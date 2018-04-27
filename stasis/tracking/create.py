@@ -1,27 +1,20 @@
-import json
+from stasis.service import Queue
 import logging
 import time
-import os
-import boto3
 import json
 
 # valid states for tracking of samples
 validStates = ['entered', 'acquired', 'converted', 'processing', 'exported']
 
 
-def create(event, context):
+def triggerEvent(data):
     """
-        creates a new sample tracking object
+        submits the given data to the queue
 
-        :param event:
-        :param context:
-        :return:
+    :param data: requires sample and status in it, to be considered validd
+    :return: a serialized version of the submitted message
     """
 
-    if 'body' not in event:
-        raise Exception("please ensure you provide a valid body")
-
-    data = json.loads(event['body'])
     if 'sample' not in data:
         logging.error("Validation Failed")
         raise Exception("please ensure you provide the 'sample' property in the object")
@@ -31,12 +24,6 @@ def create(event, context):
     if data['status'].lower() not in validStates:
         raise Exception(
             "please provide the 'status' property in the object, is one of the following: " + '.'.join(validStates))
-
-    # get topic refrence
-    client = boto3.client('sns')
-
-    # if topic exists, we just reuse it
-    topic_arn = client.create_topic(Name=os.environ['topic'])['TopicArn']
 
     # if validation passes, persist the object in the dynamo db
 
@@ -53,29 +40,22 @@ def create(event, context):
         ]
     }
 
-    serialized = json.dumps(item)
-    # submit item to queue for routing to the correct persistence
+    x = Queue.Queue()
+    return x.submit(item, "tracking")
 
-    result = client.publish(
-        TopicArn=topic_arn,
-        Message=json.dumps({'default': serialized}),
-        Subject="route:tracking",
-        MessageStructure='json',
-        MessageAttributes={
-            'route': {
-                'DataType': 'String',
-                'StringValue': 'tracking'
-            }
-        },
-    )
 
-    print(result)
+def create(event, context):
+    """
+        creates a new sample tracking object, from a html api request
 
-    # create a response
-    response = {
-        "statusCode": result['ResponseMetadata']['HTTPStatusCode'],
-        "body": serialized
+        :param event:
+        :param context:
+        :return:
+    """
 
-    }
+    if 'body' not in event:
+        raise Exception("please ensure you provide a valid body")
 
-    return response
+    data = json.loads(event['body'])
+
+    return triggerEvent(data)

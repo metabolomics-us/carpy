@@ -18,7 +18,7 @@ def test_create_success(requireMocking):
 
     assert json.loads(response["body"])["status"][0]['value'], "ENTERED"
 
-    assert json.loads(response["body"])["status"][0]['time'] > timestamp
+    assert json.loads(response["body"])["status"][0]['time'] >= timestamp
 
 
 def test_create_fail_invalid_status(requireMocking):
