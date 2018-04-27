@@ -1,4 +1,4 @@
-from stasis.service import Queue
+from stasis.service.Queue import Queue
 import logging
 import time
 import json
@@ -40,7 +40,7 @@ def triggerEvent(data):
         ]
     }
 
-    x = Queue.Queue()
+    x = Queue()
     return x.submit(item, "tracking")
 
 

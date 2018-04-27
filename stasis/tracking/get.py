@@ -1,10 +1,10 @@
 from stasis.util import decimalencoder
+from stasis.service.Persistence import Persistence
 import json
 import os
 
 import boto3
 
-dynamodb = boto3.resource('dynamodb')
 
 
 def get(events, context):
@@ -15,17 +15,13 @@ def get(events, context):
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
 
-            table = dynamodb.Table(os.environ["trackingTable"])
-            result = table.get_item(
-                Key={
-                    'id': events['pathParameters']['sample']
-                }
-            )
+            db = Persistence(os.environ["trackingTable"])
+            result = db.load(events['pathParameters']['sample'])
 
             # create a response
             return {
                 "statusCode": 200,
-                "body": json.dumps(result['Item'],
+                "body": json.dumps(result,
                            cls=decimalencoder.DecimalEncoder)
             }
         else:

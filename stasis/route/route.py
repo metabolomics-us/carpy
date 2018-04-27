@@ -1,6 +1,7 @@
 import json
 import os
 import boto3
+from stasis.service.Persistence import Persistence
 
 dynamodb = boto3.resource('dynamodb')
 
@@ -61,21 +62,16 @@ def processTrackingMessage(message):
     """
 
     if 'id' in message:
-        table = dynamodb.Table(os.environ['trackingTable'])
+        table = Persistence(os.environ['trackingTable'])
 
-        result = table.get_item(
-            Key={
-                'id': message['id']
-            }
-        )
+        result = table.load(message['id'])
 
-        if 'Item' in result:
+        if result is not None:
             # require merge
-            data = result['Item']
-            message['status'] = data['status'] + message['status']
+            message['status'] = result['status'] + message['status']
 
         # require insert
-        result = table.put_item(Item=message)
+        result = table.save(message)
 
         print(result)
 
