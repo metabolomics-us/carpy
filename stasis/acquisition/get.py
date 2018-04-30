@@ -13,7 +13,7 @@ def get(events, context):
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
 
-            db = Persistence(os.environ["trackingTable"])
+            db = Persistence(os.environ["acquisitionTable"])
             result = db.load(events['pathParameters']['sample'])
 
             # create a response

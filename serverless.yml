@@ -2,6 +2,9 @@ service: stasis
 
 frameworkVersion: ">=1.1.0 <2.0.0"
 
+############################################################################################
+# configure out provider and the security guide lines
+############################################################################################
 provider:
   name: aws
   runtime: python3.6
@@ -31,15 +34,24 @@ provider:
   deploymentBucket:
     name: lambdas-stasis
 
+############################################################################################
 #custom configuration settings
+############################################################################################
 custom:
   stage: ${opt:stage, self:provider.stage}
   region: ${opt:region, self:provider.region}
 
   snsTopic: "StasisQueue-${self:custom.stage}"
+
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
+  acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
+  resultTable: "StasisResultTable-${self:custom.stage}"
 
 
+
+############################################################################################
+# this section defines all lambda function and triggers
+############################################################################################
 functions:
   #creates a new tracking record in the system
   trackingCreate:
@@ -71,6 +83,31 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
 
+  #fetches an acquisition record
+  acquisitionGet:
+    handler: stasis/acquisition/get.get
+    events:
+      - http:
+          path: stasis/acquisition/{sample}
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                sample: true
+
+  #fetches an acquisition record
+  acquisitionCreate:
+    handler: stasis/acquisition/create.create
+    events:
+      - http:
+          path: stasis/acquisition
+          method: post
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   #monitors our event queue for received messages and routes them
   route:
@@ -80,10 +117,15 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
 
+############################################################################################
+#this section defines all the resources required by the system
+############################################################################################
 resources:
   Resources:
 
-    #creates our required tables
+    #####################################################################
+    # table to track samples
+    #####################################################################
     TrackingTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
@@ -101,3 +143,45 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:custom.trackingTable}
+
+    #####################################################################
+    # table to track meta data
+    #####################################################################
+    MetaDataTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.acquisitionTable}
+
+    #####################################################################
+    # table to track results of samples
+    #####################################################################
+    ResultTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.resultTable}

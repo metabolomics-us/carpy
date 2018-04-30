@@ -29,6 +29,7 @@ class Persistence:
             }
         )
 
+        print(result)
         if 'Item' in result:
             return result['Item']
         else:

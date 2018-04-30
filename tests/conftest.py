@@ -25,11 +25,32 @@ def requireMocking():
     client = session.client('sns')
 
     os.environ["topic"] = "UnitTestTopic"
-    os.environ["trackingTable"] = "StasisTrackingTable"
+    os.environ["trackingTable"] = "UnitTrackingTable"
+    os.environ["acquisitionTable"] = "UnitAcquisitionTable"
 
     dynamodb = boto3.resource('dynamodb')
-    users = dynamodb.create_table(
+    dynamodb.create_table(
         TableName=os.environ["trackingTable"],
+        KeySchema=[
+            {
+                'AttributeName': 'id',
+                'KeyType': 'HASH'
+            }
+        ],
+        AttributeDefinitions=[
+            {
+                'AttributeName': 'id',
+                'AttributeType': 'S'
+            }
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 1,
+            'WriteCapacityUnits': 1
+        }
+    )
+
+    dynamodb.create_table(
+        TableName=os.environ["acquisitionTable"],
         KeySchema=[
             {
                 'AttributeName': 'id',

@@ -46,17 +46,26 @@ def route(events, context):
 
 def processMetaDataMessage(message):
     """
-        processes the received metadata and stores it in the internal database
+        sends the received message to the internal database for storage
     :param message:
     :return:
     """
 
-    return True
+    if 'id' in message:
+        table = Persistence(os.environ['acquisitionTable'])
+        result = table.save(message)
+
+        print(result)
+
+        return True
+
+    else:
+        return False
 
 
 def processTrackingMessage(message):
     """
-        sends the received message to the internal database for storage
+        processes the received metadata and stores it in the internal database
     :param message:
     :return:
     """

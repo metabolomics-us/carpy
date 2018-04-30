@@ -1,10 +1,21 @@
-from stasis.service.Queue import Queue
-import logging
-import time
 import json
+import time
+
+from stasis.service.Queue import Queue
 
 # valid states for tracking of samples
 validStates = ['entered', 'acquired', 'converted', 'processing', 'exported']
+from jsonschema import validate
+
+dataSchema = {
+    'sample': {
+        'type': 'string'
+    },
+    'status': {
+        'type': 'string'
+    },
+    'required': ['sample', 'status']
+}
 
 
 def triggerEvent(data):
@@ -15,12 +26,7 @@ def triggerEvent(data):
     :return: a serialized version of the submitted message
     """
 
-    if 'sample' not in data:
-        logging.error("Validation Failed")
-        raise Exception("please ensure you provide the 'sample' property in the object")
-    if 'status' not in data:
-        logging.error("Validation Failed")
-        raise Exception("please provide the 'status' property in the object")
+    validate(data, dataSchema)
     if data['status'].lower() not in validStates:
         raise Exception(
             "please provide the 'status' property in the object, is one of the following: " + '.'.join(validStates))

@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 import datetime
-import json
+
 import untangle
 
 
@@ -16,18 +16,19 @@ def parse_minix_xml(f):
     for c in x.experiment.classes.get_elements():
         for sample in c.samples.sample:
             filename = sample['fileName'].split(',')[-1]
-            
+
             title = x.experiment['title'].split(',')
             method = title[-2].strip() if len(title) > 2 else ''
 
             if not filename.startswith('please_change_me'):
                 samples.append({
-                    'id': filename,
-                    'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    'sample': filename,
 
                     'acquisition': {
                         'instrument': x.experiment.architecture['name'],
-                        'method': method
+                        'name': method,
+                        'ionisation': 'positive',  # psotivie || lcms
+                        'method': 'gcms'  # gcms || lcms
                     },
 
                     'metadata': {
@@ -43,7 +44,3 @@ def parse_minix_xml(f):
                 })
 
     return samples
-
-
-if __name__ == '__main__':
-    parse_minix_xml(open('375786.xml'))

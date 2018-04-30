@@ -8,7 +8,6 @@ if version_info.major == 3 and version_info.minor < 6 or \
 
 from stasis import __version__
 
-
 setup(name='stasis',
       version=__version__,
       description='Sample Tracking and Supplementary Information System',
@@ -19,9 +18,11 @@ setup(name='stasis',
       packages=['stasis'],
       scripts=[],
       setup_requires=['pytest-runner'],
-      tests_require=['pytest', 'pytest-mock', 'pytest-cov','moto'],
+      tests_require=['pytest', 'pytest-mock', 'pytest-cov', 'moto'],
       install_requires=[
-        'boto3'
+          'boto3',
+          'untangle',
+          'jsonschema'
       ],
       include_package_data=True,
       zip_safe=False,
