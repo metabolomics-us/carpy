@@ -2,6 +2,9 @@ service: stasis
 
 frameworkVersion: ">=1.1.0 <2.0.0"
 
+plugins:
+  - serverless-domain-manager
+
 ############################################################################################
 # configure out provider and the security guide lines
 ############################################################################################
@@ -30,6 +33,8 @@ provider:
   timeout: 90
   versionFunctions: false
 
+  logRetentionInDays: 3
+
   #where to store out data, needs to be manually created!
   deploymentBucket:
     name: lambdas-stasis
@@ -47,6 +52,20 @@ custom:
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
   resultTable: "StasisResultTable-${self:custom.stage}"
 
+  ###
+  # custom domain management
+  ###
+
+  domains:
+    prod: api.metabolomics.us
+    test: test-api.metabolomics.us
+    dev:  dev-api.metabolomics.us
+
+  customDomain:
+    basePath: "stasis"
+    domainName: ${self:custom.domains.${self:custom.stage}}
+    stage: "${self:custom.stage}"
+    createRoute53Record: true
 
 
 ############################################################################################
