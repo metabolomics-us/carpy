@@ -2,6 +2,8 @@ import json
 import os
 import boto3
 from stasis.service.Persistence import Persistence
+from stasis.util.minix_parser import parse_minix_xml
+from stasis.acquisition.create import triggerEvent
 
 dynamodb = boto3.resource('dynamodb')
 
@@ -50,12 +52,18 @@ def processMetaDataMessage(message):
     :param message:
     :return:
     """
+    table = Persistence(os.environ['acquisitionTable'])
 
-    if 'id' in message:
-        table = Persistence(os.environ['acquisitionTable'])
-        result = table.save(message)
+    if 'minix' in message and 'url' in message:
+        for x in parse_minix_xml(message['url']):
+            # rederict to the appropriate functions
+            triggerEvent(x)
 
-        print(result)
+        return True
+
+    elif 'id' in message and 'minix' not in message:
+
+        table.save(message)
 
         return True
 

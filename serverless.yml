@@ -109,6 +109,20 @@ functions:
     environment:
       acquisitionTable: ${self:custom.acquisitionTable}
 
+  #imports data from MiniX
+  acquisitionCreateFromMinix:
+    handler: stasis/acquisition/create.fromMinix
+    events:
+      - http:
+          path: stasis/acquisition/import/minix
+          method: post
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+
   #monitors our event queue for received messages and routes them
   route:
     handler: stasis/route/route.route

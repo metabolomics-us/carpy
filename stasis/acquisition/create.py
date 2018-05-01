@@ -1,5 +1,4 @@
 from stasis.service.Queue import Queue
-import logging
 import time
 import json
 from jsonschema import validate
@@ -63,9 +62,9 @@ def triggerEvent(data):
 
     timestamp = int(time.time() * 1000)
     data['time'] = timestamp
+    data['id'] = data['sample']
 
     validate(data, dataSchema)
-    data['id'] = data['sample']
 
     x = Queue()
     return x.submit(data, "metadata")
@@ -86,3 +85,32 @@ def create(event, context):
     data = json.loads(event['body'])
 
     return triggerEvent(data)
+
+
+def fromMinix(event, context):
+    """
+        submits all the samples from the given minix study to the system for usage
+    :param event:
+    :param context:
+    :return:
+    """
+
+    if 'body' not in event:
+        raise Exception("please ensure you provide a valid body")
+
+    data = json.loads(event['body'])
+
+    url = "http://minix.fiehnlab.ucdavis.edu/rest/export/"
+    if 'url' in data:
+        url = data['url']
+
+    if 'id' not in data:
+        raise Exception("please ensure you provide a an id!")
+
+    url += str(data['id'])
+
+    data['url'] = url
+    data['minix'] = True
+
+    x = Queue()
+    return x.submit(data, "metadata")

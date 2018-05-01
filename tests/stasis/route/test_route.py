@@ -1,14 +1,7 @@
-from unittest import TestCase
-
-from moto import mock_lambda, sns
-
-from stasis.route import route
-from stasis.tracking import create
-
-from moto import mock_sqs, mock_dynamodb, mock_dynamodb2, mock_sns
-import boto3
+import json
 import os
 
+from stasis.route import route
 from stasis.service.Persistence import Persistence
 
 
@@ -79,6 +72,28 @@ def test_route_metadata(requireMocking):
                 "Sns": {
                     "Subject": "route:metadata",
                     "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"ENTERED\"}]}"
+                }
+            }
+        ]
+    }, {})
+
+    assert len(response) == 1
+    assert response[0]['success']
+    assert response[0]['event'] == 'metadata'
+
+def test_route_metadata_minix(requireMocking):
+    # simulate a message
+
+    message = {
+        "url" : "http://minix.fiehnlab.ucdavis.edu/rest/export/382171",
+        "minix": True
+    }
+    response = route.route({
+        "Records": [
+            {
+                "Sns": {
+                    "Subject": "route:metadata",
+                    "Message": json.dumps(message)
                 }
             }
         ]

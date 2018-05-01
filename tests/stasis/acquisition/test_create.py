@@ -4,6 +4,8 @@ import time
 import pytest
 
 from stasis.acquisition import create
+from stasis.acquisition import create
+
 from stasis.util.minix_parser import parse_minix_xml
 
 
@@ -24,3 +26,13 @@ def test_create_success_gctof(requireMocking):
         assert json.loads(response["body"])["acquisition"]['method'] == "gcms"
         assert json.loads(response["body"])["metadata"]['species'] == "rat"
         assert json.loads(response["body"])["metadata"]['organ'] == "tissue"
+
+
+def test_create_success_minix(requireMocking):
+    data = {
+        "id": 382171
+    }
+    response = create.fromMinix({'body': json.dumps(data)}, {})
+
+    assert json.loads(response["body"])['id'] == 382171
+    assert 'body' in response

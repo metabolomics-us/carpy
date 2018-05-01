@@ -60,8 +60,7 @@ def create(event, context):
     """
 
     if 'body' not in event:
-        raise Exception("please ensure you provide a valid body")
-
+        "http://minix.fiehnlab.ucdavis.edu/rest/export/"
     data = json.loads(event['body'])
 
     return triggerEvent(data)
