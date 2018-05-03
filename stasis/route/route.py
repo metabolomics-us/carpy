@@ -55,10 +55,12 @@ def processMetaDataMessage(message):
     table = Persistence(os.environ['acquisitionTable'])
 
     if 'minix' in message and 'url' in message:
+        print("handling minix data: " + json.dumps(message, indent=2))
         for x in parse_minix_xml(message['url']):
             # rederict to the appropriate functions
             triggerEvent(x)
 
+        print("finished import")
         return True
 
     elif 'id' in message and 'minix' not in message:

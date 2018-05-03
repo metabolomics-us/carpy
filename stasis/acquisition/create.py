@@ -60,6 +60,8 @@ def triggerEvent(data):
     :return: a serialized version of the submitted message
     """
 
+    print("trigger event: " + json.dumps(data, indent=2))
+
     timestamp = int(time.time() * 1000)
     data['time'] = timestamp
     data['id'] = data['sample']

@@ -4,6 +4,7 @@ frameworkVersion: ">=1.1.0 <2.0.0"
 
 plugins:
   - serverless-domain-manager
+  - serverless-python-requirements
 
 ############################################################################################
 # configure out provider and the security guide lines
@@ -23,7 +24,7 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:custom.trackingTable}"
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/*"
     - Effect: Allow
       Action:
         - SNS:*
@@ -67,7 +68,8 @@ custom:
     stage: "${self:custom.stage}"
     createRoute53Record: true
 
-
+  pythonRequirements:
+    dockerizePip: non-linux
 ############################################################################################
 # this section defines all lambda function and triggers
 ############################################################################################
@@ -127,6 +129,7 @@ functions:
     #defines to which topic we want to connect
     environment:
       acquisitionTable: ${self:custom.acquisitionTable}
+      topic: ${self:custom.snsTopic}
 
   #imports data from MiniX
   acquisitionCreateFromMinix:
@@ -140,15 +143,20 @@ functions:
     #defines to which topic we want to connect
     environment:
       acquisitionTable: ${self:custom.acquisitionTable}
+      topic: ${self:custom.snsTopic}
 
 
   #monitors our event queue for received messages and routes them
   route:
+    memorySize: 1512
+
     handler: stasis/route/route.route
     events:
       - sns: ${self:custom.snsTopic}
     environment:
       trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+      topic: ${self:custom.snsTopic}
 
 ############################################################################################
 #this section defines all the resources required by the system
