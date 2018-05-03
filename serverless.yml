@@ -79,7 +79,7 @@ functions:
     handler: stasis/tracking/create.create
     events:
       - http:
-          path: stasis/tracking
+          path: tracking
           method: post
           cors: true
 
@@ -92,7 +92,7 @@ functions:
     handler: stasis/tracking/get.get
     events:
       - http:
-          path: stasis/tracking/{sample}
+          path: tracking/{sample}
           method: get
           cors: true
           request:
@@ -109,20 +109,24 @@ functions:
     handler: stasis/acquisition/get.get
     events:
       - http:
-          path: stasis/acquisition/{sample}
+          path: acquisition/{sample}
           method: get
           cors: true
           request:
             parameter:
               paths:
                 sample: true
+    #defines to which topic we want to connect
+    environment:
+      acquisitionTable: ${self:custom.acquisitionTable}
+      topic: ${self:custom.snsTopic}
 
   #fetches an acquisition record
   acquisitionCreate:
     handler: stasis/acquisition/create.create
     events:
       - http:
-          path: stasis/acquisition
+          path: acquisition
           method: post
           cors: true
 
@@ -136,7 +140,7 @@ functions:
     handler: stasis/acquisition/create.fromMinix
     events:
       - http:
-          path: stasis/acquisition/import/minix
+          path: acquisition/import/minix
           method: post
           cors: true
 
@@ -147,6 +151,7 @@ functions:
 
 
   #monitors our event queue for received messages and routes them
+  #no public exposure
   route:
     memorySize: 1512
 
