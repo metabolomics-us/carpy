@@ -20,9 +20,11 @@ class NewFileScanner(FileSystemEventHandler):
         # 1. make sure it's a directory
         # 2. wait till the size stays constant of it and all it's file
         # 3. trigger status acquired
-        # 4. start proteo wizard procees
-        # 5. store as mzXML file
-        # 6. trigger status converted
+        # 4. zip file
+        # 5. upload file to converter
+        # 6  wait for file conversion to finish
+        # 7. store as mzML file
+        # 8. trigger status converted
 
         print(event)
 
