@@ -22,7 +22,8 @@ setup(name='stasis',
       install_requires=[
           'boto3',
           'untangle',
-          'jsonschema'
+          'jsonschema',
+          'watchdog'
       ],
       include_package_data=True,
       zip_safe=False,
