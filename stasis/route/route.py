@@ -29,6 +29,8 @@ def route(events, context):
                                 result.append({"event": "tracking", "success": processTrackingMessage(message)})
                             elif subject[1] == 'metadata':
                                 result.append({"event": "metadata", "success": processMetaDataMessage(message)})
+                            elif subject[1] == 'result':
+                                result.append({"event": "result", "success": processResultMessage(message)})
                             else:
                                 print("unknown event specified: ", subject[1])
                                 result.append({"event": subject[1], "success": False})
@@ -89,6 +91,26 @@ def processTrackingMessage(message):
             # require merge
             message['status'] = result['status'] + message['status']
 
+        # require insert
+        result = table.save(message)
+
+        print(result)
+
+        return True
+
+    else:
+        return False
+
+
+def processResultMessage(message):
+    """
+        processes the received metadata and stores it in the internal database
+    :param message:
+    :return:
+    """
+
+    if 'id' in message:
+        table = Persistence(os.environ['resultTable'])
         # require insert
         result = table.save(message)
 
