@@ -2,3 +2,5 @@ boto3
 untangle
 jsonschema
 watchdog
+pytest
+moto
