@@ -88,13 +88,12 @@ def processTrackingMessage(message):
         result = table.load(message['id'])
 
         if result is not None:
-            # require merge
+            # only keep elements with a lower priority
+            result['status'] = [x for x in result['status'] if x['priority'] < message['status'][0]['priority']]
             message['status'] = result['status'] + message['status']
 
-        # require insert
+        # req   uire insert
         result = table.save(message)
-
-        print(result)
 
         return True
 

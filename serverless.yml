@@ -69,7 +69,7 @@ custom:
     createRoute53Record: true
 
   pythonRequirements:
-    dockerizePip: non-linux
+    dockerizePip: false #non-linux
 ############################################################################################
 # this section defines all lambda function and triggers
 ############################################################################################

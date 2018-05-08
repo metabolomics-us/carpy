@@ -35,7 +35,7 @@ def test_route_tracking_merge(requireMocking):
             {
                 "Sns": {
                     "Subject": "route:tracking",
-                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"ENTERED\"}]}"
+                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"ENTERED\",\"priority\":0}]}"
                 }
             }]
     }, {})
@@ -54,7 +54,7 @@ def test_route_tracking_merge(requireMocking):
             {
                 "Sns": {
                     "Subject": "route:tracking",
-                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\"}]}"
+                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\",\"priority\":300}]}"
                 }
             }]
     }, {})

@@ -2,10 +2,8 @@ import json
 import time
 
 from stasis.service.Queue import Queue
-
-# valid states for tracking of samples
-validStates = ['entered', 'acquired', 'converted', 'processing', 'exported']
 from jsonschema import validate
+from stasis.service.Status import Status
 
 dataSchema = {
     'sample': {
@@ -27,9 +25,11 @@ def triggerEvent(data):
     """
 
     validate(data, dataSchema)
-    if data['status'].lower() not in validStates:
+
+    statusService = Status()
+    if not statusService.valid(data['status']):
         raise Exception(
-            "please provide the 'status' property in the object, is one of the following: " + '.'.join(validStates))
+            "please provide the 'status' property in the object")
 
     # if validation passes, persist the object in the dynamo db
 
@@ -41,7 +41,8 @@ def triggerEvent(data):
         'status': [
             {
                 'time': timestamp,
-                'value': data['status'].upper()
+                'value': data['status'].lower(),
+                'priority': statusService.priority(data['status'])
             }
         ]
     }
