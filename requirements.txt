@@ -4,3 +4,4 @@ jsonschema
 watchdog
 pytest
 moto
+simplejson

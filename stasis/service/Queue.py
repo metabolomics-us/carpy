@@ -1,4 +1,4 @@
-import json
+import simplejson as json
 import os
 import boto3
 
@@ -25,7 +25,7 @@ class Queue:
         # if topic exists, we just reuse it
         topic_arn = client.create_topic(Name=os.environ['topic'])['TopicArn']
 
-        serialized = json.dumps(object)
+        serialized = json.dumps(object, use_decimal=True)
         # submit item to queue for routing to the correct persistence
 
         result = client.publish(

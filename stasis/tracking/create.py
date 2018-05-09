@@ -1,4 +1,4 @@
-import json
+import simplejson as json
 import time
 
 from stasis.service.Queue import Queue

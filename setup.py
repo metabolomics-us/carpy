@@ -23,7 +23,8 @@ setup(name='stasis',
           'boto3',
           'untangle',
           'jsonschema',
-          'watchdog'
+          'watchdog',
+          'simplejson'
       ],
       include_package_data=True,
       zip_safe=False,

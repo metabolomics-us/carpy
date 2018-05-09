@@ -69,11 +69,45 @@ custom:
     createRoute53Record: true
 
   pythonRequirements:
-    dockerizePip: false #non-linux
+    dockerizePip: non-linux
 ############################################################################################
 # this section defines all lambda function and triggers
 ############################################################################################
 functions:
+
+
+  #fetches an result record
+  resultGet:
+    handler: stasis/results/get.get
+    events:
+      - http:
+          path: result/{sample}
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                sample: true
+    #defines to which topic we want to connect
+    environment:
+      resultTable: ${self:custom.resultTable}
+      topic: ${self:custom.snsTopic}
+
+  #fetches an result record
+  resultCreate:
+    handler: stasis/results/create.create
+    events:
+      - http:
+          path: result
+          method: post
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      resultTable: ${self:custom.resultTable}
+      topic: ${self:custom.snsTopic}
+
+
   #creates a new tracking record in the system
   trackingCreate:
     handler: stasis/tracking/create.create

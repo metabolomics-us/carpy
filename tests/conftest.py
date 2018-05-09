@@ -27,6 +27,7 @@ def requireMocking():
     os.environ["topic"] = "UnitTestTopic"
     os.environ["trackingTable"] = "UnitTrackingTable"
     os.environ["acquisitionTable"] = "UnitAcquisitionTable"
+    os.environ["resultTable"] = "UnitResultTable"
 
     dynamodb = boto3.resource('dynamodb')
     dynamodb.create_table(
@@ -69,6 +70,25 @@ def requireMocking():
         }
     )
 
+    dynamodb.create_table(
+        TableName=os.environ["resultTable"],
+        KeySchema=[
+            {
+                'AttributeName': 'id',
+                'KeyType': 'HASH'
+            }
+        ],
+        AttributeDefinitions=[
+            {
+                'AttributeName': 'id',
+                'AttributeType': 'S'
+            }
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 1,
+            'WriteCapacityUnits': 1
+        }
+    )
     yield
     sns.stop()
     dynamo.stop()

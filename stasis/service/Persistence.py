@@ -45,4 +45,6 @@ class Persistence:
         """
 
         table = self.db.Table(self.table)
+
         return table.put_item(Item=object)
+

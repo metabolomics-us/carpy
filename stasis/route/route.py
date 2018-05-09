@@ -1,4 +1,4 @@
-import json
+import simplejson as json
 import os
 import boto3
 from stasis.service.Persistence import Persistence
@@ -113,9 +113,9 @@ def processResultMessage(message):
         # require insert
         result = table.save(message)
 
-        print(result)
-
         return True
 
     else:
+        print('no id provided')
+        print(message)
         return False

@@ -1,8 +1,8 @@
-import json
 import os
 
+import simplejson as json
+
 from stasis.service.Persistence import Persistence
-from stasis.util import decimalencoder
 
 
 def get(events, context):
@@ -19,8 +19,7 @@ def get(events, context):
             # create a response
             return {
                 "statusCode": 200,
-                "body": json.dumps(result,
-                           cls=decimalencoder.DecimalEncoder)
+                "body": json.dumps(result)
             }
         else:
             return {
