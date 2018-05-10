@@ -29,7 +29,7 @@ virtualenv -p python3 --no-site-packages $PYENV_HOME
 source $PYENV_HOME/bin/activate
 pip install -U pytest
 pip install -r requirements.txt
-py.test integrationTests 
+py.test integrationTests || exit 1
 deactivate'''
       }
     }
