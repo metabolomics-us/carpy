@@ -18,6 +18,7 @@ deactivate'''
       steps {
         sh '''npm install serverless-domain-manager
 sls deploy --stage test'''
+        sh 'npm install serverless-python-requirements'
       }
     }
     stage('sls deploy - prod') {
