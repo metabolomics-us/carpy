@@ -28,36 +28,40 @@ def test_create_success(requireMocking):
                     }
                 ]
             },
-            'results': [
-                {
-                    'target': {
-                        'retentionIndex': 121.12,
-                        'name': 'test',
-                        'id': 'test_id',
-                        'mass': 12.2
-                    },
-                    'annotation': {
-                        'retentionIndex': 121.2,
-                        'intensity': 10.0,
-                        'replaced': False,
-                        'mass': 12.2
-                    }
-                },
-                {
-                    'target': {
-                        'retentionIndex': 123.12,
-                        'name': 'test2',
-                        'id': 'test_id2',
-                        'mass': 132.12
-                    },
-                    'annotation': {
-                        'retentionIndex': 123.2,
-                        'intensity': 103.0,
-                        'replaced': True,
-                        'mass': 132.12
-                    }
+            'injections': {
+                'test_1': {
+                    'results': [
+                        {
+                            'target': {
+                                'retentionIndex': 121.12,
+                                'name': 'test',
+                                'id': 'test_id',
+                                'mass': 12.2
+                            },
+                            'annotation': {
+                                'retentionIndex': 121.2,
+                                'intensity': 10.0,
+                                'replaced': False,
+                                'mass': 12.2
+                            }
+                        },
+                        {
+                            'target': {
+                                'retentionIndex': 123.12,
+                                'name': 'test2',
+                                'id': 'test_id2',
+                                'mass': 132.12
+                            },
+                            'annotation': {
+                                'retentionIndex': 123.2,
+                                'intensity': 103.0,
+                                'replaced': True,
+                                'mass': 132.12
+                            }
+                        }
+                    ]
                 }
-            ]
+            }
         }
     )
 

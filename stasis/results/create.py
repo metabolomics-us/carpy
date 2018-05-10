@@ -9,67 +9,73 @@ dataSchema = {
         'type': 'string'
     },
     'time': {
-        'type': 'long'
-    }
-    ,
-    'results': {
-        'type': 'array',
-        'items': {
-
-            'type': 'object',
-            'properties': {
-
-                'target': {
-                    'retentionIndex': {
-                        'type': 'double'
-                    },
-                    'name': {
-                        'type': 'string'
-                    },
-                    'id': {
-                        'type': 'string'
-                    },
-                    'mass': {
-                        'type': 'double'
-                    }
-                },
-
-                'annotation': {
-                    'retentionIndex': {
-                        'type': 'double'
-                    },
-                    'mass': {
-                        'type': 'double'
-                    },
-                    'intensity': {
-                        'type': 'double'
-                    },
-                    'replaced': {
-                        'type': 'bool'
-                    }
-                }
-            }
-
-        }
+        'type': 'integer'
     },
     'correction': {
+        'polynomial': {
+            'type': 'integer'
+        },
         'sampleUsed': {
             'type': 'string'
         },
-        'polynomial': 'int',
         'curve': {
             'type': 'array',
             'items': {
                 'type': 'object',
-                'properties': {
-                    'x': 'double',
-                    'y': 'double'
+                'x': {
+                    'type': 'number'
+                },
+                'y': {
+                    'type': 'number'
                 }
+            }
+        },
+        'required':['polinomial', 'sampleUsed', 'curve']
+    },
+    'injections': {
+        'type': 'object',
+        'patterProperties': {
+            '^.*$': {
+                'type': 'object',
+                'results': {
+                   'type': 'array',
+                   'items': {
+                       'type': 'object',
+                       'target': {
+                           'retentionIndex': {
+                               'type': 'number'
+                           },
+                           'name': {
+                               'type': 'string'
+                           },
+                           'id': {
+                               'type': 'string'
+                           },
+                           'mass': {
+                               'type': 'number'
+                           }
+                       },
+                       'annotation': {
+                           'retentionIndex': {
+                               'type': 'number'
+                           },
+                           'intensity': {
+                               'type': 'integer'
+                           },
+                           'replaced': {
+                               'type': 'boolean'
+                           },
+                           'mass': {
+                               'type': 'number'
+                           }
+                       }
+                   }
+               }
             }
         }
     },
 
-    'required': ['sample', 'results', 'time', 'correction']
+    'required': ['sample', 'time', 'correction', 'injections']
 }
 
 
