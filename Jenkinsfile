@@ -16,7 +16,8 @@ deactivate'''
     }
     stage('sls deploy - test') {
       steps {
-        sh 'sls deploy --stage test'
+        sh '''npm install serverless-domain-manager
+sls deploy --stage test'''
       }
     }
     stage('sls deploy - prod') {
