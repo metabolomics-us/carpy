@@ -88,6 +88,9 @@ functions:
             parameter:
               paths:
                 sample: true
+          response:
+            headers:
+              Content-Type: "'application/json'"
     #defines to which topic we want to connect
     environment:
       resultTable: ${self:custom.resultTable}
@@ -133,6 +136,9 @@ functions:
             parameter:
               paths:
                 sample: true
+          response:
+            headers:
+              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
@@ -150,6 +156,9 @@ functions:
             parameter:
               paths:
                 sample: true
+          response:
+            headers:
+              Content-Type: "'application/json'"
     #defines to which topic we want to connect
     environment:
       acquisitionTable: ${self:custom.acquisitionTable}
