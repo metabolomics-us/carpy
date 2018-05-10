@@ -5,6 +5,7 @@ from jsonschema import validate
 
 # defines the schema of the incoming data object
 dataSchema = {
+
     'sample': {
         'type': 'string'
     },

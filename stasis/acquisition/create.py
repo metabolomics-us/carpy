@@ -1,6 +1,6 @@
 from stasis.service.Queue import Queue
 import time
-import json
+import simplejson as json
 from jsonschema import validate
 
 # defines the schema of the incoming data object

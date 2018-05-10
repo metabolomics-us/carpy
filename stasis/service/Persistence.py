@@ -1,4 +1,5 @@
 import boto3
+import simplejson as json
 
 
 class Persistence:
@@ -29,7 +30,6 @@ class Persistence:
             }
         )
 
-        print(result)
         if 'Item' in result:
             return result['Item']
         else:
@@ -46,5 +46,8 @@ class Persistence:
 
         table = self.db.Table(self.table)
 
-        return table.put_item(Item=object)
-
+        # force serialization to deal with decimal number tag
+        data = json.dumps(object, use_decimal=True)
+        data = json.loads(data, use_decimal=True)
+        print(data)
+        return table.put_item(Item=data)

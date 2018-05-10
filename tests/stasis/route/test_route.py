@@ -110,6 +110,7 @@ def test_route_result(requireMocking):
     # simulate a result message
 
     data = json.dumps({
+        "id": "test",
         "sample": "test",
         "time": 1525832496333,
         "correction": {
@@ -122,34 +123,34 @@ def test_route_result(requireMocking):
         },
         "injections": {
             "test_1": {
-                "results": [{
-                    "target": {
-                        "retentionIndex": 121.12,
-                        "name": "test",
-                        "id": "test_id",
-                        "mass": 12.2},
-                    "annotation": {
-                        "retentionIndex": 121.2,
-                        "intensity": 10.0,
-                        "replaced": False,
-                        "mass": 12.2}
-                }, {
-                    "target": {
-                        "retentionIndex": 123.12,
-                        "name": "test2",
-                        "id": "test_id2",
-                        "mass": 132.12},
-                    "annotation": {
-                        "retentionIndex": 123.2,
-                        "intensity": 103.0,
-                        "replaced": True,
-                        "mass": 132.12}
-                }]
+                "results": [
+                    {
+                        "target": {
+                            "retentionIndex": 121.12,
+                            "name": "test",
+                            "id": "test_id",
+                            "mass": 12.2},
+                        "annotation": {
+                            "retentionIndex": 121.2,
+                            "intensity": 10.0,
+                            "replaced": False,
+                            "mass": 12.2}
+                    }, {
+                        "target": {
+                            "retentionIndex": 123.12,
+                            "name": "test2",
+                            "id": "test_id2",
+                            "mass": 132.12},
+                        "annotation": {
+                            "retentionIndex": 123.2,
+                            "intensity": 103.0,
+                            "replaced": True,
+                            "mass": 132.12}
+                    }
+                ]
             }
         }
     })
-
-    print(data)
 
     # put some data
     route.route({
@@ -164,6 +165,7 @@ def test_route_result(requireMocking):
     }, {})
 
     reinj = json.dumps({
+        "id": "test",
         "sample": "test",
         "time": 1525832496333,
         "correction": {
@@ -173,7 +175,8 @@ def test_route_result(requireMocking):
                 {"x": 121.12, "y": 121.2},
                 {"x": 123.12, "y": 123.2}
             ]
-        }, "injections": {
+        },
+        "injections": {
             "test_2": {
                 "results": [{
                     "target": {
@@ -218,6 +221,10 @@ def test_route_result(requireMocking):
     assert response[0]['success']
     assert response[0]['event'] == 'result'
 
-    injKeys = response[0]['body']['injections'].keys
+    db = Persistence(os.environ['resultTable'])
+
+    result = db.load('test')
+
+    injKeys = result['injections']
     assert 'test_1' in injKeys
     assert 'test_2' in injKeys

@@ -111,21 +111,22 @@ def processResultMessage(message):
     if 'sample' in message:
         table = Persistence(os.environ['resultTable'])
 
-        existing = table.load(message['sample'])
-        if(existing != None):
-            newInj = message['injections'][0]
-            print(newInj.keys[0])
+        existing = table.load(message['id'])
+
+        print(message.keys())
+        if existing is not None:
+            newInj = message['injections']
+            print(newInj.keys())
 
             # need to append result to injections
             print(existing['injections'])
-            result = ""
-        else:
-            # require insert
-            result = table.save(message)
+
+            message['injections'] = {**message['injections'], **existing['injections']}
+
+        table.save(message)
 
         return True
 
     else:
         print('no id provided')
-        print(message)
         return False
