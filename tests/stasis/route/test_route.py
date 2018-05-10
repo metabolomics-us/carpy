@@ -1,5 +1,6 @@
-import json
 import os
+
+import simplejson as json
 
 from stasis.route import route
 from stasis.service.Persistence import Persistence
@@ -108,7 +109,7 @@ def test_route_metadata_minix(requireMocking):
 def test_route_result(requireMocking):
     # simulate a result message
 
-    data = {
+    data = json.dumps({
         "sample": "test",
         "time": 1525832496333,
         "correction": {
@@ -146,7 +147,9 @@ def test_route_result(requireMocking):
                 }]
             }
         }
-    }
+    })
+
+    print(data)
 
     # put some data
     route.route({
@@ -154,13 +157,13 @@ def test_route_result(requireMocking):
             {
                 "Sns": {
                     "Subject": "route:result",
-                    "Message": json.dumps(data)
+                    "Message": data
                 }
             }
         ]
     }, {})
 
-    reinj = {
+    reinj = json.dumps({
         "sample": "test",
         "time": 1525832496333,
         "correction": {
@@ -198,14 +201,14 @@ def test_route_result(requireMocking):
                 }]
             }
         }
-    }
+    })
 
     response = route.route({
         "Records": [
             {
                 "Sns": {
                     "Subject": "route:result",
-                    "Message": json.dumps(reinj)
+                    "Message": reinj
                 }
             }
         ]
