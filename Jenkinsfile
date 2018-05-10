@@ -10,7 +10,7 @@ virtualenv -p python3 --no-site-packages $PYENV_HOME
 source $PYENV_HOME/bin/activate
 pip install -U pytest
 pip install -r requirements.txt
-py.test tests 
+py.test tests || exit 1
 deactivate'''
         sh 'rm -rdf $WORKSPACE/.pyenv'
       }
