@@ -1,18 +1,13 @@
 pipeline {
   agent any
   stages {
-    stage('setup') {
-      steps {
-        sh 'pip install virtualenv'
-      }
-    }
     stage('testing') {
       steps {
         sh '''PYENV_HOME=$WORKSPACE/.pyenv/
 virtualenv --no-site-packages $PYENV_HOME
 source $PYENV_HOME/bin/activate
-pip install -U pytest
-pip install -r requirements.txt
+pip3 install -U pytest
+pip3 install -r requirements.txt
 py.test . 
 deactivate'''
       }
