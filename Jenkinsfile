@@ -12,6 +12,7 @@ pip install -U pytest
 pip install -r requirements.txt
 py.test . 
 deactivate'''
+        sh 'rm -rdf $WORKSPACE/.pyenv'
       }
     }
     stage('sls deploy - test') {
