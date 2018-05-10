@@ -3,7 +3,9 @@ pipeline {
   stages {
     stage('testing') {
       steps {
-        sh '''PYENV_HOME=$WORKSPACE/.pyenv/
+        sh '''#!/bin/bash
+
+PYENV_HOME=$WORKSPACE/.pyenv/
 virtualenv --no-site-packages $PYENV_HOME
 source $PYENV_HOME/bin/activate
 pip3 install -U pytest
