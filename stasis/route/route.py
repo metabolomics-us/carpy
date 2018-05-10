@@ -108,10 +108,20 @@ def processResultMessage(message):
     :return:
     """
 
-    if 'id' in message:
+    if 'sample' in message:
         table = Persistence(os.environ['resultTable'])
-        # require insert
-        result = table.save(message)
+
+        existing = table.load(message['sample'])
+        if(existing != None):
+            newInj = message['injections'][0]
+            print(newInj.keys[0])
+
+            # need to append result to injections
+            print(existing['injections'])
+            result = ""
+        else:
+            # require insert
+            result = table.save(message)
 
         return True
 
