@@ -1,6 +1,11 @@
 pipeline {
   agent any
   stages {
+    stage('setup) {
+      steps {
+        sh 'pip install virtualenv'
+      }
+    }
     stage('testing') {
       steps {
         sh '''PYENV_HOME=$WORKSPACE/.pyenv/
