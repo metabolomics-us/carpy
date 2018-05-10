@@ -10,7 +10,7 @@ virtualenv -p python3 --no-site-packages $PYENV_HOME
 source $PYENV_HOME/bin/activate
 pip install -U pytest
 pip install -r requirements.txt
-py.test . 
+py.test tests 
 deactivate'''
         sh 'rm -rdf $WORKSPACE/.pyenv'
       }
@@ -21,6 +21,16 @@ deactivate'''
 npm install serverless-python-requirements
 sls deploy --stage test'''
         echo 'test deployment succeded'
+        sh '''#!/bin/bash
+# executes all the python integration tests
+
+PYENV_HOME=$WORKSPACE/.pyenv/
+virtualenv -p python3 --no-site-packages $PYENV_HOME
+source $PYENV_HOME/bin/activate
+pip install -U pytest
+pip install -r requirements.txt
+py.test integrationTests 
+deactivate'''
       }
     }
     stage('sls deploy - prod') {
