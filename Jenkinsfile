@@ -1,7 +1,7 @@
 pipeline {
   agent any
   stages {
-    stage('setup) {
+    stage('setup') {
       steps {
         sh 'pip install virtualenv'
       }
