@@ -1,6 +1,6 @@
 import boto3
 import simplejson as json
-
+from boltons.iterutils import remap
 
 class Persistence:
     """
@@ -15,6 +15,7 @@ class Persistence:
 
         self.table = table
         self.db = boto3.resource('dynamodb')
+        self.drop_falsey = lambda path, key, value: bool(value)
 
     def load(self, sample):
         """
@@ -47,7 +48,11 @@ class Persistence:
         table = self.db.Table(self.table)
 
         # force serialization to deal with decimal number tag
-        data = json.dumps(object, use_decimal=True)
+        data = remap(object, visit=self.drop_falsey)
+        data = json.dumps(data, use_decimal=True)
         data = json.loads(data, use_decimal=True)
         print(data)
         return table.put_item(Item=data)
+
+
+

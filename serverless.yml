@@ -216,6 +216,7 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
+      resultTable: ${self:custom.resultTable}
       topic: ${self:custom.snsTopic}
 
 ############################################################################################

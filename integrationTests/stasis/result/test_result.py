@@ -61,7 +61,7 @@ def test_create():
         }
     }
 
-    response = requests.post(apiUrl, data)
+    response = requests.post(apiUrl, json=data)
     assert 200 == response.status_code
 
     time.sleep(5)

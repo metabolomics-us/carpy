@@ -5,3 +5,4 @@ watchdog
 pytest
 moto
 simplejson
+boltons

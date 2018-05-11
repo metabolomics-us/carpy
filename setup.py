@@ -24,7 +24,8 @@ setup(name='stasis',
           'untangle',
           'jsonschema',
           'watchdog',
-          'simplejson'
+          'simplejson',
+          'boltons'
       ],
       include_package_data=True,
       zip_safe=False,

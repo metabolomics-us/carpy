@@ -15,12 +15,12 @@ def test_create():
         }
 
 
-    response = requests.post(apiUrl, data)
+    response = requests.post(apiUrl, json=data)
     assert 200 == response.status_code
 
     time.sleep(5)
 
-    response = requests.get(apiUrl, samplename)
+    response = requests.get(apiUrl+'/'+samplename)
     assert 200 == response.status_code
 
     sample = json.loads(response.content)
