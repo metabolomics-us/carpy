@@ -20,7 +20,6 @@ deactivate'''
         sh '''npm install serverless-domain-manager
 npm install serverless-python-requirements
 sls deploy --stage test'''
-        echo 'test deployment succeded'
         sh '''#!/bin/bash
 # executes all the python integration tests
 
