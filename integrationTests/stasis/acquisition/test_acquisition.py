@@ -46,7 +46,7 @@ def test_create():
 
     assert 200 == response.status_code
 
-    time.sleep(5)
+    time.sleep(15)
 
     response = requests.get(apiUrl + '/' + samplename)
     assert 200 == response.status_code
