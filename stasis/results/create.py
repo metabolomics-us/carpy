@@ -104,10 +104,12 @@ def create(event, context):
         :return:
     """
 
+    print(event)
+
     if 'body' not in event:
         raise Exception("please ensure you provide a valid body")
 
-    print(event)
+
     data = json.loads(event['body'])
 
     return triggerEvent(data)
