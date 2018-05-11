@@ -9,7 +9,7 @@ from stasis.tracking import create
 def test_create_success(requireMocking):
     timestamp = int(time.time() * 1000)
 
-    jsonString = json.dumps({'sample': 'test', 'status': 'entered'})
+    jsonString = json.dumps({'sample': 'myTest', 'status': 'entered'})
 
     print(jsonString)
     response = create.create({'body': jsonString}, {})

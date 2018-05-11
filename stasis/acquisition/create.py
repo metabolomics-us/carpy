@@ -21,8 +21,6 @@ dataSchema = {
         'method': {
             'type': 'string'
         },
-
-        'required': ['instrument', 'name', 'ionisation', 'method']
     },
     'metadata': {
         'class': {
@@ -34,8 +32,6 @@ dataSchema = {
         'organ': {
             'type': 'string'
         },
-
-        'required': ['class', 'species', 'organ']
     },
     'userdata': {
         'label': {
@@ -44,8 +40,6 @@ dataSchema = {
         'comment': {
             'type': 'string'
         },
-
-        'required': ['label', 'comment']
     },
 
     'required': ['userdata', 'metadata', 'acquisition', 'sample']
@@ -62,11 +56,11 @@ def triggerEvent(data):
 
     print("trigger event: " + json.dumps(data, indent=2))
 
+    validate(data, dataSchema)
+
     timestamp = int(time.time() * 1000)
     data['time'] = timestamp
     data['id'] = data['sample']
-
-    validate(data, dataSchema)
 
     x = Queue()
     return x.submit(data, "metadata")

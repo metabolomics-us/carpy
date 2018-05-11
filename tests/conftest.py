@@ -93,3 +93,5 @@ def requireMocking():
     sns.stop()
     dynamo.stop()
     lamb.stop()
+
+    pass

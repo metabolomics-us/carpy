@@ -104,6 +104,9 @@ functions:
           path: result
           method: post
           cors: true
+          response:
+            headers:
+              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
@@ -119,6 +122,9 @@ functions:
           path: tracking
           method: post
           cors: true
+          response:
+            headers:
+              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
@@ -172,6 +178,9 @@ functions:
           path: acquisition
           method: post
           cors: true
+          response:
+            headers:
+              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
@@ -186,6 +195,9 @@ functions:
           path: acquisition/import/minix
           method: post
           cors: true
+          response:
+            headers:
+              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
