@@ -88,6 +88,7 @@ def processTrackingMessage(message):
         result = table.load(message['id'])
 
         if result is not None:
+            print(result)
             # only keep elements with a lower priority
             result['status'] = [x for x in result['status'] if x['priority'] < message['status'][0]['priority']]
             message['status'] = result['status'] + message['status']
@@ -114,7 +115,6 @@ def processResultMessage(message):
         existing = table.load(message['id'])
 
         if existing is not None:
-
             # need to append result to injections
             message['injections'] = {**message['injections'], **existing['injections']}
 

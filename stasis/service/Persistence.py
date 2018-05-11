@@ -15,7 +15,7 @@ class Persistence:
 
         self.table = table
         self.db = boto3.resource('dynamodb')
-        self.drop_falsey = lambda path, key, value: bool(value)
+        self.drop_falsey = lambda path, key, value: True if isinstance(value, (int, float, complex)) else bool(value)
 
     def load(self, sample):
         """
