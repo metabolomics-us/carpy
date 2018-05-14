@@ -8,31 +8,32 @@ dataSchema = {
     'sample': {
         'type': 'string'
     },
-    'correction': {
-        'polynomial': {
-            'type': 'integer'
-        },
-        'sampleUsed': {
-            'type': 'string'
-        },
-        'curve': {
-            'type': 'array',
-            'items': {
-                'type': 'object',
-                'x': {
-                    'type': 'number'
-                },
-                'y': {
-                    'type': 'number'
-                }
-            }
-        }
-    },
     'injections': {
         'type': 'object',
         'patterProperties': {
             '^.*$': {
                 'type': 'object',
+                'logid': 'string',
+                'correction': {
+                    'polynomial': {
+                        'type': 'integer'
+                    },
+                    'sampleUsed': {
+                        'type': 'string'
+                    },
+                    'curve': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'x': {
+                                'type': 'number'
+                            },
+                            'y': {
+                                'type': 'number'
+                            }
+                        }
+                    }
+                },
                 'results': {
                    'type': 'array',
                    'items': {
@@ -67,11 +68,12 @@ dataSchema = {
                        }
                    }
                }
-            }
+            },
+            'required': ['correction']
         }
     },
 
-    'required': ['sample', 'correction', 'injections']
+    'required': ['sample', 'injections']
 }
 
 
@@ -108,7 +110,6 @@ def create(event, context):
 
     if 'body' not in event:
         raise Exception("please ensure you provide a valid body")
-
 
     data = json.loads(event['body'])
 

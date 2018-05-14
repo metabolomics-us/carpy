@@ -11,22 +11,23 @@ samplename = f'test_{time.time()}'
 def test_create():
     data = {
         'sample': samplename,
-        'correction': {
-            'polynomial': 5,
-            'sampleUsed': 'test',
-            'curve': [
-                {
-                    'x': 121.12,
-                    'y': 121.2
-                },
-                {
-                    'x': 123.12,
-                    'y': 123.2
-                }
-            ]
-        },
         'injections': {
             'test_1': {
+                'logid':'1234',
+                'correction': {
+                    'polynomial': 5,
+                    'sampleUsed': 'test',
+                    'curve': [
+                        {
+                            'x': 121.12,
+                            'y': 121.2
+                        },
+                        {
+                            'x': 123.12,
+                            'y': 123.2
+                        }
+                    ]
+                },
                 'results': [
                     {
                         'target': {
