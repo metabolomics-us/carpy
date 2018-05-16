@@ -51,7 +51,7 @@ custom:
 
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
-  resultTable: "stasis-result-data-${self:custom.stage}"
+  resultTable: "data-stasis-result-${self:custom.stage}"
 
   ###
   # custom domain management
