@@ -30,7 +30,7 @@ def requireMocking():
     os.environ["topic"] = "UnitTestTopic"
     os.environ["trackingTable"] = "UnitTrackingTable"
     os.environ["acquisitionTable"] = "UnitAcquisitionTable"
-    os.environ["resultTable"] = "UnitResultTable"
+    os.environ["resultTable"] = "ResultBucket"
 
     dynamodb = boto3.resource('dynamodb')
     dynamodb.create_table(
