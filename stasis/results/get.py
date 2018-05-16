@@ -3,6 +3,7 @@ import os
 import simplejson as json
 
 from stasis.service.Persistence import Persistence
+from stasis.service.Bucket import Bucket
 
 
 def get(events, context):
@@ -13,14 +14,21 @@ def get(events, context):
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
 
-            db = Persistence(os.environ["resultTable"])
-            result = db.load(events['pathParameters']['sample'])
+            db = Bucket(os.environ["resultTable"])
 
-            # create a response
-            return {
-                "statusCode": 200,
-                "body": json.dumps(result)
-            }
+            if db.exists(events['pathParameters']['sample']):
+                result = db.load(events['pathParameters']['sample'])
+
+                # create a response
+                return {
+                    "statusCode": 200,
+                    "body": result
+                }
+            else:
+                return {
+                    "statusCode": 404,
+                    "body": json.dumps(events)
+                }
         else:
             return {
                 "statusCode": 404,

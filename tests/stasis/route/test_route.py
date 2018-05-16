@@ -3,6 +3,7 @@ import os
 import simplejson as json
 
 from stasis.route import route
+from stasis.service.Bucket import Bucket
 from stasis.service.Persistence import Persistence
 
 
@@ -221,9 +222,9 @@ def test_route_result(requireMocking):
     assert response[0]['success']
     assert response[0]['event'] == 'result'
 
-    db = Persistence(os.environ['resultTable'])
+    db = Bucket(os.environ['resultTable'])
 
-    result = db.load('test')
+    result = json.loads(db.load('test'))
 
     injKeys = result['injections']
     assert 'test_1' in injKeys

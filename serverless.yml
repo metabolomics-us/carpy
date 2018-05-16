@@ -51,7 +51,7 @@ custom:
 
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
-  resultTable: "StasisResultTable-${self:custom.stage}"
+  resultTable: "stasis-result-data-${self:custom.stage}"
 
   ###
   # custom domain management
@@ -245,24 +245,3 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:custom.acquisitionTable}
-
-    #####################################################################
-    # table to track results of samples
-    #####################################################################
-    ResultTable:
-      Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: id
-            AttributeType: S
-
-        KeySchema:
-          -
-            AttributeName: id
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:custom.resultTable}

@@ -2,6 +2,7 @@ import simplejson as json
 import os
 import boto3
 from stasis.service.Persistence import Persistence
+from stasis.service.Bucket import Bucket
 from stasis.util.minix_parser import parse_minix_xml
 from stasis.acquisition.create import triggerEvent
 
@@ -110,15 +111,16 @@ def processResultMessage(message):
     """
 
     if 'sample' in message:
-        table = Persistence(os.environ['resultTable'])
+        table = Bucket(os.environ['resultTable'])
 
-        existing = table.load(message['id'])
+        existing = table.exists(message['id'])
 
-        if existing is not None:
+        if existing:
+            existing = json.loads(table.load(message['id']))
             # need to append result to injections
             message['injections'] = {**message['injections'], **existing['injections']}
 
-        table.save(message)
+        table.save(message['id'], json.dumps(message))
 
         return True
 

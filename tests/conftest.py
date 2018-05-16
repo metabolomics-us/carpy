@@ -20,6 +20,9 @@ def requireMocking():
     lamb = moto.mock_lambda()
     lamb.start()
 
+    bucket = moto.mock_s3()
+    bucket.start()
+
     session = boto3.session.Session()
 
     client = session.client('sns')
@@ -93,5 +96,6 @@ def requireMocking():
     sns.stop()
     dynamo.stop()
     lamb.stop()
+    bucket.stop()
 
     pass
