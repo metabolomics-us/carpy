@@ -88,9 +88,6 @@ functions:
             parameter:
               paths:
                 sample: true
-          response:
-            headers:
-              Content-Type: "'application/json'"
     #defines to which topic we want to connect
     environment:
       resultTable: ${self:custom.resultTable}
@@ -104,9 +101,6 @@ functions:
           path: result
           method: post
           cors: true
-          response:
-            headers:
-              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
@@ -122,9 +116,6 @@ functions:
           path: tracking
           method: post
           cors: true
-          response:
-            headers:
-              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
@@ -142,9 +133,6 @@ functions:
             parameter:
               paths:
                 sample: true
-          response:
-            headers:
-              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
@@ -162,9 +150,6 @@ functions:
             parameter:
               paths:
                 sample: true
-          response:
-            headers:
-              Content-Type: "'application/json'"
     #defines to which topic we want to connect
     environment:
       acquisitionTable: ${self:custom.acquisitionTable}
@@ -178,9 +163,6 @@ functions:
           path: acquisition
           method: post
           cors: true
-          response:
-            headers:
-              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
@@ -195,9 +177,6 @@ functions:
           path: acquisition/import/minix
           method: post
           cors: true
-          response:
-            headers:
-              Content-Type: "'application/json'"
 
     #defines to which topic we want to connect
     environment:
