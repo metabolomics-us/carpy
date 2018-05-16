@@ -16,7 +16,7 @@ def parse_minix_xml(f):
             filename = sample['fileName'].split(',')[-1]
 
             title = x.experiment['title'].split(',')
-            method = title[-2].strip() if len(title) > 2 else ''
+            method = title[-2].strip() if len(title) > 2 else x.experiment.architecture['name']
 
             if not filename.startswith('please_change_me'):
                 samples.append({

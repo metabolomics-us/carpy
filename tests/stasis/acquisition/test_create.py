@@ -10,29 +10,30 @@ from stasis.util.minix_parser import parse_minix_xml
 
 
 def test_create_success_gctof(requireMocking):
-    data = parse_minix_xml("http://minix.fiehnlab.ucdavis.edu/rest/export/382171")
+    data = parse_minix_xml("http://minix.fiehnlab.ucdavis.edu/rest/export/63618")
 
     timestamp = int(time.time() * 1000)
 
     for x in data:
+        print(x)
         jsonString = json.dumps(x)
 
         response = create.create({'body': jsonString}, {})
 
         assert response["statusCode"], 200
         assert json.loads(response["body"])["acquisition"]['instrument'] == "Leco GC-Tof"
-        assert json.loads(response["body"])["acquisition"]['name'] == "GCTOF"
+        assert json.loads(response["body"])["acquisition"]['name'] == "Leco GC-Tof"
         assert json.loads(response["body"])["acquisition"]['ionisation'] == "positive"
         assert json.loads(response["body"])["acquisition"]['method'] == "gcms"
-        assert json.loads(response["body"])["metadata"]['species'] == "rat"
-        assert json.loads(response["body"])["metadata"]['organ'] == "tissue"
+        assert json.loads(response["body"])["metadata"]['species'] == "Medicago sativa"
+        assert json.loads(response["body"])["metadata"]['organ'] == "aerial part"
 
 
 def test_create_success_minix(requireMocking):
     data = {
-        "id": 382171
+        "id": 63618
     }
     response = create.fromMinix({'body': json.dumps(data)}, {})
 
-    assert json.loads(response["body"])['id'] == 382171
+    assert json.loads(response["body"])['id'] == 63618
     assert 'body' in response

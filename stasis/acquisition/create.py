@@ -2,49 +2,7 @@ from stasis.service.Queue import Queue
 import time
 import simplejson as json
 from jsonschema import validate
-
-# defines the schema of the incoming data object
-dataSchema = {
-    'sample': {
-        'type': 'string'
-    },
-    'acquisition': {
-        'instrument': {
-            'type': 'string'
-        },
-        'name': {
-            'type': 'string'
-        },
-        'ionisation': {
-            'type': 'string'
-        },
-        'method': {
-            'type': 'string'
-        },
-    },
-    'metadata': {
-        'class': {
-            'type': 'string'
-        },
-        'species': {
-            'type': 'string'
-        },
-        'organ': {
-            'type': 'string'
-        },
-    },
-    'userdata': {
-        'label': {
-            'type': 'string'
-        },
-        'comment': {
-            'type': 'string'
-        },
-    },
-
-    'required': ['userdata', 'metadata', 'acquisition', 'sample']
-}
-
+from stasis.schema import __ACQUISITION_SCHEMA__
 
 def triggerEvent(data):
     """
@@ -56,7 +14,7 @@ def triggerEvent(data):
 
     print("trigger event: " + json.dumps(data, indent=2))
 
-    validate(data, dataSchema)
+    validate(data, __ACQUISITION_SCHEMA__)
 
     timestamp = int(time.time() * 1000)
     data['time'] = timestamp
