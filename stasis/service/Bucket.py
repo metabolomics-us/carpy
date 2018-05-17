@@ -1,5 +1,6 @@
 import boto3
 import botocore
+from moto.s3.exceptions import BucketAlreadyExists
 
 
 class Bucket:
