@@ -11,6 +11,11 @@ class Bucket:
         self.bucket_name = bucket_name
         self.s3 = boto3.resource('s3')
 
+        try:
+            boto3.client('s3').create_bucket(Bucket=bucket_name)
+        except botocore.errorfactory.BucketAlreadyExists:
+            print("sorry this bucket BucketAlreadyExists")
+
     def save(self, name, content):
         """
         stores the specified content in the bucket
@@ -18,7 +23,7 @@ class Bucket:
         :param content: the content
         :return:
         """
-        result = self.s3.Object(self.bucket_name, name).put(Body=content)
+        return self.s3.Object(self.bucket_name, name).put(Body=content)
 
     def load(self, name):
         """

@@ -100,7 +100,6 @@ def requireMocking():
     except botocore.errorfactory.BucketAlreadyExists:
         print("sorry this bucket BucketAlreadyExists")
 
-
     yield
     sns.stop()
     dynamo.stop()
