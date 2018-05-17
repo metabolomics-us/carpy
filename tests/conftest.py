@@ -11,8 +11,11 @@ def requireMocking():
         mocking context for stasis
         """
 
-    sns = moto.mock_sns()
-    sns.start()
+    bucket = moto.mock_s3()
+    bucket.start()
+
+    # sns = moto.mock_sns()
+    # sns.start()
 
     dynamo = moto.mock_dynamodb2()
     dynamo.start()
@@ -20,8 +23,6 @@ def requireMocking():
     lamb = moto.mock_lambda()
     lamb.start()
 
-    bucket = moto.mock_s3()
-    bucket.start()
 
     session = boto3.session.Session()
     session.client('sns')
