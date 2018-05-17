@@ -13,7 +13,7 @@ provider:
   name: aws
   runtime: python3.6
   region: us-west-2
-
+  
   #required permissions
   iamRoleStatements:
     - Effect: Allow

@@ -14,15 +14,14 @@ def requireMocking():
     bucket = moto.mock_s3()
     bucket.start()
 
-    # sns = moto.mock_sns()
-    # sns.start()
+    sns = moto.mock_sns()
+    sns.start()
 
     dynamo = moto.mock_dynamodb2()
     dynamo.start()
 
     lamb = moto.mock_lambda()
     lamb.start()
-
 
     session = boto3.session.Session()
     session.client('sns')

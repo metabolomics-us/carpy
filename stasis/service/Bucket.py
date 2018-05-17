@@ -1,6 +1,7 @@
 import boto3
-import botocore
 from moto.s3.exceptions import BucketAlreadyExists
+
+
 
 
 class Bucket:
@@ -37,7 +38,7 @@ class Bucket:
             data = self.s3.Object(self.bucket_name, name).get()['Body']
 
             return data.read().decode()
-        except botocore.exceptions.ClientError as e:
+        except Exception as e:
             if e.response['Error']['Code'] == "404":
                 print("The object does not exist.")
             else:
@@ -53,7 +54,7 @@ class Bucket:
         try:
             self.s3.Object(self.bucket_name, name).load()
             return True
-        except botocore.exceptions.ClientError as e:
+        except Exception as e:
             if e.response['Error']['Code'] == "404":
                 # The object does not exist.
                 return False
