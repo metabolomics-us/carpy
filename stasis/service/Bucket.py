@@ -10,7 +10,6 @@ class Bucket:
     def __init__(self, bucket_name):
         self.bucket_name = bucket_name
         self.s3 = boto3.resource('s3')
-        self.s3.create_bucket(Bucket=bucket_name)
 
     def save(self, name, content):
         """

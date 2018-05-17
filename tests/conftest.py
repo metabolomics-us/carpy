@@ -24,8 +24,7 @@ def requireMocking():
     bucket.start()
 
     session = boto3.session.Session()
-
-    client = session.client('sns')
+    session.client('sns')
 
     os.environ["topic"] = "UnitTestTopic"
     os.environ["trackingTable"] = "UnitTrackingTable"
@@ -91,7 +90,12 @@ def requireMocking():
             'ReadCapacityUnits': 1,
             'WriteCapacityUnits': 1
         }
+
     )
+
+    print("creating test bucket")
+    boto3.client('s3').create_bucket(Bucket=os.environ["resultTable"])
+
     yield
     sns.stop()
     dynamo.stop()

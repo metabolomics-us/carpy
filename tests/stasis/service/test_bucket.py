@@ -1,5 +1,5 @@
 from stasis.service.Bucket import Bucket
-
+import os
 
 def test_bucket_operations(requireMocking):
     """
@@ -8,7 +8,7 @@ def test_bucket_operations(requireMocking):
     :return:
     """
 
-    bucket = Bucket("test_bucket")
+    bucket = Bucket(os.environ["resultTable"])
     assert not bucket.exists("test.txt")
 
     bucket.save("test.txt", "tada")
