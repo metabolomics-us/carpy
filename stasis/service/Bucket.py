@@ -7,13 +7,18 @@ class Bucket:
     """
 
     def __init__(self, bucket_name):
+
+        print(bucket_name)
         self.bucket_name = bucket_name
         self.s3 = boto3.resource('s3')
 
+
         try:
-            boto3.client('s3').create_bucket(Bucket=bucket_name)
+            boto3.client('s3').create_bucket(Bucket=bucket_name, CreateBucketConfiguration={
+    'LocationConstraint': 'us-west-2'})
         except Exception as e:
-            print("sorry this bucket BucketAlreadyExists")
+            print("sorry this bucket caused and error!")
+            print(e)
 
     def save(self, name, content):
         """

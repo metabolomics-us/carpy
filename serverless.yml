@@ -30,6 +30,13 @@ provider:
         - SNS:*
       Resource: { "Fn::Join" : [":", ["arn:aws:sns:${self:custom.region}",  "*:*" ] ]  }
 
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource: "arn:aws:s3:::*" 
+
+ 
+      
   memorySize: 128
   timeout: 90
   versionFunctions: false
@@ -51,7 +58,7 @@ custom:
 
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
-  resultTable: "data-stasis-result-${self:custom.stage}"
+  resultTable: "wcmc-data-stasis-result-${self:custom.stage}"
 
   ###
   # custom domain management

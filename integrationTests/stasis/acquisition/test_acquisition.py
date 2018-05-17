@@ -14,7 +14,7 @@ from stasis.acquisition import create
 
 
 apiUrl = "https://test-api.metabolomics.us/stasis/acquisition"
-samplename = f'test_{time.time()}'
+samplename = f'test_{int(time.time())}'
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
@@ -30,6 +30,9 @@ def test_create():
             'name': 'method blah',
             'ionisation': 'positive',  # psotivie || negative
             'method': 'gcms'  # gcms || lcms
+        },
+        'processing' : {
+            'method': 'gcms'
         },
         'metadata': {
             'class': '12345',
