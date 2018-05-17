@@ -9,15 +9,19 @@ __ACQUISITION_SCHEMA__ = {
         'instrument': {
             'type': 'string'
         },
-        'name': {
-            'type': 'string'
-        },
         'ionisation': {
             'type': 'string'
         },
         'method': {
             'type': 'string'
         },
+        'required': ['instrument', 'method']
+    },
+    'processing': {
+        'method': {
+            'type': 'string'
+        },
+        'required': ['method']
     },
     'metadata': {
         'class': {
@@ -29,6 +33,7 @@ __ACQUISITION_SCHEMA__ = {
         'organ': {
             'type': 'string'
         },
+        'required': ['class', 'species', 'organ']
     },
     'userdata': {
         'label': {
@@ -49,8 +54,10 @@ __ACQUISITION_SCHEMA__ = {
             'value': {
                 'type': 'string'
             },
+
+            'required': ['name', 'value']
         }
     },
 
-    'required': ['userdata', 'metadata', 'acquisition', 'sample']
+    'required': ['metadata', 'acquisition', 'sample', 'processing']
 }

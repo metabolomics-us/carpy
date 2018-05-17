@@ -35,6 +35,10 @@ def parse_minix_xml(f):
                         'organ': c['organ']
                     },
 
+                    'processing' : {
+                        'method' : 'rtx5'
+                    },
+
                     'userdata': {
                         'label': sample['label'],
                         'comment': sample['comment'],
