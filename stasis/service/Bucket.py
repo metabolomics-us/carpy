@@ -1,7 +1,4 @@
 import boto3
-from moto.s3.exceptions import BucketAlreadyExists
-
-
 
 
 class Bucket:
@@ -15,7 +12,7 @@ class Bucket:
 
         try:
             boto3.client('s3').create_bucket(Bucket=bucket_name)
-        except BucketAlreadyExists as e:
+        except botocore.errorfactory.BucketAlreadyExists as e:
             print("sorry this bucket BucketAlreadyExists")
 
     def save(self, name, content):
