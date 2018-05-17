@@ -94,7 +94,12 @@ def requireMocking():
     )
 
     print("creating test bucket")
-    boto3.client('s3').create_bucket(Bucket=os.environ["resultTable"])
+
+    try:
+        boto3.client('s3').create_bucket(Bucket=os.environ["resultTable"])
+    except botocore.errorfactory.BucketAlreadyExists:
+        print("sorry this bucket BucketAlreadyExists")
+
 
     yield
     sns.stop()
