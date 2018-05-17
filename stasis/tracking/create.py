@@ -4,16 +4,7 @@ import time
 from stasis.service.Queue import Queue
 from jsonschema import validate
 from stasis.service.Status import Status
-
-dataSchema = {
-    'sample': {
-        'type': 'string'
-    },
-    'status': {
-        'type': 'string'
-    },
-    'required': ['sample', 'status']
-}
+from stasis.schema import __TRACKING_SCHEMA__
 
 
 def triggerEvent(data):
@@ -24,7 +15,7 @@ def triggerEvent(data):
     :return: a serialized version of the submitted message
     """
 
-    validate(data, dataSchema)
+    validate(data, __TRACKING_SCHEMA__)
 
     statusService = Status()
     if not statusService.valid(data['status']):
@@ -46,6 +37,9 @@ def triggerEvent(data):
             }
         ]
     }
+
+    if "fileHandle" in data:
+        item['status']['fileHandle'] = data['fileHandle']
 
     x = Queue()
     return x.submit(item, "tracking")
