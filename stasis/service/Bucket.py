@@ -14,7 +14,7 @@ class Bucket:
 
         try:
             boto3.client('s3').create_bucket(Bucket=bucket_name)
-        except BucketAlreadyExists:
+        except BucketAlreadyExists as e:
             print("sorry this bucket BucketAlreadyExists")
 
     def save(self, name, content):
