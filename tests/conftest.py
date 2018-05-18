@@ -1,15 +1,21 @@
+
+# Set AWS environment variables
+import os
+
+if 'AWS_DEFAULT_REGION' not in os.environ:
+    os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+
 import pytest
 import moto
 import boto3
-import os
 
 
 @pytest.fixture
 def requireMocking():
     """
-        method which should be called before all other methods in tests. It basically configures our
-        mocking context for stasis
-        """
+    method which should be called before all other methods in tests. It basically configures our
+    mocking context for stasis
+    """
 
     bucket = moto.mock_s3()
     bucket.start()
