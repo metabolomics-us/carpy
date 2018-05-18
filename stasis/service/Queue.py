@@ -2,6 +2,8 @@ import simplejson as json
 import os
 import boto3
 
+from stasis.headers import __HTTP_HEADERS__
+
 
 class Queue:
     """
@@ -42,6 +44,7 @@ class Queue:
         )
 
         return {
-            "statusCode": result['ResponseMetadata']['HTTPStatusCode'],
-            "body": serialized
+            'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
+            'headers': __HTTP_HEADERS__,
+            'body': serialized
         }

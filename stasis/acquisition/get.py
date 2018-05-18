@@ -2,6 +2,7 @@ import simplejson as json
 import os
 
 from stasis.service.Persistence import Persistence
+from stasis.headers import __HTTP_HEADERS__
 
 
 def get(events, context):
@@ -18,15 +19,18 @@ def get(events, context):
             # create a response
             return {
                 "statusCode": 200,
+                "headers": __HTTP_HEADERS__,
                 "body": json.dumps(result)
             }
         else:
             return {
                 "statusCode": 404,
+                "headers": __HTTP_HEADERS__,
                 "body": json.dumps({"error": "sample name is not provided!"})
             }
     else:
         return {
             "statusCode": 404,
+            "headers": __HTTP_HEADERS__,
             "body": json.dumps({"error": "not supported, need's be called from a http event!"})
         }

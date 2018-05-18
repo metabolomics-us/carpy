@@ -1,5 +1,5 @@
 
-# Set AWS environment variables
+# Set AWS environment variables if they don't exist before importing moto/boto3
 import os
 
 if 'AWS_DEFAULT_REGION' not in os.environ:
