@@ -41,5 +41,6 @@ def test_create_with_fileHandle():
     assert 200 == response.status_code
 
     sample = json.loads(response.content)
+    print(f"sample: {sample}")
     assert samplename == sample['sample']
-    assert samplename == sample['fileHandle']
+    assert samplename == sample['status'][0]['fileHandle']
