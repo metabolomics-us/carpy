@@ -1,10 +1,11 @@
-import simplejson as json
 import time
 
-from stasis.service.Queue import Queue
+import simplejson as json
 from jsonschema import validate
-from stasis.service.Status import Status
+
 from stasis.schema import __TRACKING_SCHEMA__
+from stasis.service.Queue import Queue
+from stasis.service.Status import Status
 
 
 def triggerEvent(data):
@@ -39,7 +40,7 @@ def triggerEvent(data):
     }
 
     if "fileHandle" in data:
-        item['status']['fileHandle'] = data['fileHandle']
+        item['status'][0]['fileHandle'] = data['fileHandle']
 
     x = Queue()
     return x.submit(item, "tracking")
