@@ -17,8 +17,7 @@ class Bucket:
             boto3.client('s3').create_bucket(Bucket=bucket_name, CreateBucketConfiguration={
     'LocationConstraint': 'us-west-2'})
         except Exception as e:
-            print("sorry this bucket caused and error!")
-            print(e)
+            print("sorry this bucket caused an error - this mean it exist, no reason to worry")
 
     def save(self, name, content):
         """

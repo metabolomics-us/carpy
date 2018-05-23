@@ -110,6 +110,8 @@ def processResultMessage(message):
     :return:
     """
 
+    print(message)
+
     if 'sample' in message:
         table = Bucket(os.environ['resultTable'])
 
@@ -120,7 +122,7 @@ def processResultMessage(message):
             # need to append result to injections
             message['injections'] = {**message['injections'], **existing['injections']}
 
-        table.save(message['id'], json.dumps(message))
+        print(table.save(message['id'], json.dumps(message)))
 
         return True
 
