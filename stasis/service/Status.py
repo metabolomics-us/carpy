@@ -10,6 +10,11 @@ class Status:
             'acquired': 100,
             'converted': 200,
             'processing': 300,
+            'deconvoluted': 310,
+            'corrected': 320,
+            'annotated': 330,
+            'quantified': 340,
+            'replaced': 350,
             'exported': 400
         }
 
