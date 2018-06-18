@@ -41,3 +41,18 @@ def test_create_with_fileHandle(requireMocking):
 def test_create_fail_invalid_status(requireMocking):
     with pytest.raises(Exception):
         create.create({'body': json.dumps({'sample': 'test', 'status': 'not a valid status'})}, {})
+
+
+def test_create_success_with_substatus(requireMocking):
+    timestamp = int(time.time() * 1000)
+
+    jsonString = json.dumps({'sample': 'myTest', 'status': 'corrected'})
+
+    print(jsonString)
+    response = create.create({'body': jsonString}, {})
+
+    assert response["statusCode"], 200
+
+    assert json.loads(response["body"])["status"][0]['value'], "CORRECTED"
+
+    assert json.loads(response["body"])["status"][0]['time'] >= timestamp

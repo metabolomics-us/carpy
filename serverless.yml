@@ -145,6 +145,23 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
 
+  #fetches an existing tracking record from the system
+  trackingDelete:
+    handler: stasis/tracking/delete.delete
+    events:
+      - http:
+          path: tracking/{sample}
+          method: delete
+          cors: true
+          request:
+            parameter:
+              paths:
+                sample: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
   #fetches an acquisition record
   acquisitionGet:
     handler: stasis/acquisition/get.get

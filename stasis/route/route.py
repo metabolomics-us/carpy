@@ -1,11 +1,14 @@
-import simplejson as json
 import os
+
 import boto3
-from stasis.service.Persistence import Persistence
+import simplejson as json
+
 from stasis.service.Bucket import Bucket
+from stasis.service.Persistence import Persistence
 from stasis.util.minix_parser import parse_minix_xml
 from stasis.acquisition.create import triggerEvent
 from stasis.tables import get_acquisition_table, get_tracking_table
+
 dynamodb = boto3.resource('dynamodb')
 
 
@@ -82,20 +85,25 @@ def processTrackingMessage(message):
     :param message:
     :return:
     """
+    print("tracking message: %s" % message)
 
     if 'id' in message:
         table = Persistence(get_tracking_table())
 
-        result = table.load(message['id'])
+        if 'delete' in message:
+            result = table.delete(message['id'])
+            print("result of deletion: %s" % result)
+        else:
+            result = table.load(message['id'])
 
-        if result is not None:
-            print(result)
-            # only keep elements with a lower priority
-            result['status'] = [x for x in result['status'] if x['priority'] < message['status'][0]['priority']]
-            message['status'] = result['status'] + message['status']
+            if result is not None:
+                print(result)
+                # only keep elements with a lower priority
+                result['status'] = [x for x in result['status'] if x['priority'] < message['status'][0]['priority']]
+                message['status'] = result['status'] + message['status']
 
-        # req   uire insert
-        result = table.save(message)
+            # require insert
+            result = table.save(message)
 
         return True
 
