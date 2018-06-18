@@ -3,6 +3,7 @@ import os
 
 from stasis.service.Persistence import Persistence
 from stasis.headers import __HTTP_HEADERS__
+from stasis.tables import get_acquisition_table
 
 
 def get(events, context):
@@ -13,7 +14,7 @@ def get(events, context):
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
 
-            db = Persistence(os.environ["acquisitionTable"])
+            db = Persistence(get_acquisition_table())
             result = db.load(events['pathParameters']['sample'])
 
             # create a response

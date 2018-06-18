@@ -2,6 +2,7 @@ import boto3
 import simplejson as json
 from boltons.iterutils import remap
 
+
 class Persistence:
     """
         simplistic persistence framework
@@ -24,8 +25,7 @@ class Persistence:
         :return:
         """
 
-        table = self.db.Table(self.table)
-        result = table.get_item(
+        result = self.table.get_item(
             Key={
                 'id': sample
             }
@@ -45,14 +45,9 @@ class Persistence:
         :return:
         """
 
-        table = self.db.Table(self.table)
-
         # force serialization to deal with decimal number tag
         data = remap(object, visit=self.drop_falsey)
         data = json.dumps(data, use_decimal=True)
         data = json.loads(data, use_decimal=True)
         print(data)
-        return table.put_item(Item=data)
-
-
-
+        return self.table.put_item(Item=data)

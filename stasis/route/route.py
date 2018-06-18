@@ -5,7 +5,7 @@ from stasis.service.Persistence import Persistence
 from stasis.service.Bucket import Bucket
 from stasis.util.minix_parser import parse_minix_xml
 from stasis.acquisition.create import triggerEvent
-
+from stasis.tables import get_acquisition_table, get_tracking_table
 dynamodb = boto3.resource('dynamodb')
 
 
@@ -55,7 +55,7 @@ def processMetaDataMessage(message):
     :param message:
     :return:
     """
-    table = Persistence(os.environ['acquisitionTable'])
+    table = Persistence(get_acquisition_table())
 
     if 'minix' in message and 'url' in message:
         print("handling minix data: " + json.dumps(message, indent=2))
@@ -84,7 +84,7 @@ def processTrackingMessage(message):
     """
 
     if 'id' in message:
-        table = Persistence(os.environ['trackingTable'])
+        table = Persistence(get_tracking_table())
 
         result = table.load(message['id'])
 
