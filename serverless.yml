@@ -34,6 +34,14 @@ provider:
       Action:
         - s3:*
       Resource: "arn:aws:s3:::*" 
+    - Effect: "Allow"
+      Action:
+        - ecs:RunTask
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - iam:PassRole
+      Resource: "*"
 
  
       
@@ -221,51 +229,3 @@ functions:
       acquisitionTable: ${self:custom.acquisitionTable}
       resultTable: ${self:custom.resultTable}
       topic: ${self:custom.snsTopic}
-
-############################################################################################
-#this section defines all the resources required by the system
-############################################################################################
-resources:
-  Resources:
-
-    #####################################################################
-    # table to track samples
-    #####################################################################
-    TrackingTable:
-      Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: id
-            AttributeType: S
-
-        KeySchema:
-          -
-            AttributeName: id
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:custom.trackingTable}
-
-    #####################################################################
-    # table to track meta data
-    #####################################################################
-    MetaDataTable:
-      Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: id
-            AttributeType: S
-
-        KeySchema:
-          -
-            AttributeName: id
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:custom.acquisitionTable}

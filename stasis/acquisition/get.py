@@ -1,7 +1,6 @@
 import simplejson as json
-import os
 
-from stasis.service.Persistence import Persistence
+from boto3.dynamodb.conditions import Key
 from stasis.headers import __HTTP_HEADERS__
 from stasis.tables import get_acquisition_table
 
@@ -14,15 +13,25 @@ def get(events, context):
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
 
-            db = Persistence(get_acquisition_table())
-            result = db.load(events['pathParameters']['sample'])
+            table = get_acquisition_table()
 
-            # create a response
-            return {
-                "statusCode": 200,
-                "headers": __HTTP_HEADERS__,
-                "body": json.dumps(result)
-            }
+            result = table.query(
+                KeyConditionExpression=Key('id').eq(events['pathParameters']['sample'])
+            )
+
+            if "Items" in result and len(result['Items']) > 0:
+                return {
+                    "statusCode": 200,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps(result['Items'][0])
+                }
+            else:
+                return {
+                    "statusCode": 404,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps({"error": "no sample found with this identifier : {}".format(
+                        events['pathParameters']['sample'])})
+                }
         else:
             return {
                 "statusCode": 404,

@@ -2,12 +2,11 @@ import os
 
 import boto3
 import simplejson as json
-
-from stasis.service.Bucket import Bucket
-from stasis.service.Persistence import Persistence
-from stasis.util.minix_parser import parse_minix_xml
+from boto3.dynamodb.conditions import Key
 from stasis.acquisition.create import triggerEvent
+from stasis.service.Bucket import Bucket
 from stasis.tables import get_acquisition_table, get_tracking_table
+from stasis.util.minix_parser import parse_minix_xml
 
 dynamodb = boto3.resource('dynamodb')
 
@@ -58,7 +57,7 @@ def processMetaDataMessage(message):
     :param message:
     :return:
     """
-    table = Persistence(get_acquisition_table())
+    table = get_acquisition_table()
 
     if 'minix' in message and 'url' in message:
         print("handling minix data: " + json.dumps(message, indent=2))
@@ -71,7 +70,16 @@ def processMetaDataMessage(message):
 
     elif 'id' in message and 'minix' not in message:
 
-        table.save(message)
+        if 'experiment' not in message:
+            print("user should provide a valid experiment!")
+            message['experiment'] = "unknown"
+
+        result = json.dumps(message, use_decimal=True)
+        result = json.loads(result, use_decimal=True)
+
+        print("submitting: {}".format(result))
+        # require insert
+        table.put_item(Item=result)
 
         return True
 
@@ -88,27 +96,57 @@ def processTrackingMessage(message):
     print("tracking message: %s" % message)
 
     if 'id' in message:
-        table = Persistence(get_tracking_table())
+        table = get_tracking_table()
 
-        if 'delete' in message:
-            result = table.delete(message['id'])
-            print("result of deletion: %s" % result)
+        result = table.query(
+            KeyConditionExpression=Key('id').eq(message['id'])
+        )
+
+        # print(result)
+        if 'Items' in result and len(result['Items']) > 0:
+            result = result['Items'][0]
+            # only keep elements with a lower priority
+            result['status'] = [x for x in result['status'] if x['priority'] < message['status'][0]['priority']]
+            result['status'] = result['status'] + message['status']
         else:
-            result = table.load(message['id'])
+            result = message
 
-            if result is not None:
-                print(result)
-                # only keep elements with a lower priority
-                result['status'] = [x for x in result['status'] if x['priority'] < message['status'][0]['priority']]
-                message['status'] = result['status'] + message['status']
+        result['experiment'] = _fetch_experiment(message['id'])
 
-            # require insert
-            result = table.save(message)
+        result = json.dumps(result, use_decimal=True)
+        result = json.loads(result, use_decimal=True)
 
-        return True
+        # print("submitting: {}".format(result))
+        # require insert
+        result = table.put_item(Item=result)
+        # print("result: {}".format(result))
 
+    return True
+
+
+def _fetch_experiment(sample: str) -> str:
+    """
+        loads the internal experiment id for the given sample
+    :param sample:
+    :return:
+    """
+
+    table = get_tracking_table()
+
+    result = table.query(
+        KeyConditionExpression=Key('id').eq(sample)
+    )
+
+    print("query result was {}".format(result))
+
+    if 'Items' in result and len(result['Items']) > 0:
+        result = result['Items'][0]
+        if 'experiment' in result:
+            return result['experiment']
+        else:
+            "unknown"
     else:
-        return False
+        return "unknown"
 
 
 def processResultMessage(message):

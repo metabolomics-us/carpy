@@ -34,6 +34,7 @@ class Persistence:
         if 'Item' in result:
             return result['Item']
         else:
+            print(result)
             return None
 
     def save(self, object):

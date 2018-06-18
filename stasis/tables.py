@@ -19,7 +19,7 @@ def get_tracking_table():
     existing_tables = boto3.client('dynamodb').list_tables()['TableNames']
     if table_name not in existing_tables:
         try:
-            db.create_table(
+            print(db.create_table(
                 TableName=os.environ["trackingTable"],
                 KeySchema=[
                     {
@@ -45,7 +45,7 @@ def get_tracking_table():
                     'ReadCapacityUnits': 1,
                     'WriteCapacityUnits': 1
                 }
-            )
+            ))
         except Exception as e:
             print("table already exist {}".format(e))
 
@@ -66,7 +66,7 @@ def get_acquisition_table():
     existing_tables = boto3.client('dynamodb').list_tables()['TableNames']
     if table_name not in existing_tables:
         try:
-            db.create_table(
+            print(db.create_table(
                 TableName=os.environ["acquisitionTable"],
                 KeySchema=[
                     {
@@ -91,7 +91,7 @@ def get_acquisition_table():
                 ProvisionedThroughput={
                     'ReadCapacityUnits': 1,
                     'WriteCapacityUnits': 1
-                }
+                })
             )
         except Exception as e:
             print("table already exist {}".format(e))

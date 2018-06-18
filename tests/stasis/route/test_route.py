@@ -1,10 +1,10 @@
 import os
 
 import simplejson as json
-
+from boto3.dynamodb.conditions import Key
 from stasis.route import route
 from stasis.service.Bucket import Bucket
-from stasis.service.Persistence import Persistence
+from stasis.tables import get_tracking_table
 
 
 def test_route_tracking(requireMocking):
@@ -30,7 +30,7 @@ def test_route_tracking_merge(requireMocking):
     # simulate a message
 
     # validating that merge worked correctly
-    db = Persistence(os.environ['trackingTable'])
+    db = get_tracking_table()
 
     response = route.route({
         "Records": [
@@ -46,7 +46,10 @@ def test_route_tracking_merge(requireMocking):
     assert response[0]['success']
     assert response[0]['event'] == 'tracking'
 
-    result = db.load('test')
+    result = db.query(
+        KeyConditionExpression=Key('id').eq("test")
+    )['Items'][0]
+
     assert len(result['status']) == 1
 
     # add a second message
@@ -61,7 +64,9 @@ def test_route_tracking_merge(requireMocking):
             }]
     }, {})
 
-    result = db.load('test')
+    result = db.query(
+        KeyConditionExpression=Key('id').eq("test")
+    )['Items'][0]
     assert len(result['status']) == 2
 
 
