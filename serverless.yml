@@ -146,7 +146,7 @@ functions:
       trackingTable: ${self:custom.trackingTable}
 
   #fetches an existing tracking record from the system
-  trackingGet:
+  trackingDelete:
     handler: stasis/tracking/delete.delete
     events:
       - http:
