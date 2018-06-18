@@ -2,11 +2,29 @@ import os
 
 import boto3
 import simplejson as json
+
 from boto3.dynamodb.conditions import Key
 from stasis.acquisition.create import triggerEvent
 from stasis.service.Bucket import Bucket
 from stasis.tables import get_acquisition_table, get_tracking_table
 from stasis.util.minix_parser import parse_minix_xml
+
+
+def sanitize_json_for_dynamo(result):
+    """
+    sanitizes a list and makes it dynamo db compatible
+    :param result:
+    :return:
+    """
+    from boltons.iterutils import remap
+
+    result = remap(result,
+                   visit=lambda path, key, value: True if isinstance(value, (int, float, complex)) else bool(value))
+    result = json.dumps(result, use_decimal=True)
+    result = json.loads(result, use_decimal=True)
+
+    return result
+
 
 dynamodb = boto3.resource('dynamodb')
 
@@ -79,7 +97,7 @@ def processMetaDataMessage(message):
 
         print("submitting: {}".format(result))
         # require insert
-        table.put_item(Item=result)
+        table.put_item(Item=sanitize_json_for_dynamo(result))
 
         return True
 
@@ -113,12 +131,9 @@ def processTrackingMessage(message):
 
         result['experiment'] = _fetch_experiment(message['id'])
 
-        result = json.dumps(result, use_decimal=True)
-        result = json.loads(result, use_decimal=True)
-
         # print("submitting: {}".format(result))
         # require insert
-        result = table.put_item(Item=result)
+        result = table.put_item(Item=sanitize_json_for_dynamo(result))
         # print("result: {}".format(result))
 
     return True
@@ -156,7 +171,6 @@ def processResultMessage(message):
     :return:
     """
 
-    print(message)
 
     if 'sample' in message:
         table = Bucket(os.environ['resultTable'])
@@ -168,7 +182,7 @@ def processResultMessage(message):
             # need to append result to injections
             message['injections'] = {**message['injections'], **existing['injections']}
 
-        print(table.save(message['id'], json.dumps(message)))
+        print(table.save(message['id'], json.dumps(sanitize_json_for_dynamo(message))))
 
         return True
 
