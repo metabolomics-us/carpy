@@ -61,7 +61,7 @@ __ACQUISITION_SCHEMA__ = {
         }
     },
 
-    'required': ['experiment', 'metadata', 'acquisition', 'sample', 'processing']
+    'required': ['metadata', 'acquisition', 'sample', 'processing']
 }
 
 """
