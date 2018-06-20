@@ -18,9 +18,9 @@ def test_get(requireMocking):
     }, {})
 
     print(result)
-    assert result['statusCode'] == 200
+    assert 200 == result['statusCode']
     assert 'body' in result
-    assert json.loads(result['body'])["id"] == "test"
+    assert "test" == json.loads(result['body'])["id"]
 
 
 def test_get_with_fileHandle(requireMocking):
@@ -37,10 +37,10 @@ def test_get_with_fileHandle(requireMocking):
     }, {})
 
     print(result)
-    assert result['statusCode'] == 200
+    assert 200 == result['statusCode']
     assert 'body' in result
-    assert json.loads(result['body'])["id"] == "test"
-    assert json.loads(result['body'])["status"][0]["fileHandle"] == "test.mzml"
+    assert "test" == json.loads(result['body'])["id"]
+    assert "test.mzml" == json.loads(result['body'])["status"][0]["fileHandle"]
 
 
 def test_get_inexistent_sample_returns_404(requireMocking):
@@ -52,5 +52,17 @@ def test_get_inexistent_sample_returns_404(requireMocking):
     }, {})
 
     print(result)
-    assert result['statusCode'] == 404
-    assert json.loads(result['body'])['error'] == "sample not found"
+    assert 404 == result['statusCode']
+    assert "sample not found" == json.loads(result['body'])['error']
+
+
+def test_get_experiment(requireMocking):
+    result = get.get_experiment({
+        'pathParameters': {
+            'experiment': '1'
+        }
+    }, {})
+
+    print(result)
+
+    assert 200 == result['statusCode']

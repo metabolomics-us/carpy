@@ -1,11 +1,8 @@
-import simplejson as json
 import time
 
-import pytest
+import simplejson as json
 
 from stasis.acquisition import create
-from stasis.acquisition import create
-
 from stasis.util.minix_parser import parse_minix_xml
 
 
@@ -37,3 +34,34 @@ def test_create_success_minix(requireMocking):
 
     assert json.loads(response["body"])['id'] == 63618
     assert 'body' in response
+
+
+def test_create_non_minix(requireMocking):
+    data = {
+        'sample': 'test_no_minix',
+        'experiment': '1',
+        'acquisition': {
+            'instrument': 'test inst',
+            'name': 'method blah',
+            'ionisation': 'positive',  # psotivie || negative
+            'method': 'gcms'  # gcms || lcms
+        },
+        'processing': {
+            'method': 'gcms'
+        },
+        'metadata': {
+            'class': '12345',
+            'species': 'alien',
+            'organ': 'honker'
+        },
+        'userdata': {
+            'label': 'filexxx',
+            'comment': '',
+        },
+    }
+
+    response = create.create({'body': json.dumps(data)}, {})
+
+    assert response['statusCode'] == 200
+    assert 'body' in response
+    assert json.loads(response['body'])['id'] == 'test_no_minix'

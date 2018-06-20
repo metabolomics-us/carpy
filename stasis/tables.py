@@ -44,7 +44,29 @@ def get_tracking_table():
                 ProvisionedThroughput={
                     'ReadCapacityUnits': 1,
                     'WriteCapacityUnits': 1
-                }
+                },
+                GlobalSecondaryIndexes=[
+                    {
+                        'IndexName': 'experiment-id-index',
+                        'KeySchema': [
+                            {
+                                'AttributeName': 'experiment',
+                                'KeyType': 'HASH'
+                            },
+                            {
+                                'AttributeName': 'id',
+                                'KeyType': 'RANGE'
+                            }
+                        ],
+                        'Projection': {
+                            'ProjectionType': 'ALL'
+                        },
+                        'ProvisionedThroughput': {
+                            'ReadCapacityUnits': 1,
+                            'WriteCapacityUnits': 1
+                        }
+                    }
+                ]
             ))
         except Exception as e:
             print("table already exist {}".format(e))
@@ -91,7 +113,29 @@ def get_acquisition_table():
                 ProvisionedThroughput={
                     'ReadCapacityUnits': 1,
                     'WriteCapacityUnits': 1
-                })
+                },
+                GlobalSecondaryIndexes=[
+                    {
+                        'IndexName': 'experiment-id-index',
+                        'KeySchema': [
+                            {
+                                'AttributeName': 'experiment',
+                                'KeyType': 'HASH'
+                            },
+                            {
+                                'AttributeName': 'id',
+                                'KeyType': 'RANGE'
+                            }
+                        ],
+                        'Projection': {
+                            'ProjectionType': 'ALL'
+                        },
+                        'ProvisionedThroughput': {
+                            'ReadCapacityUnits': 1,
+                            'WriteCapacityUnits': 1
+                        }
+                    }
+                ])
             )
         except Exception as e:
             print("table already exist {}".format(e))

@@ -24,7 +24,7 @@ class Status:
         :param state:
         :return:
         """
-        if self.valid(state):
+        if self.valid(str(state)):
             return self.states[state.lower()]
         else:
             return None

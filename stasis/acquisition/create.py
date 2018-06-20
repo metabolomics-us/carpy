@@ -1,8 +1,11 @@
-from stasis.service.Queue import Queue
 import time
+
 import simplejson as json
 from jsonschema import validate
+
 from stasis.schema import __ACQUISITION_SCHEMA__
+from stasis.service.Queue import Queue
+
 
 def triggerEvent(data):
     """

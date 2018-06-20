@@ -5,6 +5,9 @@ __ACQUISITION_SCHEMA__ = {
     'sample': {
         'type': 'string'
     },
+    'experiment': {
+        'type': 'string'
+    },
     'acquisition': {
         'instrument': {
             'type': 'string'
@@ -43,7 +46,6 @@ __ACQUISITION_SCHEMA__ = {
             'type': 'string'
         },
     },
-
     'references': {
         'type': 'array',
         'items': {
@@ -59,7 +61,7 @@ __ACQUISITION_SCHEMA__ = {
         }
     },
 
-    'required': ['metadata', 'acquisition', 'sample', 'processing']
+    'required': ['experiment', 'metadata', 'acquisition', 'sample', 'processing']
 }
 
 """

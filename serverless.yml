@@ -147,6 +147,7 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
+      topic: ${self:custom.snsTopic}
 
   #fetches an existing tracking record from the system
   trackingDelete:
@@ -164,6 +165,24 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
+      topic: ${self:custom.snsTopic}
+
+  #fetches
+  trackingExperiment:
+    handler: stasis/tracking/get.get_experiment
+    events:
+      - http:
+          path: experiment/{experiment}
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                experiment: true
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      topic: ${self:custom.snsTopic}
 
   #fetches an acquisition record
   acquisitionGet:

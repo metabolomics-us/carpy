@@ -2,8 +2,8 @@ import os
 
 import boto3
 import simplejson as json
-
 from boto3.dynamodb.conditions import Key
+
 from stasis.acquisition.create import triggerEvent
 from stasis.service.Bucket import Bucket
 from stasis.tables import get_acquisition_table, get_tracking_table
@@ -146,22 +146,22 @@ def _fetch_experiment(sample: str) -> str:
     :return:
     """
 
-    table = get_tracking_table()
+    table = get_acquisition_table()
 
     result = table.query(
         KeyConditionExpression=Key('id').eq(sample)
     )
 
-    print("query result was {}".format(result))
+    print('getting experiment from acquisition data: %s' % result)
 
     if 'Items' in result and len(result['Items']) > 0:
         result = result['Items'][0]
         if 'experiment' in result:
             return result['experiment']
         else:
-            "unknown"
+            'unknown'
     else:
-        return "unknown"
+        return 'unknown'
 
 
 def processResultMessage(message):
@@ -170,7 +170,6 @@ def processResultMessage(message):
     :param message:
     :return:
     """
-
 
     if 'sample' in message:
         table = Bucket(os.environ['resultTable'])
