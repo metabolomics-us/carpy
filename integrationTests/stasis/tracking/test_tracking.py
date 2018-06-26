@@ -3,8 +3,8 @@ import time
 import requests
 import simplejson as json
 
-apiUrl = "https://test-api.metabolomics.us/stasis"
-samplename = 'test_%s' % time.time()
+apiUrl = "https://dev-api.metabolomics.us/stasis"
+samplename = "test_%s" % str(time.time()).split('.')[-1]
 
 
 def test_create():
@@ -16,7 +16,7 @@ def test_create():
     response = requests.post(apiUrl + '/tracking/', json=data)
     assert 200 == response.status_code
 
-    time.sleep(15)
+    time.sleep(5)
 
     response = requests.get(apiUrl + '/tracking/' + samplename)
     assert 200 == response.status_code
@@ -29,86 +29,45 @@ def test_create_with_file_handle():
     data = {
         'sample': samplename,
         'status': 'entered',
-        'fileHandle': samplename
+        'fileHandle': samplename + ".mzml"
     }
 
     response = requests.post(apiUrl + '/tracking', json=data)
     assert 200 == response.status_code
 
-    time.sleep(15)
+    time.sleep(2)
 
     response = requests.get(apiUrl + '/tracking/' + samplename)
     assert 200 == response.status_code
 
     sample = json.loads(response.content)
-    print("sample: %s" % sample)
+    print("sample: %s" % json.dumps(sample, indent=2))
     assert samplename == sample['sample']
-    assert samplename == sample['status'][0]['fileHandle']
+    assert "%s.mzml" % samplename == sample['status'][0]['fileHandle']
 
 
-def test_get_experiment():
-    # start prepare test data
-    acq_data = [{
-        'sample': 'test-query-experiment',
-        'experiment': '1',
-        'acquisition': {
-            'instrument': 'flute',
-            'name': 'method blah',
-            'ionisation': 'positive',
-            'method': 'lcms'
-        },
-        'processing': {
-            'method': 'lcms'
-        },
-        'metadata': {
-            'class': '12345',
-            'species': 'alien',
-            'organ': 'honker'
-        },
-        'userdata': {
-            'label': 'filexxx',
-            'comment': ''
-        }
-    }, {
-        'sample': 'test-query-experiment2',
-        'experiment': '1',
-        'acquisition': {
-            'instrument': 'flute',
-            'name': 'method blah',
-            'ionisation': 'positive',
-            'method': 'lcms'
-        },
-        'processing': {
-            'method': 'lcms'
-        },
-        'metadata': {
-            'class': '12345',
-            'species': 'alien',
-            'organ': 'honker'
-        },
-        'userdata': {
-            'label': 'filexxx',
-            'comment': ''
-        }
-    }]
-    acq = [requests.post(apiUrl + '/acquisition', json=ac) for ac in acq_data]
-    assert 200 == acq[-1].status_code
+def test_create_not_merging_statuses():
+    requests.delete(apiUrl + '/tracking/processed-sample')
+    data = [{'sample': 'processed-sample', 'status': 'entered'},
+            {'sample': 'processed-sample', 'status': 'acquired'},
+            {'sample': 'processed-sample', 'status': 'converted'},
+            {'sample': 'processed-sample', 'status': 'processing'},
+            {'sample': 'processed-sample', 'status': 'deconvoluted'},
+            {'sample': 'processed-sample', 'status': 'corrected'},
+            {'sample': 'processed-sample', 'status': 'annotated'},
+            {'sample': 'processed-sample', 'status': 'quantified'},
+            {'sample': 'processed-sample', 'status': 'replaced'},
+            {'sample': 'processed-sample', 'status': 'exported'}]
 
-    tracking_data = [{
-        'sample': 'test-query-experiment',
-        'status': 'entered',
-        'fileHandle': 'test.mzml'
-    }, {
-        'sample': 'test-query-experiment2',
-        'status': 'entered',
-        'fileHandle': 'test2.mzml'
-    }]
-    trk = [requests.post(apiUrl + '/tracking', json=td) for td in tracking_data]
-    assert 200 == trk[-1].status_code
-    # end prepare test data
+    result = None
+    for d in data:
+        requests.post(apiUrl + '/tracking', json=d)
+        time.sleep(2)
+        result = requests.get(apiUrl + '/tracking/processed-sample')
 
-    result = requests.get(apiUrl + '/experiment/1')
-    print(result.text)
+    time.sleep(1)
+    # requests.delete(apiUrl + '/tracking/processed-sample')
 
     assert 200 == result.status_code
-    assert 2 == len(json.loads(result.text))
+    assert 'processed-sample' == result.json()['sample']
+    assert 10 == len(result.json()['status'])

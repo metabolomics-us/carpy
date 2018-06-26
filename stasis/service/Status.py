@@ -6,7 +6,7 @@ class Status:
     def __init__(self):
         # valid states for tracking of samples
         self.states = {
-            'entered': 0,
+            'entered': 1,
             'acquired': 100,
             'converted': 200,
             'processing': 300,

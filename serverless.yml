@@ -129,6 +129,7 @@ functions:
 
     #defines to which topic we want to connect
     environment:
+      trackingTable: ${self:custom.trackingTable}
       topic: ${self:custom.snsTopic}
 
   #fetches an existing tracking record from the system

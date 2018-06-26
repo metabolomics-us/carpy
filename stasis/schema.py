@@ -64,9 +64,7 @@ __ACQUISITION_SCHEMA__ = {
     'required': ['metadata', 'acquisition', 'sample', 'processing']
 }
 
-"""
-defines the incomming tracking schema
-"""
+# defines the incomming tracking schema
 __TRACKING_SCHEMA__ = {
     'sample': {
         'type': 'string'

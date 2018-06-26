@@ -7,7 +7,6 @@ from stasis.tables import get_tracking_table
 
 def get(events, context):
     """returns the specific sample from the storage"""
-
     print("received event: " + json.dumps(events, indent=2))
 
     if 'pathParameters' in events:
@@ -51,7 +50,6 @@ def get(events, context):
 
 def get_experiment(events, context):
     """returns the latest status for all the samples in the given experiment"""
-
     print("received event: %s" % events)
 
     if 'pathParameters' in events:
@@ -80,7 +78,6 @@ def get_experiment(events, context):
                     "body": json.dumps({'error': ex.args})
                 }
 
-                print("result: %s" % result['Items'])
             return {
                 "statusCode": 200,
                 "headers": __HTTP_HEADERS__,

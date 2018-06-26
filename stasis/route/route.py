@@ -2,7 +2,6 @@ import os
 
 import boto3
 import simplejson as json
-from boto3.dynamodb.conditions import Key
 
 from stasis.acquisition.create import triggerEvent
 from stasis.service.Bucket import Bucket
@@ -16,14 +15,16 @@ def sanitize_json_for_dynamo(result):
     :param result:
     :return:
     """
+    print('sanitizing json')
+
     from boltons.iterutils import remap
 
     result = remap(result,
                    visit=lambda path, key, value: True if isinstance(value, (int, float, complex)) else bool(value))
-    result = json.dumps(result, use_decimal=True)
-    result = json.loads(result, use_decimal=True)
+    data_str = json.dumps(result, use_decimal=True)
+    new_result = json.loads(data_str, use_decimal=True)
 
-    return result
+    return new_result
 
 
 dynamodb = boto3.resource('dynamodb')
@@ -33,8 +34,7 @@ def route(events, context):
     """ this routes the incomming messages to the corresponding queues. Main reason is to avoid delays, while processing
     incomming data and events.
     """
-
-    print("received event: " + json.dumps(events, indent=2))
+    print("route received event: " + json.dumps(events, indent=2))
 
     result = []
     if 'Records' in events:
@@ -43,7 +43,7 @@ def route(events, context):
                 if 'Sns' in event:
                     if 'Subject' in event['Sns'] and 'Message' in event['Sns']:
                         subject = event['Sns']['Subject'].lower().split(":")
-                        message = json.loads(event['Sns']['Message'])
+                        message = json.loads(event['Sns']['Message'], use_decimal=True)
 
                         if 'route' in subject:
                             if subject[1] == 'tracking':
@@ -75,6 +75,8 @@ def processMetaDataMessage(message):
     :param message:
     :return:
     """
+    print('route processing acquisition data')
+
     table = get_acquisition_table()
 
     if 'minix' in message and 'url' in message:
@@ -102,6 +104,7 @@ def processMetaDataMessage(message):
         return True
 
     else:
+        print('no id provided')
         return False
 
 
@@ -116,52 +119,39 @@ def processTrackingMessage(message):
     if 'id' in message:
         table = get_tracking_table()
 
-        result = table.query(
-            KeyConditionExpression=Key('id').eq(message['id'])
+        existing = table.query(
+            KeyConditions={
+                'id': {
+                    'AttributeValueList': [message['id']],
+                    'ComparisonOperator': 'EQ'
+                },
+                'experiment': {
+                    'AttributeValueList': [message['experiment']],
+                    'ComparisonOperator': 'EQ'
+                },
+            }
         )
 
-        # print(result)
-        if 'Items' in result and len(result['Items']) > 0:
-            result = result['Items'][0]
+        if existing['Items']:
+            result = existing['Items'][0]
             # only keep elements with a lower priority
             result['status'] = [x for x in result['status'] if x['priority'] < message['status'][0]['priority']]
-            result['status'] = result['status'] + message['status']
+            result['status'].append(message['status'][0])
         else:
             result = message
 
-        result['experiment'] = _fetch_experiment(message['id'])
-
-        # print("submitting: {}".format(result))
         # require insert
-        result = table.put_item(Item=sanitize_json_for_dynamo(result))
-        # print("result: {}".format(result))
+        sanitized = sanitize_json_for_dynamo(result)
 
-    return True
+        try:
+            result = table.put_item(Item=sanitized)
+        except TypeError as te:
+            print("Error: %s" % str(te))
 
-
-def _fetch_experiment(sample: str) -> str:
-    """
-        loads the internal experiment id for the given sample
-    :param sample:
-    :return:
-    """
-
-    table = get_acquisition_table()
-
-    result = table.query(
-        KeyConditionExpression=Key('id').eq(sample)
-    )
-
-    print('getting experiment from acquisition data: %s' % result)
-
-    if 'Items' in result and len(result['Items']) > 0:
-        result = result['Items'][0]
-        if 'experiment' in result:
-            return result['experiment']
-        else:
-            'unknown'
+        return True
     else:
-        return 'unknown'
+        print('no id provided')
+        return False
 
 
 def processResultMessage(message):

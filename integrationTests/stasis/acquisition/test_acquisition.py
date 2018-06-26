@@ -3,7 +3,7 @@ import time
 import requests
 import simplejson as json
 
-apiUrl = "https://test-api.metabolomics.us/stasis/acquisition"
+apiUrl = "https://dev-api.metabolomics.us/stasis/acquisition"
 samplename = 'test_%s' % time.time()
 
 
@@ -13,7 +13,6 @@ def test_create():
         'experiment': 'mySecretExp',
         'acquisition': {
             'instrument': 'test inst',
-            'name': 'method blah',
             'ionisation': 'positive',  # psotivie || negative
             'method': 'gcms'  # gcms || lcms
         },

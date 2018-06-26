@@ -1,15 +1,12 @@
-import os
-
 import simplejson as json
 from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.service.Persistence import Persistence
 from stasis.tables import get_tracking_table
 
 
 def delete(events, context):
-    """returns the specific element from the storage"""
+    """deletes the specific element from the storage"""
 
     print("received event: " + json.dumps(events, indent=2))
 
@@ -22,17 +19,22 @@ def delete(events, context):
                 KeyConditionExpression=Key('id').eq(events['pathParameters']['sample'])
             )
 
-            print("query result was {}".format(result))
+            print("found result to delete: %s" % result)
 
             if 'Items' in result and len(result['Items']) > 0:
                 result = json.dumps(result['Items'][0], use_decimal=True)
                 result = json.loads(result, use_decimal=True)
 
                 # create a response when sample is found
-                result = table.delete(result)
+                table.delete_item(Key={
+                    'id': result['id'],
+                    'experiment': result['experiment']
+                }
+                )
                 return {
                     "statusCode": 204,
-                    "headers": __HTTP_HEADERS__
+                    "headers": __HTTP_HEADERS__,
+                    'body': ''
                 }
             else:
                 # create a response when sample is not found

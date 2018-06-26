@@ -12,9 +12,6 @@ def get_tracking_table():
     :return:
     """
 
-    if 'trackingTable' not in os.environ:
-        os.environ['trackingTable'] = "TrackingTable"
-
     table_name = os.environ['trackingTable']
     existing_tables = boto3.client('dynamodb').list_tables()['TableNames']
     if table_name not in existing_tables:
@@ -81,8 +78,6 @@ def get_acquisition_table():
     :return:
     """
 
-    if 'acquisitionTable' not in os.environ:
-        os.environ['acquisitionTable'] = "AcquisitionTable"
 
     table_name = os.environ['acquisitionTable']
     existing_tables = boto3.client('dynamodb').list_tables()['TableNames']

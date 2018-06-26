@@ -1,10 +1,9 @@
 import os
 
 import simplejson as json
-from boto3.dynamodb.conditions import Key
+
 from stasis.route import route
 from stasis.service.Bucket import Bucket
-from stasis.tables import get_tracking_table
 
 
 def test_route_tracking(requireMocking):
@@ -15,7 +14,8 @@ def test_route_tracking(requireMocking):
             {
                 "Sns": {
                     "Subject": "route:tracking",
-                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"ENTERED\"}]}"
+                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, "
+                               "\"value\": \"ENTERED\"}]} "
                 }
             }
         ]
@@ -26,48 +26,23 @@ def test_route_tracking(requireMocking):
     assert response[0]['event'] == 'tracking'
 
 
-def test_route_tracking_merge(requireMocking):
-    # simulate a message
-
-    # validating that merge worked correctly
-    db = get_tracking_table()
-
+def test_route_tracking_with_filehandle(requireMocking):
     response = route.route({
         "Records": [
             {
                 "Sns": {
                     "Subject": "route:tracking",
-                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"ENTERED\",\"priority\":0}]}"
+                    "Message": "{\"id\": \"test_filehandle\", \"experiment\": \"unknown\", \"sample\": "
+                               "\"test_filehandle\", \"status\": [{\"time\": 1524772162698, \"value\": \"entered\", "
+                               "\"fileHandle\":\"test_filehandle.mzml\"}]} "
                 }
-            }]
+            }
+        ]
     }, {})
 
     assert len(response) == 1
     assert response[0]['success']
     assert response[0]['event'] == 'tracking'
-
-    result = db.query(
-        KeyConditionExpression=Key('id').eq("test")
-    )['Items'][0]
-
-    assert len(result['status']) == 1
-
-    # add a second message
-
-    response = route.route({
-        "Records": [
-            {
-                "Sns": {
-                    "Subject": "route:tracking",
-                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\",\"priority\":300}]}"
-                }
-            }]
-    }, {})
-
-    result = db.query(
-        KeyConditionExpression=Key('id').eq("test")
-    )['Items'][0]
-    assert len(result['status']) == 2
 
 
 def test_route_metadata(requireMocking):
@@ -78,7 +53,8 @@ def test_route_metadata(requireMocking):
             {
                 "Sns": {
                     "Subject": "route:metadata",
-                    "Message": "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"ENTERED\"}]}"
+                    "Message": "{\"id\": \"test\", \"experiment\": \"unknown\", \"sample\": \"test\", \"status\": [{"
+                               "\"time\": 1524772162698, \"value\": \"ENTERED\"}]} "
                 }
             }
         ]

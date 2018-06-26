@@ -8,7 +8,7 @@ def test_get(requireMocking):
     # store data
 
     processTrackingMessage(json.loads(
-        "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\"}]}"))
+        "{\"id\": \"test\", \"experiment\":\"unknown\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\"}]}"))
     # process data
 
     result = get.get({
@@ -27,7 +27,7 @@ def test_get_with_fileHandle(requireMocking):
     # store data
 
     processTrackingMessage(json.loads(
-        "{\"id\": \"test\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\", \"fileHandle\":\"test.mzml\"}]}"))
+        "{\"id\": \"test\", \"experiment\":\"unknown\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\", \"fileHandle\":\"test.mzml\"}]}"))
     # process data
 
     result = get.get({
@@ -57,12 +57,16 @@ def test_get_inexistent_sample_returns_404(requireMocking):
 
 
 def test_get_experiment(requireMocking):
+    processTrackingMessage(json.loads(
+        "{\"id\": \"test\", \"experiment\":\"1\", \"sample\": \"test\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\", \"fileHandle\":\"test.mzml\"}]}"))
+    processTrackingMessage(json.loads(
+        "{\"id\": \"test2\", \"experiment\":\"1\", \"sample\": \"test2\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\", \"fileHandle\":\"test2.mzml\"}]}"))
+
     result = get.get_experiment({
         'pathParameters': {
             'experiment': '1'
         }
     }, {})
 
-    print(result)
-
     assert 200 == result['statusCode']
+    assert 2 == len(json.loads(result['body']))
