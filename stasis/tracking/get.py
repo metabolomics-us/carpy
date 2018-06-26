@@ -2,7 +2,7 @@ import simplejson as json
 from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.tables import get_tracking_table
+from stasis.tables import TableManager
 
 
 def get(events, context):
@@ -11,14 +11,12 @@ def get(events, context):
 
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
-
-            table = get_tracking_table()
+            tm = TableManager()
+            table = tm.get_tracking_table()
 
             result = table.query(
                 KeyConditionExpression=Key('id').eq(events['pathParameters']['sample'])
             )
-
-            print("query result was {}".format(result))
 
             if 'Items' in result and len(result['Items']) > 0:
                 # create a response when sample is found
@@ -57,7 +55,8 @@ def get_experiment(events, context):
         if 'experiment' in events['pathParameters']:
             expId = events['pathParameters']['experiment']
 
-            table = get_tracking_table()
+            tm = TableManager()
+            table = tm.get_tracking_table()
 
             try:
                 result = table.query(

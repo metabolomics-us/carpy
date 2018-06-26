@@ -4,7 +4,8 @@ import simplejson as json
 from jsonschema import validate
 
 from stasis.schema import __ACQUISITION_SCHEMA__
-from stasis.service.Queue import Queue
+from stasis.tables import TableManager
+from stasis.util.minix_parser import parse_minix_xml
 
 
 def triggerEvent(data):
@@ -14,8 +15,7 @@ def triggerEvent(data):
     :param data: requires sample
     :return: a serialized version of the submitted message
     """
-
-    print("trigger event: " + json.dumps(data, indent=2))
+    print("trigger event: " + json.dumps(data))
 
     validate(data, __ACQUISITION_SCHEMA__)
 
@@ -23,8 +23,14 @@ def triggerEvent(data):
     data['time'] = timestamp
     data['id'] = data['sample']
 
-    x = Queue()
-    return x.submit(data, "metadata")
+    # put item in table instead of queueing
+    table = TableManager().get_acquisition_table()
+    saved = table.put_item(
+        Item=data,  # save or update our item
+        ReturnValues='ALL_NEW'  # return the new values saved on the db
+    )
+
+    return saved
 
 
 def create(event, context):
@@ -69,5 +75,9 @@ def fromMinix(event, context):
     data['url'] = url
     data['minix'] = True
 
-    x = Queue()
-    return x.submit(data, "metadata")
+    response = []
+    for x in parse_minix_xml(data['url']):
+        # rederict to the appropriate functions
+        response.append(triggerEvent(x))
+
+    return response

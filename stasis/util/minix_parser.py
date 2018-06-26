@@ -21,7 +21,7 @@ def parse_minix_xml(f):
             if not filename.startswith('please_change_me'):
                 samples.append({
                     'sample': filename,
-
+                    'experiment': x.experiment['id'],
                     'acquisition': {
                         'instrument': x.experiment.architecture['name'],
                         'name': method,

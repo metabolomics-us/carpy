@@ -5,14 +5,13 @@ from boto3.dynamodb.conditions import Key
 from jsonschema import validate
 
 from stasis.schema import __TRACKING_SCHEMA__
-from stasis.service.Queue import Queue
 from stasis.service.Status import Status
-from stasis.tables import get_acquisition_table
+from stasis.tables import TableManager
 
 
 def triggerEvent(data):
     """
-        submits the given data to the queue
+        submits the given data to the table (previously queue)
 
     :param data: requires sample and status in it, to be considered validd
     :return: a serialized version of the submitted message
@@ -20,12 +19,12 @@ def triggerEvent(data):
     print("data for event triggering: %s" % data)
     validate(data, __TRACKING_SCHEMA__)
 
-    statusService = Status()
-    if not statusService.valid(data['status']):
-        raise Exception(
-            "please provide the 'status' property in the object")
+    status_service = Status()
+    if not status_service.valid(data['status']):
+        raise Exception("please provide the 'status' property in the object")
 
     # if validation passes, persist the object in the dynamo db
+    tm = TableManager()
 
     timestamp = int(time.time() * 1000)
 
@@ -39,7 +38,7 @@ def triggerEvent(data):
             {
                 'time': timestamp,
                 'value': data['status'].lower(),
-                'priority': statusService.priority(data['status'])
+                'priority': status_service.priority(data['status'])
             }
         ]
     }
@@ -47,9 +46,15 @@ def triggerEvent(data):
     if "fileHandle" in data:
         item['status'][-1]['fileHandle'] = data['fileHandle']
 
-    x = Queue()
-    return x.submit(item, "tracking")
+    item = tm.sanitize_json_for_dynamo(item)
 
+    # put item in table instead of queueing
+    table = tm.get_tracking_table()
+    saved = table.put_item(
+        Item=item,  # save or update our item
+        ReturnValues='ALL_NEW'  # return the new values saved on the db
+    )
+    return saved
 
 def create(event, context):
     """
@@ -73,9 +78,8 @@ def _fetch_experiment(sample: str) -> str:
     :return:
     """
     print("\tfetching experiment id for sample %s" % sample)
-    acq_table = get_acquisition_table()
-
-    print("scan result:\n%s" % acq_table.scan())
+    tm = TableManager()
+    acq_table = tm.get_acquisition_table()
 
     result = acq_table.query(
         KeyConditionExpression=Key('id').eq(sample),
@@ -88,10 +92,8 @@ def _fetch_experiment(sample: str) -> str:
         #     },
         ProjectionExpression='experiment'
     )
-    print("acq result: %s" % result)
 
     if result['Items']:
-        print(result['Items'])
         item = result['Items'][0]
         if 'experiment' in item:
             print('experiment exists: %s' % item)

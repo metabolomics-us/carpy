@@ -1,13 +1,21 @@
 import simplejson as json
 
-from stasis.route.route import processTrackingMessage
+from stasis.tables import TableManager
 from stasis.tracking import get, delete
 
 
 def test_delete(requireMocking):
     # add test sample
-    processTrackingMessage(json.loads(
-        "{\"id\": \"test-to-delete\", \"experiment\":\"unknown\", \"sample\": \"test-to-delete\", \"status\": [{\"time\": 1524772162698, \"value\": \"PROCESSING\"}]}"))
+    tm = TableManager()
+    table = tm.get_tracking_table()
+    table.put_item(Item={
+        "id": "test-to-delete",
+        "experiment": "unknown",
+        "sample": "test-to-delete",
+        "status": [
+            {"time": 1524772162698, "value": "PROCESSING"}
+        ]
+    })
 
     # check it's there
     result = get.get({
@@ -16,7 +24,6 @@ def test_delete(requireMocking):
         }
     }, {})
 
-    print("pre delete: %s" % result)
     assert json.loads(result['body'])["id"] == "test-to-delete"
 
     # call deletion
@@ -26,7 +33,6 @@ def test_delete(requireMocking):
         }
     }, {})
 
-    print("pos delete: %s" % result)
     # assert test data is gone
     assert result['statusCode'] == 204
     assert get.get({"pathParameters": {"sample": "test-to-delete"}}, {})['statusCode'] == 404

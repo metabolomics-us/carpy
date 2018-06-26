@@ -20,10 +20,12 @@ provider:
       Action:
         - dynamodb:*
       Resource: "*"
-    - Effect: Allow
-      Action:
-        - SNS:*
-      Resource: { "Fn::Join" : [":", ["arn:aws:sns:${self:custom.region}",  "*:*" ] ]  }
+
+# commenting for test refactoring of route removal
+#    - Effect: Allow
+#      Action:
+#        - SNS:*
+#      Resource: { "Fn::Join" : [":", ["arn:aws:sns:${self:custom.region}",  "*:*" ] ]  }
 
     - Effect: Allow
       Action:
@@ -57,7 +59,7 @@ custom:
   stage: ${opt:stage, self:provider.stage}
   region: ${opt:region, self:provider.region}
 
-  snsTopic: "StasisQueue-${self:custom.stage}"
+#  snsTopic: "StasisQueue-${self:custom.stage}"
 
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
@@ -101,7 +103,6 @@ functions:
     #defines to which topic we want to connect
     environment:
       resultTable: ${self:custom.resultTable}
-      topic: ${self:custom.snsTopic}
 
   #fetches an result record
   resultCreate:
@@ -115,7 +116,6 @@ functions:
     #defines to which topic we want to connect
     environment:
       resultTable: ${self:custom.resultTable}
-      topic: ${self:custom.snsTopic}
 
 
   #creates a new tracking record in the system
@@ -130,7 +130,6 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
-      topic: ${self:custom.snsTopic}
 
   #fetches an existing tracking record from the system
   trackingGet:
@@ -148,7 +147,6 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
-      topic: ${self:custom.snsTopic}
 
   #fetches an existing tracking record from the system
   trackingDelete:
@@ -166,7 +164,6 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
-      topic: ${self:custom.snsTopic}
 
   #fetches
   trackingExperiment:
@@ -183,7 +180,6 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
-      topic: ${self:custom.snsTopic}
 
   #fetches an acquisition record
   acquisitionGet:
@@ -200,7 +196,6 @@ functions:
     #defines to which topic we want to connect
     environment:
       acquisitionTable: ${self:custom.acquisitionTable}
-      topic: ${self:custom.snsTopic}
 
   #fetches an acquisition record
   acquisitionCreate:
@@ -214,7 +209,6 @@ functions:
     #defines to which topic we want to connect
     environment:
       acquisitionTable: ${self:custom.acquisitionTable}
-      topic: ${self:custom.snsTopic}
 
   #imports data from MiniX
   acquisitionCreateFromMinix:
@@ -228,19 +222,20 @@ functions:
     #defines to which topic we want to connect
     environment:
       acquisitionTable: ${self:custom.acquisitionTable}
-      topic: ${self:custom.snsTopic}
 
 
   #monitors our event queue for received messages and routes them
   #no public exposure
-  route:
-    memorySize: 1512
 
-    handler: stasis/route/route.route
-    events:
-      - sns: ${self:custom.snsTopic}
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
-      resultTable: ${self:custom.resultTable}
-      topic: ${self:custom.snsTopic}
+# commenting for test refactoring of route removal
+#  route:
+#    memorySize: 1512
+#
+#    handler: stasis/route/route.route
+#    events:
+#      - sns: ${self:custom.snsTopic}
+#    environment:
+#      trackingTable: ${self:custom.trackingTable}
+#      acquisitionTable: ${self:custom.acquisitionTable}
+#      resultTable: ${self:custom.resultTable}
+#      topic: ${self:custom.snsTopic}

@@ -12,14 +12,11 @@ def test_create_success(requireMocking):
 
     jsonString = json.dumps({'sample': 'myTest', 'status': 'entered'})
 
-    print(jsonString)
     response = create.create({'body': jsonString}, {})
+    assert response['ResponseMetadata']['HTTPStatusCode'], 200
 
-    assert response["statusCode"], 200
-
-    assert json.loads(response["body"])["status"][0]['value'], "ENTERED"
-
-    assert json.loads(response["body"])["status"][0]['time'] >= timestamp
+    assert 'entered' == response['Attributes']['status'][0]['value']
+    assert timestamp <= response['Attributes']['status'][0]['time']
 
 
 def test_create_with_fileHandle(requireMocking):
@@ -27,16 +24,15 @@ def test_create_with_fileHandle(requireMocking):
 
     jsonString = json.dumps({'sample': 'myTest', 'status': 'entered', 'fileHandle': 'myTest.d'})
 
-    print(jsonString)
     response = create.create({'body': jsonString}, {})
 
-    assert response["statusCode"], 200
+    assert response['ResponseMetadata']['HTTPStatusCode'], 200
 
-    data = json.loads(response["body"])
+    data = response['Attributes']
 
-    assert data["status"][0]['value'], "ENTERED"
-    assert data["status"][0]['time'] >= timestamp
-    assert data["status"][0]['fileHandle'] == "myTest.d"
+    assert 'entered' == data['status'][0]['value']
+    assert timestamp <= data['status'][0]['time']
+    assert 'myTest.d' == data['status'][0]['fileHandle']
 
 
 def test_create_fail_invalid_status(requireMocking):
@@ -49,12 +45,13 @@ def test_create_success_with_substatus(requireMocking):
 
     jsonString = json.dumps({'sample': 'myTest', 'status': 'corrected'})
 
-    print(jsonString)
     response = create.create({'body': jsonString}, {})
 
-    assert response["statusCode"], 200
-    assert json.loads(response["body"])["status"][0]['value'], "CORRECTED"
-    assert json.loads(response["body"])["status"][0]['time'] >= timestamp
+    assert response['ResponseMetadata']['HTTPStatusCode'], 200
+
+    data = response['Attributes']
+    assert 'corrected' == data['status'][0]['value']
+    assert timestamp <= data['status'][0]['time']
 
 
 def test_status_merging(requireMocking):
@@ -89,7 +86,7 @@ def test_create_with_experiment(requireMocking):
 
     print('bootstraping acquisition data')
     response = acq_create.create({'body': json.dumps(data)}, {})
-    assert 200 == response['statusCode']
+    assert 200 == response['ResponseMetadata']['HTTPStatusCode']
     time.sleep(2)
 
     track = {
@@ -97,7 +94,7 @@ def test_create_with_experiment(requireMocking):
         'status': 'entered'
     }
     print('creating tracking data')
-    response = acq_create.create({'body': json.dumps(track)}, {})
+    response = create.create({'body': json.dumps(track)}, {})
 
     assert 200 == response['statusCode']
     assert '1' == json.loads(response['body'])['experiment']
