@@ -12,13 +12,13 @@ def test_create_success_gctof(requireMocking):
 
         response = create.create({'body': jsonString}, {})
 
-        assert 200 == response['ResponseMetadata']['HTTPStatusCode']
-        assert "Leco GC-Tof" == response['Attributes']["acquisition"]['instrument']
-        assert "GCTOF" == response['Attributes']["acquisition"]['name']
-        assert "positive" == response['Attributes']["acquisition"]['ionisation']
-        assert "gcms" == response['Attributes']["acquisition"]['method']
-        assert "Medicago sativa" == response['Attributes']["metadata"]['species']
-        assert "aerial part" == response['Attributes']["metadata"]['organ']
+        assert 200 == response['statusCode']
+        assert "Leco GC-Tof" == json.loads(response['body'])["acquisition"]['instrument']
+        assert "GCTOF" == json.loads(response['body'])["acquisition"]['name']
+        assert "positive" == json.loads(response['body'])["acquisition"]['ionisation']
+        assert "gcms" == json.loads(response['body'])["acquisition"]['method']
+        assert "Medicago sativa" == json.loads(response['body'])["metadata"]['species']
+        assert "aerial part" == json.loads(response['body'])["metadata"]['organ']
 
 
 def test_create_success_minix(requireMocking):
@@ -28,9 +28,9 @@ def test_create_success_minix(requireMocking):
     assert 0 < len(response)
 
     for item in response:
-        assert 200 == item['ResponseMetadata']['HTTPStatusCode']
-        assert '63618' == item['Attributes']['experiment']
-        assert item['Attributes']['id'] == item['Attributes']['sample']
+        assert 200 == item['statusCode']
+        assert '63618' == json.loads(item['body'])['experiment']
+        assert json.loads(item['body'])['id'] == json.loads(item['body'])['sample']
 
 
 def test_create_non_minix(requireMocking):
@@ -39,8 +39,8 @@ def test_create_non_minix(requireMocking):
         'experiment': '1',
         'acquisition': {
             'instrument': 'test inst',
-            'ionisation': 'positive',  # psotivie || negative
-            'method': 'gcms'  # gcms || lcms
+            'ionisation': 'positive',
+            'method': 'gcms'
         },
         'processing': {
             'method': 'gcms'
@@ -52,12 +52,12 @@ def test_create_non_minix(requireMocking):
         },
         'userdata': {
             'label': 'filexxx',
-            'comment': '',
-        },
+            'comment': ''
+        }
     }
 
     response = create.create({'body': json.dumps(data)}, {})
 
-    assert response['ResponseMetadata']['HTTPStatusCode'] == 200
-    assert 'Attributes' in response
-    assert response['Attributes']['id'] == 'test_no_minix'
+    assert 200 == response['statusCode']
+    assert 'body' in response
+    assert 'test_no_minix' == json.loads(response['body'])['id']

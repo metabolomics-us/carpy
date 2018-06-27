@@ -3,6 +3,7 @@ import time
 import simplejson as json
 from jsonschema import validate
 
+from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __ACQUISITION_SCHEMA__
 from stasis.tables import TableManager
 from stasis.util.minix_parser import parse_minix_xml
@@ -23,14 +24,25 @@ def triggerEvent(data):
     data['time'] = timestamp
     data['id'] = data['sample']
 
-    # put item in table instead of queueing
-    table = TableManager().get_acquisition_table()
-    saved = table.put_item(
-        Item=data,  # save or update our item
-        ReturnValues='ALL_NEW'  # return the new values saved on the db
-    )
 
-    return saved
+    # put item in table instead of queueing
+    tm = TableManager()
+    table = tm.get_acquisition_table()
+
+    data = tm.sanitize_json_for_dynamo(data)
+    saved = {}
+    try:
+        saved = table.put_item(Item=data)  # save or update our item
+    except Exception as ex:
+        print("ERROR: %s" % str(ex))
+        data = ''
+        saved['ResponseMetadata']['HTTPStatusCode'] = 500
+
+    return {
+        'body': json.dumps(data),
+        'statusCode': saved['ResponseMetadata']['HTTPStatusCode'],
+        'headers': __HTTP_HEADERS__
+    }
 
 
 def create(event, context):

@@ -1,7 +1,6 @@
 import time
 
 import requests
-import simplejson as json
 
 apiUrl = "https://dev-api.metabolomics.us/stasis/acquisition"
 samplename = 'test_%s' % time.time()
@@ -13,8 +12,9 @@ def test_create():
         'experiment': 'mySecretExp',
         'acquisition': {
             'instrument': 'test inst',
-            'ionisation': 'positive',  # psotivie || negative
-            'method': 'gcms'  # gcms || lcms
+            'ionisation': 'positive',
+            'name': 'some name',
+            'method': 'gcms'
         },
         'processing': {
             'method': 'gcms'
@@ -26,18 +26,19 @@ def test_create():
         },
         'userdata': {
             'label': 'filexxx',
-            'comment': '',
-        },
+            'comment': ''
+        }
     }
 
     response = requests.post(apiUrl, json=data)
-
     assert 200 == response.status_code
-
-    time.sleep(5)
+    time.sleep(1)
 
     response = requests.get(apiUrl + '/' + samplename)
     assert 200 == response.status_code
 
-    sample = json.loads(response.content)
+    sample = response.json()
     assert samplename == sample['sample']
+    assert 'mySecretExp' == sample['experiment']
+    assert all(x in sample.keys() for x in
+               ['experiment', 'metadata', 'acquisition', 'sample', 'processing', 'time', 'id', 'userdata'])

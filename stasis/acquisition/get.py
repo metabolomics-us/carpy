@@ -1,8 +1,8 @@
 import simplejson as json
-
 from boto3.dynamodb.conditions import Key
+
 from stasis.headers import __HTTP_HEADERS__
-from stasis.tables import get_acquisition_table
+from stasis.tables import TableManager
 
 
 def get(events, context):
@@ -12,8 +12,8 @@ def get(events, context):
 
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
-
-            table = get_acquisition_table()
+            tm = TableManager()
+            table = tm.get_acquisition_table()
 
             result = table.query(
                 KeyConditionExpression=Key('id').eq(events['pathParameters']['sample'])
