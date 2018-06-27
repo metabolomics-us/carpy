@@ -130,6 +130,7 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches an existing tracking record from the system
   trackingGet:
@@ -147,6 +148,7 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches an existing tracking record from the system
   trackingDelete:
@@ -164,6 +166,7 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches
   trackingExperiment:
@@ -180,6 +183,7 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches an acquisition record
   acquisitionGet:
@@ -195,6 +199,7 @@ functions:
                 sample: true
     #defines to which topic we want to connect
     environment:
+      trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches an acquisition record
@@ -208,6 +213,7 @@ functions:
 
     #defines to which topic we want to connect
     environment:
+      trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
 
   #imports data from MiniX
@@ -221,21 +227,5 @@ functions:
 
     #defines to which topic we want to connect
     environment:
+      trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
-
-
-  #monitors our event queue for received messages and routes them
-  #no public exposure
-
-# commenting for test refactoring of route removal
-#  route:
-#    memorySize: 1512
-#
-#    handler: stasis/route/route.route
-#    events:
-#      - sns: ${self:custom.snsTopic}
-#    environment:
-#      trackingTable: ${self:custom.trackingTable}
-#      acquisitionTable: ${self:custom.acquisitionTable}
-#      resultTable: ${self:custom.resultTable}
-#      topic: ${self:custom.snsTopic}

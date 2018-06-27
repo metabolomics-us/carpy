@@ -47,8 +47,8 @@ def test_get_with_fileHandle(requireMocking):
 
     assert 200 == result['statusCode']
     assert 'body' in result
-    assert "test" == json.loads(result['body'])["id"]
-    assert "test.mzml" == json.loads(result['body'])["status"][0]["fileHandle"]
+    assert 'test' == json.loads(result['body'])['id']
+    assert 'test.mzml' == json.loads(result['body'])['status'][0]['fileHandle']
 
 
 def test_get_inexistent_sample_returns_404(requireMocking):

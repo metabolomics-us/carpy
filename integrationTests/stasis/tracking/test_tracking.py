@@ -5,7 +5,7 @@ import simplejson as json
 
 apiUrl = "https://dev-api.metabolomics.us/stasis"
 samplename = "test_%s" % str(time.time()).split('.')[-1]
-
+delay = 1
 
 def test_create():
     data = {
@@ -13,10 +13,9 @@ def test_create():
         'status': 'entered'
     }
 
-    response = requests.post(apiUrl + '/tracking/', json=data)
+    response = requests.post(apiUrl + '/tracking', json=data)
     assert 200 == response.status_code
-
-    time.sleep(5)
+    time.sleep(delay)
 
     response = requests.get(apiUrl + '/tracking/' + samplename)
     assert 200 == response.status_code
@@ -34,8 +33,7 @@ def test_create_with_file_handle():
 
     response = requests.post(apiUrl + '/tracking', json=data)
     assert 200 == response.status_code
-
-    time.sleep(2)
+    time.sleep(delay)
 
     response = requests.get(apiUrl + '/tracking/' + samplename)
     assert 200 == response.status_code
@@ -62,10 +60,9 @@ def test_create_not_merging_statuses():
     result = None
     for d in data:
         requests.post(apiUrl + '/tracking', json=d)
-        time.sleep(2)
+        time.sleep(delay)
         result = requests.get(apiUrl + '/tracking/processed-sample')
 
-    time.sleep(1)
     # requests.delete(apiUrl + '/tracking/processed-sample')
 
     assert 200 == result.status_code

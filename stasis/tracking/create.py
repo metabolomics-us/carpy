@@ -4,6 +4,7 @@ import simplejson as json
 from boto3.dynamodb.conditions import Key
 from jsonschema import validate
 
+from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __TRACKING_SCHEMA__
 from stasis.service.Status import Status
 from stasis.tables import TableManager
@@ -25,23 +26,32 @@ def triggerEvent(data):
 
     # if validation passes, persist the object in the dynamo db
     tm = TableManager()
+    table = tm.get_tracking_table()
+
+    resp = table.query(
+        KeyConditionExpression=Key('id').eq(data['sample'])
+    )
 
     timestamp = int(time.time() * 1000)
-
     experiment = _fetch_experiment(data['sample'])
-
-    item = {
-        'id': data['sample'],
-        'sample': data['sample'],
-        'experiment': experiment,
-        'status': [
-            {
-                'time': timestamp,
-                'value': data['status'].lower(),
-                'priority': status_service.priority(data['status'])
-            }
-        ]
+    new_status = {
+        'time': timestamp,
+        'value': data['status'].lower(),
+        'priority': status_service.priority(data['status'])
     }
+
+    if resp['Items']:
+        # only keep elements with a lower priority
+        item = resp['Items'][0]
+        item['status'] = [x for x in item['status'] if int(x['priority']) < int(new_status['priority'])]
+        item['status'].append(new_status)
+    else:
+        item = {
+            'id': data['sample'],
+            'sample': data['sample'],
+            'experiment': experiment,
+            'status': [new_status]
+        }
 
     if "fileHandle" in data:
         item['status'][-1]['fileHandle'] = data['fileHandle']
@@ -49,12 +59,19 @@ def triggerEvent(data):
     item = tm.sanitize_json_for_dynamo(item)
 
     # put item in table instead of queueing
-    table = tm.get_tracking_table()
-    saved = table.put_item(
-        Item=item,  # save or update our item
-        ReturnValues='ALL_NEW'  # return the new values saved on the db
-    )
-    return saved
+    saved = {}
+    try:
+        saved = table.put_item(Item=item)
+    except Exception as e:
+        print("ERROR: %s" % e)
+        item = {}
+        saved['ResponseMetadata']['HTTPStatusCode'] = 500
+
+    return {
+        'body': json.dumps(item),
+        'statusCode': saved['ResponseMetadata']['HTTPStatusCode'],
+        'headers': __HTTP_HEADERS__
+    }
 
 def create(event, context):
     """
@@ -82,21 +99,12 @@ def _fetch_experiment(sample: str) -> str:
     acq_table = tm.get_acquisition_table()
 
     result = acq_table.query(
-        KeyConditionExpression=Key('id').eq(sample),
-        # ---------- or -----------
-        #     KeyConditions={
-        #         'id': {
-        #             'AttributeValueList': [sample],
-        #             'ComparisonOperator': 'EQ'
-        #         }
-        #     },
-        ProjectionExpression='experiment'
+        KeyConditionExpression=Key('id').eq(sample)
     )
 
     if result['Items']:
         item = result['Items'][0]
         if 'experiment' in item:
-            print('experiment exists: %s' % item)
             return item['experiment']
         else:
             print('no experiment in item -> unknown')

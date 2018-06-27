@@ -2,6 +2,7 @@ import os
 
 import boto3
 import simplejson as json
+from boto.dynamodb2.exceptions import ResourceInUseException
 
 
 class TableManager:
@@ -18,6 +19,7 @@ class TableManager:
 
         table_name = os.environ['trackingTable']
         existing_tables = boto3.client('dynamodb').list_tables()['TableNames']
+
         if table_name not in existing_tables:
             try:
                 print(self.db.create_table(
@@ -69,8 +71,12 @@ class TableManager:
                         }
                     ]
                 ))
-            except Exception as e:
-                print("table already exist {}".format(e))
+            except ResourceInUseException as e:
+                print("table already exist, ignoring error {}".format(e))
+                pass
+            except Exception as ex:
+                print("table already exist, ignoring error {}".format(ex))
+                pass
 
         return self.db.Table(table_name)
 
@@ -133,8 +139,12 @@ class TableManager:
                         }
                     ])
                 )
-            except Exception as e:
-                print("table already exist {}".format(e))
+            except ResourceInUseException as e:
+                print("table already exist, ignoring error {}".format(e))
+                pass
+            except Exception as ex:
+                print("table already exist, ignoring error {}".format(ex))
+                pass
 
         return self.db.Table(table_name)
 
@@ -144,7 +154,6 @@ class TableManager:
         :param result:
         :return:
         """
-        print('sanitizing json')
 
         from boltons.iterutils import remap
 
