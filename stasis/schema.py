@@ -77,3 +77,75 @@ __TRACKING_SCHEMA__ = {
     },
     'required': ['sample', 'status']
 }
+
+# defines the schema of the incoming data object
+__RESULT_SCHEMA__ = {
+    'sample': {
+        'type': 'string'
+    },
+    'injections': {
+        'type': 'object',
+        'patterProperties': {
+            '^.*$': {
+                'type': 'object',
+                'logid': 'string',
+                'correction': {
+                    'polynomial': {
+                        'type': 'integer'
+                    },
+                    'sampleUsed': {
+                        'type': 'string'
+                    },
+                    'curve': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'x': {
+                                'type': 'number'
+                            },
+                            'y': {
+                                'type': 'number'
+                            }
+                        }
+                    }
+                },
+                'results': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'target': {
+                            'retentionIndex': {
+                                'type': 'number'
+                            },
+                            'name': {
+                                'type': 'string'
+                            },
+                            'id': {
+                                'type': 'string'
+                            },
+                            'mass': {
+                                'type': 'number'
+                            }
+                        },
+                        'annotation': {
+                            'retentionIndex': {
+                                'type': 'number'
+                            },
+                            'intensity': {
+                                'type': 'integer'
+                            },
+                            'replaced': {
+                                'type': 'boolean'
+                            },
+                            'mass': {
+                                'type': 'number'
+                            }
+                        }
+                    }
+                }
+            },
+            'required': ['correction']
+        }
+    },
+    'required': ['sample', 'injections']
+}

@@ -2,9 +2,8 @@ import os
 
 import simplejson as json
 
-from stasis.service.Persistence import Persistence
-from stasis.service.Bucket import Bucket
 from stasis.headers import __HTTP_HEADERS__
+from stasis.service.Bucket import Bucket
 
 
 def get(events, context):

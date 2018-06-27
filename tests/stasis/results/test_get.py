@@ -1,11 +1,10 @@
-from stasis.route.route import processResultMessage
-from stasis.results import get
 import simplejson as json
+
+from stasis.results import get, create
 
 
 def test_get(requireMocking):
     # store data
-
     jsonString = json.dumps(
         {
             'id': 'test',
@@ -94,16 +93,11 @@ def test_get(requireMocking):
         }
     )
     print(jsonString)
-    print("tada")
-    assert processResultMessage(
-        json.loads(
-            jsonString
-            , use_decimal=True
-        )
-    )
+
+    result = create.create({'body': jsonString}, {})
+    assert 200 == result['statusCode']
 
     # process data
-
     result = get.get({
         "pathParameters": {
             "sample": "test"

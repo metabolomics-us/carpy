@@ -1,8 +1,6 @@
-import simplejson as json
 import time
 
-import pytest
-import datetime
+import simplejson as json
 
 from stasis.results import create
 
@@ -66,7 +64,11 @@ def test_create_success(requireMocking):
         }
     )
 
-    print(jsonString)
     response = create.create({'body': jsonString}, {})
+    print('RESPONSE: %s' % response)
+    assert 200 == response['statusCode']
 
-    assert response["statusCode"], 200
+    print("BODY: %s" % response['body'])
+
+    assert 'test' == json.loads(response['body'])['sample']
+    assert 5 == json.loads(response['body'])['injections']['test_1']['correction']['polynomial']

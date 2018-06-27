@@ -1,8 +1,7 @@
-import simplejson as json
 import time
-import requests
 
-from stasis.acquisition import create
+import requests
+import simplejson as json
 
 apiUrl = "https://test-api.metabolomics.us/stasis/result"
 samplename = f'test_{time.time()}'
@@ -65,7 +64,7 @@ def test_create():
     response = requests.post(apiUrl, json=data)
     assert 200 == response.status_code
 
-    time.sleep(15)
+    time.sleep(5)
 
     response = requests.get(apiUrl + '/' + samplename)
     assert 200 == response.status_code

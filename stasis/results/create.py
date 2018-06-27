@@ -1,80 +1,13 @@
-from stasis.service.Queue import Queue
+import os
 import time
+
 import simplejson as json
 from jsonschema import validate
 
-# defines the schema of the incoming data object
-dataSchema = {
-    'sample': {
-        'type': 'string'
-    },
-    'injections': {
-        'type': 'object',
-        'patterProperties': {
-            '^.*$': {
-                'type': 'object',
-                'logid': 'string',
-                'correction': {
-                    'polynomial': {
-                        'type': 'integer'
-                    },
-                    'sampleUsed': {
-                        'type': 'string'
-                    },
-                    'curve': {
-                        'type': 'array',
-                        'items': {
-                            'type': 'object',
-                            'x': {
-                                'type': 'number'
-                            },
-                            'y': {
-                                'type': 'number'
-                            }
-                        }
-                    }
-                },
-                'results': {
-                   'type': 'array',
-                   'items': {
-                       'type': 'object',
-                       'target': {
-                           'retentionIndex': {
-                               'type': 'number'
-                           },
-                           'name': {
-                               'type': 'string'
-                           },
-                           'id': {
-                               'type': 'string'
-                           },
-                           'mass': {
-                               'type': 'number'
-                           }
-                       },
-                       'annotation': {
-                           'retentionIndex': {
-                               'type': 'number'
-                           },
-                           'intensity': {
-                               'type': 'integer'
-                           },
-                           'replaced': {
-                               'type': 'boolean'
-                           },
-                           'mass': {
-                               'type': 'number'
-                           }
-                       }
-                   }
-               }
-            },
-            'required': ['correction']
-        }
-    },
-
-    'required': ['sample', 'injections']
-}
+from stasis.headers import __HTTP_HEADERS__
+from stasis.schema import __RESULT_SCHEMA__
+from stasis.service.Bucket import Bucket
+from stasis.tables import TableManager
 
 
 def triggerEvent(data):
@@ -85,16 +18,37 @@ def triggerEvent(data):
     :return: a serialized version of the submitted message
     """
 
-    print("trigger event: " + json.dumps(data, indent=2))
+    print("trigger event: %s" % data)
 
-    validate(data, dataSchema)
+    validate(data, __RESULT_SCHEMA__)
 
     timestamp = int(time.time() * 1000)
     data['time'] = timestamp
     data['id'] = data['sample']
 
-    x = Queue()
-    return x.submit(data, "result")
+    if 'sample' in data:
+        table = Bucket(os.environ['resultTable'])
+
+        existing = table.exists(data['id'])
+
+        if existing:
+            existing = json.loads(table.load(data['id']))
+            # need to append result to injections
+            data['injections'] = {**data['injections'], **existing['injections']}
+
+        result = table.save(data['id'], json.dumps(TableManager().sanitize_json_for_dynamo(data)))
+
+        return {
+            'body': json.dumps(data),
+            'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
+            'headers': __HTTP_HEADERS__
+        }
+    else:
+        return {
+            'body': json.dumps({'error': 'no sample provided'}),
+            'statusCode': 400,
+            'headers': __HTTP_HEADERS__
+        }
 
 
 def create(event, context):
