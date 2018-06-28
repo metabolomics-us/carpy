@@ -13,7 +13,7 @@ def test_create_success(requireMocking):
     jsonString = json.dumps({'sample': 'myTest', 'status': 'entered'})
 
     response = create.create({'body': jsonString}, {})
-    assert response['statusCode'], 200
+    assert response['statusCode'] == 200
 
     assert 'entered' == json.loads(response['body'])['status'][0]['value']
     assert timestamp <= json.loads(response['body'])['status'][0]['time']
@@ -25,7 +25,7 @@ def test_create_with_fileHandle(requireMocking):
     data = json.dumps({'sample': 'myTest', 'status': 'entered', 'fileHandle': 'myTest.d'})
 
     response = create.create({'body': data}, {})
-    assert response['statusCode'], 200
+    assert response['statusCode'] == 200
 
     assert 'entered' == json.loads(response['body'])['status'][0]['value']
     assert timestamp <= json.loads(response['body'])['status'][0]['time']
@@ -44,7 +44,7 @@ def test_create_success_with_substatus(requireMocking):
 
     response = create.create({'body': data}, {})
 
-    assert response['statusCode'], 200
+    assert response['statusCode'] == 200
 
     assert 'corrected' == json.loads(response['body'])['status'][0]['value']
     assert timestamp <= json.loads(response['body'])['status'][0]['time']

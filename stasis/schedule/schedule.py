@@ -1,8 +1,12 @@
 import os
+from stasis.headers import __HTTP_HEADERS__
+
 from stasis.schema import __SCHEDULE__
 import simplejson as json
+from stasis.tracking.create import create
 
 from jsonschema import validate
+
 
 def schedule(event, context):
     """
@@ -18,11 +22,10 @@ def schedule(event, context):
     :param user:
     :return:
     """
+    body = json.loads(event['body'])
 
+    print(body)
     try:
-        body = json.loads(event['body'])
-
-        print(body)
 
         validate(body, __SCHEDULE__)
 
@@ -45,12 +48,19 @@ def schedule(event, context):
             ]
         }]}
 
+        version = "1"
+
+        if "task_version" in body:
+            version = body["task_version"]
+
+        print("utilizing version: {}".format(version))
+
         # fire AWS fargate instance now
         client = boto3.client('ecs')
         response = client.run_task(
             cluster='carrot',  # name of the cluster
             launchType='FARGATE',
-            taskDefinition='carrot-runner:1',
+            taskDefinition='carrot-runner:{}'.format(version),
             count=1,
             platformVersion='LATEST',
             networkConfiguration={
@@ -64,8 +74,23 @@ def schedule(event, context):
             overrides=overrides,
         )
 
-        # fire status update to track sample is in scheduling
-        return response
+        create({"body": json.dumps({'sample': body['sample'], 'status': 'scheduled'})}, {})
 
-    except Error:
-        return
+        # fire status update to track sample is in scheduling
+
+        return {
+            'body': json.dumps(response),
+            'statusCode': 200,
+            'headers': __HTTP_HEADERS__
+        }
+
+    except Exception as e:
+
+        print(e)
+        create({"body": json.dumps({'sample': body['sample'], 'status': 'failed'})}, {})
+
+        return {
+            'body': json.dumps(str(e)),
+            'statusCode': 503,
+            'headers': __HTTP_HEADERS__
+        }
