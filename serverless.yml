@@ -245,7 +245,7 @@ functions:
       acquisitionTable: ${self:custom.acquisitionTable}
 
   #returns all statuses
-  acquisitionGet:
+  statusGet:
     handler: stasis/status/get.get
     events:
       - http:
