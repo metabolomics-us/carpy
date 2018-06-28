@@ -230,6 +230,20 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
 
+  #imports data from MiniX
+  schedule:
+    handler: stasis/schedule/schedule.schedule
+    events:
+      - http:
+          path: schedule
+          method: post
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
   #returns all statuses
   acquisitionGet:
     handler: stasis/status/get.get

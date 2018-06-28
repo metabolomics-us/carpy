@@ -9,14 +9,15 @@ class Status:
             'entered': 1,
             'acquired': 100,
             'converted': 200,
-            'processing': 300,
-            'deconvoluted': 310,
-            'corrected': 320,
-            'annotated': 330,
-            'quantified': 340,
-            'replaced': 350,
-            'exported': 400,
-            'failed': 666
+            'scheduled': 300,
+            'processing': 400,
+            'deconvoluted': 410,
+            'corrected': 420,
+            'annotated': 430,
+            'quantified': 440,
+            'replaced': 450,
+            'exported': 500,
+            'failed': 900
         }
 
     def priority(self, state):
