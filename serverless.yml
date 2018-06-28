@@ -21,12 +21,6 @@ provider:
         - dynamodb:*
       Resource: "*"
 
-# commenting for test refactoring of route removal
-#    - Effect: Allow
-#      Action:
-#        - SNS:*
-#      Resource: { "Fn::Join" : [":", ["arn:aws:sns:${self:custom.region}",  "*:*" ] ]  }
-
     - Effect: Allow
       Action:
         - s3:*
@@ -58,8 +52,6 @@ provider:
 custom:
   stage: ${opt:stage, self:provider.stage}
   region: ${opt:region, self:provider.region}
-
-#  snsTopic: "StasisQueue-${self:custom.stage}"
 
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
@@ -229,3 +221,19 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
+
+  #imports data from MiniX
+  schedule:
+    handler: stasis/schedule/schedule.schedule
+    events:
+      - http:
+          path: schedule
+          method: post
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+
