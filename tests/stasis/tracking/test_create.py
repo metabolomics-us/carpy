@@ -93,3 +93,41 @@ def test_create_with_experiment(requireMocking):
     assert 200 == response['statusCode']
     assert '1' == json.loads(response['body'])['experiment']
     assert 'test_experiment' == json.loads(response['body'])['sample']
+
+
+def test_fetching_reinjection(requireMocking):
+    data = ['reinjected_2', 'reinjected_BU', 'reinjected_3']
+
+    cleaned = [create._remove_reinjection(x) for x in data]
+
+    assert all([x == 'reinjected' for x in cleaned])
+
+
+def test_create_reinjection(requireMocking):
+    data = {
+        'sample': 'test_reinjected',
+        'experiment': 'myReinjectionTest',
+        'acquisition': {'instrument': 'test inst', 'name': 'method blah',
+                        'ionisation': 'positive',  # psotivie || negative
+                        'method': 'gcms'  # gcms || lcms
+                        },
+        'processing': {'method': 'gcms'},
+        'metadata': {'class': '12345', 'species': 'alien', 'organ': 'honker'},
+        'userdata': {'label': 'filexxx', 'comment': ''},
+    }
+
+    print('bootstraping acquisition data')
+    response = acq_create.create({'body': json.dumps(data)}, {})
+    assert 200 == response['statusCode']
+    time.sleep(1)
+
+    tracking = [{'sample': 'test_reinjected_2', 'status': 'acquired', 'fileHandle': 'test_reinjected_2.mzml'},
+                {'sample': 'test_reinjected_BU', 'status': 'acquired', 'fileHandle': 'test_reinjected_BU.mzml'}]
+
+    responses = [create.create({'body': json.dumps(x)}, {}) for x in tracking]
+
+    print([json.loads(s['body']) for s in responses])
+
+    # if we decide to strip reinjections from the sample in traking, uncomment following line
+    # assert all('test_reinjected' == json.loads(resp['body'])['sample'] for resp in responses)
+    assert all('myReinjectionTest' == json.loads(resp['body'])['experiment'] for resp in responses)

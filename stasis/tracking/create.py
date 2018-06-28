@@ -1,3 +1,4 @@
+import re
 import time
 
 import simplejson as json
@@ -88,6 +89,13 @@ def create(event, context):
     return triggerEvent(data)
 
 
+def _remove_reinjection(sample: str) -> str:
+    # cleaned = re.split('[A-Za-z]+(\d{3,4}|_MSMS)_MX\d+_[A-Za-z]+_[A-Za-z0-9-]+(_\d+_\d+)?', sample, 1)
+    cleaned = re.split(r'_\d|_BU', sample)[0]
+
+    return cleaned
+
+
 def _fetch_experiment(sample: str) -> str:
     """
         loads the internal experiment id for the given sample
@@ -99,7 +107,7 @@ def _fetch_experiment(sample: str) -> str:
     acq_table = tm.get_acquisition_table()
 
     result = acq_table.query(
-        KeyConditionExpression=Key('id').eq(sample)
+        KeyConditionExpression=Key('id').eq(_remove_reinjection(sample))
     )
 
     if result['Items']:
