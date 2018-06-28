@@ -29,6 +29,15 @@ def requireMocking():
     lamb = moto.mock_lambda()
     lamb.start()
 
+    ecs = moto.mock_ecs()
+    ecs.start()
+
+    ec2 = moto.mock_ec2()
+    ec2.start()
+
+
+    create_cluster()
+
     session = boto3.session.Session()
     session.client('sns')
     session.client('s3')
@@ -45,5 +54,56 @@ def requireMocking():
     dynamo.stop()
     lamb.stop()
     bucket.stop()
+    ecs.stop()
+    ec2.stop()
 
     pass
+
+
+def create_cluster():
+    from moto.ec2 import utils as ec2_utils
+    import simplejson as json
+
+    ec2 = boto3.resource('ec2')
+    cluster = boto3.client('ecs')
+
+    cluster.create_cluster(clusterName='carrot')
+
+    cluster.register_task_definition(
+        containerDefinitions=[
+            {
+                'name': 'carrot-runner',
+                'command': [
+                    'sleep',
+                    '360',
+                ],
+                'cpu': 10,
+                'essential': True,
+                'image': 'busybox',
+                'memory': 10,
+            },
+        ],
+        family='carrot-runner',
+        taskRoleArn='',
+        volumes=[
+        ],
+    )
+
+    test_instance = ec2.create_instances(
+        ImageId="ami-1234abcd",
+        MinCount=1,
+        MaxCount=1,
+    )[0]
+
+    instance_id_document = json.dumps(
+        ec2_utils.generate_instance_identity_document(test_instance)
+    )
+
+
+    cluster.register_container_instance(
+        cluster="carrot",
+        instanceIdentityDocument = instance_id_document
+    )
+
+
+    return cluster

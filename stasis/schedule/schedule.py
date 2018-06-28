@@ -1,8 +1,10 @@
-def schedule_event_to_queue(event, context):
-    pass
+import os
+from stasis.schema import __SCHEDULE__
+import simplejson as json
 
+from jsonschema import validate
 
-def schedule_queue_event_to_fargate(event, context):
+def schedule(event, context):
     """
     triggers a new calculation task on the fargate server
     :param event:
@@ -16,21 +18,28 @@ def schedule_queue_event_to_fargate(event, context):
     :param user:
     :return:
     """
+
+    body = json.loads(event['body'])
+
+    print(body)
+
+    validate(body, __SCHEDULE__)
+
     import boto3
     overrides = {"containerOverrides": [{
         "name": "carrot-runner",
         "environment": [
             {
-                "name": "ACTIVE_PROFILE",
-                "value": "{}".format("test_profile")
+                "name": "SPRING_PROFILES_ACTIVE",
+                "value": "{},{}".format(body['env'], body['mode'])
             },
             {
                 "name": "CARROT_SAMPLE",
-                "value": "{}".format("test_sample")
+                "value": "{}".format(body['sample'])
             },
             {
                 "name": "CARROT_METHOD",
-                "value": "{}".format("test_method")
+                "value": "{}".format(body['method'])
             }
         ]
     }]}
@@ -40,17 +49,14 @@ def schedule_queue_event_to_fargate(event, context):
     response = client.run_task(
         cluster='carrot',  # name of the cluster
         launchType='FARGATE',
-        taskDefinition='carrot-process:1',
+        taskDefinition='carrot-runner:1',
         count=1,
         platformVersion='LATEST',
         networkConfiguration={
             'awsvpcConfiguration': {
                 'subnets': [
                     # we need at least 2, to insure network stability
-                    os.environ.get('FREQ_SUBNET_1', 'subnet-c35bdcab'),
-                    os.environ.get('FREQ_SUBNET_2', 'subnet-be46b9c4'),
-                    os.environ.get('FREQ_SUBNET_3', 'subnet-234ab559'),
-                    os.environ.get('FREQ_SUBNET_4', 'subnet-234ab559')],
+                    os.environ.get('SUBNET', 'subnet-064fbf05a666c6557')],
                 'assignPublicIp': 'ENABLED'
             }
         },

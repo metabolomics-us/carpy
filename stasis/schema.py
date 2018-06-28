@@ -149,3 +149,49 @@ __RESULT_SCHEMA__ = {
     },
     'required': ['sample', 'injections']
 }
+
+__SCHEDULE__ = {
+
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "profile": {
+            "$id": "/properties/profile",
+            "type": "string",
+            "title": "The Profile Schema ",
+            "default": "",
+            "examples": [
+                "lcms"
+            ]
+        },
+        "env": {
+            "$id": "/properties/env",
+            "type": "string",
+            "title": "The Env Schema ",
+            "default": "",
+            "examples": [
+                "prod"
+            ]
+        },
+        "sample": {
+            "$id": "/properties/sample",
+            "type": "string",
+            "title": "The Sample Schema ",
+            "default": "",
+            "examples": [
+                "abc"
+            ]
+        },
+        "method": {
+            "$id": "/properties/method",
+            "type": "string",
+            "title": "The Method Schema ",
+            "default": "",
+            "examples": [
+                "method"
+            ]
+        }
+    }
+}
