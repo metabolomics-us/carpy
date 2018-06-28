@@ -45,8 +45,8 @@ class TableManager:
                         }
                     ],
                     ProvisionedThroughput={
-                        'ReadCapacityUnits': 1,
-                        'WriteCapacityUnits': 1
+                        'ReadCapacityUnits': 10,
+                        'WriteCapacityUnits': 5
                     },
                     GlobalSecondaryIndexes=[
                         {
@@ -65,8 +65,8 @@ class TableManager:
                                 'ProjectionType': 'ALL'
                             },
                             'ProvisionedThroughput': {
-                                'ReadCapacityUnits': 1,
-                                'WriteCapacityUnits': 1
+                                'ReadCapacityUnits': 10,
+                                'WriteCapacityUnits': 5
                             }
                         }
                     ]
@@ -113,8 +113,8 @@ class TableManager:
                         }
                     ],
                     ProvisionedThroughput={
-                        'ReadCapacityUnits': 1,
-                        'WriteCapacityUnits': 1
+                        'ReadCapacityUnits': 10,
+                        'WriteCapacityUnits': 5
                     },
                     GlobalSecondaryIndexes=[
                         {
@@ -133,8 +133,8 @@ class TableManager:
                                 'ProjectionType': 'ALL'
                             },
                             'ProvisionedThroughput': {
-                                'ReadCapacityUnits': 1,
-                                'WriteCapacityUnits': 1
+                                'ReadCapacityUnits': 10,
+                                'WriteCapacityUnits': 5
                             }
                         }
                     ])
