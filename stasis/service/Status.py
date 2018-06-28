@@ -15,7 +15,8 @@ class Status:
             'annotated': 330,
             'quantified': 340,
             'replaced': 350,
-            'exported': 400
+            'exported': 400,
+            'failed': 666
         }
 
     def priority(self, state):
