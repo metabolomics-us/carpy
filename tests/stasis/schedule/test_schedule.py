@@ -1,5 +1,7 @@
 import time
+
 import simplejson as json
+
 from stasis.schedule import schedule as s
 from stasis.tracking import get
 
@@ -11,7 +13,7 @@ def test_schedule(requireMocking):
 
     response = s.schedule({'body': jsonString}, {})
 
-    assert response['statusCode']== 200
+    assert response['statusCode'] == 200
 
     # ensure we have a new tracking object
     result = json.loads(get.get({

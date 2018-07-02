@@ -1,11 +1,11 @@
 import os
-from stasis.headers import __HTTP_HEADERS__
 
-from stasis.schema import __SCHEDULE__
 import simplejson as json
-from stasis.tracking.create import create
-
 from jsonschema import validate
+
+from stasis.headers import __HTTP_HEADERS__
+from stasis.schema import __SCHEDULE__
+from stasis.tracking.create import create
 
 
 def schedule(event, context):
