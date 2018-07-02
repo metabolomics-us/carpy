@@ -222,7 +222,7 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
 
-  #imports data from MiniX
+  #schedule data to stasis, for handling the processing on the backend
   schedule:
     handler: stasis/schedule/schedule.schedule
     events:
