@@ -1,5 +1,6 @@
 import os
 
+import traceback
 import simplejson as json
 from jsonschema import validate
 
@@ -86,7 +87,7 @@ def schedule(event, context):
 
     except Exception as e:
 
-        print(e)
+        traceback.print_exc()
         create({"body": json.dumps({'sample': body['sample'], 'status': 'failed'})}, {})
 
         return {
