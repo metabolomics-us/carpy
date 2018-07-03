@@ -79,8 +79,8 @@ def schedule(event, context):
 
         # fire status update to track sample is in scheduling
 
+        print(response)
         return {
-            'body': json.dumps(response),
             'statusCode': 200,
             'headers': __HTTP_HEADERS__
         }
