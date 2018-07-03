@@ -35,7 +35,7 @@ def schedule(event, context):
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{},{}".format(body['env'], body['mode'])
+                    "value": "{},{}".format(body['env'], body['profile'])
                 },
                 {
                     "name": "CARROT_SAMPLE",
