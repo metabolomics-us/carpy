@@ -5,6 +5,7 @@ from jsonschema import validate
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __ACQUISITION_SCHEMA__
+from stasis.service.Status import Status
 from stasis.tables import TableManager
 from stasis.util.minix_parser import parse_minix_xml
 
@@ -24,18 +25,32 @@ def triggerEvent(data):
     data['time'] = timestamp
     data['id'] = data['sample']
 
-
     # put item in table instead of queueing
     tm = TableManager()
-    table = tm.get_acquisition_table()
+    acqtable = tm.get_acquisition_table()
+    trktable = tm.get_tracking_table()
 
     data = tm.sanitize_json_for_dynamo(data)
     saved = {}
     try:
-        saved = table.put_item(Item=data)  # save or update our item
+        saved = acqtable.put_item(Item=data)  # save or update our item
+
+        # add 'entered' tracking status
+        tracking = {
+            'id': data['id'],
+            'experiment': data['experiment'] if data['experiment'] != None else 'unknown',
+            'sample': data['sample'],
+            'status': [{
+                'time': data['time'],
+                'value': 'entered',
+                'priority': Status().priority('entered')
+            }]
+        }
+        tracked = trktable.put_item(Item=tracking)
+
     except Exception as ex:
         print("ERROR: %s" % str(ex))
-        data = ''
+        data = str(ex)
         saved['ResponseMetadata']['HTTPStatusCode'] = 500
 
     return {

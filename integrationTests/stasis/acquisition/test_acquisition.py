@@ -31,6 +31,8 @@ def test_create():
     }
 
     response = requests.post(apiUrl, json=data)
+    print(response.reason)
+
     assert 200 == response.status_code
     time.sleep(1)
 
@@ -42,3 +44,9 @@ def test_create():
     assert 'mySecretExp' == sample['experiment']
     assert all(x in sample.keys() for x in
                ['experiment', 'metadata', 'acquisition', 'sample', 'processing', 'time', 'id', 'userdata'])
+
+    tracking_response = requests.get('https://dev-api.metabolomics.us/stasis/tracking/%s' % sample['id'])
+
+    assert 200 == tracking_response.status_code
+    tracking = tracking_response.json()
+    assert 'entered' == tracking['status'][0]['value']

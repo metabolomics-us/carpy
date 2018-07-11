@@ -44,7 +44,7 @@ __ACQUISITION_SCHEMA__ = {
         },
         'comment': {
             'type': 'string'
-        },
+        }
     },
     'references': {
         'type': 'array',

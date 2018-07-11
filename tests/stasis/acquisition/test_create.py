@@ -1,6 +1,7 @@
 import simplejson as json
 
 from stasis.acquisition import create
+from stasis.tracking import get
 from stasis.util.minix_parser import parse_minix_xml
 
 
@@ -61,3 +62,9 @@ def test_create_non_minix(requireMocking):
     assert 200 == response['statusCode']
     assert 'body' in response
     assert 'test_no_minix' == json.loads(response['body'])['id']
+
+    # checking creation of tracking data
+    tracking = get.get({'pathParameters': {'sample': data['sample']}}, {})
+    assert 200 == tracking['statusCode']
+    assert data['sample'] == json.loads(tracking['body'])['id']
+    assert 'entered' == json.loads(tracking['body'])['status'][0]['value']
