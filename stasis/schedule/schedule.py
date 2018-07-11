@@ -1,5 +1,6 @@
 import os
 
+import traceback
 import simplejson as json
 from jsonschema import validate
 
@@ -35,7 +36,7 @@ def schedule(event, context):
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{},{}".format(body['env'], body['mode'])
+                    "value": "{},{}".format(body['env'], body['profile'])
                 },
                 {
                     "name": "CARROT_SAMPLE",
@@ -78,15 +79,15 @@ def schedule(event, context):
 
         # fire status update to track sample is in scheduling
 
+        print(response)
         return {
-            'body': json.dumps(response),
             'statusCode': 200,
             'headers': __HTTP_HEADERS__
         }
 
     except Exception as e:
 
-        print(e)
+        traceback.print_exc()
         create({"body": json.dumps({'sample': body['sample'], 'status': 'failed'})}, {})
 
         return {

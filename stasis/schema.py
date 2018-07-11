@@ -163,7 +163,8 @@ __SCHEDULE__ = {
             "title": "The Profile Schema ",
             "default": "",
             "examples": [
-                "lcms"
+                "lcms",
+                "gcms"
             ]
         },
         "env": {
@@ -172,7 +173,10 @@ __SCHEDULE__ = {
             "title": "The Env Schema ",
             "default": "",
             "examples": [
-                "prod"
+                "prod",
+                "test",
+                "dev"
+
             ]
         },
         "sample": {

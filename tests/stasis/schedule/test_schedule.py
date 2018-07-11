@@ -9,11 +9,11 @@ from stasis.tracking import get
 def test_schedule(requireMocking):
     timestamp = int(time.time() * 1000)
 
-    jsonString = json.dumps({'sample': 'myTest', 'env': 'test', 'method': 'hello', 'mode': 'lcms', 'task_version': '1'})
+    jsonString = json.dumps({'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms', 'task_version': '1'})
 
     response = s.schedule({'body': jsonString}, {})
 
-    assert response['statusCode'] == 200
+    assert 200 == response['statusCode']
 
     # ensure we have a new tracking object
     result = json.loads(get.get({
@@ -28,7 +28,7 @@ def test_schedule_failed(requireMocking):
     timestamp = int(time.time() * 1000)
 
     jsonString = json.dumps(
-        {'sample': 'myTest', 'env': 'test', 'method': 'hello', 'mode': 'lcms', 'task_version': '111'})
+        {'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms', 'task_version': '111'})
 
     response = s.schedule({'body': jsonString}, {})
 
