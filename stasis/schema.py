@@ -211,10 +211,11 @@ __TARGET_SCHEMA__ = {
         },
         'sample': {
             'type': 'string'
-        },
-        'splash': {
-            'type': 'string',
-            'pattern': '^splash1\d-[0-9a-z]{4}-[0-9]{10}-[0-9a-z]{20}$'
+            # commented pending review of spectrum addition to dynamo table
+            # },
+            # 'splash': {
+            #     'type': 'string',
+            #     'pattern': '^splash1\d-[0-9a-z]{4}-[0-9]{10}-[0-9a-z]{20}$'
         }
     },
     'required': ['method', 'mz_rt', 'sample']

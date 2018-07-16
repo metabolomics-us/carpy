@@ -44,8 +44,8 @@ def create(event, context):
         'sample': data['sample']
     }
 
-    if 'splash' in data and data['splash']:  # failsafe for when we have MS1 (no splash)
-        newTarget['splash'] = data['splash']
+    # if 'splash' in data and data['splash']:  # failsafe for when we have MS1 (no splash)
+    #     newTarget['splash'] = data['splash']
 
     newTarget = tm.sanitize_json_for_dynamo(newTarget)
 

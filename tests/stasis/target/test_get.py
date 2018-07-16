@@ -12,8 +12,7 @@ def test_get_with_mzrt(requireMocking):
         'method': 'testLib',
         'mz_rt': '12_1',
         'sample': 'tgtTest',
-        'time': 1524772162698,
-        'splash': 'splash10-l33t-0123456789-a9a90f8h9238h08243tg'
+        'time': 1524772162698
     })
 
     # process data
@@ -39,8 +38,7 @@ def test_get_without_mzrt(requireMocking):
         'method': 'testLib',
         'mz_rt': '12_1',
         'sample': 'tgtTest',
-        'time': 1524772162698,
-        'splash': 'splash10-l33t-0123456789-a9a90f8h9238h08243tg'
+        'time': 1524772162698
     })
 
     # process data

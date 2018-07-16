@@ -26,6 +26,7 @@ def test_get_with_mzrt():
 
     assert 200 == response.status_code
     item = response.json()
+    print(item)
     assert 'test_lib' == item['method']
     assert '10_123' == item['mz_rt']
     assert '10' == item['mz']
