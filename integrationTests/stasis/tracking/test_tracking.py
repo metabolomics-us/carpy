@@ -3,7 +3,7 @@ import time
 import requests
 import simplejson as json
 
-apiUrl = "https://dev-api.metabolomics.us/stasis"
+apiUrl = "https://test-api.metabolomics.us/stasis"
 samplename = "test_%s" % str(time.time()).split('.')[-1]
 delay = 1
 
@@ -49,6 +49,7 @@ def test_create_not_merging_statuses():
     data = [{'sample': 'processed-sample', 'status': 'entered'},
             {'sample': 'processed-sample', 'status': 'acquired'},
             {'sample': 'processed-sample', 'status': 'converted'},
+            {'sample': 'processed-sample', 'status': 'scheduled'},
             {'sample': 'processed-sample', 'status': 'processing'},
             {'sample': 'processed-sample', 'status': 'deconvoluted'},
             {'sample': 'processed-sample', 'status': 'corrected'},
@@ -67,4 +68,4 @@ def test_create_not_merging_statuses():
 
     assert 200 == result.status_code
     assert 'processed-sample' == result.json()['sample']
-    assert 10 == len(result.json()['status'])
+    assert 11 == len(result.json()['status'])

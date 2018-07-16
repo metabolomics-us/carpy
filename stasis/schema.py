@@ -199,3 +199,23 @@ __SCHEDULE__ = {
         }
     }
 }
+
+# defines the input schema for a target
+__TARGET_SCHEMA__ = {
+    'properties': {
+        'method': {
+            'type': 'string'
+        },
+        'mz_rt': {
+            'type': 'string'
+        },
+        'sample': {
+            'type': 'string'
+        },
+        'splash': {
+            'type': 'string',
+            'pattern': '^splash1\d-[0-9a-z]{4}-[0-9]{10}-[0-9a-z]{20}$'
+        }
+    },
+    'required': ['method', 'mz_rt', 'sample']
+}

@@ -59,11 +59,18 @@ custom:
   stage: ${opt:stage, self:provider.stage}
   region: ${opt:region, self:provider.region}
 
-#  snsTopic: "StasisQueue-${self:custom.stage}"
-
+  ###
+  # Stasis resources definitions
+  ###
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
   resultTable: "wcmc-data-stasis-result-${self:custom.stage}"
+
+  ###
+  # Carrot resources definition
+  ###
+  targetTable: "CarrotTargetTable-${self:custom.stage}"
+  # spectra bucket S3 or cheaper version
 
   ###
   # custom domain management
@@ -258,3 +265,42 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
 
+  #returns all statuses
+  targetGet:
+    handler: stasis/target/get.get
+    events:
+      - http:
+          path: target/{method}
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                method: true
+                mz_rt: false
+      - http:
+          path: target/{method}/{mz_rt}
+          method: get
+          cors: true
+          request:
+            parameter:
+              path:
+                method: true
+                mz_rt: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}
+
+  #returns all statuses
+  targetPost:
+    handler: stasis/target/create.create
+    events:
+      - http:
+          path: target
+          method: post
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}

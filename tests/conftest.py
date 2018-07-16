@@ -3,7 +3,7 @@
 import os
 
 if 'AWS_DEFAULT_REGION' not in os.environ:
-    os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+    os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
 
 import pytest
 import moto
@@ -46,6 +46,7 @@ def requireMocking():
     os.environ["trackingTable"] = "UnitTrackingTable"
     os.environ["acquisitionTable"] = "UnitAcquisitionTable"
     os.environ["resultTable"] = "ResultBucket"
+    os.environ["targetTable"] = "UnitTargetTable"
 
     dynamodb = boto3.resource('dynamodb')
 
