@@ -1,10 +1,12 @@
+import pytest
 import simplejson as json
 
 from stasis.tables import TableManager
 from stasis.target import get
 
 
-def test_get_with_mzrt(requireMocking):
+@pytest.fixture
+def addData():
     # store data
     tm = TableManager()
     table = tm.get_target_table()
@@ -14,7 +16,27 @@ def test_get_with_mzrt(requireMocking):
         'sample': 'tgtTest',
         'time': 1524772162698
     })
+    table.put_item(Item={
+        'method': 'testLib',
+        'mz_rt': '12.1_0.9',
+        'sample': 'tgtTest2',
+        'time': 1524772162698
+    })
+    table.put_item(Item={
+        'method': 'testLib',
+        'mz_rt': '1_12',
+        'sample': 'tgtTest2',
+        'time': 1524772162800
+    })
+    table.put_item(Item={
+        'method': 'test2Lib',
+        'mz_rt': '2_15',
+        'sample': 'tgtTest',
+        'time': 1524772163000
+    })
 
+
+def test_get_with_mzrt(requireMocking, addData):
     # process data
     result = get.get({
         "pathParameters": {
@@ -23,24 +45,14 @@ def test_get_with_mzrt(requireMocking):
         }
     }, {})
 
-    print('RESULT: %s' % result)
-
     assert 200 == result['statusCode']
     assert 'body' in result
-    assert 'testLib' == json.loads(result['body'])['method']
+    items = json.loads(result['body'])
+    assert len(items) > 0
+    assert all('testLib' == x['method'] for x in items)
 
 
-def test_get_without_mzrt(requireMocking):
-    # store data
-    tm = TableManager()
-    table = tm.get_target_table()
-    table.put_item(Item={
-        'method': 'testLib',
-        'mz_rt': '12_1',
-        'sample': 'tgtTest',
-        'time': 1524772162698
-    })
-
+def test_get_without_mzrt(requireMocking, addData):
     # process data
     result = get.get({
         "pathParameters": {
@@ -48,8 +60,8 @@ def test_get_without_mzrt(requireMocking):
         }
     }, {})
 
-    print('RESULT: %s' % result)
-
     assert 200 == result['statusCode']
     assert 'body' in result
-    assert 'testLib' == json.loads(result['body'])['method']
+    items = json.loads(result['body'])
+    assert len(items) > 0
+    assert all('testLib' == x['method'] for x in items)

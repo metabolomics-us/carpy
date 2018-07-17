@@ -6,7 +6,7 @@ from stasis.tables import TableManager
 
 
 def get(events, context):
-    """returns the specific sample from the storage"""
+    """returns a list of targets for a specific method and if present an MZ_RT value"""
     print("received event: " + json.dumps(events, indent=2))
 
     if 'pathParameters' in events:
@@ -22,17 +22,19 @@ def get(events, context):
                     Key('method').eq(events['pathParameters']['method']) &
                     Key('mz_rt').eq(events['pathParameters']['mz_rt'])
                 )
+                print('MZRT QUERY: %s' % result['Items'])
             else:
                 result = table.query(
                     KeyConditionExpression=Key('method').eq(events['pathParameters']['method'])
                 )
+                print('METHOD QUERY: %s' % result['Items'])
 
             if 'Items' in result and len(result['Items']) > 0:
                 # create a response when sample is found
                 return {
                     "statusCode": 200,
                     "headers": __HTTP_HEADERS__,
-                    "body": json.dumps(result['Items'][0])
+                    "body": json.dumps(result['Items'])
                 }
             else:
                 # create a response when sample is not found

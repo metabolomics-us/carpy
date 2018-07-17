@@ -15,10 +15,10 @@ def test_get_without_mzrt():
 
     assert 200 == response.status_code
     item = response.json()
-    assert 'test_lib' == item['method']
-    assert '10_123' == item['mz_rt']
-    assert '10' == item['mz']
-    assert '123' == item['rt']
+    assert 'test_lib' == item[0]['method']
+    assert '10_123' == item[0]['mz_rt']
+    assert '10' == item[0]['mz']
+    assert '123' == item[0]['rt']
 
 
 def test_get_with_mzrt():
@@ -26,8 +26,7 @@ def test_get_with_mzrt():
 
     assert 200 == response.status_code
     item = response.json()
-    print(item)
-    assert 'test_lib' == item['method']
-    assert '10_123' == item['mz_rt']
-    assert '10' == item['mz']
-    assert '123' == item['rt']
+    assert 'test_lib' == item[0]['method']
+    assert '10_123' == item[0]['mz_rt']
+    assert '10' == item[0]['mz']
+    assert '123' == item[0]['rt']

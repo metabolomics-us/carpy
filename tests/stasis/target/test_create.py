@@ -14,9 +14,10 @@ def test_create_success(requireMocking):
     }, {})
 
     assert 200 == result['statusCode']
-    assert 'tgtTest' == json.loads(result['body'])['sample']
-    assert '12' == json.loads(result['body'])['mz']
-    assert '1' == json.loads(result['body'])['rt']
+    added = json.loads(result['body'])[0]
+    assert 'tgtTest' == added['sample']
+    assert '12' == added['mz']
+    assert '1' == added['rt']
 
 
 def test_create_invalid_data(requireMocking):
