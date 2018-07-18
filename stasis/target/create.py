@@ -32,22 +32,14 @@ def create(event, context):
 
     tm = TableManager()
 
-    data['mz'], data['rt'] = data['mz_rt'].split("_")
-
     timestamp = int(time.time() * 1000)
-    newTarget = {
-        'method': data['method'],
-        'mz_rt': data['mz_rt'],
-        'time': timestamp,
-        'mz': data['mz'],
-        'rt': data['rt'],
-        'sample': data['sample']
-    }
+    data['mz'], data['rt'] = data['mz_rt'].split("_")
+    data['time'] = timestamp
 
     # if 'splash' in data and data['splash']:  # failsafe for when we have MS1 (no splash)
     #     newTarget['splash'] = data['splash']
 
-    newTarget = tm.sanitize_json_for_dynamo(newTarget)
+    newTarget = tm.sanitize_json_for_dynamo(data)
 
     # put item in table
     saved = {}

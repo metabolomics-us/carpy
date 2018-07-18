@@ -14,7 +14,7 @@ def test_create_success(requireMocking):
     }, {})
 
     assert 200 == result['statusCode']
-    added = json.loads(result['body'])[0]
+    added = json.loads(result['body'])['targets'][0]
     assert 'tgtTest' == added['sample']
     assert '12' == added['mz']
     assert '1' == added['rt']
@@ -22,7 +22,7 @@ def test_create_success(requireMocking):
 
 def test_create_invalid_data(requireMocking):
     jsonString = json.dumps(
-        {'method': 'test_lib', 'sample': 'tgtTest', 'splash': 'splash10-a112-0123456789-a0s1d2f3g4h5j6k7l8q9'})
+        {'method': 'test_lib', 'sample': 'tgtTest'})
 
     result = create.create({'body': jsonString}, {})
     assert 422 == result['statusCode']

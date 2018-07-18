@@ -159,7 +159,7 @@ class TableManager:
 
         if table_name not in existing_tables:
             try:
-                print(self.db.create_table(
+                self.db.create_table(
                     TableName=os.environ["targetTable"],
                     KeySchema=[
                         {
@@ -185,7 +185,7 @@ class TableManager:
                         'ReadCapacityUnits': 2,
                         'WriteCapacityUnits': 2
                     }
-                ))
+                )
             except ResourceInUseException as e:
                 print("table already exist, ignoring error {}".format(e))
                 pass

@@ -1,3 +1,5 @@
+from urllib.parse import unquote
+
 import simplejson as json
 from boto3.dynamodb.conditions import Key
 
@@ -24,19 +26,22 @@ def get(events, context):
                 )
                 print('MZRT QUERY: %s' % result['Items'])
             else:
+                print("encoded: %s" % events['pathParameters']['method'])
+                print("unencoded: %s" % unquote(events['pathParameters']['method']))
                 result = table.query(
-                    KeyConditionExpression=Key('method').eq(events['pathParameters']['method'])
+                    KeyConditionExpression=Key('method').eq(unquote(events['pathParameters']['method']))
                 )
                 print('METHOD QUERY: %s' % result['Items'])
 
             if 'Items' in result and len(result['Items']) > 0:
                 # create a response when sample is found
                 return {
-                    "statusCode": 200,
-                    "headers": __HTTP_HEADERS__,
-                    "body": json.dumps(result['Items'])
+                    'statusCode': 200,
+                    'headers': __HTTP_HEADERS__,
+                    'body': json.dumps({'targets': result['Items']})
                 }
             else:
+                print(result)
                 # create a response when sample is not found
                 return {
                     "statusCode": 404,

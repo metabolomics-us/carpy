@@ -34,6 +34,18 @@ def addData():
         'sample': 'tgtTest',
         'time': 1524772163000
     })
+    table.put_item(Item={
+        'method': 'test_dynamo | unknown | unknown | unknown',
+        'mz_rt': '2_15',
+        'sample': 'tgtTest',
+        'time': 1524772163000
+    })
+    table.put_item(Item={
+        'method': 'test_dynamo|unknown|unknown|unknown',
+        'mz_rt': '2_15',
+        'sample': 'tgtTest',
+        'time': 1524772163000
+    })
 
 
 def test_get_with_mzrt(requireMocking, addData):
@@ -47,7 +59,7 @@ def test_get_with_mzrt(requireMocking, addData):
 
     assert 200 == result['statusCode']
     assert 'body' in result
-    items = json.loads(result['body'])
+    items = json.loads(result['body'])['targets']
     assert len(items) > 0
     assert all('testLib' == x['method'] for x in items)
 
@@ -62,6 +74,34 @@ def test_get_without_mzrt(requireMocking, addData):
 
     assert 200 == result['statusCode']
     assert 'body' in result
-    items = json.loads(result['body'])
+    items = json.loads(result['body'])['targets']
     assert len(items) > 0
     assert all('testLib' == x['method'] for x in items)
+
+
+def test_get_method_with_spaces(requireMocking, addData):
+    # process data
+    result = get.get({
+        "pathParameters": {
+            "method": "test_dynamo|unknown|unknown|unknown"
+        }
+    }, {})
+
+    assert 200 == result['statusCode']
+    assert 'body' in result
+    items = json.loads(result['body'])['targets']
+    assert len(items) > 0
+
+
+def test_get_method_urlencoded(requireMocking, addData):
+    # process data
+    result = get.get({
+        "pathParameters": {
+            "method": "test_dynamo%20%7c%20unknown%20%7c%20unknown%20%7c%20unknown"
+        }
+    }, {})
+
+    assert 200 == result['statusCode']
+    assert 'body' in result
+    items = json.loads(result['body'])['targets']
+    assert len(items) > 0
