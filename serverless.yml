@@ -317,3 +317,34 @@ functions:
     #defines to which topic we want to connect
     environment:
       targetTable: ${self:custom.targetTable}
+
+  #updates a target
+  targetDelete:
+    handler: stasis/target/delete.delete
+    events:
+    - http:
+        path: target/{method}/{mz_rt}
+        method: delete
+        cors: true
+        request:
+          parameter:
+            path:
+              method: true
+              mz_rt: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}
+
+  #return available libraries
+  libraryGet:
+    handler: stasis/library/get.get
+    events:
+    - http:
+        path: library
+        method: get
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}

@@ -2,6 +2,7 @@ import requests
 
 apiUrl = "https://dev-api.metabolomics.us/stasis/target"
 data = {'method': 'test_lib', 'mz_rt': '10_123', 'sample': 'sample1', 'name': 'unknown'}
+data2 = {'method': 'test_del', 'mz_rt': '1_2', 'sample': 'sample1', 'name': 'unknown'}
 newData = {'method': 'test_lib', 'mz_rt': '10_123', 'sample': 'sample1', 'name': 'newStuff'}
 
 
@@ -47,3 +48,10 @@ def test_update_missing_body():
 
 def test_update_empty_body():
     assert 422 == requests.put(apiUrl, json={}).status_code
+
+
+def test_delete():
+    response = requests.post(apiUrl, json=data2)
+    assert 200 == response.status_code
+
+    assert 204 == requests.delete('%s/%s/%s' % (apiUrl, 'test_del', '1_2')).status_code
