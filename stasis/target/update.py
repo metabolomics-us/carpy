@@ -1,7 +1,6 @@
 import time
 
 import simplejson as json
-from boto3.dynamodb.conditions import Key
 from jsonschema import validate, ValidationError
 
 from stasis.headers import __HTTP_HEADERS__
@@ -10,16 +9,17 @@ from stasis.tables import TableManager
 
 
 def update(event, context):
-    if 'body' not in event or not event['body']:
+    print('received event: %s' % json.dumps(event, indent=2))
+
+    if not event.get('body'):
         return {
             'statusCode': 422,
             'headers': __HTTP_HEADERS__,
             'body': json.dumps({'error': 'missing target\'s method and/or mz_rt, please provide these values in body'})
         }
 
-    print('EVENT: %s' % event)
     try:
-        data = json.loads(event['body'])
+        data = json.loads(event.get('body'))
         print('DATA: ', json.dumps(data, indent=2))
 
         timestamp = int(time.time() * 1000)
@@ -37,7 +37,7 @@ def update(event, context):
         }
 
     try:
-        print("data for event triggering: %s" % data)
+        print("data for event triggering: %s" % json.dumps(data, indent=2))
         validate(data, __TARGET_SCHEMA__)
     except ValidationError as ve:
         return {
@@ -48,12 +48,14 @@ def update(event, context):
 
     tm = TableManager()
     try:
+        print('updating...')
         tgt_table = tm.get_target_table()
-        existing = tgt_table.query(
-            KeyConditionExpression=
-            Key('method').eq(data['method']) &
-            Key('mz_rt').eq(data['mz_rt'])
+        existing = tgt_table.get_item(
+            Key={'method': data['method'],
+                 'mz_rt': data['mz_rt']}
         )
+        existing = existing.get('Item')
+        print(existing)
     except Exception as e:
         return {
             'statusCode': 422,
@@ -61,7 +63,7 @@ def update(event, context):
             'body': json.dumps({'error': 'error querying target. %s ' % str(e)})
         }
 
-    if not existing['Items']:
+    if existing is None:
         return {
             'statusCode': 404,
             'headers': __HTTP_HEADERS__,

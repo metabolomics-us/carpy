@@ -24,6 +24,7 @@ def test_update(requireMocking):
     print("NEW targets: %s " % json.loads(response['body'])['targets'])
     assert 200 == response['statusCode']
     updated = json.loads(response['body'])['targets'][0]
+    print('updated: %s' % updated)
     assert 'tgtTest' == updated['sample']
     assert 'newStuff' == updated['name']
 
