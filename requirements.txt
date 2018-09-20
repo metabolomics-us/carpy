@@ -1,5 +1,6 @@
 requests
-boto3
+boto3==1.7.22
+botocore==1.10.22
 untangle
 jsonschema
 watchdog
