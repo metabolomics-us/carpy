@@ -56,7 +56,6 @@ __ACQUISITION_SCHEMA__ = {
             'value': {
                 'type': 'string'
             },
-
             'required': ['name', 'value']
         }
     },

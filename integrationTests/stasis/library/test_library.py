@@ -19,7 +19,7 @@ def test_get():
     assert 200 == response.status_code
     items = response.json()
     print('libraries: %s' % items)
-    assert len(items) == 2
+    assert len(items) >= 2
     assert 'test_lib | unknown | unknown | positive' in items
     assert 'test_other | unknown | unknown | negative' in items
 
