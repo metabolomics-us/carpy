@@ -1,4 +1,5 @@
 from sys import version_info
+
 from setuptools import setup
 
 if version_info.major == 3 and version_info.minor < 6 or \
@@ -18,9 +19,15 @@ setup(name='stasis',
       packages=['stasis'],
       scripts=[],
       setup_requires=['pytest-runner'],
-      tests_require=['pytest', 'pytest-mock', 'pytest-cov', 'moto'],
+      tests_require=[
+          'pytest',
+          'pytest-mock',
+          'pytest-cov',
+          'moto==1.3.3'
+      ],
       install_requires=[
-          'boto3',
+          'boto3==1.7.22',
+          'botocore==1.10.22',
           'untangle',
           'jsonschema',
           'watchdog',
