@@ -33,8 +33,8 @@ def triggerEvent(data):
 
         if existing:
             existing = json.loads(table.load(data['id']))
-            # need to append result to injections
-            data['injections'] = {**data['injections'], **existing['injections']}
+            # need to append and/or update result to injections
+            data['injections'] = {**existing['injections'], **data['injections']}
 
         result = table.save(data['id'], json.dumps(TableManager().sanitize_json_for_dynamo(data)))
 
