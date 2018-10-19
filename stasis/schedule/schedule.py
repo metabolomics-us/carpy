@@ -45,6 +45,10 @@ def schedule(event, context):
                 {
                     "name": "CARROT_METHOD",
                     "value": "{}".format(body['method'])
+                },
+                {
+                    "name": "CARROT_MODE",
+                    "values": "{}".format(body['profile'])
                 }
             ]
         }]}
