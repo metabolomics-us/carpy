@@ -48,7 +48,7 @@ def schedule(event, context):
                 },
                 {
                     "name": "CARROT_MODE",
-                    "values": "{}".format(body['profile'])
+                    "value": "{}".format(body['profile'])
                 }
             ]
         }]}
