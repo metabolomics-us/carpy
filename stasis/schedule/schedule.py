@@ -9,6 +9,38 @@ from stasis.schema import __SCHEDULE__
 from stasis.tracking.create import create
 
 
+def scheduled_queue_size(event, context):
+    """
+    returns the size of the current queue, utilized for scheduling
+    :param event:
+    :param context:
+    :return:
+    """
+
+
+def scheduled_task_size(event, context):
+    """
+
+    returns the current count of tasks in the fargate cluster list. This is required to ensure we are not overwhelming the cluster
+    by scheduling more tasks than we are allowed to run at any given time
+    :param event:
+    :param context:
+    :return:
+    """
+
+    import boto3
+    client = boto3.client('ecs')
+
+    result = len(client.list_tasks(cluster='carrot')['taskArns'])
+
+    print(result)
+    return {
+        'body': json.dumps({'count': result}),
+        'statusCode': 200,
+        'headers': __HTTP_HEADERS__
+    }
+
+
 def schedule(event, context):
     """
     triggers a new calculation task on the fargate server
@@ -48,7 +80,7 @@ def schedule(event, context):
                 },
                 {
                     "name": "CARROT_MODE",
-                    "values": "{}".format(body['profile'])
+                    "value": "{}".format(body['profile'])
                 }
             ]
         }]}

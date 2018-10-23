@@ -1,9 +1,16 @@
 import time
 
 import simplejson as json
+from pytest import fail
 
 from stasis.schedule import schedule as s
 from stasis.tracking import get
+
+
+def test_scheduled_task_size(requireMocking):
+
+    response = s.scheduled_task_size({},{})
+
 
 
 def test_schedule(requireMocking):
@@ -22,6 +29,8 @@ def test_schedule(requireMocking):
         }
     }, {})['body'])
     assert result['status'][0]['value'] == "scheduled"
+
+    assert json.loads(s.scheduled_task_size({},{})['body'])['count'] == 1
 
 
 def test_schedule_failed(requireMocking):
