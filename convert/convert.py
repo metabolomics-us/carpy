@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
 import re
 import time
 
-import simplejson as json
-
 import pandas as pd
 import requests
+import simplejson as json
 
 apiBase = 'https://api.metabolomics.us/stasis'
-common_extensions = ['.d','.mzml','.raw','.cdf','.wiff']
+common_extensions = ['.d', '.mzml', '.raw', '.cdf', '.wiff']
+
 
 def create_metadata(filename, args):
     data = {'sample': filename,
@@ -70,10 +69,10 @@ def schedule(sample, args):
             'env': 'prod',
             'sample': f'{sample}.mzml',
             'method': f'{args.method} | {args.instrument} | {args.column} | {args.ion_mode}',
-            'task_version': 86
+            'task_version': args.task_version
             }
 
-    if(args.test):
+    if (args.test):
         print(data)
         return 200
     else:
@@ -85,7 +84,7 @@ def schedule(sample, args):
 
 
 def fix_sample_filename(sample):
-    regex =  re.compile(r'\.mzml$|\.d$|\.raw$|\.wiff$|\.cdf$', re.IGNORECASE)
+    regex = re.compile(r'\.mzml$|\.d$|\.raw$|\.wiff$|\.cdf$', re.IGNORECASE)
 
     name = regex.sub('', sample)
     return name
@@ -119,13 +118,14 @@ def process(args):
                     # add upload to eclipse and convertion to mzml due to manual processing
                     results[sample]['tracking'] = json.dumps(add_tracking(sample, args))
 
+    delay_secs = 300
     for sample in results.keys():
         if args.schedule:
             tasks_count = requests.get('%s/schedule/cluster/count' % apiBase)
-            if(tasks_count.status_code == 200):
+            if tasks_count.status_code == 200:
                 while int(tasks_count.json()['count']) >= fargate_max_tasks:
-                    print('Waiting for 10 minutes before scheduling...')
-                    time.sleep(300)
+                    print(f'Waiting for {delay_secs/60} minutes before scheduling...')
+                    time.sleep(delay_secs)
                     tasks_count = requests.get('%s/schedule/cluster/count' % apiBase)
 
                 results[sample]['schedule'] = schedule(sample, args)  # push the sample to the pipeline

@@ -1,8 +1,8 @@
-import datetime
-import os
-import glob
-
 import argparse
+import datetime
+import glob
+import os
+
 import dateutil.parser
 
 
