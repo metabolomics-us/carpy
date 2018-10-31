@@ -17,11 +17,10 @@ provider:
     - dynamodb:*
     Resource: "*"
 
-  # commenting for test refactoring of route removal
-  #    - Effect: Allow
-  #      Action:
-  #        - SNS:*
-  #      Resource: { "Fn::Join" : [":", ["arn:aws:sns:${self:custom.region}",  "*:*" ] ]  }
+  - Effect: Allow
+    Action:
+    - sqs:*
+    Resource: { "Fn::Join": [":", ["arn:aws:sqs:${self:custom.region}",  "*:*" ] ]  }
 
   - Effect: Allow
     Action:
@@ -68,6 +67,11 @@ custom:
   ###
   targetTable: "CarrotTargetTable-${self:custom.stage}"
   # spectra bucket S3 or cheaper version
+
+  ###
+  # Queues
+  ###
+  scheduleQueue: "StatisScheduleQueue-${self:custom.stage}"
 
   ###
   # custom domain management
@@ -264,6 +268,16 @@ functions:
         method: get
         cors: true
 
+  # monitors the schedule queue and submits data for calculation
+  # to the fargate cluster
+  schedule_monitor:
+    handler: stasis/schedule/schedule.monitor_queue
+    events:
+    - schedule:
+        rate: rate(1 minute)
+    environment:
+      schedule_queue: ${self:custom.scheduleQueue}
+
   #returns all statuses
   statusGet:
     handler: stasis/status/get.get
@@ -361,3 +375,4 @@ functions:
     #defines to which topic we want to connect
     environment:
       targetTable: ${self:custom.targetTable}
+

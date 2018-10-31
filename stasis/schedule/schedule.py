@@ -6,7 +6,10 @@ from jsonschema import validate
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __SCHEDULE__
+from stasis.service.Queue import Queue
 from stasis.tracking.create import create
+
+MAX_FARGATE_TASKS = 50
 
 
 def scheduled_queue_size(event, context):
@@ -42,6 +45,109 @@ def scheduled_task_size(event, context):
 
 
 def schedule(event, context):
+    """
+    schedules the given even to the internal queuing system
+    :param event:
+    :param context:
+    :return:
+    """
+    body = json.loads(event['body'])
+
+    # get topic refrence
+    import boto3
+    client = boto3.client('sqs')
+
+    # if topic exists, we just reuse it
+    arn = client.create_queue(QueueName=os.environ['schedule_queue'])['QueueUrl']
+
+    serialized = json.dumps(body, use_decimal=True)
+    # submit item to queue for routing to the correct persistence
+
+    result = client.send_message(
+        QueueUrl=arn,
+        MessageBody=json.dumps({'default': serialized}),
+    )
+
+    print(result)
+    return {
+        'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
+        'headers': __HTTP_HEADERS__,
+        'body': serialized
+    }
+
+
+def monitor_queue(event, context):
+    """
+    monitors the fargate queue and if task size is less than < x it will
+    try to schedule new tasks. This should be called from cron or another
+    scheduled interval
+    :param event:
+    :param context:
+    :return:
+    """
+
+    # 1. check fargate queue
+
+    import boto3
+    client = boto3.client('ecs')
+
+    result = len(client.list_tasks(cluster='carrot')['taskArns'])
+
+    if result > (MAX_FARGATE_TASKS - 1):
+        print("fargate queue was full, no scheduling possible")
+        return
+
+    jobs = MAX_FARGATE_TASKS - result
+
+    # receive message from queue
+    client = boto3.client('sqs')
+
+    # if topic exists, we just reuse it
+    arn = client.create_queue(QueueName=os.environ['schedule_queue'])['QueueUrl']
+
+    message = client.receive_message(
+        QueueUrl=arn,
+        AttributeNames=[
+            'All'
+        ],
+        MessageAttributeNames=[
+            'string',
+        ],
+        MaxNumberOfMessages=1,
+        VisibilityTimeout=1,
+        WaitTimeSeconds=1,
+        ReceiveRequestAttemptId='string'
+    )
+
+    if 'Messages' not in message:
+        print("no messages received: {}".format(message))
+        return {
+            'statusCode': 200,
+            'headers': __HTTP_HEADERS__
+        }
+
+    messages = message['Messages']
+
+    if len(messages) > 0:
+        result = []
+        for message in json.loads(messages):
+            body = json.loads(message['Body'])['default']
+            result.append(schedule_to_fargate({'body': body}, {}))
+
+        return {
+            'statusCode': 200,
+            'headers': __HTTP_HEADERS__,
+            'body': json.dumps({'scheduled': len(result)})
+        }
+
+    else:
+        return {
+            'statusCode': 200,
+            'headers': __HTTP_HEADERS__
+        }
+
+
+def schedule_to_fargate(event, context):
     """
     triggers a new calculation task on the fargate server
     :param event:
