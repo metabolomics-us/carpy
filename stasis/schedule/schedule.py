@@ -144,7 +144,9 @@ def monitor_queue(event, context):
     if len(messages) > 0:
         print("received {} messages".format(len(messages)))
         result = []
-        for message in json.loads(messages):
+        print(messages)
+        for message in messages:
+            print("current message: {}".format(message))
             body = json.loads(message['Body'])['default']
             print("schedule: {}".format(body))
             result.append(schedule_to_fargate({'body': body}, {}))
