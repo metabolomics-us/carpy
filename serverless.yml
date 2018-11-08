@@ -256,7 +256,7 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
-
+      schedule_queue: ${self:custom.scheduleQueue}
   #returns the count of scheduled tasks in the fargate cluster
   #no to be confused with the actual queue
   schedule_task_count:
