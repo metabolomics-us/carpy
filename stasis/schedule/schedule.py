@@ -76,6 +76,21 @@ def schedule(event, context):
     }
 
 
+def _free_task_count() -> int:
+    # 1. check fargate queue
+
+    import boto3
+    client = boto3.client('ecs')
+
+    result = len(client.list_tasks(cluster='carrot')['taskArns'])
+
+    if result > (MAX_FARGATE_TASKS - 1):
+        print("fargate queue was full, no scheduling possible")
+        return 0
+    else:
+        return MAX_FARGATE_TASKS - result
+
+
 def monitor_queue(event, context):
     """
     monitors the fargate queue and if task size is less than < x it will
@@ -86,24 +101,22 @@ def monitor_queue(event, context):
     :return:
     """
 
-    # 1. check fargate queue
-
     import boto3
-    client = boto3.client('ecs')
-
-    result = len(client.list_tasks(cluster='carrot')['taskArns'])
-
-    if result > (MAX_FARGATE_TASKS - 1):
-        print("fargate queue was full, no scheduling possible")
-        return
-
-    jobs = MAX_FARGATE_TASKS - result
-
     # receive message from queue
     client = boto3.client('sqs')
 
     # if topic exists, we just reuse it
     arn = client.create_queue(QueueName=os.environ['schedule_queue'])['QueueUrl']
+
+    slots = _free_task_count()
+
+    if slots == 0:
+        return {
+            'statusCode': 200,
+            'headers': __HTTP_HEADERS__
+        }
+
+    print("we have: {} slots free for tasks".format(slots))
 
     message = client.receive_message(
         QueueUrl=arn,
@@ -113,7 +126,7 @@ def monitor_queue(event, context):
         MessageAttributeNames=[
             'string',
         ],
-        MaxNumberOfMessages=1,
+        MaxNumberOfMessages=_free_task_count(),
         VisibilityTimeout=1,
         WaitTimeSeconds=1,
         ReceiveRequestAttemptId='string'
