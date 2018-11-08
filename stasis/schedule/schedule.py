@@ -118,6 +118,7 @@ def monitor_queue(event, context):
 
     print("we have: {} slots free for tasks".format(slots))
 
+    message_count = slots if 0 < slots <= 10 else 10 if slots > 0 else 1
     message = client.receive_message(
         QueueUrl=arn,
         AttributeNames=[
@@ -126,7 +127,7 @@ def monitor_queue(event, context):
         MessageAttributeNames=[
             'string',
         ],
-        MaxNumberOfMessages=_free_task_count(),
+        MaxNumberOfMessages=message_count,
         VisibilityTimeout=1,
         WaitTimeSeconds=1,
         ReceiveRequestAttemptId='string'
