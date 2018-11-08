@@ -147,11 +147,18 @@ def monitor_queue(event, context):
         result = []
         print(messages)
         for message in messages:
+            receipt_handle = message['ReceiptHandle']
             print("current message: {}".format(message))
             body = json.loads(message['Body'])['default']
             print("schedule: {}".format(body))
-            result.append(schedule_to_fargate({'body': body}, {}))
-
+            try:
+                result.append(schedule_to_fargate({'body': body}, {}))
+                client.delete_message(
+                    QueueUrl=arn,
+                    ReceiptHandle=receipt_handle
+                )
+            except Exception as e:
+                return
         return {
             'statusCode': 200,
             'headers': __HTTP_HEADERS__,

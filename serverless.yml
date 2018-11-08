@@ -254,8 +254,6 @@ functions:
 
     #defines to which topic we want to connect
     environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
       schedule_queue: ${self:custom.scheduleQueue}
   #returns the count of scheduled tasks in the fargate cluster
   #no to be confused with the actual queue
@@ -277,8 +275,11 @@ functions:
         rate: rate(1 minute)
     environment:
       schedule_queue: ${self:custom.scheduleQueue}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
 
-  #returns all statuses
+  #
+  #
   statusGet:
     handler: stasis/status/get.get
     events:
