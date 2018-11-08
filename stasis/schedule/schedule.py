@@ -129,9 +129,11 @@ def monitor_queue(event, context):
     messages = message['Messages']
 
     if len(messages) > 0:
+        print("received {} messages".format(len(messages)))
         result = []
         for message in json.loads(messages):
             body = json.loads(message['Body'])['default']
+            print("schedule: {}".format(body))
             result.append(schedule_to_fargate({'body': body}, {}))
 
         return {
@@ -141,6 +143,7 @@ def monitor_queue(event, context):
         }
 
     else:
+        print("no messages received!")
         return {
             'statusCode': 200,
             'headers': __HTTP_HEADERS__
