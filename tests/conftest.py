@@ -23,6 +23,10 @@ def requireMocking():
     sns = moto.mock_sns()
     sns.start()
 
+    sqs = moto.mock_sqs()
+    sqs.start(
+    )
+
     dynamo = moto.mock_dynamodb2()
     dynamo.start()
 
@@ -42,6 +46,7 @@ def requireMocking():
     session.client('sns')
     session.client('s3')
 
+    os.environ["schedule_queue"] = "test_schedule"
     os.environ["topic"] = "UnitTestTopic"
     os.environ["trackingTable"] = "UnitTrackingTable"
     os.environ["acquisitionTable"] = "UnitAcquisitionTable"
@@ -51,6 +56,7 @@ def requireMocking():
     dynamodb = boto3.resource('dynamodb')
 
     yield
+    sqs.stop()
     sns.stop()
     dynamo.stop()
     lamb.stop()
