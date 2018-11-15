@@ -17,8 +17,8 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--species', help='Species the sample comes from.', default='human')
     parser.add_argument('-o', '--organ', help='Organ from which the sample was extracted.', default='plasma')
     parser.add_argument('-a', '--acquisition', help='Creates acquisition metadata for each file', action='store_true')
-    parser.add_argument('-v', '--task_version', help='Submits the sample to a specific task revision', required=True,
-                        default='86')
+    parser.add_argument('-v', '--task_version', help='Submits the sample to a specific task revision', default='86')
+    parser.add_argument('-x', '--extra_profiles', help='Comma separated list of extra profiles to pass to springboot')
     parser.add_argument('-p', '--prepare', help='Preloads the acquisition data of samples', action='store_true')
     parser.add_argument('-r', '--schedule', help='Schedules the processing of samples', action='store_true')
     parser.add_argument('-t', '--test', help='Test run. Do not submit any data.', action='store_true')
