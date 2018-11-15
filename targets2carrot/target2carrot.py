@@ -1,4 +1,5 @@
 import argparse
+
 import pandas as pd
 from ruamel.yaml import YAML
 
@@ -10,10 +11,10 @@ if __name__ == "__main__":
                              'Metabolite name,Average Mz,Average Rt(min),istd')
     parser.add_argument('-o', '--output', help='name of the yml file to be created')
     parser.add_argument('-s', '--study', help='name of the study', required=True)
-    parser.add_argument('-i', '--instrument', help='name of the instrument for the library', required=False, default = 'test')
-    parser.add_argument('-c', '--column', help='name of the column for the library', required=False, default = 'test')
-    parser.add_argument('-m', '--mode', help='ion mode. [\'positive\' or \'negative\']', required=False,
-                        default = 'positive', choices=['positive','negative'])
+    parser.add_argument('-i', '--instrument', help='name of the instrument for the library', default='test')
+    parser.add_argument('-c', '--column', help='name of the column for the library', default='test')
+    parser.add_argument('-m', '--mode', help='ion mode. [\'positive\' or \'negative\']', default='positive',
+                        choices=['positive', 'negative'])
 
     args = parser.parse_args()
     if args.file == '__unknown__' or args.study == "__unknown__":
@@ -33,7 +34,7 @@ if __name__ == "__main__":
              'retentionTimeUnit': "minutes",
              'isInternalStandard': target['istd'],
              'requiredForCorrection': False,
-             'confirmed': target['istd']}
+             'confirmed': True}
         targets.append(t)
 
     print('---------------------------------')
