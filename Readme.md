@@ -78,7 +78,7 @@ Compares and produces feedback for several topics:
 - Checks the results on aws agains a previous list of result files (obtained with the aws-cli app)
 
 ### Usage
-If you _REALY, REALY!_ want to use this, refer to the code.
+If you _REALLY, REALLY!_ want to use this, refer to the code.
 
 ---
 ## Old incomplete and unused scripts
