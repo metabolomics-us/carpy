@@ -69,3 +69,4 @@ def test_create_not_merging_statuses():
     assert 200 == result.status_code
     assert 'processed-sample' == result.json()['sample']
     assert 11 == len(result.json()['status'])
+

@@ -1,3 +1,4 @@
+import pytest
 import simplejson as json
 
 from stasis.tables import TableManager
@@ -63,21 +64,18 @@ def test_get_inexistent_sample_returns_404(requireMocking):
     assert "sample not found" == json.loads(result['body'])['error']
 
 
-def test_get_experiment(requireMocking):
+@pytest.mark.parametrize('sample_count', [5, 10, 100, 1000, 10000])
+def test_get_experiment(requireMocking, sample_count):
     tm = TableManager()
     table = tm.get_tracking_table()
-    table.put_item(Item={
-        "id": "test",
-        "experiment": "1",
-        "sample": "test",
-        "status": [{"time": 1524772162698, "value": "PROCESSING", "fileHandle": "test.mzml"}]
-    })
-    table.put_item(Item={
-        "id": "test2",
-        "experiment": "1",
-        "sample": "test2",
-        "status": [{"time": 1524772162698, "value": "PROCESSING", "fileHandle": "test2.mzml"}]
-    })
+
+    for x in range(0, sample_count):
+        table.put_item(Item={
+            "id": "test-{}".format(x),
+            "experiment": "1",
+            "sample": "test-{}".format(x),
+            "status": [{"time": 1524772162698, "value": "PROCESSING", "fileHandle": "test.mzml"}]
+        })
 
     result = get.get_experiment({
         'pathParameters': {
@@ -85,5 +83,7 @@ def test_get_experiment(requireMocking):
         }
     }, {})
 
+    print(result
+          )
     assert 200 == result['statusCode']
-    assert 2 == len(json.loads(result['body']))
+    assert sample_count == len(json.loads(result['body']))
