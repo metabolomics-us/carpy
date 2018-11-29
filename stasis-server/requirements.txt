@@ -1,0 +1,10 @@
+requests
+boto3==1.7.22
+botocore==1.10.22
+untangle
+jsonschema
+watchdog
+pytest==3.7.1
+moto==1.3.3
+simplejson
+boltons

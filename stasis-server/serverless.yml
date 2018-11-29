@@ -1,0 +1,379 @@
+service: stasis
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+plugins:
+- serverless-domain-manager
+- serverless-python-requirements
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+
+  #required permissions
+  iamRoleStatements:
+  - Effect: Allow
+    Action:
+    - dynamodb:*
+    Resource: "*"
+
+  - Effect: Allow
+    Action:
+    - sqs:*
+    Resource: { "Fn::Join": [":", ["arn:aws:sqs:${self:custom.region}",  "*:*" ] ]  }
+
+  - Effect: Allow
+    Action:
+    - s3:*
+    Resource: "arn:aws:s3:::*"
+  - Effect: "Allow"
+    Action:
+    - ecs:RunTask
+    - ecs:ListTasks
+    Resource: "*"
+  - Effect: Allow
+    Action:
+    - iam:PassRole
+    Resource: "*"
+
+
+
+  memorySize: 128
+  timeout: 90
+  versionFunctions: false
+
+  logRetentionInDays: 3
+
+  #where to store out data, needs to be manually created!
+  deploymentBucket:
+    name: lambdas-stasis
+
+############################################################################################
+#custom configuration settings
+############################################################################################
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+  ###
+  # Stasis resources definitions
+  ###
+  trackingTable: "StasisTrackingTable-${self:custom.stage}"
+  acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
+  resultTable: "wcmc-data-stasis-result-${self:custom.stage}"
+
+  ###
+  # Carrot resources definition
+  ###
+  targetTable: "CarrotTargetTable-${self:custom.stage}"
+  # spectra bucket S3 or cheaper version
+
+  ###
+  # Queues
+  ###
+  scheduleQueue: "StatisScheduleQueue-${self:custom.stage}"
+
+  ###
+  # custom domain management
+  ###
+
+  domains:
+    prod: api.metabolomics.us
+    test: test-api.metabolomics.us
+    dev:  dev-api.metabolomics.us
+
+  customDomain:
+    basePath: "stasis"
+    domainName: ${self:custom.domains.${self:custom.stage}}
+    stage: "${self:custom.stage}"
+    createRoute53Record: true
+
+  pythonRequirements:
+    dockerizePip: true
+    slim: true
+    slimPatterns:
+    - "**/*.egg-info*"
+    - "**/test/*"
+    - ".venv/*"
+############################################################################################
+# this section defines all lambda function and triggers
+############################################################################################
+functions:
+
+
+  #fetches an result record
+  resultGet:
+    handler: stasis/results/get.get
+    events:
+    - http:
+        path: result/{sample}
+        method: get
+        cors: true
+        request:
+          parameter:
+            paths:
+              sample: true
+    #defines to which topic we want to connect
+    environment:
+      resultTable: ${self:custom.resultTable}
+
+  #fetches an result record
+  resultCreate:
+    handler: stasis/results/create.create
+    events:
+    - http:
+        path: result
+        method: post
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      resultTable: ${self:custom.resultTable}
+
+
+  #creates a new tracking record in the system
+  trackingCreate:
+    handler: stasis/tracking/create.create
+    events:
+    - http:
+        path: tracking
+        method: post
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  #fetches an existing tracking record from the system
+  trackingGet:
+    handler: stasis/tracking/get.get
+    events:
+    - http:
+        path: tracking/{sample}
+        method: get
+        cors: true
+        request:
+          parameter:
+            paths:
+              sample: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  #fetches an existing tracking record from the system
+  trackingDelete:
+    handler: stasis/tracking/delete.delete
+    events:
+    - http:
+        path: tracking/{sample}
+        method: delete
+        cors: true
+        request:
+          parameter:
+            paths:
+              sample: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  #fetches
+  trackingExperiment:
+    handler: stasis/tracking/get.get_experiment
+    events:
+    - http:
+        path: experiment/{experiment}
+        method: get
+        cors: true
+        request:
+          parameter:
+            paths:
+              experiment: true
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  #fetches an acquisition record
+  acquisitionGet:
+    handler: stasis/acquisition/get.get
+    events:
+    - http:
+        path: acquisition/{sample}
+        method: get
+        cors: true
+        request:
+          parameter:
+            paths:
+              sample: true
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  #fetches an acquisition record
+  acquisitionCreate:
+    handler: stasis/acquisition/create.create
+    events:
+    - http:
+        path: acquisition
+        method: post
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  #imports data from MiniX
+  acquisitionCreateFromMinix:
+    handler: stasis/acquisition/create.fromMinix
+    events:
+    - http:
+        path: acquisition/import/minix
+        method: post
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  #schedule data to stasis, for handling the processing on the backend
+  schedule:
+    handler: stasis/schedule/schedule.schedule
+    events:
+    - http:
+        path: schedule
+        method: post
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      schedule_queue: ${self:custom.scheduleQueue}
+  #returns the count of scheduled tasks in the fargate cluster
+  #no to be confused with the actual queue
+  schedule_task_count:
+
+    handler: stasis/schedule/schedule.scheduled_task_size
+    events:
+    - http:
+        path: schedule/cluster/count
+        method: get
+        cors: true
+
+  # monitors the schedule queue and submits data for calculation
+  # to the fargate cluster
+  schedule_monitor:
+    handler: stasis/schedule/schedule.monitor_queue
+    events:
+    - schedule:
+        rate: rate(1 minute)
+    environment:
+      schedule_queue: ${self:custom.scheduleQueue}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+
+  #
+  #
+  statusGet:
+    handler: stasis/status/get.get
+    events:
+    - http:
+        path: status
+        method: get
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  #returns all targets for a method or a target matching method and mz_rt
+  targetGet:
+    handler: stasis/target/get.get
+    events:
+    - http:
+        path: target/{method}
+        method: get
+        cors: true
+        request:
+          parameter:
+            paths:
+              method: true
+              mz_rt: false
+    - http:
+        path: target/{method}/{mz_rt}
+        method: get
+        cors: true
+        request:
+          parameter:
+            path:
+              method: true
+              mz_rt: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}
+
+  #creates a target
+  targetPost:
+    handler: stasis/target/create.create
+    events:
+    - http:
+        path: target
+        method: post
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}
+
+  #updates a target
+  targetPut:
+    handler: stasis/target/update.update
+    events:
+    - http:
+        path: target
+        method: put
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}
+
+  #updates a target
+  targetDelete:
+    handler: stasis/target/delete.delete
+    events:
+    - http:
+        path: target/{method}/{mz_rt}
+        method: delete
+        cors: true
+        request:
+          parameter:
+            path:
+              method: true
+              mz_rt: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}
+
+  #return available libraries
+  libraryGet:
+    handler: stasis/library/get.get
+    events:
+    - http:
+        path: library
+        method: get
+        cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      targetTable: ${self:custom.targetTable}
+
