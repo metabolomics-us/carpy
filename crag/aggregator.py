@@ -14,8 +14,9 @@ stasis_url = "https://api.metabolomics.us/stasis"
 test_url = "https://test-api.metabolomics.us/stasis"
 
 
-def getExperimentFiles(experiment) -> [str]:
+def get_experiment_files(experiment) -> [str]:
     """
+    NOT USED ATM
     Calls the stasis api to get a list files for an experiment
     :param experiment: name of experiment for which to get the list of files
     :return: dictionary with results or {error: msg}
@@ -30,14 +31,15 @@ def getExperimentFiles(experiment) -> [str]:
     return files
 
 
-def getSampleTracking(filename):
+def get_sample_tracking(filename):
     """
+    NOT USED ATM
     Calls the stasis api to get the tracking status for a single file
     :param filename: name of file to get tracking info from
     :return: dictionary with tracking or {error: msg}
     """
     print(f'{time.strftime("%H:%M:%S")} - Getting filename status')
-    response = requests.get(stasis_url + "/tracking/" + filename)
+    response = requests.get(stasis_url + '/tracking/' + filename)
 
     if response.status_code == 200:
         return response.json()
@@ -45,10 +47,30 @@ def getSampleTracking(filename):
         return {"error": "no tracking info"}
 
 
-def getFileResults(filename):
+def get_sample_metadata(filename, log):
+    """
+    Calls the stasis api to get the metadata for a single file
+    :param filename: name of file to get metadata from
+    :param log:
+    :return: dictionary with metadata or {error: msg}
+    """
+    response = requests.get(stasis_url + '/acquisition/' + filename)
+
+    if log:
+        print(response)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": "no metadata info"}
+
+
+
+def getFileResults(filename, log):
     """
     Calls the stasis api to get the results for a single file
     :param filename: name of file to get results from
+    :param log:
     :return: dictionary with results or {error: msg}
     """
 
@@ -58,24 +80,50 @@ def getFileResults(filename):
     response = requests.get(stasis_url + "/result/" + filename)
 
     if response.status_code == 200:
-        return response.json()
+        data = response.json()
+        data['metadata'] = get_sample_metadata(filename, log)
+
     else:
-        return {"error": f'no results. {response.reason}'}
+        data = {'error': f'no results. {response.reason}'}
+
+    if log:
+        print(response.json())
+
+    return data
+
+
+def findReplaced(value):
+    """
+    Returns the intensity value only for replaced data
+    :param value: the entire annotation object
+    :return: intensity value if replaced or 0 if not replaced
+    """
+    if value['replaced']:
+        return round(value["intensity"])
+    else:
+        return 0
 
 
 def format_sample(data):
+    """
+    filters the incoming sample data separating intensity, mass, retention index and replacement values
+    :param data:
+    :return:
+    """
     intensities = []
     masses = []
     rts = []
     curve = []
+    replaced = []
 
     for k, v in data['injections'].items():
         intensities = {k: [round(r['annotation']['intensity']) for r in v['results']]}
-        masses = {k: [r['annotation']['mass'] for r in v['results']]}
-        rts = {k: [r['annotation']['retentionIndex'] for r in v['results']]}
+        masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
+        rts = {k: [round(r['annotation']['retentionIndex'], 2) for r in v['results']]}
         curve = {k: [r for r in v['correction']['curve']]}
+        replaced = {k: [findReplaced(r['annotation']) for r in v['results']]}
 
-    return [intensities, masses, rts, curve]
+    return [intensities, masses, rts, curve, replaced]
 
 
 def format_metadata(data):
@@ -94,33 +142,43 @@ def format_metadata(data):
     names2 = [name.rsplit('_', maxsplit=1)[0] if pattern.match(name) else name for name in names]
 
     metadata = pd.DataFrame({'name': names2, 'ri(s)': rts, 'mz': masses, 'inchikey': inchikeys,
-                             'delta': pd.np.nan, AVG_BR_: pd.np.nan, RSD_BR_: pd.np.nan})
+                             AVG_BR_: pd.np.nan, RSD_BR_: pd.np.nan})
     return metadata
 
 
-def export_excel(intensity, mass, rt, curve, args):
+def export_excel(intensity, mass, rt, curve, replaced, infile, test):
     # saving excel file
     print(f'{time.strftime("%H:%M:%S")} - Exporting excel file')
-    file, ext = os.path.splitext(args.input)
+    file, ext = os.path.splitext(infile)
     output_name = f'{file}_results.xlsx'
 
-    if args.test:
+    if test:
         output_name = f'{file}_testResults.xlsx'
 
     intensity.set_index('name')
     mass.set_index('name')
     rt.set_index('name')
+    replaced.set_index('name')
 
     writer = pd.ExcelWriter(output_name)
     intensity.fillna('').to_excel(writer, 'Intensity matrix')
-    mass.fillna('NA').to_excel(writer, 'Mass matrix')
-    rt.fillna('NA').to_excel(writer, 'Retention index matrix')
-    curve.fillna('NA').to_excel(writer, 'Correction curves')
+    mass.fillna('').to_excel(writer, 'Mass matrix')
+    rt.fillna('').to_excel(writer, 'Retention index matrix')
+    replaced.fillna('').to_excel(writer, 'Replaced values')
+    curve.fillna('').to_excel(writer, 'Correction curves')
     writer.save()
 
 
 def calculate_delta(intensity, mass, rt):
+    """
+    NOT USED ANYMORE
+    :param intensity:
+    :param mass:
+    :param rt:
+    :return:
+    """
     print(f'{time.strftime("%H:%M:%S")} - Calculating ranges for intensity, mass and RT (ignoring missing results)')
+    numpy.seterr(invalid='log')
 
     for i in range(len(intensity)):
         intensity.loc[i, 'delta'] = intensity.iloc[i, 4:].max() - intensity.iloc[i, 4:].min()
@@ -129,8 +187,17 @@ def calculate_delta(intensity, mass, rt):
 
 
 def calculate_average(intensity, mass, rt, biorecs):
-    print(
-        f'{time.strftime("%H:%M:%S")} - Calculating average of biorecs for intensity, mass and RT (ignoring missing results)')
+    """
+    Calculates the average intensity, mass and retention index of biorecs
+    :param intensity:
+    :param mass:
+    :param rt:
+    :param biorecs:
+    :return:
+    """
+    print(f'{time.strftime("%H:%M:%S")} - Calculating average of biorecs for intensity, mass and RT (ignoring missing '
+          f'results)')
+    numpy.seterr(invalid='log')
 
     for i in range(len(intensity)):
         intensity.loc[i, AVG_BR_] = intensity.loc[i, biorecs].mean()
@@ -139,8 +206,16 @@ def calculate_average(intensity, mass, rt, biorecs):
 
 
 def calculate_rsd(intensity, mass, rt, biorecs):
-    print(
-        f'{time.strftime("%H:%M:%S")} - Calculating %RDS of biorecs for intensity, mass and RT (ignoring missing results)')
+    """
+    Calculates intensity, mass and retention index Relative Standard Deviation of biorecs
+    :param intensity:
+    :param mass:
+    :param rt:
+    :param biorecs:
+    :return:
+    """
+    print(f'{time.strftime("%H:%M:%S")} - Calculating %RDS of biorecs for intensity, mass and RT (ignoring missing '
+          f'results)')
     size = range(len(intensity))
     numpy.seterr(invalid='log')
 
@@ -155,6 +230,12 @@ def calculate_rsd(intensity, mass, rt, biorecs):
 
 
 def chunker(list, size):
+    """
+    Splits a list in 'pages'
+    :param list: original list to split
+    :param size: amount of items in each 'page'
+    :return: list of splits
+    """
     return (list[pos:pos + size] for pos in range(0, len(list), size))
 
 
@@ -171,54 +252,65 @@ def aggregate(args):
     # files = getExperimentFiles(args.experiment)
     # print(files)
 
-    if not os.path.isfile(args.input):
-        print(f'Can\'t find the file {args.input}')
+    for file in args.infiles:
+        process_file(file, args)
+
+
+def process_file(infile, args):
+    if not os.path.isfile(infile):
+        print(f'Can\'t find the file {infile}')
         exit(-1)
 
-    with open(args.input) as processed:
-        files = [p.strip() for p in processed.readlines() if p]
+    with open(infile) as processed:
+        samples = [p.strip() for p in processed.readlines() if p]
 
     if args.test:
-        files = files[3:5]
+        samples = samples[3:7]
 
     # creating target section
     first_data = ""
-    for file in files:
-        if file in ['samples']: continue
-        first_data = getFileResults(file)
+    for sample in samples:
+        if sample in ['samples']: continue
+        first_data = getFileResults(sample, False)
         if 'error' not in first_data: break
-
     intensity = format_metadata(first_data)
     mass = format_metadata(first_data)
     rt = format_metadata(first_data)
     curve = format_metadata(first_data)
-
+    replaced = format_metadata(first_data)
     # adding intensity matrix
-    for chunk in chunker(files, 1000):
-        for file in chunk:
-            if file in ['samples']: continue
-            data = getFileResults(file)
+    for chunk in chunker(samples, 1000):
+        for sample in chunk:
+            if sample in ['samples']: continue
+            data = getFileResults(sample, False)
             if 'error' not in data:
                 formatted = format_sample(data)
-                intensity[file] = pd.DataFrame.from_dict(formatted[0])
-                mass[file] = pd.DataFrame.from_dict(formatted[1])
-                rt[file] = pd.DataFrame.from_dict(formatted[2])
-                curve[file] = pd.DataFrame.from_dict(formatted[3])
+                intensity[sample] = pd.DataFrame.from_dict(formatted[0])
+                mass[sample] = pd.DataFrame.from_dict(formatted[1])
+                rt[sample] = pd.DataFrame.from_dict(formatted[2])
+                curve[sample] = pd.DataFrame.from_dict(formatted[3])
+                replaced[sample] = pd.DataFrame.from_dict(formatted[4])
             else:
-                intensity[file] = pd.np.nan
-                mass[file] = pd.np.nan
-                rt[file] = pd.np.nan
+                intensity[sample] = pd.np.nan
+                mass[sample] = pd.np.nan
+                rt[sample] = pd.np.nan
+                replaced[sample] = pd.np.nan
 
-    biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower()]
-
+    biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower() or 'qc' in str(br).lower()]
     pd.set_option('display.max_rows', 100)
     pd.set_option('display.max_columns', 10)
     pd.set_option('display.width', 1000)
 
-    calculate_delta(intensity, mass, rt)
-
-    calculate_average(intensity, mass, rt, biorecs)
-
-    calculate_rsd(intensity, mass, rt, biorecs)
-
-    export_excel(intensity, mass, rt, curve, args)
+    #    calculate_delta(intensity, mass, rt)
+    try:
+        calculate_average(intensity, mass, rt, biorecs)
+    except Exception as e:
+        print("Error in average calculation: " + e)
+    try:
+        calculate_rsd(intensity, mass, rt, biorecs)
+    except Exception as e:
+        print("Error in average calculation: " + e)
+    try:
+        export_excel(intensity, mass, rt, curve, replaced, infile, args.test)
+    except Exception as e:
+        print("Error in average calculation: " + e)
