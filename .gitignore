@@ -1,7 +1,0 @@
-*.json
-*.txt
-*.pyc
-!requirements.txt
-
-.idea/
-__pycache__
