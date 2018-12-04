@@ -3,38 +3,43 @@ service: stasis
 frameworkVersion: ">=1.1.0 <2.0.0"
 
 plugins:
-- serverless-domain-manager
-- serverless-python-requirements
+  - serverless-domain-manager
+  - serverless-python-requirements
 provider:
   name: aws
   runtime: python3.6
   region: us-west-2
 
+  # simple security based on stages and api keys
+  # one fits all for production
+  apiKeys:
+    - "stasis-${self:custom.stage}"
+
   #required permissions
   iamRoleStatements:
-  - Effect: Allow
-    Action:
-    - dynamodb:*
-    Resource: "*"
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+      Resource: "*"
 
-  - Effect: Allow
-    Action:
-    - sqs:*
-    Resource: { "Fn::Join": [":", ["arn:aws:sqs:${self:custom.region}",  "*:*" ] ]  }
+    - Effect: Allow
+      Action:
+        - sqs:*
+      Resource: { "Fn::Join": [":", ["arn:aws:sqs:${self:custom.region}",  "*:*" ] ]  }
 
-  - Effect: Allow
-    Action:
-    - s3:*
-    Resource: "arn:aws:s3:::*"
-  - Effect: "Allow"
-    Action:
-    - ecs:RunTask
-    - ecs:ListTasks
-    Resource: "*"
-  - Effect: Allow
-    Action:
-    - iam:PassRole
-    Resource: "*"
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource: "arn:aws:s3:::*"
+    - Effect: "Allow"
+      Action:
+        - ecs:RunTask
+        - ecs:ListTasks
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - iam:PassRole
+      Resource: "*"
 
 
 
@@ -92,9 +97,9 @@ custom:
     dockerizePip: true
     slim: true
     slimPatterns:
-    - "**/*.egg-info*"
-    - "**/test/*"
-    - ".venv/*"
+      - "**/*.egg-info*"
+      - "**/test/*"
+      - ".venv/*"
 ############################################################################################
 # this section defines all lambda function and triggers
 ############################################################################################
@@ -105,14 +110,15 @@ functions:
   resultGet:
     handler: stasis/results/get.get
     events:
-    - http:
-        path: result/{sample}
-        method: get
-        cors: true
-        request:
-          parameter:
-            paths:
-              sample: true
+      - http:
+          private: true
+          path: result/{sample}
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                sample: true
     #defines to which topic we want to connect
     environment:
       resultTable: ${self:custom.resultTable}
@@ -121,10 +127,11 @@ functions:
   resultCreate:
     handler: stasis/results/create.create
     events:
-    - http:
-        path: result
-        method: post
-        cors: true
+      - http:
+          path: result
+          private: true
+          method: post
+          cors: true
 
     #defines to which topic we want to connect
     environment:
@@ -135,10 +142,11 @@ functions:
   trackingCreate:
     handler: stasis/tracking/create.create
     events:
-    - http:
-        path: tracking
-        method: post
-        cors: true
+      - http:
+          path: tracking
+          private: true
+          method: post
+          cors: true
 
     #defines to which topic we want to connect
     environment:
@@ -149,14 +157,15 @@ functions:
   trackingGet:
     handler: stasis/tracking/get.get
     events:
-    - http:
-        path: tracking/{sample}
-        method: get
-        cors: true
-        request:
-          parameter:
-            paths:
-              sample: true
+      - http:
+          path: tracking/{sample}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                sample: true
 
     #defines to which topic we want to connect
     environment:
@@ -167,14 +176,15 @@ functions:
   trackingDelete:
     handler: stasis/tracking/delete.delete
     events:
-    - http:
-        path: tracking/{sample}
-        method: delete
-        cors: true
-        request:
-          parameter:
-            paths:
-              sample: true
+      - http:
+          path: tracking/{sample}
+          private: true
+          method: delete
+          cors: true
+          request:
+            parameter:
+              paths:
+                sample: true
 
     #defines to which topic we want to connect
     environment:
@@ -185,14 +195,15 @@ functions:
   trackingExperiment:
     handler: stasis/tracking/get.get_experiment
     events:
-    - http:
-        path: experiment/{experiment}
-        method: get
-        cors: true
-        request:
-          parameter:
-            paths:
-              experiment: true
+      - http:
+          path: experiment/{experiment}
+          method: get
+          private: true
+          cors: true
+          request:
+            parameter:
+              paths:
+                experiment: true
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -202,14 +213,15 @@ functions:
   acquisitionGet:
     handler: stasis/acquisition/get.get
     events:
-    - http:
-        path: acquisition/{sample}
-        method: get
-        cors: true
-        request:
-          parameter:
-            paths:
-              sample: true
+      - http:
+          path: acquisition/{sample}
+          method: get
+          cors: true
+          private: true
+          request:
+            parameter:
+              paths:
+                sample: true
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -219,10 +231,11 @@ functions:
   acquisitionCreate:
     handler: stasis/acquisition/create.create
     events:
-    - http:
-        path: acquisition
-        method: post
-        cors: true
+      - http:
+          path: acquisition
+          method: post
+          private: true
+          cors: true
 
     #defines to which topic we want to connect
     environment:
@@ -233,10 +246,11 @@ functions:
   acquisitionCreateFromMinix:
     handler: stasis/acquisition/create.fromMinix
     events:
-    - http:
-        path: acquisition/import/minix
-        method: post
-        cors: true
+      - http:
+          path: acquisition/import/minix
+          private: true
+          method: post
+          cors: true
 
     #defines to which topic we want to connect
     environment:
@@ -247,10 +261,11 @@ functions:
   schedule:
     handler: stasis/schedule/schedule.schedule
     events:
-    - http:
-        path: schedule
-        method: post
-        cors: true
+      - http:
+          path: schedule
+          method: post
+          private: true
+          cors: true
 
     #defines to which topic we want to connect
     environment:
@@ -261,18 +276,18 @@ functions:
 
     handler: stasis/schedule/schedule.scheduled_task_size
     events:
-    - http:
-        path: schedule/cluster/count
-        method: get
-        cors: true
+      - http:
+          path: schedule/cluster/count
+          method: get
+          cors: true
 
   # monitors the schedule queue and submits data for calculation
   # to the fargate cluster
   schedule_monitor:
     handler: stasis/schedule/schedule.monitor_queue
     events:
-    - schedule:
-        rate: rate(1 minute)
+      - schedule:
+          rate: rate(1 minute)
     environment:
       schedule_queue: ${self:custom.scheduleQueue}
       trackingTable: ${self:custom.trackingTable}
@@ -283,10 +298,11 @@ functions:
   statusGet:
     handler: stasis/status/get.get
     events:
-    - http:
-        path: status
-        method: get
-        cors: true
+      - http:
+          path: status
+          method: get
+          private: true
+          cors: true
 
     #defines to which topic we want to connect
     environment:
@@ -297,24 +313,26 @@ functions:
   targetGet:
     handler: stasis/target/get.get
     events:
-    - http:
-        path: target/{method}
-        method: get
-        cors: true
-        request:
-          parameter:
-            paths:
-              method: true
-              mz_rt: false
-    - http:
-        path: target/{method}/{mz_rt}
-        method: get
-        cors: true
-        request:
-          parameter:
-            path:
-              method: true
-              mz_rt: true
+      - http:
+          path: target/{method}
+          method: get
+          private: true
+          cors: true
+          request:
+            parameter:
+              paths:
+                method: true
+                mz_rt: false
+      - http:
+          path: target/{method}/{mz_rt}
+          method: get
+          private: true
+          cors: true
+          request:
+            parameter:
+              path:
+                method: true
+                mz_rt: true
 
     #defines to which topic we want to connect
     environment:
@@ -324,10 +342,11 @@ functions:
   targetPost:
     handler: stasis/target/create.create
     events:
-    - http:
-        path: target
-        method: post
-        cors: true
+      - http:
+          path: target
+          private: true
+          method: post
+          cors: true
 
     #defines to which topic we want to connect
     environment:
@@ -337,10 +356,11 @@ functions:
   targetPut:
     handler: stasis/target/update.update
     events:
-    - http:
-        path: target
-        method: put
-        cors: true
+      - http:
+          path: target
+          private: true
+          method: put
+          cors: true
 
     #defines to which topic we want to connect
     environment:
@@ -350,15 +370,16 @@ functions:
   targetDelete:
     handler: stasis/target/delete.delete
     events:
-    - http:
-        path: target/{method}/{mz_rt}
-        method: delete
-        cors: true
-        request:
-          parameter:
-            path:
-              method: true
-              mz_rt: true
+      - http:
+          path: target/{method}/{mz_rt}
+          method: delete
+          cors: true
+          private: true
+          request:
+            parameter:
+              path:
+                method: true
+                mz_rt: true
 
     #defines to which topic we want to connect
     environment:
@@ -368,10 +389,11 @@ functions:
   libraryGet:
     handler: stasis/library/get.get
     events:
-    - http:
-        path: library
-        method: get
-        cors: true
+      - http:
+          path: library
+          private: true
+          method: get
+          cors: true
 
     #defines to which topic we want to connect
     environment:
