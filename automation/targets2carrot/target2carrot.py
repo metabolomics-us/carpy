@@ -7,7 +7,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-f', '--file',
-                        help='csv file with the list of targets with headers: '
+                        help='csv/txt file with the list of targets with headers: '
                              'Metabolite name,Average Mz,Average Rt(min),istd')
     parser.add_argument('-o', '--output', help='name of the yml file to be created')
     parser.add_argument('-s', '--study', help='name of the study', required=True)
