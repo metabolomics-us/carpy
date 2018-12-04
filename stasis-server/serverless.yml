@@ -191,8 +191,27 @@ functions:
         cors: true
         request:
           parameter:
-            paths:
+            path:
               experiment: true
+    - http:
+        path: experiment/{experiment}/{psize}
+        method: get
+        cors: true
+        request:
+          parameter:
+            path:
+              experiment: true
+              psize: true
+    - http:
+        path: experiment/{experiment}/{psize}/{lastSample}
+        method: get
+        cors: true
+        request:
+          parameter:
+            path:
+              experiment: true
+              psize: true
+              lastSample: true
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}

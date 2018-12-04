@@ -71,19 +71,23 @@ def test_get_experiment(requireMocking, sample_count):
 
     for x in range(0, sample_count):
         table.put_item(Item={
-            "id": "test-{}".format(x),
+            "id": "test-{0:06d}".format(x),
             "experiment": "1",
-            "sample": "test-{}".format(x),
+            "sample": "test-{0:06d}".format(x),
             "status": [{"time": 1524772162698, "value": "PROCESSING", "fileHandle": "test.mzml"}]
         })
 
+    page_size = 3
+
     result = get.get_experiment({
         'pathParameters': {
-            'experiment': '1'
+            'experiment': '1',
+            'psize': page_size
         }
     }, {})
 
-    print(result
-          )
+    data = json.loads(result['body'])
+
     assert 200 == result['statusCode']
-    assert sample_count == len(json.loads(result['body']))
+    assert page_size == len(data['items'])
+    assert 'test-000002' == data['last_item']['id']
