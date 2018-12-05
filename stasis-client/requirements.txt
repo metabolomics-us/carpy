@@ -1,0 +1,4 @@
+requests
+jsonschema
+pytest==3.7.1
+simplejson
