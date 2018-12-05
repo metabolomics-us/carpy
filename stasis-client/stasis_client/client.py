@@ -1,3 +1,6 @@
+import requests
+
+
 class StasisClient:
     """
     a simple client to interact with the stasis system in a safe and secure manner.
@@ -13,7 +16,7 @@ class StasisClient:
         """
 
         self._url = url
-        self._token = token
+        self._header = {'x-api-key': token}
 
     def sample_state(self, sample_name: str):
         """
@@ -23,13 +26,13 @@ class StasisClient:
         """
         pass
 
-    def sample_result(self, sample_name: str):
+    def sample_result(self, sample_name: str) -> dict:
         """
         returns the result for a specified sample
         :param sample_name:
         :return:
         """
-        pass
+        return requests.get("{}:/result/{}".format(self._url, sample_name), headers=self._header).json()
 
     def sample_schedule(self, sample_name: str, method: str, mode: str):
         """
