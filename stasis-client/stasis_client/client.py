@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+import requests
 
 
 class StasisClient:
@@ -25,28 +26,73 @@ class StasisClient:
         if self._url is None:
             self._url = os.environ.get("STASIS_URL")
 
+        self._header = {
+            'Content-type': 'application/json',
+            'Accept': 'application/json',
+            'x-api-key': '{}'.format(self._token)
+        }
+
+    def sample_acquisition_create(self, data: dict):
+        """
+        updloads the
+        :param data: the data object containing the aquisiton description
+        :return:
+        """
+        return requests.post("{}/acquisition/".format(self._url), json=data, headers=self._header)
+
+    def sample_acquisition_get(self, sample_name):
+        """
+        returns the acquistion data of this sample
+
+        :param sample_name:
+        :return:
+        """
+        return requests.get("{}/acquisition/{}".format(self._url, sample_name), headers=self._header).json()
+
     def sample_state(self, sample_name: str):
         """
         returns the state of the given sample
         :param sample_name:
         :return:
         """
-        pass
+        return requests.get("{}/tracking/{}".format(self._url, sample_name), headers=self._header).json()
 
-    def sample_result(self, sample_name: str):
+    def sample_state_update(self, sample_name: str, state):
+        """
+        updates a sample state in the remote system+
+        :param sample_name:
+        :param state:
+        :return:
+        """
+
+    def sample_result(self, sample_name: str) -> dict:
         """
         returns the result for a specified sample
         :param sample_name:
         :return:
         """
-        pass
+        return requests.get("{}/result/{}".format(self._url, sample_name), headers=self._header).json()
 
-    def sample_schedule(self, sample_name: str, method: str, mode: str):
+    def sample_schedule_dataprocessing(self, sample_name: str, method: str, mode: str):
         """
-        schedules a sample for calculation
+        schedules a sample for dataprocessing with carrot
         :param sample_name:
         :param method:
         :param mode:
+        :return:
+        """
+
+    def experiment_schedule_aggregation(self, experiment_id):
+        """
+        schedules the aggregation of an experiment, which has been processing in carrot
+        :param experiment_id:
+        :return:
+        """
+
+    def experiment_ready_for_aggregation(self, experiment_id) -> bool:
+        """
+
+        :param experiment_id:
         :return:
         """
 
@@ -57,12 +103,6 @@ class StasisClient:
         :return:
         """
 
-    def sample_metadata(self, sample_name):
-        """
-        the associated metadata for a given sample
-        :param sample_name:
-        :return:
-        """
 
     def experiment_samples(self, experiment_id):
         """
