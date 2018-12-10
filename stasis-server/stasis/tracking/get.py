@@ -7,7 +7,6 @@ from stasis.tables import TableManager
 
 def get(events, context):
     """returns the specific sample from the storage"""
-    print("received event: " + json.dumps(events, indent=2))
 
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
@@ -47,41 +46,56 @@ def get(events, context):
 
 
 def get_experiment(events, context):
-    """returns the latest status for all the samples in the given experiment"""
-    print("received event: %s" % events)
+    """returns paged list with the latest status for the samples in the given experiment"""
 
     if 'pathParameters' in events:
-        print(events['pathParameters'])
         if 'experiment' in events['pathParameters']:
             expId = events['pathParameters']['experiment']
+
+            if 'psize' in events['pathParameters']:
+                page_size = int(events['pathParameters']['psize'])
+            else:
+                page_size = 25
+
+            query_params = {
+                'IndexName': 'experiment-id-index',
+                'Select': 'ALL_ATTRIBUTES',
+                'KeyConditionExpression': Key('experiment').eq(expId),
+                'Limit': page_size
+            }
+
+            if 'lastSample' in events['pathParameters']:
+                print(f"Not the first page // {events['pathParameters']['lastSample']}")
+                query_params['ExclusiveStartKey'] = {
+                    "experiment": expId,
+                    "id": events['pathParameters']['lastSample']
+                }
 
             tm = TableManager()
             table = tm.get_tracking_table()
 
             try:
-                result = table.query(
-                    IndexName='experiment-id-index',
-                    Select='ALL_ATTRIBUTES',
-                    KeyConditions={
-                        'experiment': {
-                            'AttributeValueList': [expId],
-                            'ComparisonOperator': 'EQ'
-                        }
-                    }
-                )
+                result = table.query(**query_params)
+                items = result['Items']
+                last_item = result['LastEvaluatedKey'] or ''
+
+                data = {
+                    'statusCode': 200,
+                    'headers': __HTTP_HEADERS__,
+                    'body': json.dumps({
+                        "items": items,
+                        "last_item": last_item
+                    })
+                }
+
+                return data
             except Exception as ex:
                 print("QUERY-ERROR: %s" % str(ex))
                 return {
                     "statusCode": 418,
                     "headers": __HTTP_HEADERS__,
-                    "body": json.dumps({'error': ex.args})
+                    "body": json.dumps({"error": ex.args})
                 }
-
-            return {
-                "statusCode": 200,
-                "headers": __HTTP_HEADERS__,
-                "body": json.dumps(result['Items'])
-            }
         else:
             return {
                 "statusCode": 422,
