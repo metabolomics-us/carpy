@@ -55,7 +55,7 @@ class StasisClient:
         :param sample_name:
         :return:
         """
-        return requests.get("{}/tracking/{}".format(self._url, sample_name), headers=self._header).json()
+        return requests.get("{}/tracking/{}".format(self._url, sample_name), headers=self._header).json()['status']
 
     def sample_state_update(self, sample_name: str, state):
         """
@@ -64,6 +64,11 @@ class StasisClient:
         :param state:
         :return:
         """
+        data = {
+            "sample": sample_name,
+            "status": state
+        }
+        return requests.post("{}/tracking".format(self._url), json=data, headers=self._header)
 
     def sample_result(self, sample_name: str) -> dict:
         """
@@ -95,14 +100,6 @@ class StasisClient:
         :param experiment_id:
         :return:
         """
-
-    def sample_exist(self, sample_name) -> bool:
-        """
-        does this given sample exist in the system or not
-        :param sample_name:
-        :return:
-        """
-
 
     def experiment_samples(self, experiment_id):
         """

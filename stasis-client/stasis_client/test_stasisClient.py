@@ -9,8 +9,23 @@ client = StasisClient(url, key)
 
 
 def test_sample_acquisition_create():
+    data = _create_sample()
+    result = client.sample_acquisition_create(data)
+
+    print(result)
+
+    assert result.status_code == 200
+
+    result = client.sample_acquisition_get(data['sample'])
+
+    print(result)
+
+    assert result['sample'] == data['sample']
+
+
+def _create_sample(name: str = "test"):
     data = {
-        'sample': "123-test-{}".format(time()),
+        'sample': "123-{}-{}".format(name, time()),
         'experiment': 'mySecretExp_{}'.format(123),
         'acquisition': {
             'instrument': 'test inst',
@@ -31,22 +46,15 @@ def test_sample_acquisition_create():
             'comment': ''
         }
     }
-    result = client.sample_acquisition_create(data)
-
-    print(result)
-
-    assert result.status_code == 200
-
-    result = client.sample_acquisition_get(data['sample'])
-
-    print(result)
-
-    assert result['sample'] == data['sample']
+    return data
 
 
 def test_sample_state():
-    result = client.sample_state("Zeki_SIMVA_test_1uL.mzml")
+    sample = _create_sample("123")
+    result = client.sample_state_update(sample['sample'], "entered")
+
     print(result)
+    assert client.sample_state(sample['sample'])[0]['value'] == "entered"
 
 
 def test_sample_result():
@@ -60,11 +68,6 @@ def test_sample_schedule():
 
 
 def test_sample_exist():
-    result = client.sample_state("Zeki_SIMVA_test_1uL.mzml")
-    print(result)
-
-
-def test_sample_metadata():
     result = client.sample_state("Zeki_SIMVA_test_1uL.mzml")
     print(result)
 
