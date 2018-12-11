@@ -78,32 +78,3 @@ class StasisClient:
         """
         return requests.get("{}/result/{}".format(self._url, sample_name), headers=self._header).json()
 
-    def sample_schedule_dataprocessing(self, sample_name: str, method: str, mode: str):
-        """
-        schedules a sample for dataprocessing with carrot
-        :param sample_name:
-        :param method:
-        :param mode:
-        :return:
-        """
-
-    def experiment_schedule_aggregation(self, experiment_id):
-        """
-        schedules the aggregation of an experiment, which has been processing in carrot
-        :param experiment_id:
-        :return:
-        """
-
-    def experiment_ready_for_aggregation(self, experiment_id) -> bool:
-        """
-
-        :param experiment_id:
-        :return:
-        """
-
-    def experiment_samples(self, experiment_id):
-        """
-        returns all samples of a given experiment
-        :param experiment_id:
-        :return:
-        """

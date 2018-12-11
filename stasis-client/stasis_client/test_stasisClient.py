@@ -62,16 +62,3 @@ def test_sample_result():
     print(result)
 
 
-def test_sample_schedule():
-    result = client.sample_state("Zeki_SIMVA_test_1uL.mzml")
-    print(result)
-
-
-def test_sample_exist():
-    result = client.sample_state("Zeki_SIMVA_test_1uL.mzml")
-    print(result)
-
-
-def test_experiment_samples():
-    result = client.sample_state("Zeki_SIMVA_test_1uL.mzml")
-    print(result)
