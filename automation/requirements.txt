@@ -2,3 +2,4 @@ requests
 simplejson
 argparse
 pandas
+git+git://github.com/metabolomics-us/carpy.git#egg=stasis-client&subdirectory=stasis-client
