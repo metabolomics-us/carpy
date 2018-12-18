@@ -15,7 +15,7 @@ def test_schedule(requireMocking):
     timestamp = int(time.time() * 1000)
 
     jsonString = json.dumps(
-        {'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms', 'task_version': '1'})
+        {'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms', 'task_version': '86'})
 
     response = s.schedule({'body': jsonString}, {})
 

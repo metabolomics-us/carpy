@@ -73,7 +73,8 @@ def test_create_not_merging_statuses():
 
 
 def test_get_experiment_paged_default():
-    result = requests.get(apiUrl + '/experiment/unknown')
+    result = requests.get(apiUrl + '/experiment/unknown',
+                          headers={'x-api-key': 't1I9UXgOD76x7wRPVR87r7YXQpPnM1OA6Bg4lg6J'})
     data = json.loads(result.content)
 
     assert 25 == len(data['items'])
@@ -81,19 +82,23 @@ def test_get_experiment_paged_default():
 
 
 def test_get_experiment_paged_custom_page_size():
-    result = requests.get(apiUrl + '/experiment/none/3')
+    result = requests.get(apiUrl + '/experiment/12345/25',
+                          headers={'x-api-key': 't1I9UXgOD76x7wRPVR87r7YXQpPnM1OA6Bg4lg6J'})
     data = json.loads(result.content)
 
-    assert 3 == len(data['items'])
-    assert data['last_item']['id'] == 'test_1531366879985'
+    assert 25 == len(data['items'])
+    assert data['last_item']['id'] == 'test1544735921246'
 
 
 def test_get_experiment_paged_second_page():
-    result = requests.get(apiUrl + '/experiment/none/3/test_1531366879985')
-    data = json.loads(result.content)
+    result = requests.get(apiUrl + '/experiment/12345/25/test1544801381510',
+                          headers={'x-api-key': 't1I9UXgOD76x7wRPVR87r7YXQpPnM1OA6Bg4lg6J'})
+    if result.status_code != 200:
+        print(result.text)
+        data = {'items': []}
+    else:
+        data = json.loads(result.content)
 
-    assert 3 == len(data['items'])
-    # first page last_item
-    assert data['last_item']['id'] != 'test_1531366879985'
+    assert 7 == len(data['items'])
     # new last_item
-    assert data['last_item']['id'] == 'test_1531500769089'
+    assert 'last_item' not in data

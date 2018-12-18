@@ -77,15 +77,16 @@ def get_experiment(events, context):
             try:
                 result = table.query(**query_params)
                 items = result['Items']
-                last_item = result['LastEvaluatedKey'] or ''
+
+                body = {"items": items}
+
+                if 'LastEvaluatedKey' in result:
+                    body['last_item'] = result['LastEvaluatedKey']
 
                 data = {
                     'statusCode': 200,
                     'headers': __HTTP_HEADERS__,
-                    'body': json.dumps({
-                        "items": items,
-                        "last_item": last_item
-                    })
+                    'body': json.dumps(body)
                 }
 
                 return data
