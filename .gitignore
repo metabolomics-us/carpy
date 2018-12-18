@@ -105,3 +105,7 @@ venv.bak/
 
 # PyCharm
 .idea
+
+# Serverless related files & folders
+.serverless/
+node_modules/
