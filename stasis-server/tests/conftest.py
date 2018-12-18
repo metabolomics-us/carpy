@@ -1,4 +1,3 @@
-
 # Set AWS environment variables if they don't exist before importing moto/boto3
 import os
 
@@ -38,7 +37,6 @@ def requireMocking():
 
     ec2 = moto.mock_ec2()
     ec2.start()
-
 
     create_cluster()
 
@@ -106,11 +104,9 @@ def create_cluster():
         ec2_utils.generate_instance_identity_document(test_instance)
     )
 
-
     cluster.register_container_instance(
         cluster="carrot",
-        instanceIdentityDocument = instance_id_document
+        instanceIdentityDocument=instance_id_document
     )
-
 
     return cluster

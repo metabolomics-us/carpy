@@ -109,3 +109,7 @@ venv.bak/
 # Serverless related files & folders
 .serverless/
 node_modules/
+
+# API Token files
+.env
+
