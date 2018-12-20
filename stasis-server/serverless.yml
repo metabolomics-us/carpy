@@ -74,6 +74,11 @@ custom:
   # spectra bucket S3 or cheaper version
 
   ###
+  # Carrot bucket definition
+  ###
+  dataBucketName: "data-carrot"
+
+  ###
   # Queues
   ###
   scheduleQueue: "StatisScheduleQueue-${self:custom.stage}"
@@ -420,3 +425,18 @@ functions:
     environment:
       targetTable: ${self:custom.targetTable}
 
+  #checks existence of a raw data file
+  fileExists:
+    handler: stasis/file/exists.exists
+    events:
+      - http:
+          private: true
+          path: file/exists/{sample}
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                sample: true
+    environment:
+      dataBucket: ${self:custom.dataBucketName}
