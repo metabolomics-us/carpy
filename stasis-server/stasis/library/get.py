@@ -13,10 +13,8 @@ def get(events, context):
 
     result = {}
     try:
-        print('running query\nItems: %d' % table.item_count)
         result = table.scan(ProjectionExpression='#m',
                             ExpressionAttributeNames={'#m': 'method'})
-        print('MZRT QUERY: %s' % result['Items'])
     except Exception as ex:
         print(ex)
         return {
@@ -27,18 +25,16 @@ def get(events, context):
 
     if 'Items' in result and len(result['Items']) > 0:
         # create a response when sample is found
-        mthdList = [x['method'] for x in result['Items']]
-        print('items: %s' % mthdList)
+        mthdList = list(set([x['method'] for x in result['Items']]))
         return {
             'statusCode': 200,
             'headers': __HTTP_HEADERS__,
             'body': json.dumps(mthdList)
         }
     else:
-        print(result)
         # create a response when sample is not found
         return {
             "statusCode": 404,
             "headers": __HTTP_HEADERS__,
-            "body": json.dumps({"error": "method not found"})
+            "body": json.dumps({"error": "no libraries/methods found"})
         }

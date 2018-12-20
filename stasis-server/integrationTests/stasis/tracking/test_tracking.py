@@ -8,35 +8,35 @@ samplename = "test_%s" % str(time.time()).split('.')[-1]
 delay = 1
 
 
-def test_create():
+def test_create(api_token):
     data = {
         'sample': samplename,
         'status': 'entered'
     }
 
-    response = requests.post(apiUrl + '/tracking', json=data)
+    response = requests.post(apiUrl + '/tracking', json=data, headers=api_token)
     assert 200 == response.status_code
     time.sleep(delay)
 
-    response = requests.get(apiUrl + '/tracking/' + samplename)
+    response = requests.get(apiUrl + '/tracking/' + samplename, headers=api_token)
     assert 200 == response.status_code
 
     sample = json.loads(response.content)
     assert samplename == sample['sample']
 
 
-def test_create_with_file_handle():
+def test_create_with_file_handle(api_token):
     data = {
         'sample': samplename,
         'status': 'entered',
         'fileHandle': samplename + ".mzml"
     }
 
-    response = requests.post(apiUrl + '/tracking', json=data)
+    response = requests.post(apiUrl + '/tracking', json=data, headers=api_token)
     assert 200 == response.status_code
     time.sleep(delay)
 
-    response = requests.get(apiUrl + '/tracking/' + samplename)
+    response = requests.get(apiUrl + '/tracking/' + samplename, headers=api_token)
     assert 200 == response.status_code
 
     sample = json.loads(response.content)
@@ -45,8 +45,8 @@ def test_create_with_file_handle():
     assert "%s.mzml" % samplename == sample['status'][0]['fileHandle']
 
 
-def test_create_not_merging_statuses():
-    requests.delete(apiUrl + '/tracking/processed-sample')
+def test_create_not_merging_statuses(api_token):
+    requests.delete(apiUrl + '/tracking/processed-sample', headers=api_token)
     data = [{'sample': 'processed-sample', 'status': 'entered'},
             {'sample': 'processed-sample', 'status': 'acquired'},
             {'sample': 'processed-sample', 'status': 'converted'},
@@ -61,9 +61,9 @@ def test_create_not_merging_statuses():
 
     result = None
     for d in data:
-        requests.post(apiUrl + '/tracking', json=d)
+        requests.post(apiUrl + '/tracking', json=d, headers=api_token)
         time.sleep(delay)
-        result = requests.get(apiUrl + '/tracking/processed-sample')
+        result = requests.get(apiUrl + '/tracking/processed-sample', headers=api_token)
 
     # requests.delete(apiUrl + '/tracking/processed-sample')
 
@@ -72,33 +72,30 @@ def test_create_not_merging_statuses():
     assert 11 == len(result.json()['status'])
 
 
-def test_get_experiment_paged_default():
-    result = requests.get(apiUrl + '/experiment/unknown',
-                          headers={'x-api-key': 't1I9UXgOD76x7wRPVR87r7YXQpPnM1OA6Bg4lg6J'})
+def test_get_experiment_paged_default(api_token):
+    result = requests.get(apiUrl + '/experiment/unknown', headers=api_token)
     data = json.loads(result.content)
 
     assert 25 == len(data['items'])
     assert data['last_item']['id'] == 'BioRec_LipidsPos_PhIV_002'
 
 
-def test_get_experiment_paged_custom_page_size():
-    result = requests.get(apiUrl + '/experiment/12345/25',
-                          headers={'x-api-key': 't1I9UXgOD76x7wRPVR87r7YXQpPnM1OA6Bg4lg6J'})
+def test_get_experiment_paged_custom_page_size(api_token):
+    result = requests.get(apiUrl + '/experiment/12345/25', headers=api_token)
     data = json.loads(result.content)
 
     assert 25 == len(data['items'])
     assert data['last_item']['id'] == 'test1544735921246'
 
 
-def test_get_experiment_paged_second_page():
-    result = requests.get(apiUrl + '/experiment/12345/25/test1544801381510',
-                          headers={'x-api-key': 't1I9UXgOD76x7wRPVR87r7YXQpPnM1OA6Bg4lg6J'})
+def test_get_experiment_paged_second_page(api_token):
+    result = requests.get(apiUrl + '/experiment/12345/25/test1544801381510', headers=api_token)
     if result.status_code != 200:
         print(result.text)
         data = {'items': []}
     else:
         data = json.loads(result.content)
 
-    assert 7 == len(data['items'])
+    assert 7 <= len(data['items'])
     # new last_item
     assert 'last_item' not in data

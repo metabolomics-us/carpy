@@ -7,7 +7,7 @@ apiUrl = "https://test-api.metabolomics.us/stasis/result"
 samplename = f'test_{time.time()}'
 
 
-def test_create():
+def test_create(api_token):
     data = {
         'sample': samplename,
         'injections': {
@@ -61,12 +61,12 @@ def test_create():
         }
     }
 
-    response = requests.post(apiUrl, json=data)
+    response = requests.post(apiUrl, json=data, headers=api_token)
     assert 200 == response.status_code
 
     time.sleep(5)
 
-    response = requests.get(apiUrl + '/' + samplename)
+    response = requests.get(apiUrl + '/' + samplename, headers=api_token)
     assert 200 == response.status_code
 
     sample = json.loads(response.content)
