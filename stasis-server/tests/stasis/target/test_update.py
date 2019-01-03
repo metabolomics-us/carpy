@@ -2,8 +2,10 @@ import simplejson as json
 
 from stasis.target import create, get, update
 
-jsonString = json.dumps({'method': 'test_lib', 'mz_rt': '12_1', 'name': 'unknown', 'sample': 'tgtTest'})
-newStuff = json.dumps({'method': 'test_lib', 'mz_rt': '12_1', 'name': 'newStuff', 'sample': 'tgtTest'})
+jsonString = json.dumps({'method': 'testLib | unknown | unknown | unknown',
+                         'mz': 12, 'rt': 1, 'name': 'unknown', 'sample': 'tgtTest'})
+newStuff = json.dumps({'method': 'testLib | unknown | unknown | unknown', 'mz_rt': '12_1',
+                       'mz': 12, 'rt': 1, 'name': 'newStuff', 'sample': 'tgtTest'})
 
 
 def test_update(requireMocking):
@@ -18,7 +20,7 @@ def test_update(requireMocking):
     assert 200 == response['statusCode']
 
     response = get.get({'pathParameters': {
-        'method': 'test_lib',
+        'method': 'testLib | unknown | unknown | unknown',
         'mz_rt': '12_1'}
     }, {})
     print("NEW targets: %s " % json.loads(response['body'])['targets'])
@@ -29,25 +31,29 @@ def test_update(requireMocking):
     assert 'newStuff' == updated['name']
 
 
-def test_missing_mzrt(requireMocking):
+def test_missing_method(requireMocking):
     result = update.update({
         'body': json.dumps({'name': 'blah', 'mz_rt': 'asd'})
     }, {})
     assert 422 == result['statusCode']
+    assert 'missing target\'s method and/or mz_rt' in json.loads(result['body'])['error']
 
 
-def test_missing_body(requireMocking):
+def test_missing_mzrt(requireMocking):
     result = update.update({
         'body': json.dumps({'method': 'blah', 'sample': 'asd'})
     }, {})
     assert 422 == result['statusCode']
+    assert 'missing target\'s method and/or mz_rt' in json.loads(result['body'])['error']
 
 
 def test_update_inexistent_taget(requireMocking):
     result = update.update({
         'body': json.dumps({
             'method': 'notfound',
-            'mz_rt': 'invalid',
+            'mz_rt': '99_99',
+            'mz': 99,
+            'rt': 99,
             'name': 'newStuff',
             'sample': 'tgtTest'
         })

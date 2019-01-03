@@ -10,49 +10,55 @@ def addData():
     # store data
     tm = TableManager()
     table = tm.get_target_table()
-    table.put_item(Item={
-        'method': 'testLib',
-        'mz_rt': '12_1',
+    table.put_item(Item=tm.sanitize_json_for_dynamo({
+        'method': 'testLib | unknown | unknown | unknown',
+        'mz': 12,
+        'rt': 1,
         'sample': 'tgtTest',
-        'time': 1524772162698
-    })
-    table.put_item(Item={
-        'method': 'testLib',
-        'mz_rt': '12.1_0.9',
+        'mz_rt': '12_1'
+    }))
+    table.put_item(Item=tm.sanitize_json_for_dynamo({
+        'method': 'testLib | unknown | unknown | unknown',
+        'mz': 12.1,
+        'rt': 0.9,
         'sample': 'tgtTest2',
-        'time': 1524772162698
-    })
-    table.put_item(Item={
-        'method': 'testLib',
-        'mz_rt': '1_12',
+        'mz_rt': '12.1_0.9'
+    }))
+    table.put_item(Item=tm.sanitize_json_for_dynamo({
+        'method': 'testLib | unknown | unknown | unknown',
+        'mz': 1,
+        'rt': 12,
         'sample': 'tgtTest2',
-        'time': 1524772162800
-    })
-    table.put_item(Item={
-        'method': 'test2Lib',
-        'mz_rt': '2_15',
+        'mz_rt': '1_12'
+    }))
+    table.put_item(Item=tm.sanitize_json_for_dynamo({
+        'method': 'test2Lib | unknown | unknown | unknown',
+        'mz': 2,
+        'rt': 15,
         'sample': 'tgtTest',
-        'time': 1524772163000
-    })
-    table.put_item(Item={
+        'mz_rt': '2_15'
+    }))
+    table.put_item(Item=tm.sanitize_json_for_dynamo({
         'method': 'test_dynamo | unknown | unknown | unknown',
-        'mz_rt': '2_15',
+        'mz': 2,
+        'rt': 15,
         'sample': 'tgtTest',
-        'time': 1524772163000
-    })
-    table.put_item(Item={
+        'mz_rt': '2_15'
+    }))
+    table.put_item(Item=tm.sanitize_json_for_dynamo({
         'method': 'test_dynamo|unknown|unknown|unknown',
-        'mz_rt': '2_15',
+        'mz': 2,
+        'rt': 15,
         'sample': 'tgtTest',
-        'time': 1524772163000
-    })
+        'mz_rt': '2_15'
+    }))
 
 
 def test_get_with_mzrt(requireMocking, addData):
     # process data
     result = get.get({
         "pathParameters": {
-            "method": 'testLib',
+            "method": 'testLib | unknown | unknown | unknown',
             "mz_rt": '12_1'
         }
     }, {})
@@ -61,14 +67,14 @@ def test_get_with_mzrt(requireMocking, addData):
     assert 'body' in result
     items = json.loads(result['body'])['targets']
     assert len(items) > 0
-    assert all('testLib' == x['method'] for x in items)
+    assert all('testLib | unknown | unknown | unknown' == x['method'] for x in items)
 
 
 def test_get_without_mzrt(requireMocking, addData):
     # process data
     result = get.get({
         "pathParameters": {
-            "method": 'testLib'
+            "method": 'testLib | unknown | unknown | unknown'
         }
     }, {})
 
@@ -76,7 +82,7 @@ def test_get_without_mzrt(requireMocking, addData):
     assert 'body' in result
     items = json.loads(result['body'])['targets']
     assert len(items) > 0
-    assert all('testLib' == x['method'] for x in items)
+    assert all('testLib | unknown | unknown | unknown' == x['method'] for x in items)
 
 
 def test_get_method_with_spaces(requireMocking, addData):
