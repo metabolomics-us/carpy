@@ -101,10 +101,27 @@ custom:
   pythonRequirements:
     dockerizePip: true
     slim: true
-    slimPatterns:
-      - "**/*.egg-info*"
-      - "**/test/*"
-      - ".venv/*"
+    noDeploy:
+      - "boto3"
+      - "botocore"
+      - "moto"
+      - "pytest"
+
+############################################################################################
+# this section defines what to include and exclud when packaging artifacts
+############################################################################################
+package:
+  exclude:
+    - .git/**
+    - .venv/**
+    - .idea/**
+    - .pytest_cache/**
+    - venv/**
+    - test/**
+    - tests/**
+    - node_modules/**
+    - integrationTests/**
+
 ############################################################################################
 # this section defines all lambda function and triggers
 ############################################################################################
@@ -196,9 +213,9 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
 
-  #fetches
+  #fetches a list of samples in an experiment
   trackingExperiment:
-    handler: stasis/tracking/get.get_experiment
+    handler: stasis/experiment/experiment.get
     events:
     - http:
         path: experiment/{experiment}
