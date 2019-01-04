@@ -5,7 +5,7 @@ from stasis.target import create, get
 
 def test_create_success(requireMocking):
     jsonString = json.dumps({'method': 'test_lib | unknown | unknown | positive',
-                             'mz': 12, 'rt': 1.01, 'sample': 'tgtTest'})
+                             'mz': 12.45, 'rt': 1.01, 'sample': 'tgtTest'})
 
     response = create.create({'body': jsonString}, {})
     assert response['statusCode'] == 200
@@ -16,9 +16,10 @@ def test_create_success(requireMocking):
 
     assert 200 == result['statusCode']
     added = json.loads(result['body'])['targets'][0]
-    assert 'tgtTest' == added['sample']
-    assert 12 == added['mz']
-    assert 1.01 == added['rt']
+    assert added['sample'] == 'tgtTest'
+    assert added['mz'] == 12.45
+    assert added['rt'] == 1.01
+    assert added['mz_rt'] == '12.45_1.01'
 
 
 def test_create_invalid_data(requireMocking):

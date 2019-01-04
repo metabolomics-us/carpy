@@ -36,7 +36,7 @@ def create(event, context):
     data['name'] = 'Unknown' if 'name' not in data or data['name'] == '' else data['name']
     data['riMarker'] = False if 'riMarker' not in data else data['riMarker']
     data['rtUnit'] = 'seconds' if 'rtUnit' not in data else data['rtUnit']
-    data['mz_rt'] = f'%d_%d' % (data['mz'], data['rt'])
+    data['mz_rt'] = f'{data["mz"]}_{data["rt"]}'
     data['time'] = timestamp
 
     # if 'splash' in data and data['splash']:  # failsafe for when we have MS1 (no splash)
