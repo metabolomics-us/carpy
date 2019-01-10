@@ -1,0 +1,14 @@
+language: python
+python:
+- 3.6
+
+# Remove Google's default boto configuration
+before_install:
+- sudo rm -f /etc/boto.cfg
+
+# Support multiple subprojects
+env:
+- TEST_DIR=stasis-client
+- TEST_DIR=stasis-server
+
+script: cd $TEST_DIR && pip install -r requirements.txt && pytest
