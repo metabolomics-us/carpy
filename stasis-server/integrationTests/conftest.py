@@ -9,4 +9,4 @@ def api_token():
     if api_token is '':
         api_token = open('../../../test.env', 'r').readline()
 
-    return {'x-api-key': api_token}
+    return {'x-api-key': api_token.strip()}

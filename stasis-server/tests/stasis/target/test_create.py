@@ -29,5 +29,5 @@ def test_create_invalid_data(requireMocking):
     result = create.create({'body': jsonString}, {})
     assert 422 == result['statusCode']
     print("body: " + json.dumps(result, indent=2))
-    assert 'message' in result
+    assert 'body' in result
     assert result['message'] == '{"error": "\'mz\' is a required property"}'

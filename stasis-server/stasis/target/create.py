@@ -26,7 +26,7 @@ def create(event, context):
     except ValidationError as ve:
         print(str(ve.message))
         return {
-            'message': json.dumps({'error': str(ve.message)}),
+            'body': json.dumps({'error': str(ve.message)}),
             'statusCode': 422,
             'headers': __HTTP_HEADERS__
         }

@@ -19,19 +19,16 @@ def get(events, context):
             result = None
 
             if 'mz_rt' in events['pathParameters']:
+                # maybe change to range query
                 result = table.query(
                     KeyConditionExpression=
-                    Key('method').eq(events['pathParameters']['method']) &
-                    Key('mz_rt').eq(events['pathParameters']['mz_rt'])
+                    Key('method').eq(unquote(events['pathParameters']['method'])) &
+                    Key('mz_rt').eq(unquote(events['pathParameters']['mz_rt']))
                 )
-                print('MZRT QUERY: %s' % result['Items'])
             else:
-                print("encoded: %s" % events['pathParameters']['method'])
-                print("unencoded: %s" % unquote(events['pathParameters']['method']))
                 result = table.query(
                     KeyConditionExpression=Key('method').eq(unquote(events['pathParameters']['method']))
                 )
-                print('METHOD QUERY: %s' % result['Items'])
 
             if 'Items' in result and len(result['Items']) > 0:
                 # create a response when sample is found
@@ -41,12 +38,11 @@ def get(events, context):
                     'body': json.dumps({'targets': result['Items']})
                 }
             else:
-                print(result)
                 # create a response when sample is not found
                 return {
                     "statusCode": 404,
                     "headers": __HTTP_HEADERS__,
-                    "body": json.dumps({"error": "method not found"})
+                    "body": json.dumps({"error": "no targets found", "targets": result['Items'], "result": result})
                 }
         else:
             return {

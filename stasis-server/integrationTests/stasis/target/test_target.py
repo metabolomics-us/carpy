@@ -1,9 +1,12 @@
 import requests
 
 apiUrl = "https://test-api.metabolomics.us/stasis/target"
-data = {'method': 'test_lib', 'mz_rt': '10_123', 'sample': 'sample1', 'name': 'unknown'}
-data2 = {'method': 'test_del', 'mz_rt': '1_2', 'sample': 'sample1', 'name': 'unknown'}
-newData = {'method': 'test_lib', 'mz_rt': '10_123', 'sample': 'sample1', 'name': 'newStuff'}
+data = {'method': 'test_lib | unknown | unknown | positive',
+        'mz': 10, 'rt': 123, 'sample': 'sample1', 'name': 'Unknown'}
+data2 = {'method': 'test_del | unknown | unknown | positive',
+         'mz': 1, 'rt': 2, 'mz_rt': '1_2', 'sample': 'sample1', 'name': 'unknown'}
+newData = {'method': 'test_lib | unknown | unknown | positive',
+           'mz_rt': '10_123', 'mz': 10, 'rt': 123, 'sample': 'sample1', 'name': 'newStuff'}
 
 
 def test_create(api_token):
@@ -13,30 +16,18 @@ def test_create(api_token):
 
 
 def test_get_without_mzrt(api_token):
-    response = requests.get('%s/test_lib' % apiUrl, headers=api_token)
+    response = requests.get('%s/test_lib | unknown | unknown | positive' % apiUrl, headers=api_token)
 
     assert 200 == response.status_code
     item = response.json()['targets']
-    assert 'test_lib' == item[0]['method']
+    assert 'test_lib | unknown | unknown | positive' == item[0]['method']
     assert '10_123' == item[0]['mz_rt']
-    assert '10' == item[0]['mz']
-    assert '123' == item[0]['rt']
-
-
-def test_get_with_mzrt(api_token):
-    response = requests.get('%s/test_lib/10_123' % apiUrl, headers=api_token)
-
-    assert 200 == response.status_code
-    item = response.json()['targets']
-    assert 'test_lib' == item[0]['method']
-    assert '10_123' == item[0]['mz_rt']
-    assert '10' == item[0]['mz']
-    assert '123' == item[0]['rt']
+    assert 10 == item[0]['mz']
+    assert 123 == item[0]['rt']
 
 
 def test_update_success(api_token):
     response = requests.put(apiUrl, json=newData, headers=api_token)
-    print("RESPONSE: %s" % response.text)
     assert 200 == response.status_code
     item = response.json()
     assert 'newStuff' == item['name']
@@ -54,4 +45,5 @@ def test_delete(api_token):
     response = requests.post(apiUrl, json=data2, headers=api_token)
     assert 200 == response.status_code
 
-    assert 204 == requests.delete('%s/%s/%s' % (apiUrl, 'test_del', '1_2'), headers=api_token).status_code
+    assert 204 == requests.delete(apiUrl + '/test_del | unknown | unknown | positive/1_2',
+                                  headers=api_token).status_code

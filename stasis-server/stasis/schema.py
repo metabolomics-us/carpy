@@ -213,7 +213,19 @@ __TARGET_SCHEMA__ = {
         },
         'name': {
             'type': 'string'
+        },
+        'mz': {
+            'type': 'number'
+        },
+        'rt': {
+            'type': 'number'
+        },
+        'rtUnit': {
+            'type': 'string'
+        },
+        'riMarker': {
+            'type': 'boolean'
         }
     },
-    'required': ['method', 'mz_rt', 'sample']
+    'required': ['method', 'mz', 'rt', 'sample']
 }
