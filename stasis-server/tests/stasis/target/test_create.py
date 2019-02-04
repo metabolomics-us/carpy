@@ -4,26 +4,30 @@ from stasis.target import create, get
 
 
 def test_create_success(requireMocking):
-    jsonString = json.dumps({'method': 'test_lib', 'mz_rt': '12_1', 'sample': 'tgtTest'})
+    jsonString = json.dumps({'method': 'test_lib | unknown | unknown | positive',
+                             'mz': 12.45, 'rt': 1.01, 'sample': 'tgtTest'})
 
     response = create.create({'body': jsonString}, {})
     assert response['statusCode'] == 200
 
     result = get.get({'pathParameters': {
-        'method': 'test_lib', 'mz_rt': '12_1'}
+        'method': 'test_lib | unknown | unknown | positive'}
     }, {})
 
     assert 200 == result['statusCode']
     added = json.loads(result['body'])['targets'][0]
-    assert 'tgtTest' == added['sample']
-    assert '12' == added['mz']
-    assert '1' == added['rt']
+    assert added['sample'] == 'tgtTest'
+    assert added['mz'] == 12.45
+    assert added['rt'] == 1.01
+    assert added['mz_rt'] == '12.45_1.01'
 
 
 def test_create_invalid_data(requireMocking):
     jsonString = json.dumps(
-        {'method': 'test_lib', 'sample': 'tgtTest'})
+        {'method': 'test_lib | unknown | unknown | positive', 'sample': 'tgtTest'})
 
     result = create.create({'body': jsonString}, {})
     assert 422 == result['statusCode']
-    assert 'body' in result
+    print("body: " + json.dumps(result, indent=2))
+    assert 'message' in result
+    assert result['message'] == '{"error": "\'mz\' is a required property"}'

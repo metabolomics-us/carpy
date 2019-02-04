@@ -51,7 +51,7 @@ provider:
 
   #where to store out data, needs to be manually created!
   deploymentBucket:
-    name: lambdas-stasis
+    name: "lambdas-stasis"
 
 ############################################################################################
 #custom configuration settings
@@ -296,10 +296,24 @@ functions:
     #defines to which topic we want to connect
     environment:
       schedule_queue: ${self:custom.scheduleQueue}
+
+  #schedule data to stasis, for handling the processing on the backend
+  secure_schedule:
+    handler: stasis/schedule/schedule.secure_schedule
+    events:
+      - http:
+          path: secure_schedule
+          method: post
+          private: true
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      schedule_queue: ${self:custom.scheduleQueue}
+
   #returns the count of scheduled tasks in the fargate cluster
   #no to be confused with the actual queue
   schedule_task_count:
-
     handler: stasis/schedule/schedule.scheduled_task_size
     events:
       - http:
@@ -319,8 +333,7 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
 
-  #
-  #
+  # fetches the list of tracking statuses
   statusGet:
     handler: stasis/status/get.get
     events:

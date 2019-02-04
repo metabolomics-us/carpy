@@ -184,7 +184,7 @@ __SCHEDULE__ = {
             "title": "The Sample Schema ",
             "default": "",
             "examples": [
-                "abc"
+                "abc.mzml"
             ]
         },
         "method": {
@@ -193,7 +193,7 @@ __SCHEDULE__ = {
             "title": "The Method Schema ",
             "default": "",
             "examples": [
-                "method"
+                "method name | instrument | column | ion mode"
             ]
         }
     }

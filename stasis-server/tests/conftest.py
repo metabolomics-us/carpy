@@ -95,6 +95,25 @@ def create_cluster():
         ],
     )
 
+    cluster.register_task_definition(
+        containerDefinitions=[
+            {
+                'name': 'carrot-runner',
+                'command': [
+                    'sleep',
+                    '360',
+                ],
+                'cpu': 10,
+                'essential': True,
+                'image': 'busybox',
+                'memory': 10,
+            },
+        ],
+        family='secure-carrot-runner',
+        taskRoleArn='',
+        volumes=[],
+    )
+
     test_instance = ec2.create_instances(
         ImageId="ami-1234abcd",
         MinCount=1,

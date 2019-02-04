@@ -1,12 +1,11 @@
 import os
-
 import traceback
+
 import simplejson as json
 from jsonschema import validate
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __SCHEDULE__
-from stasis.service.Queue import Queue
 from stasis.tracking.create import create
 
 MAX_FARGATE_TASKS = 50
@@ -52,6 +51,42 @@ def schedule(event, context):
     :return:
     """
     body = json.loads(event['body'])
+
+    # get topic refrence
+    import boto3
+    client = boto3.client('sqs')
+
+    # if topic exists, we just reuse it
+    arn = client.create_queue(QueueName=os.environ['schedule_queue'])['QueueUrl']
+
+    serialized = json.dumps(body, use_decimal=True)
+    # submit item to queue for routing to the correct persistence
+
+    result = client.send_message(
+        QueueUrl=arn,
+        MessageBody=json.dumps({'default': serialized}),
+    )
+
+    print(result)
+    return {
+        'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
+        'headers': __HTTP_HEADERS__,
+        'body': serialized
+    }
+
+
+def secure_schedule(event, context):
+    """
+    schedules the given even to the internal queuing system
+    :param event:
+    :param context:
+    :return:
+    """
+    body = json.loads(event['body'])
+    body['secured'] = True
+
+    if 'task_version' not in body:
+        body['task_version'] = 1
 
     # get topic refrence
     import boto3
@@ -175,16 +210,9 @@ def monitor_queue(event, context):
 
 def schedule_to_fargate(event, context):
     """
-    triggers a new calculation task on the fargate server
+    submits a new task to the cluster - a fargate task will run it
     :param event:
     :param context:
-    :return:
-    """
-    """
-        submits a new task to the cluster - a fargate task will run it
-
-    :param configuration:
-    :param user:
     :return:
     """
     body = json.loads(event['body'])
@@ -217,19 +245,23 @@ def schedule_to_fargate(event, context):
             ]
         }]}
 
-        version = "1"
+        version = '1'
+        task_name = 'carrot-runner'
 
-        if "task_version" in body:
+        if 'task_version' in body:
             version = body["task_version"]
 
-        print("utilizing version: {}".format(version))
+        if 'secured' in body and body['secured']:
+            task_name = 'secure-carrot-runner'
+
+        print('utilizing taskDefinition: {}:{}'.format(task_name, version))
 
         # fire AWS fargate instance now
         client = boto3.client('ecs')
         response = client.run_task(
             cluster='carrot',  # name of the cluster
             launchType='FARGATE',
-            taskDefinition='carrot-runner:{}'.format(version),
+            taskDefinition='{}:{}'.format(task_name, version),
             count=1,
             platformVersion='LATEST',
             networkConfiguration={
