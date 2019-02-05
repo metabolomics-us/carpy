@@ -1,14 +1,28 @@
 language: python
 python:
 - 3.6
+cache: pip
 
 # Remove Google's default boto configuration
 before_install:
 - sudo rm -f /etc/boto.cfg
 
-# Support multiple subprojects
 env:
-- TEST_DIR=stasis-client
-- TEST_DIR=stasis-server
+  # Support multiple subprojects
+  matrix:
+  - TEST_DIR=stasis-client
+  - TEST_DIR=stasis-server
+  
+  # AWS keys for user travis-ci
+  global:
+  - secure: nJfuQQzGjqmUkw3bIYIAoH++P7JPV3x2+szPHKe8AP2DWdcpQNowCx8+21AMyghCFUFNJG6w5Nmg17Jrfa0QzjYqUsiTt7HZkolJ6laD90bUffzo06irfn8ITOX1PecRyOckkpr2UagmEPbZnTQDKR9x/wpn2FIoaMmTO2jgPJ11RT6l8/VGEpXfOFr0CHUuH9tpwOYCxuFOrH2RxjLojZoRjm1d50h8p6TDubD16b05LBkaEvcO9RTCpmTDl2zOkOqtMn0d07dz0mOuqV8vuFAAluDFqvkZThh5xmJntowpGd94dH+imYhmAPtu5zV6WcvAvrFy7gWGPVIpMbNyYjhXBMvK/alrGNraNnikxnVOLDEhqy5DpOX34txOxGzg/N5p5AmyrxfE8ag+6abqbSB3+dZQy/+VPXj5N0VKRllWXwnV5p4bw+ZIrf6kdgTuEATlNwB7ZE3x19OEiwRLW8CtKORv4naTj+yxBdfbKefzC8die4rDM4VxCihhi/n3DTlJatI5yvU0RlVcPzaZZJ50ZT862BX67WCNqMtuy+7zvLKoExqZatA0IvRo5NVN8WSt8z8kTQAla8XtCLWnL8mWCfksyuyPTqe8V1Q31LoKwUlbN3crpjRESLPUYDc/Z91ImBlrgesMrfDYButvk7D18Un1v7bCxeMhPNyzbNs=
+  - secure: FzKqS37IZ/no5ZavEHL6Dm/QalqqMoXtLSLM9CnZswpzUr1ajdyPnGUNtMmRZewlrnq5VmGmrp9SiAZWcnMQ/FLTEMn89WUI1tgB8q/MpPhiWZ2Epotpg3kCezIAqlihCsq8I9JV0z2IkN++jc/OPJ6e43R/UWHOxDbrgXhCueFFayjEG4nffUes+QRXB9HGFqP0pDIJ6JmbPfT+dJlQ0xlMHk24bb9E0BFE93NqWoAKVeJp/fbXo5VVMsfCZQAouE5WhuTXDkcA+26yNQzI92+i/w5D2fiO8/iZKWXHRM8qz1OvGAeLPCbLBgXVPVG0HndmpAgWiqMobfI7tEeboEC5Yhx4XiXHj4NvwLkxpBKCYCynOM82YBKKauZ5Ky2MPPw2+HI8z9vAQCyOOis2Qi9xcrNuSxdttz+oUgW0J849orbM2GcX3PmxhvC8X/Hm5r6LiX6zKdPxykppzO3jE1Y+ErVwLkVRV9g5Uxbxmy917lANCffHAa/76xr5Fh+D7xZ2a740j0p74oO6D6AaxhI+Tsi1GwBLZHUz5BTXUswe/QCz54LPUn71+FGFNCNBYZyJRqWyuYLlX3F0ilOrNdG4XiBsv+jgcCyhq3J56cSvJZZfXjh9k4cRdDUt3+caANoOpgI0nLhUWuSUB7ptm8cK3bGaJeCZ2dVKL4r8o18=
 
-script: cd $TEST_DIR && pip install -r requirements.txt && pytest
+script: cd $TEST_DIR && pip install -r requirements.txt && pytest --ignore=integrationTests
+
+jobs:
+  include:
+    - stage: deploy
+      env: TEST_DIR=none
+      install: cd stasis-server && npm install -g serverless && npm install serverless-domain-manager serverless-python-requirements
+      script: sls deploy --stage test && pip install -r requirements.txt && pytest integrationTests
