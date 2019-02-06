@@ -8,8 +8,6 @@ from stasis.tables import TableManager
 def get(events, context):
     """returns the specific element from the storage"""
 
-    print("received event: " + json.dumps(events, indent=2))
-
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
             tm = TableManager()

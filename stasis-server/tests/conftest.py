@@ -1,12 +1,14 @@
 # Set AWS environment variables if they don't exist before importing moto/boto3
 import os
 
+import boto3
+import moto
+import pytest
+import simplejson as json
+from moto.ec2 import utils as ec2_utils
+
 if 'AWS_DEFAULT_REGION' not in os.environ:
     os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
-
-import pytest
-import moto
-import boto3
 
 
 @pytest.fixture
@@ -23,8 +25,7 @@ def requireMocking():
     sns.start()
 
     sqs = moto.mock_sqs()
-    sqs.start(
-    )
+    sqs.start()
 
     dynamo = moto.mock_dynamodb2()
     dynamo.start()
@@ -67,8 +68,6 @@ def requireMocking():
 
 
 def create_cluster():
-    from moto.ec2 import utils as ec2_utils
-    import simplejson as json
 
     ec2 = boto3.resource('ec2')
     cluster = boto3.client('ecs')
@@ -89,7 +88,7 @@ def create_cluster():
                 'memory': 10,
             },
         ],
-        family='carrot-runner',
+        family='test-carrot-runner',
         taskRoleArn='',
         volumes=[
         ],
@@ -109,7 +108,7 @@ def create_cluster():
                 'memory': 10,
             },
         ],
-        family='secure-carrot-runner',
+        family='test-secure-carrot-runner',
         taskRoleArn='',
         volumes=[],
     )

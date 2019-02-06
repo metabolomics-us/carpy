@@ -1,10 +1,12 @@
 import simplejson as json
+from moto import mock_s3
 
 from stasis.acquisition import create
 from stasis.tracking import get
 from stasis.util.minix_parser import parse_minix_xml
 
 
+@mock_s3
 def test_create_success_gctof(requireMocking):
     data = parse_minix_xml("http://minix.fiehnlab.ucdavis.edu/rest/export/63618")
 

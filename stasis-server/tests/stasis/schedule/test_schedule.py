@@ -6,7 +6,7 @@ from stasis.schedule import schedule as s
 
 
 def test_scheduled_task_size(requireMocking):
-    response = s.scheduled_task_size({}, {})
+    s.scheduled_task_size({}, {})
 
 
 def test_schedule(requireMocking):

@@ -57,7 +57,7 @@ def schedule(event, context):
     client = boto3.client('sqs')
 
     # if topic exists, we just reuse it
-    arn = client.create_queue(QueueName=os.environ['schedule_queue'])['QueueUrl']
+    arn = _get_queue(client)
 
     serialized = json.dumps(body, use_decimal=True)
     # submit item to queue for routing to the correct persistence
@@ -93,7 +93,7 @@ def secure_schedule(event, context):
     client = boto3.client('sqs')
 
     # if topic exists, we just reuse it
-    arn = client.create_queue(QueueName=os.environ['schedule_queue'])['QueueUrl']
+    arn = _get_queue(client)
 
     serialized = json.dumps(body, use_decimal=True)
     # submit item to queue for routing to the correct persistence
@@ -141,7 +141,7 @@ def monitor_queue(event, context):
     client = boto3.client('sqs')
 
     # if topic exists, we just reuse it
-    arn = client.create_queue(QueueName=os.environ['schedule_queue'])['QueueUrl']
+    arn = _get_queue(client)
 
     slots = _free_task_count()
 
@@ -159,13 +159,13 @@ def monitor_queue(event, context):
         AttributeNames=[
             'All'
         ],
-        MessageAttributeNames=[
-            'string',
-        ],
+        # MessageAttributeNames=[
+        #     'string',
+        # ],
         MaxNumberOfMessages=message_count,
         VisibilityTimeout=1,
-        WaitTimeSeconds=1,
-        ReceiveRequestAttemptId='string'
+        WaitTimeSeconds=1
+        # ReceiveRequestAttemptId='string'
     )
 
     if 'Messages' not in message:
@@ -178,14 +178,14 @@ def monitor_queue(event, context):
     messages = message['Messages']
 
     if len(messages) > 0:
-        print("received {} messages".format(len(messages)))
+        # print("received {} messages".format(len(messages)))
         result = []
-        print(messages)
+        # print(messages)
         for message in messages:
             receipt_handle = message['ReceiptHandle']
-            print("current message: {}".format(message))
+            # print("current message: {}".format(message))
             body = json.loads(message['Body'])['default']
-            print("schedule: {}".format(body))
+            # print("schedule: {}".format(body))
             try:
                 result.append(schedule_to_fargate({'body': body}, {}))
                 client.delete_message(
@@ -279,7 +279,7 @@ def schedule_to_fargate(event, context):
 
         # fire status update to track sample is in scheduling
 
-        print(response)
+        print(f'Response: {response}')
         return {
             'statusCode': 200,
             'headers': __HTTP_HEADERS__
@@ -295,3 +295,12 @@ def schedule_to_fargate(event, context):
             'statusCode': 503,
             'headers': __HTTP_HEADERS__
         }
+
+
+def _get_queue(client):
+    try:
+        print("new queue")
+        return client.create_queue(QueueName=os.environ['schedule_queue'])['QueueUrl']
+    except Exception as ex:
+        print("queue exists")
+        return client.get_queue_url(QueueName=os.environ['schedule_queue'])['QueueUrl']
