@@ -5,8 +5,9 @@ import requests
 tgtUrl = "https://test-api.metabolomics.us/stasis/target"
 apiUrl = "https://test-api.metabolomics.us/stasis/library"
 data = [
-    {'method': 'test_lib | unknown | unknown | positive', 'mz_rt': '10_123', 'sample': 'sample1', 'name': 'unknown'},
-    {'method': 'test_other | unknown | unknown | negative', 'mz_rt': '10_123', 'sample': 'sample1', 'name': 'newStuff'}]
+    {'method': 'test_lib | unknown | unknown | positive', 'mz': 10, 'rt': 123, 'sample': 'sample1', 'name': 'unknown'},
+    {'method': 'test_other | unknown | unknown | negative', 'mz': 10, 'rt': 123, 'sample': 'sample1',
+     'name': 'newStuff'}]
 
 
 def test_get(api_token):
@@ -18,7 +19,6 @@ def test_get(api_token):
 
     assert 200 == response.status_code
     items = response.json()
-    print('libraries: %s' % '\n'.join(items))
 
     assert len(items) >= 2
     assert 'test_lib | unknown | unknown | positive' in items
