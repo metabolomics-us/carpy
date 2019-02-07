@@ -20,15 +20,16 @@ def update(event, context):
 
     try:
         data = json.loads(event.get('body'))
-        print('DATA: ', json.dumps(data, indent=2))
 
         timestamp = int(time.time() * 1000)
         data['time'] = timestamp
     except Exception as ex:
-        print(str(ex))
+        print(ex.args)
         raise
 
-    keys = all(x in data for x in ['method', 'mz_rt'])
+    print([x in data.keys() for x in ['method', 'mz_rt']])
+    keys = all([x in data.keys() for x in ['method', 'mz_rt']])
+
     if not keys:
         return {
             'statusCode': 422,
@@ -37,7 +38,6 @@ def update(event, context):
         }
 
     try:
-        print("data for event triggering: %s" % json.dumps(data, indent=2))
         validate(data, __TARGET_SCHEMA__)
     except ValidationError as ve:
         return {
@@ -55,7 +55,6 @@ def update(event, context):
                  'mz_rt': data['mz_rt']}
         )
         existing = existing.get('Item')
-        print(existing)
     except Exception as e:
         return {
             'statusCode': 422,
@@ -81,7 +80,7 @@ def update(event, context):
                 'body': json.dumps(data)
             }
         except Exception as ex:
-            print("ERRROR update: %s" % str(ex))
+            print("ERROR update: %s" % str(ex))
             return {
                 'statusCode': 500,
                 'headers': __HTTP_HEADERS__,

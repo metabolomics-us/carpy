@@ -184,7 +184,7 @@ __SCHEDULE__ = {
             "title": "The Sample Schema ",
             "default": "",
             "examples": [
-                "abc"
+                "abc.mzml"
             ]
         },
         "method": {
@@ -193,7 +193,7 @@ __SCHEDULE__ = {
             "title": "The Method Schema ",
             "default": "",
             "examples": [
-                "method"
+                "method name | instrument | column | ion mode"
             ]
         }
     }
@@ -213,7 +213,19 @@ __TARGET_SCHEMA__ = {
         },
         'name': {
             'type': 'string'
+        },
+        'mz': {
+            'type': 'number'
+        },
+        'rt': {
+            'type': 'number'
+        },
+        'rtUnit': {
+            'type': 'string'
+        },
+        'riMarker': {
+            'type': 'boolean'
         }
     },
-    'required': ['method', 'mz_rt', 'sample']
+    'required': ['method', 'mz', 'rt', 'sample']
 }

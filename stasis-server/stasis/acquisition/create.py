@@ -1,6 +1,7 @@
 import time
 
 import simplejson as json
+from boto.dynamodb2.exceptions import ValidationException
 from jsonschema import validate
 
 from stasis.headers import __HTTP_HEADERS__
@@ -18,21 +19,21 @@ def triggerEvent(data):
     :return: a serialized version of the submitted message
     """
     print("trigger event: " + json.dumps(data))
-
-    validate(data, __ACQUISITION_SCHEMA__)
-
-    timestamp = int(time.time() * 1000)
-    data['time'] = timestamp
-    data['id'] = data['sample']
-
-    # put item in table instead of queueing
-    tm = TableManager()
-    acqtable = tm.get_acquisition_table()
-    trktable = tm.get_tracking_table()
-
-    data = tm.sanitize_json_for_dynamo(data)
     saved = {}
+
     try:
+        validate(data, __ACQUISITION_SCHEMA__)
+
+        timestamp = int(time.time() * 1000)
+        data['time'] = timestamp
+        data['id'] = data['sample']
+
+        # put item in table instead of queueing
+        tm = TableManager()
+        acqtable = tm.get_acquisition_table()
+        trktable = tm.get_tracking_table()
+
+        data = tm.sanitize_json_for_dynamo(data)
         saved = acqtable.put_item(Item=data)  # save or update our item
 
         # add 'entered' tracking status
@@ -48,8 +49,10 @@ def triggerEvent(data):
         }
         tracked = trktable.put_item(Item=tracking)
 
+    except ValidationException as vex:
+        data = str(vex.body)
+        saved['ResponseMetadata']['HTTPStatusCode'] = 400
     except Exception as ex:
-        print("ERROR: %s" % str(ex))
         data = str(ex)
         saved['ResponseMetadata']['HTTPStatusCode'] = 500
 

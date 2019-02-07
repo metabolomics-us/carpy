@@ -8,7 +8,7 @@ from boto.dynamodb2.exceptions import ResourceInUseException
 class TableManager:
 
     def __init__(self):
-        self.db = boto3.resource('dynamodb')
+        self.db = boto3.resource('dynamodb', 'us-west-2')
 
     def get_tracking_table(self):
         """
