@@ -7,7 +7,7 @@ cache: pip
 before_install:
   - sudo rm -f /etc/boto.cfg
 
-#env:
+env:
   # AWS keys for user travis-ci
   global:
     - secure: bZptls6SNQlG12I3G260/jNPV8tebOqLWwf+HWgj0Wwp7EvbUG/6ul5n0PwMn9C/PtecuNUMvrTg9v0E9FhbkpKVCaTZzcaqSNMq7yVnhVB1Wd+oRzQGjk+IvMJ5N6atfcdap55GZAqCATgYcmbQ6BGhl+1rKjDeAvuv61W0pmRBBhzKb8r65Xmeqxc9vXN0yTPm+MJpT46tuPhWbKo1maetNN2RaLWVv8/mAtuf3qkPz5DLE3p9qYiI5534ZX+j1fyMytRzqNJhdV1uCD7pqGVYJ/oH/4Rcg6mYgSOtEjOhBkmp5Ju5cNn0APA35vCx97kuza60e9WM1cnZRJ9cZVt+hVm9zN+VAoGyIi+xJt4Fkhop91XMT+2HL+tBICyRt7SBPqTSKuPTvaTyl0f9xeyXpCmUChYhO0FKsvyd+YDYi2vzcRDAfrZMny/+a9CXYMt/5Mg4Ogzr42zlaenk/Yg1hZHXCSggcOdWhphfEzRI+nMOl0rvq5JrcfvcyfFIystScdolE53yluBXgll89DXJiiqunBSKls0CrbzID5EjjBmXc4339YxPYQ2AMjziaHH6Son7c09/l8Jzl2o0KAesEnIByJ0iLFLuD0zf24qCcaUuBcRPzQFOa+prtt9F8nmPnEMUD5a6yRauDK594LcqOZnXkUxd9rnLLuiO3ZI=
