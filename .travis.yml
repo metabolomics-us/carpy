@@ -39,6 +39,7 @@ jobs:
         - pytest integrationTests
 
     - stage: sls_prod_deployment
+      if: branch = master
       script:
         - cd stasis-server
         - npm install -g serverless
