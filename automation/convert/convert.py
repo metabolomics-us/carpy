@@ -1,14 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
 import re
 import time
 
 import pandas as pd
 import requests
 import simplejson as json
+from requests import RequestException
 
 apiBase = 'https://api.metabolomics.us/stasis'
 common_extensions = ['.d', '.mzml', '.raw', '.cdf', '.wiff']
+
+
+def _api_token():
+    api_token = os.getenv('PROD_STASIS_API_TOKEN', '').strip()
+    if api_token is '':
+        raise RequestException("Missing authorization token")
+
+    return {'x-api-key': api_token}
 
 
 def create_metadata(filename, args):
@@ -33,11 +43,11 @@ def create_metadata(filename, args):
         print(f'{time.strftime("%H:%M:%S")} - {data}')
         status = {'status_code': 200}
     else:
-        response = requests.post('%s/acquisition' % apiBase, json=data)
+        response = requests.post('%s/acquisition' % apiBase, json=data, headers=_api_token())
         status = response.status_code
         if status != 200:
             # append line to error file
-            print(f'{time.strftime("%H:%M:%S")} - Error adding acquisition data for {filename}')
+            print(f'{time.strftime("%H:%M:%S")} - Error {status} - {response.text} adding acquisition data for {filename}')
 
     print(f'{time.strftime("%H:%M:%S")} - Added acquisition metadata for {filename}')
 
@@ -46,6 +56,7 @@ def create_metadata(filename, args):
 
 def add_tracking(filename, args):
     stat = {}
+    msg = {}
     handle_ext = {'entered': '', 'acquired': '.d', 'converted': '.mzml'}
     for trk in ['entered', 'acquired', 'converted']:
         data = {'status': trk,
@@ -55,13 +66,14 @@ def add_tracking(filename, args):
             print(f'{time.strftime("%H:%M:%S")} - {data}')
             stat[trk] = 200
         else:
-            stat[trk] = requests.post('%s/tracking' % apiBase, json=data).status_code
+            response = requests.post('%s/tracking' % apiBase, json=data, headers=_api_token())
+            stat[trk] = response.status_code
+            msg[trk] = json.loads(response.text)
 
     print(f'{time.strftime("%H:%M:%S")} - Added tracking metadata for {filename}', flush=True)
 
-    [print(f'{time.strftime("%H:%M:%S")} - Error adding tracking {stat[trk]} for {filename}') for trk in
-     ['acquired', 'converted'] if
-     stat[trk] != 200]
+    [print(f'{time.strftime("%H:%M:%S")} - Error {stat[trk]} - {msg[trk]["message"]} adding tracking for {filename}') for trk in
+     ['acquired', 'converted'] if stat[trk] != 200]
 
     return stat
 
@@ -74,16 +86,17 @@ def schedule(sample, args):
 
     data = {'profile': profiles,
             'env': 'prod',
+            'secure': True,
             'sample': f'{sample}.mzml',
             'method': f'{args.method} | {args.instrument} | {args.column} | {args.ion_mode}',
-            'task_version': args.task_version
+            'task_version': 160
             }
 
     if args.test:
         print(f'{time.strftime("%H:%M:%S")} - {data}')
         return 200
     else:
-        result = requests.post('%s/schedule' % apiBase, json=data)
+        result = requests.post('%s/secure_schedule' % apiBase, json=data, headers=_api_token())
         if result.status_code != 200:
             print('{time.strftime("%H:%M:%S")} - Error scheduling sample {sample}')
 
@@ -125,7 +138,6 @@ def process(args):
 
     for sample in results.keys():
         if args.schedule:
-
             results[sample]['schedule'] = schedule(sample, args)  # push the sample to the pipeline
             print(f'{time.strftime("%H:%M:%S")} - Scheduled sample {sample}')
         else:
