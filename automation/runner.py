@@ -3,7 +3,7 @@
 
 import argparse
 
-from convert import convert
+from scheduler import scheduler
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -28,4 +28,4 @@ if __name__ == "__main__":
         print(parser.print_help())
         SystemExit('Missing file to process')
 
-    convert.process(args)
+    scheduler.process(args)
