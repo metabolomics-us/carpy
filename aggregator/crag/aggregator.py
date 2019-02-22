@@ -1,17 +1,31 @@
-import numpy
 import os
-import pandas as pd
 import re
-import requests
 import time
 
-AVG_BR_ = 'AVG (br)'
+import numpy
+import pandas as pd
+import requests
+import simplejson as json
+from requests import RequestException
 
-# RSD_SA_ = '% RSD (sa)'
+AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
 
 stasis_url = "https://api.metabolomics.us/stasis"
 test_url = "https://test-api.metabolomics.us/stasis"
+
+
+def _api_token():
+    api_token = os.getenv('PROD_STASIS_API_TOKEN', '').strip()
+    if api_token is '':
+        raise RequestException("Missing authorization token")
+
+    return {'x-api-key': api_token}
+
+
+def print_response(response):
+    print(f'{response.status_code} -- {response.reason}')
+    print(json.dumps(response.json(), indent=2))
 
 
 def get_experiment_files(experiment) -> [str]:
@@ -22,7 +36,7 @@ def get_experiment_files(experiment) -> [str]:
     :return: dictionary with results or {error: msg}
     """
     print(f'{time.strftime("%H:%M:%S")} - Getting experiment files')
-    response = requests.get(stasis_url + '/experiment/' + experiment)
+    response = requests.get(stasis_url + '/experiment/' + experiment, headers=_api_token())
 
     files = []
     if response.status_code == 200:
@@ -39,7 +53,7 @@ def get_sample_tracking(filename):
     :return: dictionary with tracking or {error: msg}
     """
     print(f'{time.strftime("%H:%M:%S")} - Getting filename status')
-    response = requests.get(stasis_url + '/tracking/' + filename)
+    response = requests.get(stasis_url + '/tracking/' + filename, headers=_api_token())
 
     if response.status_code == 200:
         return response.json()
@@ -54,10 +68,10 @@ def get_sample_metadata(filename, log):
     :param log:
     :return: dictionary with metadata or {error: msg}
     """
-    response = requests.get(stasis_url + '/acquisition/' + filename)
+    response = requests.get(stasis_url + '/acquisition/' + filename, headers=_api_token())
 
     if log:
-        print(response)
+        print_response(response)
 
     if response.status_code == 200:
         return response.json()
@@ -65,8 +79,7 @@ def get_sample_metadata(filename, log):
         return {"error": "no metadata info"}
 
 
-
-def getFileResults(filename, log):
+def get_file_results(filename, log):
     """
     Calls the stasis api to get the results for a single file
     :param filename: name of file to get results from
@@ -77,22 +90,21 @@ def getFileResults(filename, log):
     if filename[-5:] == '.mzml': filename = filename[:-5]
 
     print(f'{time.strftime("%H:%M:%S")} - Getting results for file \'{filename}\'')
-    response = requests.get(stasis_url + "/result/" + filename)
+    response = requests.get(stasis_url + "/result/" + filename, headers=_api_token())
 
     if response.status_code == 200:
         data = response.json()
         data['metadata'] = get_sample_metadata(filename, log)
-
     else:
         data = {'error': f'no results. {response.reason}'}
 
     if log:
-        print(response.json())
+        print_response(response)
 
     return data
 
 
-def findReplaced(value):
+def find_replaced(value):
     """
     Returns the intensity value only for replaced data
     :param value: the entire annotation object
@@ -113,6 +125,7 @@ def format_sample(data):
     intensities = []
     masses = []
     rts = []
+    origrts = []
     curve = []
     replaced = []
 
@@ -120,10 +133,31 @@ def format_sample(data):
         intensities = {k: [round(r['annotation']['intensity']) for r in v['results']]}
         masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
         rts = {k: [round(r['annotation']['retentionIndex'], 2) for r in v['results']]}
+        origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
         curve = {k: [r for r in v['correction']['curve']]}
-        replaced = {k: [findReplaced(r['annotation']) for r in v['results']]}
+        replaced = {k: [find_replaced(r['annotation']) for r in v['results']]}
 
-    return [intensities, masses, rts, curve, replaced]
+    # try:
+    #     int_arr = add_header(intensities, data['metadata'])
+    # except Exception as e:
+    #     print(f'{e} -- {str(e.args)}')
+    #     int_arr=intensities
+
+    return [intensities, masses, rts, origrts, curve, replaced]
+
+
+def add_header(dest, data):
+    species = data['metadata']['species']
+    organ = data['metadata']['organ']
+    method = data['acquisition']['method']
+    instrument = data['acquisition']['instrument']
+    ion_mode = data['acquisition']['ionization']
+    sample = dest.iterkeys().next()
+
+    new_data = [sample, species, organ, method, instrument, ion_mode, ''].append(dest.get(sample))
+
+    print(f'updated: {new_data}')
+    return new_data
 
 
 def format_metadata(data):
@@ -141,12 +175,13 @@ def format_metadata(data):
     inchikeys = [name.split('_')[-1] if pattern.match(name) else None for name in names]
     names2 = [name.rsplit('_', maxsplit=1)[0] if pattern.match(name) else name for name in names]
 
-    metadata = pd.DataFrame({'name': names2, 'ri(s)': rts, 'mz': masses, 'inchikey': inchikeys,
+    metadata = pd.DataFrame({'Target name': names2, 'Target RI(s)': rts, 'Target mz': masses, 'InChIKey': inchikeys,
                              AVG_BR_: pd.np.nan, RSD_BR_: pd.np.nan})
+    metadata = metadata[['Target name', 'Target RI(s)', 'Target mz', 'InChIKey', AVG_BR_, RSD_BR_]]
     return metadata
 
 
-def export_excel(intensity, mass, rt, curve, replaced, infile, test):
+def export_excel(intensity, mass, rt, origrt, curve, replaced, infile, test):
     # saving excel file
     print(f'{time.strftime("%H:%M:%S")} - Exporting excel file')
     file, ext = os.path.splitext(infile)
@@ -155,21 +190,23 @@ def export_excel(intensity, mass, rt, curve, replaced, infile, test):
     if test:
         output_name = f'{file}_testResults.xlsx'
 
-    intensity.set_index('name')
-    mass.set_index('name')
-    rt.set_index('name')
-    replaced.set_index('name')
+    intensity.set_index('Target name')
+    mass.set_index('Target name')
+    rt.set_index('Target name')
+    origrt.set_index('Target name')
+    replaced.set_index('Target name')
 
     writer = pd.ExcelWriter(output_name)
     intensity.fillna('').to_excel(writer, 'Intensity matrix')
     mass.fillna('').to_excel(writer, 'Mass matrix')
     rt.fillna('').to_excel(writer, 'Retention index matrix')
+    origrt.fillna('').to_excel(writer, 'Original RT matrix')
     replaced.fillna('').to_excel(writer, 'Replaced values')
     curve.fillna('').to_excel(writer, 'Correction curves')
     writer.save()
 
 
-def calculate_delta(intensity, mass, rt):
+def calculate_delta(intensity, mass, rt, origrt):
     """
     NOT USED ANYMORE
     :param intensity:
@@ -184,9 +221,10 @@ def calculate_delta(intensity, mass, rt):
         intensity.loc[i, 'delta'] = intensity.iloc[i, 4:].max() - intensity.iloc[i, 4:].min()
         mass.loc[i, 'delta'] = mass.iloc[i, 4:].max() - mass.iloc[i, 4:].min()
         rt.loc[i, 'delta'] = rt.iloc[i, 4:].max() - rt.iloc[i, 4:].min()
+        origrt.loc[i, 'delta'] = 'NA'
 
 
-def calculate_average(intensity, mass, rt, biorecs):
+def calculate_average(intensity, mass, rt, origrt, biorecs):
     """
     Calculates the average intensity, mass and retention index of biorecs
     :param intensity:
@@ -203,9 +241,10 @@ def calculate_average(intensity, mass, rt, biorecs):
         intensity.loc[i, AVG_BR_] = intensity.loc[i, biorecs].mean()
         mass.loc[i, AVG_BR_] = mass.loc[i, biorecs].mean()
         rt.loc[i, AVG_BR_] = rt.loc[i, biorecs].mean()
+        origrt.loc[i, AVG_BR_] = 'NA'
 
 
-def calculate_rsd(intensity, mass, rt, biorecs):
+def calculate_rsd(intensity, mass, rt, origrt, biorecs):
     """
     Calculates intensity, mass and retention index Relative Standard Deviation of biorecs
     :param intensity:
@@ -227,7 +266,7 @@ def calculate_rsd(intensity, mass, rt, biorecs):
                   f' Sum of intensities = {intensity.loc[i, biorecs].sum()}')
         mass.loc[i, RSD_BR_] = (mass.loc[i, biorecs].std() / mass.loc[i, biorecs].mean()) * 100
         rt.loc[i, RSD_BR_] = (rt.loc[i, biorecs].std() / rt.loc[i, biorecs].mean()) * 100
-
+        origrt.loc[i, RSD_BR_] = 'NA'
 
 def chunker(list, size):
     """
@@ -271,29 +310,32 @@ def process_file(infile, args):
     first_data = ""
     for sample in samples:
         if sample in ['samples']: continue
-        first_data = getFileResults(sample, False)
+        first_data = get_file_results(sample, args.log)
         if 'error' not in first_data: break
     intensity = format_metadata(first_data)
     mass = format_metadata(first_data)
     rt = format_metadata(first_data)
+    origrt = format_metadata(first_data)
     curve = format_metadata(first_data)
     replaced = format_metadata(first_data)
     # adding intensity matrix
     for chunk in chunker(samples, 1000):
         for sample in chunk:
             if sample in ['samples']: continue
-            data = getFileResults(sample, False)
+            data = get_file_results(sample, False)
             if 'error' not in data:
                 formatted = format_sample(data)
                 intensity[sample] = pd.DataFrame.from_dict(formatted[0])
                 mass[sample] = pd.DataFrame.from_dict(formatted[1])
                 rt[sample] = pd.DataFrame.from_dict(formatted[2])
-                curve[sample] = pd.DataFrame.from_dict(formatted[3])
-                replaced[sample] = pd.DataFrame.from_dict(formatted[4])
+                origrt[sample] = pd.DataFrame.from_dict(formatted[3])
+                curve[sample] = pd.DataFrame.from_dict(formatted[4])
+                replaced[sample] = pd.DataFrame.from_dict(formatted[5])
             else:
                 intensity[sample] = pd.np.nan
                 mass[sample] = pd.np.nan
                 rt[sample] = pd.np.nan
+                origrt[sample] = pd.np.nan
                 replaced[sample] = pd.np.nan
 
     biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower() or 'qc' in str(br).lower()]
@@ -303,14 +345,14 @@ def process_file(infile, args):
 
     #    calculate_delta(intensity, mass, rt)
     try:
-        calculate_average(intensity, mass, rt, biorecs)
+        calculate_average(intensity, mass, rt, origrt, biorecs)
     except Exception as e:
-        print("Error in average calculation: " + e)
+        print(f'Error in average calculation: {str(e.args)}')
     try:
-        calculate_rsd(intensity, mass, rt, biorecs)
+        calculate_rsd(intensity, mass, rt, origrt, biorecs)
     except Exception as e:
-        print("Error in average calculation: " + e)
+        print(f'Error in average calculation: {str(e.args)}')
     try:
-        export_excel(intensity, mass, rt, curve, replaced, infile, args.test)
+        export_excel(intensity, mass, rt, origrt, curve, replaced, infile, args.test)
     except Exception as e:
-        print("Error in average calculation: " + e)
+        print(f'Error in average calculation: {str(e.args)}')
