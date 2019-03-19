@@ -89,7 +89,7 @@ def schedule(sample, args):
             'secure': True,
             'sample': f'{sample}.mzml',
             'method': f'{args.method} | {args.instrument} | {args.column} | {args.ion_mode}',
-            'task_version': 160
+            'task_version': args.task_version
             }
 
     if args.test:
