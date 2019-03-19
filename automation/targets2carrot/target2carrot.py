@@ -3,6 +3,24 @@ import argparse
 import pandas as pd
 from ruamel.yaml import YAML
 
+
+def calculate_formate(t):
+    """
+    Creates a Formate adduct [M+FA-H]- from Acetate target (difference: −16.030202 Da)
+    :param experiment: name of experiment for which to get the list of files
+    """
+
+    formate = {'identifier': target['Metabolite name'].strip(" ").replace('[M+HAc-H]','[M+FA-H]'),
+               'accurateMass': target["Average Mz"] - 16.030202,
+               'retentionTime': target["Average Rt(min)"],
+               'retentionTimeUnit': "minutes",
+               'isInternalStandard': target['istd'],
+               'requiredForCorrection': False,
+               'confirmed': True}
+    print('formate: ' + str(formate))
+    return formate
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -13,6 +31,8 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--study', help='name of the study', required=True)
     parser.add_argument('-i', '--instrument', help='name of the instrument for the library', default='test')
     parser.add_argument('-c', '--column', help='name of the column for the library', default='test')
+    parser.add_argument('--formate', help='calculates the formated adduct from an acetate adduct',
+                        dest='formate', default=False, action='store_true')
     parser.add_argument('-m', '--mode', help='ion mode. [\'positive\' or \'negative\']', default='positive',
                         choices=['positive', 'negative'])
 
@@ -26,16 +46,23 @@ if __name__ == "__main__":
 
     targets = []
     for target in df.to_dict(orient='records'):
+        if any([x in target['Metabolite name'] for x in ['CSH_posESI', 'CSH posESI', 'CSH_negESI', 'CSH negESI']]):
+            target['Metabolite name'] = 'Unknown'
+
         print('target: ' + str(target))
 
-        t = {'identifier': f'{target["Metabolite name"]}',
+        t = {'identifier': target['Metabolite name'].strip(" "),
              'accurateMass': target["Average Mz"],
              'retentionTime': target["Average Rt(min)"],
              'retentionTimeUnit': "minutes",
              'isInternalStandard': target['istd'],
              'requiredForCorrection': False,
              'confirmed': True}
-        targets.append(t)
+
+        if args.formate and "[M+HAc-H]-" in target['Metabolite name']:
+            targets.append(calculate_formate(t))
+        else:
+            targets.append(t)
 
     print('---------------------------------')
 
@@ -55,7 +82,7 @@ if __name__ == "__main__":
         'column': args.column,
         'ionMode': args.mode,
         'instrument': args.instrument,
-        'minimumPeakIntensity': 10000,
+        'minimumPeakIntensity': 5000,
         'targets': [t for t in targets if not t['isInternalStandard']]
     }]
 
