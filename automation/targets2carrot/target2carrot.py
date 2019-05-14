@@ -10,8 +10,8 @@ def calculate_formate(t):
     :param experiment: name of experiment for which to get the list of files
     """
 
-    formate = {'identifier': target['Metabolite name'].strip(" ").replace('[M+HAc-H]','[M+FA-H]'),
-               'accurateMass': target["Average Mz"] - 16.030202,
+    formate = {'identifier': target['Metabolite name'].strip(" ").replace('[M+HAc-H]','[M+FA-H]').replace('[M+Hac-H]','[M+FA-H]'),
+               'accurateMass': target["Average Mz"] - 14.01565,
                'retentionTime': target["Average Rt(min)"],
                'retentionTimeUnit': "minutes",
                'isInternalStandard': target['istd'],
@@ -59,7 +59,7 @@ if __name__ == "__main__":
              'requiredForCorrection': False,
              'confirmed': True}
 
-        if args.formate and "[M+HAc-H]-" in target['Metabolite name']:
+        if args.formate and any([adduct in target['Metabolite name'] for adduct in ["[M+HAc-H]-", "[M+Hac-H]-"]]):
             targets.append(calculate_formate(t))
         else:
             targets.append(t)

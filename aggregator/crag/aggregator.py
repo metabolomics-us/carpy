@@ -14,6 +14,8 @@ RSD_BR_ = '% RSD (br)'
 stasis_url = "https://api.metabolomics.us/stasis"
 test_url = "https://test-api.metabolomics.us/stasis"
 
+global count
+
 
 def _api_token():
     api_token = os.getenv('PROD_STASIS_API_TOKEN', '').strip()
@@ -79,17 +81,18 @@ def get_sample_metadata(filename, log):
         return {"error": "no metadata info"}
 
 
-def get_file_results(filename, log):
+def get_file_results(filename, log, count):
     """
     Calls the stasis api to get the results for a single file
     :param filename: name of file to get results from
     :param log:
+    :param count:
     :return: dictionary with results or {error: msg}
     """
 
     if filename[-5:] == '.mzml': filename = filename[:-5]
 
-    print(f'{time.strftime("%H:%M:%S")} - Getting results for file \'{filename}\'')
+    print(f'{time.strftime("%H:%M:%S")} - [{count}] Getting results for file \'{filename}\'')
     response = requests.get(stasis_url + "/result/" + filename, headers=_api_token())
 
     if response.status_code == 200:
@@ -268,6 +271,7 @@ def calculate_rsd(intensity, mass, rt, origrt, biorecs):
         rt.loc[i, RSD_BR_] = (rt.loc[i, biorecs].std() / rt.loc[i, biorecs].mean()) * 100
         origrt.loc[i, RSD_BR_] = 'NA'
 
+
 def chunker(list, size):
     """
     Splits a list in 'pages'
@@ -308,9 +312,11 @@ def process_file(infile, args):
 
     # creating target section
     first_data = ""
+    count = 0
     for sample in samples:
         if sample in ['samples']: continue
-        first_data = get_file_results(sample, args.log)
+        first_data = get_file_results(sample, args.log, count)
+        count += 1
         if 'error' not in first_data: break
     intensity = format_metadata(first_data)
     mass = format_metadata(first_data)
@@ -319,10 +325,12 @@ def process_file(infile, args):
     curve = format_metadata(first_data)
     replaced = format_metadata(first_data)
     # adding intensity matrix
+    count = 0
     for chunk in chunker(samples, 1000):
         for sample in chunk:
             if sample in ['samples']: continue
-            data = get_file_results(sample, False)
+            data = get_file_results(sample, False, count)
+            count += 1
             if 'error' not in data:
                 formatted = format_sample(data)
                 intensity[sample] = pd.DataFrame.from_dict(formatted[0])

@@ -141,4 +141,5 @@ def process(args):
             results[sample]['schedule'] = schedule(sample, args)  # push the sample to the pipeline
             print(f'{time.strftime("%H:%M:%S")} - Scheduled sample {sample}')
         else:
-            print(f'{time.strftime("%H:%M:%S")} - Can\'t get the count of scheduled tasks')
+            print(f'{time.strftime("%H:%M:%S")} - Can\'t get the count of scheduled tasks\n')
+            print(results[sample]['schedule'])
