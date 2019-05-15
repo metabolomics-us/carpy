@@ -87,8 +87,8 @@ def get_file_results(filename, log, count, local_dir=None, save=False):
     if filename[-5:] == '.mzml':
         filename = filename[:-5]
 
-    if local_dir and Path(local_dir).is_dir() and (Path(local_dir) + filename).exists():
-        return json.load((Path(local_dir) + filename).open())
+    if local_dir and Path(local_dir).is_dir() and (Path(local_dir) / filename).exists():
+        return json.load((Path(local_dir) / filename).open())
     else:
         print(f'{time.strftime("%H:%M:%S")} - [{count}] Getting results for file \'{filename}\'')
         response = requests.get(stasis_url + "/result/" + filename, headers=_api_token())
@@ -99,7 +99,7 @@ def get_file_results(filename, log, count, local_dir=None, save=False):
 
             # Save data locally if requested
             if save and local_dir:
-                with (Path(local_dir) + filename).open() as fout:
+                with (Path(local_dir) / filename).open('w') as fout:
                     print(json.dumps(data, indent=2), file=fout)
         else:
             data = {'error': f'no results. {response.reason}'}
