@@ -1,7 +1,9 @@
+import json
 import os
 import requests
 import time
 
+from pathlib import Path
 from typing import List
 
 
@@ -73,7 +75,7 @@ def get_sample_metadata(filename, log):
         return {"error": "no metadata info"}
 
 
-def get_file_results(filename, log, count):
+def get_file_results(filename, log, count, local_dir=None, save=False):
     """
     Calls the stasis api to get the results for a single file
     :param filename: name of file to get results from
@@ -82,18 +84,27 @@ def get_file_results(filename, log, count):
     :return: dictionary with results or {error: msg}
     """
 
-    if filename[-5:] == '.mzml': filename = filename[:-5]
+    if filename[-5:] == '.mzml':
+        filename = filename[:-5]
 
-    print(f'{time.strftime("%H:%M:%S")} - [{count}] Getting results for file \'{filename}\'')
-    response = requests.get(stasis_url + "/result/" + filename, headers=_api_token())
-
-    if response.status_code == 200:
-        data = response.json()
-        data['metadata'] = get_sample_metadata(filename, log)
+    if local_dir and Path(local_dir).is_dir() and (Path(local_dir) + filename).exists():
+        return json.load((Path(local_dir) + filename).open())
     else:
-        data = {'error': f'no results. {response.reason}'}
+        print(f'{time.strftime("%H:%M:%S")} - [{count}] Getting results for file \'{filename}\'')
+        response = requests.get(stasis_url + "/result/" + filename, headers=_api_token())
 
-    if log:
-        print_response(response)
+        if response.status_code == 200:
+            data = response.json()
+            data['metadata'] = get_sample_metadata(filename, log)
 
-    return data
+            # Save data locally if requested
+            if save and local_dir:
+                with (Path(local_dir) + filename).open() as fout:
+                    print(json.dumps(data, indent=2), file=fout)
+        else:
+            data = {'error': f'no results. {response.reason}'}
+
+        if log:
+            print_response(response)
+
+        return data

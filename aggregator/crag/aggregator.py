@@ -237,7 +237,7 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
-            data = get_file_results(sample, False, self.count)
+            data = get_file_results(sample, False, self.count, self.args.dir, self.args.save)
             self.count += 1
 
             results.append(data)
