@@ -27,7 +27,7 @@ class Aggregator:
         :param value: the entire annotation object
         :return: intensity value if replaced or 0 if not replaced
         """
-        if value['replaced']:
+        if value['replaced'] and self.args.zero_replacement:
             return round(value["intensity"])
         else:
             return 0
