@@ -59,14 +59,22 @@ class Aggregator:
         return new_data
 
 
-    def export_excel(self, intensity, mass, rt, origrt, curve, replaced, infile, test):
+    def export_excel(self, intensity, mass, rt, origrt, curve, replaced, infile):
         # saving excel file
         print(f'{time.strftime("%H:%M:%S")} - Exporting excel file')
         file, ext = os.path.splitext(infile)
         output_name = f'{file}_results.xlsx'
 
-        if test:
-            output_name = f'{file}_testResults.xlsx'
+        # Build suffix
+        if self.args.test:
+            suffix = 'testResults'
+        else:
+            suffix = 'results'
+
+        if self.args.zero_replacement:
+            suffix += '_wReplacements'
+
+        output_name = f'{file}_{suffix}.xlsx'
 
         intensity = intensity.set_index('Target name').sort_index()
         mass = mass.set_index('Target name').sort_index()
@@ -334,7 +342,7 @@ class Aggregator:
         except Exception as e:
             print(f'Error in average calculation: {str(e.args)}')
         try:
-            self.export_excel(intensity, mass, rt, origrt, curve, replaced, sample_file, self.args.test)
+            self.export_excel(intensity, mass, rt, origrt, curve, replaced, sample_file)
         except Exception as e:
             print(f'Error in excel export: {str(e.args)}')
 
