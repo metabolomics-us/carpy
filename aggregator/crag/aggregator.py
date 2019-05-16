@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import requests
 import simplejson as json
+import tqdm
 
 from .stasis import *
 
@@ -21,13 +22,24 @@ class Aggregator:
         self.args = args
 
 
+    def find_intensity(self, value) -> int:
+        """
+        Returns the intensity value only for replaced data
+        :param value: the entire annotation object
+        :return: intensity value if replaced or 0 if not replaced
+        """
+        if not value['replaced'] or (value['replaced'] and self.args.zero_replacement):
+            return round(value["intensity"])
+        else:
+            return 0
+
     def find_replaced(self, value) -> int:
         """
         Returns the intensity value only for replaced data
         :param value: the entire annotation object
         :return: intensity value if replaced or 0 if not replaced
         """
-        if value['replaced'] and self.args.zero_replacement:
+        if value['replaced']:
             return round(value["intensity"])
         else:
             return 0
@@ -56,11 +68,11 @@ class Aggregator:
         if test:
             output_name = f'{file}_testResults.xlsx'
 
-        intensity.set_index('Target name')
-        mass.set_index('Target name')
-        rt.set_index('Target name')
-        origrt.set_index('Target name')
-        replaced.set_index('Target name')
+        intensity = intensity.set_index('Target name').sort_index()
+        mass = mass.set_index('Target name').sort_index()
+        rt = rt.set_index('Target name').sort_index()
+        origrt = origrt.set_index('Target name').sort_index()
+        replaced = replaced.set_index('Target name').sort_index()
 
         writer = pd.ExcelWriter(output_name)
         intensity.fillna('').to_excel(writer, 'Intensity matrix')
@@ -134,22 +146,25 @@ class Aggregator:
         dupes = {}
 
         for k, v in sample['injections'].items():
-            for x in v['results']:
-                if x['target']['id'] not in dupes:
-                    dupes[x['target']['id']] = x
-                else:
-                    i = x['target']['id']
-                    print(f"{i}: ({x['target']['name']}, {x['target']['mass']}, {x['target']['retentionIndex']}) -> ({dupes[i]['target']['name']}, {dupes[i]['target']['mass']}, {dupes[i]['target']['retentionIndex']})")
+            # Debugging
+            # for x in v['results']:
+            #     if x['target']['id'] not in dupes:
+            #         dupes[x['target']['id']] = x
+            #     else:
+            #         i = x['target']['id']
+            #         print(f"{i}: ({x['target']['name']}, {x['target']['mass']}, {x['target']['retentionIndex']}) -> ({dupes[i]['target']['name']}, {dupes[i]['target']['mass']}, {dupes[i]['target']['retentionIndex']})")
 
-            ids = [r['target']['id'] for r in v['results']]
-            intensities = {k: [round(r['annotation']['intensity']) for r in v['results']]}
+            # ids = [r['target']['id'] for r in v['results']]
+            # intensities = pd.Series([round(r['annotation']['intensity'], 4) for r in v['results']], index=ids)
+
+            intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
             masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
             rts = {k: [round(r['annotation']['retentionIndex'], 2) for r in v['results']]}
             origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
             curve = {k: v['correction']['curve']}
             replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
 
-        return [ids, intensities, masses, rts, origrts, curve, replaced]
+        return [None, intensities, masses, rts, origrts, curve, replaced]
 
 
     def build_worksheet(self, targets):
@@ -158,27 +173,36 @@ class Aggregator:
 
         for x in targets:
             rows.append({
-                'ID': x['id'],
+                # 'ID': x['id'],
                 'Target name': x['name'].rsplit('_', 1)[0],
                 'Target RI(s)': x['retentionIndex'],
                 'Target mz': x['mass'],
-                'Target RI(s)': x['retentionIndex'],
                 'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,
             })
 
-        df = pd.DataFrame(rows)
+        df = pd.DataFrame(rows)#.set_index('ID')
         df[AVG_BR_] = np.nan
         df[RSD_BR_] = np.nan
 
         return df[['Target name', 'Target RI(s)', 'Target mz', 'InChIKey', AVG_BR_, RSD_BR_]]
 
 
+    def build_target_identifier(self, target):
+        return f"{target['name']}_{target['retentionIndex'] / 60:.1f}_{target['mass']:.1f}"
+
     def build_target_list(self, targets, sample, intensity_filter=0):
+        if 'error' in sample:
+            if self.args.log:
+                print('Error:', sample)
+            return targets
+
         startIndex = 0
         new_targets = []
 
-        # Lookup for target names    
-        target_names = {x['name']: x['id'] for x in targets if x['name'] != 'Unknown'}
+        # Lookup for target names
+        # Commented version for future when target RT m/z has been corrected
+        # target_lookup = {self.build_target_identifier(x): x['id'] for x in targets if x['name'] != 'Unknown'}
+        target_lookup = {x['name']: x['id'] for x in targets if x['name'] != 'Unknown'}
 
         # Get all annotations and sort by mass
         annotations = sum([v['results'] for v in sample['injections'].values()], [])
@@ -186,10 +210,22 @@ class Aggregator:
 
         max_intensity = max(x['annotation']['intensity'] for x in annotations)
 
+        # Avoid duplicate targets
+        observed_targets = set()
+
         # Match all targets in sample data to master target list 
         for x in annotations:
-            if x['target']['name'] in target_names:
-                x['target']['id'] = target_names[x['target']['name']]
+            # For now, horrible hack to handle duplicate targets
+            if x['target']['name'] != 'Unknown':
+                if x['target']['name'] in observed_targets:
+                    continue
+                observed_targets.add(x['target']['name'])
+
+            # target_identifier = self.build_target_identifier(x['target'])
+            target_identifier = x['target']['name']
+
+            if target_identifier in target_lookup:
+                x['target']['id'] = target_lookup[target_identifier]
                 continue
 
             matched = False
@@ -203,16 +239,21 @@ class Aggregator:
                     break
 
                 if ri - self.args.rt_tolerance <= targets[i]['retentionIndex'] <= ri + self.args.rt_tolerance:
-                    print(f"Matched unknown ({ri}, {x['target']['mass']}) -> ({targets[i]['id']}, {targets[i]['name']}, {targets[i]['retentionIndex']}, {targets[i]['mass']})")
+                    if self.args.log:
+                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']}, {targets[i]['name']}, {targets[i]['retentionIndex']}, {targets[i]['mass']})")
+
                     x['target']['id'] = targets[i]['id']
+                    matched = True
                     break
 
-            if not matched and x['annotation']['intensity'] >= intensity_filter * max_intensity:
-                t = x['target']
-                t['id'] = len(targets) + len(new_targets) + 1
-                new_targets.append(t)
-            else:
-                print(f"Skipped feature ({x['target']['name']}, {ri}, {x['target']['mass']}), less than {intensity_filter * 100}% base peak intensity")
+            if not matched:
+                if x['annotation']['intensity'] >= intensity_filter * max_intensity:
+                    t = x['target']
+                    t['id'] = len(targets) + len(new_targets) + 1
+                    new_targets.append(t)
+                else:
+                    if self.args.log:
+                        print(f"Skipped feature ({x['target']['name']}, {ri}, {x['target']['mass']}, {x['annotation']['intensity']}), less than {intensity_filter * 100}% base peak intensity")
 
         return sorted(targets + new_targets, key=lambda x: x['mass'])
 
@@ -227,7 +268,7 @@ class Aggregator:
 
         # use subset of samples for testing
         if self.args.test:
-            samples = samples[:3]
+            samples = samples[:5]
 
         # creating target list
         results = []
@@ -238,10 +279,14 @@ class Aggregator:
                 continue
 
             data = get_file_results(sample, False, self.count, self.args.dir, self.args.save)
+            data['sample'] = sample
             self.count += 1
 
             results.append(data)
-            targets = self.build_target_list(targets, data)
+            # targets = self.build_target_list(targets, data)
+
+        k = list(results[0]['injections'].keys())[0]
+        targets = [x['target'] for x in results[0]['injections'][k]['results']]
 
         # creating spreadsheets
         intensity = self.build_worksheet(targets)
@@ -252,20 +297,22 @@ class Aggregator:
         replaced = self.build_worksheet(targets)
 
         # populating spreadsheets
-        for data in results:
+        for data in tqdm.tqdm(results):
+            sample = data['sample']
+
             if 'error' not in data:
                 formatted = self.format_sample(data)
 
-                print(len(formatted[0]), len(set(formatted[0])))
+                intensity[sample] = pd.DataFrame(formatted[1])
+                mass[sample] = pd.DataFrame(formatted[2])
+                rt[sample] = pd.DataFrame(formatted[3])
+                origrt[sample] = pd.DataFrame(formatted[4])
+                replaced[sample] = pd.DataFrame(formatted[6])
 
-                intensity[sample] = pd.DataFrame(formatted[1], index=formatted[0])
-                mass[sample] = pd.DataFrame(formatted[2], index=formatted[0])
-                rt[sample] = pd.DataFrame(formatted[3], index=formatted[0])
-                origrt[sample] = pd.DataFrame(formatted[4], index=formatted[0])
-                replaced[sample] = pd.DataFrame(formatted[6], index=formatted[0])
 
-                curve_data = list(formatted[5].values())[0]
-                curve[sample] = pd.DataFrame(formatted[5], index=formatted[0][: len(curve_data)])
+                # curve_data = list(formatted[5].values())[0]
+                # curve[sample] = pd.DataFrame(formatted[5], index=formatted[0][: len(curve_data)])
+                curve[sample] = pd.DataFrame(formatted[5])
             else:
                 intensity[sample] = np.nan
                 mass[sample] = np.nan
