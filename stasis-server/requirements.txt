@@ -5,7 +5,7 @@ boto3==1.9.0
 botocore==1.12.13
 #botocore==1.10.22
 untangle
-jsonschema
+jsonschema==2.6.0
 watchdog
 pytest
 boltons
