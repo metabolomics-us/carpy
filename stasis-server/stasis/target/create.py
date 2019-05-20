@@ -28,6 +28,7 @@ def create(event, context):
         return {
             'body': json.dumps({'error': str(ve.message)}),
             'statusCode': 422,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
 
@@ -54,6 +55,7 @@ def create(event, context):
         return {
             'body': json.dumps(newTarget),
             'statusCode': 200,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
     except Exception as e:
@@ -61,5 +63,6 @@ def create(event, context):
         return {
             'body': json.dumps({'error': str(e)}),
             'statusCode': 500,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }

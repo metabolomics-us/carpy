@@ -17,6 +17,7 @@ def test_schedule(requireMocking):
 
     response = s.schedule({'body': jsonString}, {})
 
+    assert 'isBase64Encoded' in response
     assert 200 == response['statusCode']
 
     s.monitor_queue({}, {})
@@ -30,6 +31,7 @@ def test_secure_schedule(requireMocking):
 
     response = s.secure_schedule({'body': jsonString}, {})
 
+    assert 'isBase64Encoded'in response
     assert 200 == response['statusCode']
     assert 'secured' in response['body']
     assert json.loads(response['body'])['secured'] == True

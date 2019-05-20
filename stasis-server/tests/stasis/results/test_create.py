@@ -66,6 +66,7 @@ def test_create_success(requireMocking):
 
     response = create.create({'body': jsonString}, {})
     print('RESPONSE: %s' % response)
+    assert 'isBase64Encoded'in response
     assert 200 == response['statusCode']
 
     print("BODY: %s" % response['body'])

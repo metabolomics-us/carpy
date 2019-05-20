@@ -41,12 +41,14 @@ def triggerEvent(data):
         return {
             'body': json.dumps(data),
             'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
     else:
         return {
             'body': json.dumps({'error': 'no sample provided'}),
             'statusCode': 400,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
 
