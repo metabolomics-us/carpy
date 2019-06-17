@@ -1,15 +1,10 @@
-import os
 import re
-import time
 
 import numpy as np
 import pandas as pd
-import requests
-import simplejson as json
 import tqdm
 
 from .stasis import *
-
 
 AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
@@ -20,7 +15,6 @@ class Aggregator:
     def __init__(self, args):
         self.count = 0
         self.args = args
-
 
     def find_intensity(self, value) -> int:
         """
@@ -44,7 +38,6 @@ class Aggregator:
         else:
             return 0
 
-
     def add_header(self, dest, data):
         species = data['metadata']['species']
         organ = data['metadata']['organ']
@@ -57,7 +50,6 @@ class Aggregator:
 
         print(f'updated: {new_data}')
         return new_data
-
 
     def export_excel(self, intensity, mass, rt, origrt, curve, replaced, infile):
         # saving excel file
@@ -91,7 +83,6 @@ class Aggregator:
         curve.fillna('').to_excel(writer, 'Correction curves')
         writer.save()
 
-
     def calculate_average(self, intensity, mass, rt, origrt, biorecs):
         """
         Calculates the average intensity, mass and retention index of biorecs
@@ -110,7 +101,6 @@ class Aggregator:
             mass.loc[i, AVG_BR_] = mass.loc[i, biorecs].mean()
             rt.loc[i, AVG_BR_] = rt.loc[i, biorecs].mean()
             origrt.loc[i, AVG_BR_] = 'NA'
-
 
     def calculate_rsd(self, intensity, mass, rt, origrt, biorecs):
         """
@@ -136,8 +126,6 @@ class Aggregator:
             rt.loc[i, RSD_BR_] = (rt.loc[i, biorecs].std() / rt.loc[i, biorecs].mean()) * 100
             origrt.loc[i, RSD_BR_] = 'NA'
 
-
-
     def format_sample(self, sample):
         """
         filters the incoming sample data separating intensity, mass, retention index and replacement values
@@ -160,7 +148,9 @@ class Aggregator:
             #         dupes[x['target']['id']] = x
             #     else:
             #         i = x['target']['id']
-            #         print(f"{i}: ({x['target']['name']}, {x['target']['mass']}, {x['target']['retentionIndex']}) -> ({dupes[i]['target']['name']}, {dupes[i]['target']['mass']}, {dupes[i]['target']['retentionIndex']})")
+            #         print(f"{i}: ({x['target']['name']}, {x['target']['mass']}, {x['target']['retentionIndex']}) ->
+            #           ({dupes[i]['target']['name']}, {dupes[i]['target']['mass']},
+            #            {dupes[i]['target']['retentionIndex']})")
 
             # ids = [r['target']['id'] for r in v['results']]
             # intensities = pd.Series([round(r['annotation']['intensity'], 4) for r in v['results']], index=ids)
@@ -174,7 +164,6 @@ class Aggregator:
 
         return [None, intensities, masses, rts, origrts, curve, replaced]
 
-
     def build_worksheet(self, targets):
         rows = []
         pattern = re.compile(".*?_[A-Z]{14}-[A-Z]{10}-[A-Z]")
@@ -183,20 +172,19 @@ class Aggregator:
             rows.append({
                 # 'ID': x['id'],
                 'Target name': x['name'].rsplit('_', 1)[0],
-                'Target RI(s)': x['retentionIndex'],
+                'Target RI(s)': x['retentionTimeInSeconds'],
                 'Target mz': x['mass'],
                 'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,
             })
 
-        df = pd.DataFrame(rows)#.set_index('ID')
+        df = pd.DataFrame(rows)  # .set_index('ID')
         df[AVG_BR_] = np.nan
         df[RSD_BR_] = np.nan
 
         return df[['Target name', 'Target RI(s)', 'Target mz', 'InChIKey', AVG_BR_, RSD_BR_]]
 
-
     def build_target_identifier(self, target):
-        return f"{target['name']}_{target['retentionIndex'] / 60:.1f}_{target['mass']:.1f}"
+        return f"{target['name']}_{target['retentionTimeInSeconds'] / 60:.1f}_{target['mass']:.1f}"
 
     def build_target_list(self, targets, sample, intensity_filter=0):
         if 'error' in sample:
@@ -237,7 +225,7 @@ class Aggregator:
                 continue
 
             matched = False
-            ri = x['target']['retentionIndex']
+            ri = x['target']['retentionTimeInSeconds']
 
             for i in range(startIndex, len(targets)):
                 if targets[i]['mass'] < x['target']['mass'] - self.args.mz_tolerance:
@@ -246,9 +234,10 @@ class Aggregator:
                 if targets[i]['mass'] > x['target']['mass'] + self.args.mz_tolerance:
                     break
 
-                if ri - self.args.rt_tolerance <= targets[i]['retentionIndex'] <= ri + self.args.rt_tolerance:
+                if ri - self.args.rt_tolerance <= targets[i]['retentionTimeInSeconds'] <= ri + self.args.rt_tolerance:
                     if self.args.log:
-                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']}, {targets[i]['name']}, {targets[i]['retentionIndex']}, {targets[i]['mass']})")
+                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']}, {
+                        targets[i]['name']}, {targets[i]['retentionTimeInSeconds']}, {targets[i]['mass']})")
 
                     x['target']['id'] = targets[i]['id']
                     matched = True
@@ -264,7 +253,6 @@ class Aggregator:
                         print(f"Skipped feature ({x['target']['name']}, {ri}, {x['target']['mass']}, {x['annotation']['intensity']}), less than {intensity_filter * 100}% base peak intensity")
 
         return sorted(targets + new_targets, key=lambda x: x['mass'])
-
 
     def process_sample_list(self, sample_file):
         if not os.path.isfile(sample_file):
@@ -317,7 +305,6 @@ class Aggregator:
                 origrt[sample] = pd.DataFrame(formatted[4])
                 replaced[sample] = pd.DataFrame(formatted[6])
 
-
                 # curve_data = list(formatted[5].values())[0]
                 # curve[sample] = pd.DataFrame(formatted[5], index=formatted[0][: len(curve_data)])
                 curve[sample] = pd.DataFrame(formatted[5])
@@ -345,7 +332,6 @@ class Aggregator:
             self.export_excel(intensity, mass, rt, origrt, curve, replaced, sample_file)
         except Exception as e:
             print(f'Error in excel export: {str(e.args)}')
-
 
     def aggregate(self):
         """

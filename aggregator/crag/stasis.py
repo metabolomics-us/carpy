@@ -1,12 +1,10 @@
 import os
-import requests
 import time
-
 from pathlib import Path
 from typing import List
 
+import requests
 import simplejson as json
-
 
 stasis_url = "https://api.metabolomics.us/stasis"
 test_url = "https://test-api.metabolomics.us/stasis"
@@ -93,6 +91,9 @@ def get_file_results(filename, log, count, local_dir=None, save=False):
     if local_dir and Path(local_dir).is_dir() and (Path(local_dir) / filename).exists():
         return json.load((Path(local_dir) / filename).open())
     else:
+        if local_dir and not Path(local_dir).exists():
+            Path(local_dir).mkdir()
+
         response = requests.get(stasis_url + "/result/" + filename, headers=_api_token())
 
         if response.status_code == 200:
