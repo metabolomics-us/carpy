@@ -32,26 +32,30 @@ def delete(events, context):
                 }
                 )
                 return {
-                    "statusCode": 204,
-                    "headers": __HTTP_HEADERS__,
+                    'statusCode': 204,
+                    'headers': __HTTP_HEADERS__,
+                    'isBase64Encoded': False,
                     'body': ''
                 }
             else:
                 # create a response when sample is not found
                 return {
-                    "statusCode": 404,
-                    "headers": __HTTP_HEADERS__,
-                    "body": json.dumps({"error": "sample not found"})
+                    'statusCode': 404,
+                    'headers': __HTTP_HEADERS__,
+                    'isBase64Encoded': False,
+                    'body': json.dumps({"error": "sample not found"})
                 }
         else:
             return {
-                "statusCode": 422,
-                "headers": __HTTP_HEADERS__,
-                "body": json.dumps({"error": "sample name is not provided!"})
+                'statusCode': 422,
+                'headers': __HTTP_HEADERS__,
+                'isBase64Encoded': False,
+                'body': json.dumps({"error": "sample name is not provided!"})
             }
     else:
         return {
-            "statusCode": 404,
-            "headers": __HTTP_HEADERS__,
-            "body": json.dumps({"error": "not supported, need's be called from a http event!"})
+            'statusCode': 404,
+            'headers': __HTTP_HEADERS__,
+            'isBase64Encoded': False,
+            'body': json.dumps({"error": "not supported, need's be called from a http event!"})
         }

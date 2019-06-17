@@ -2,4 +2,5 @@ openpyxl
 pandas
 requests
 pytest
+tqdm
 git+git://github.com/metabolomics-us/carpy.git#egg=stasis-client&subdirectory=stasis-client

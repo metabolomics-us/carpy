@@ -16,7 +16,7 @@ def test_get_experiment_paged_default(api_token):
     print(json.dumps(data, indent=2))
 
     assert 25 == len(data['items'])
-    assert data['last_item']['id'] == 'BioRec_LipidsPos_PhIV_002'
+    assert data['last_item']['id'] == 'B2a_TEDDYLipids_Neg_QC017'
 
 
 def test_get_experiment_paged_custom_page_size(api_token):

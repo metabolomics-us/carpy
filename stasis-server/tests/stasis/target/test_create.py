@@ -8,6 +8,7 @@ def test_create_success(requireMocking):
                              'mz': 12.45, 'rt': 1.01, 'sample': 'tgtTest'})
 
     response = create.create({'body': jsonString}, {})
+    assert 'isBase64Encoded' in response
     assert response['statusCode'] == 200
 
     result = get.get({'pathParameters': {
@@ -27,6 +28,7 @@ def test_create_invalid_data(requireMocking):
         {'method': 'test_lib | unknown | unknown | positive', 'sample': 'tgtTest'})
 
     result = create.create({'body': jsonString}, {})
+    assert 'isBase64Encoded' in result
     assert 422 == result['statusCode']
     print("body: " + json.dumps(result, indent=2))
     assert 'body' in result

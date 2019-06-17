@@ -71,6 +71,7 @@ def triggerEvent(data):
     return {
         'body': json.dumps(item),
         'statusCode': saved['ResponseMetadata']['HTTPStatusCode'],
+        'isBase64Encoded': False,
         'headers': __HTTP_HEADERS__
     }
 

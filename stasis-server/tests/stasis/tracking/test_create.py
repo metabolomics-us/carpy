@@ -13,6 +13,7 @@ def test_create_success(requireMocking):
     jsonString = json.dumps({'sample': 'myTest', 'status': 'entered'})
 
     response = create.create({'body': jsonString}, {})
+    assert 'isBase64Encoded' in response
     assert response['statusCode'] == 200
 
     assert 'entered' == json.loads(response['body'])['status'][0]['value']
@@ -25,6 +26,7 @@ def test_create_with_fileHandle(requireMocking):
     data = json.dumps({'sample': 'myTest', 'status': 'entered', 'fileHandle': 'myTest.d'})
 
     response = create.create({'body': data}, {})
+    assert 'isBase64Encoded' in response
     assert response['statusCode'] == 200
 
     assert 'entered' == json.loads(response['body'])['status'][0]['value']
@@ -43,7 +45,7 @@ def test_create_success_with_substatus(requireMocking):
     data = json.dumps({'sample': 'myTest', 'status': 'corrected'})
 
     response = create.create({'body': data}, {})
-
+    assert 'isBase64Encoded' in response
     assert response['statusCode'] == 200
 
     assert 'corrected' == json.loads(response['body'])['status'][0]['value']
@@ -82,6 +84,7 @@ def test_create_with_experiment(requireMocking):
 
     print('bootstraping acquisition data')
     response = acq_create.create({'body': json.dumps(data)}, {})
+    assert 'isBase64Encoded' in response
     assert 200 == response['statusCode']
     time.sleep(1)
 
@@ -90,6 +93,7 @@ def test_create_with_experiment(requireMocking):
         'status': 'entered'
     }
     response = create.create({'body': json.dumps(track)}, {})
+    assert 'isBase64Encoded' in response
     assert 200 == response['statusCode']
     assert '1' == json.loads(response['body'])['experiment']
     assert 'test_experiment' == json.loads(response['body'])['sample']
@@ -118,6 +122,7 @@ def test_create_reinjection(requireMocking):
 
     print('bootstraping acquisition data')
     response = acq_create.create({'body': json.dumps(data)}, {})
+    assert 'isBase64Encoded' in response
     assert 200 == response['statusCode']
     time.sleep(1)
 

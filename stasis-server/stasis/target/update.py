@@ -15,6 +15,7 @@ def update(event, context):
         return {
             'statusCode': 422,
             'headers': __HTTP_HEADERS__,
+            'isBase64Encoded': False,
             'body': json.dumps({'error': 'missing target\'s method and/or mz_rt, please provide these values in body'})
         }
 
@@ -34,6 +35,7 @@ def update(event, context):
         return {
             'statusCode': 422,
             'headers': __HTTP_HEADERS__,
+            'isBase64Encoded': False,
             'body': json.dumps({'error': 'missing target\'s method and/or mz_rt, please provide these values in body'})
         }
 
@@ -43,6 +45,7 @@ def update(event, context):
         return {
             'statusCode': 422,
             'headers': __HTTP_HEADERS__,
+            'isBase64Encoded': False,
             'body': json.dumps({'error': '%s' % str(ve)})
         }
 
@@ -59,6 +62,7 @@ def update(event, context):
         return {
             'statusCode': 422,
             'headers': __HTTP_HEADERS__,
+            'isBase64Encoded': False,
             'body': json.dumps({'error': 'error querying target. %s ' % str(e)})
         }
 
@@ -66,6 +70,7 @@ def update(event, context):
         return {
             'statusCode': 404,
             'headers': __HTTP_HEADERS__,
+            'isBase64Encoded': False,
             'body': json.dumps({'error': 'Target not found'})
         }
     else:
@@ -77,6 +82,7 @@ def update(event, context):
             return {
                 'statusCode': 200,
                 'headers': __HTTP_HEADERS__,
+                'isBase64Encoded': False,
                 'body': json.dumps(data)
             }
         except Exception as ex:
@@ -84,5 +90,6 @@ def update(event, context):
             return {
                 'statusCode': 500,
                 'headers': __HTTP_HEADERS__,
+                'isBase64Encoded': False,
                 'body': json.dumps({'error': str(ex)})
             }

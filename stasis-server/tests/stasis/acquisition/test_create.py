@@ -15,6 +15,7 @@ def test_create_success_gctof(requireMocking):
 
         response = create.create({'body': jsonString}, {})
 
+        assert 'isBase64Encoded' in response
         assert 200 == response['statusCode']
         assert "Leco GC-Tof" == json.loads(response['body'])["acquisition"]['instrument']
         assert "GCTOF" == json.loads(response['body'])["acquisition"]['name']
@@ -31,6 +32,7 @@ def test_create_success_minix(requireMocking):
     assert 0 < len(response)
 
     for item in response:
+        assert 'isBase64Encoded' in item
         assert 200 == item['statusCode']
         assert '63618' == json.loads(item['body'])['experiment']
         assert json.loads(item['body'])['id'] == json.loads(item['body'])['sample']
@@ -61,12 +63,14 @@ def test_create_non_minix(requireMocking):
 
     response = create.create({'body': json.dumps(data)}, {})
 
+    assert 'isBase64Encoded' in response
     assert 200 == response['statusCode']
     assert 'body' in response
     assert 'test_no_minix' == json.loads(response['body'])['id']
 
     # checking creation of tracking data
     tracking = get.get({'pathParameters': {'sample': data['sample']}}, {})
+    assert 'isBase64Encoded' in response
     assert 200 == tracking['statusCode']
     assert data['sample'] == json.loads(tracking['body'])['id']
     assert 'entered' == json.loads(tracking['body'])['status'][0]['value']

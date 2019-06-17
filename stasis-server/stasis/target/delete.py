@@ -23,6 +23,7 @@ def delete(event, context):
             return {
                 'body': json.dumps({'error': 'missing method and/or mz_rt parameters, please provide both in the url'}),
                 'statusCode': 422,
+                'isBase64Encoded': False,
                 'headers': __HTTP_HEADERS__
             }
 

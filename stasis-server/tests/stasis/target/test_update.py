@@ -10,6 +10,7 @@ newStuff = json.dumps({'method': 'testLib | unknown | unknown | unknown', 'mz_rt
 
 def test_update(requireMocking):
     response = create.create({'body': jsonString}, {})
+    assert 'isBase64Encoded' in response
     assert response['statusCode'] == 200
     tgt = json.loads(response['body'])
     assert 'unknown' == tgt['name']
@@ -17,6 +18,7 @@ def test_update(requireMocking):
     response = update.update({'body': newStuff}, {})
 
     print('response from update: %s' % response)
+    assert 'isBase64Encoded' in response
     assert 200 == response['statusCode']
 
     response = get.get({'pathParameters': {
@@ -35,6 +37,7 @@ def test_missing_method(requireMocking):
     result = update.update({
         'body': json.dumps({'name': 'blah', 'mz_rt': 'asd'})
     }, {})
+    assert 'isBase64Encoded' in result
     assert 422 == result['statusCode']
     assert 'missing target\'s method and/or mz_rt' in json.loads(result['body'])['error']
 
@@ -43,6 +46,7 @@ def test_missing_mzrt(requireMocking):
     result = update.update({
         'body': json.dumps({'method': 'blah', 'sample': 'asd'})
     }, {})
+    assert 'isBase64Encoded' in result
     assert 422 == result['statusCode']
     assert 'missing target\'s method and/or mz_rt' in json.loads(result['body'])['error']
 
@@ -58,4 +62,5 @@ def test_update_inexistent_taget(requireMocking):
             'sample': 'tgtTest'
         })
     }, {})
+    assert 'isBase64Encoded' in result
     assert 404 == result['statusCode']

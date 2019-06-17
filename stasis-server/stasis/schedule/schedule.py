@@ -71,6 +71,7 @@ def schedule(event, context):
     return {
         'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
         'headers': __HTTP_HEADERS__,
+        'isBase64Encoded': False,
         'body': serialized
     }
 
@@ -107,6 +108,7 @@ def secure_schedule(event, context):
     return {
         'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
         'headers': __HTTP_HEADERS__,
+        'isBase64Encoded': False,
         'body': serialized
     }
 
@@ -148,6 +150,7 @@ def monitor_queue(event, context):
     if slots == 0:
         return {
             'statusCode': 200,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
 
@@ -172,6 +175,7 @@ def monitor_queue(event, context):
         print("no messages received: {}".format(message))
         return {
             'statusCode': 200,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
 
@@ -197,6 +201,7 @@ def monitor_queue(event, context):
         return {
             'statusCode': 200,
             'headers': __HTTP_HEADERS__,
+            'isBase64Encoded': False,
             'body': json.dumps({'scheduled': len(result)})
         }
 
@@ -204,6 +209,7 @@ def monitor_queue(event, context):
         print("no messages received!")
         return {
             'statusCode': 200,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
 
@@ -282,6 +288,7 @@ def schedule_to_fargate(event, context):
         print(f'Response: {response}')
         return {
             'statusCode': 200,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
 
@@ -293,6 +300,7 @@ def schedule_to_fargate(event, context):
         return {
             'body': json.dumps(str(e)),
             'statusCode': 503,
+            'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
 
