@@ -10,6 +10,10 @@ AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
 
 
+def percent(x: float, intensity):
+    return intensity['found %'] >= x
+
+
 class Aggregator:
 
     def __init__(self, args):
@@ -27,7 +31,8 @@ class Aggregator:
         else:
             return 0
 
-    def find_replaced(self, value) -> int:
+    @staticmethod
+    def find_replaced(value) -> int:
         """
         Returns the intensity value only for replaced data
         :param value: the entire annotation object
@@ -38,24 +43,30 @@ class Aggregator:
         else:
             return 0
 
-    def add_header(self, dest, data):
-        species = data['metadata']['species']
-        organ = data['metadata']['organ']
-        method = data['acquisition']['method']
-        instrument = data['acquisition']['instrument']
-        ion_mode = data['acquisition']['ionization']
-        sample = dest.iterkeys().next()
+    @staticmethod
+    def add_metadata(samples, data):
+        idx = 1
+        dicdata = {'No': None, 'label': None, 'Target RI(s)': None, 'Target mz': None, 'InChIKey':
+            ['species', 'organ', 'batch', 'sample_type', 'time'], 'found %': None}
+        for sample in samples:
+            for d in [t['metadata'] for t in data if t['sample'] == sample]:
+                if '_qc' in sample.lower():
+                    sample_type = 'qc'
+                elif '_nist' in sample.lower():
+                    sample_type = 'nist'
+                else:
+                    sample_type = 'sample'
 
-        new_data = [sample, species, organ, method, instrument, ion_mode, ''].append(dest.get(sample))
+                dicdata[sample] = [d['metadata']['species'], d['metadata']['organ'], '', sample_type, idx]
+            idx += 1
 
-        print(f'updated: {new_data}')
-        return new_data
+        return pd.DataFrame(dicdata)
 
     def export_excel(self, intensity, mass, rt, origrt, curve, replaced, infile):
+
         # saving excel file
-        print(f'{time.strftime("%H:%M:%S")} - Exporting excel file')
+        # print(f'{time.strftime("%H:%M:%S")} - Exporting excel file')
         file, ext = os.path.splitext(infile)
-        output_name = f'{file}_results.xlsx'
 
         # Build suffix
         if self.args.test:
@@ -64,15 +75,17 @@ class Aggregator:
             suffix = 'results'
 
         if self.args.zero_replacement:
-            suffix += '_wReplacements'
+            suffix += '-repl'
+        else:
+            suffix += '-norepl'
 
-        output_name = f'{file}_{suffix}.xlsx'
+        output_name = f'{file}-{suffix}.xlsx'
 
-        intensity = intensity.set_index('Target name').sort_index()
-        mass = mass.set_index('Target name').sort_index()
-        rt = rt.set_index('Target name').sort_index()
-        origrt = origrt.set_index('Target name').sort_index()
-        replaced = replaced.set_index('Target name').sort_index()
+        intensity = intensity.set_index('No')  # .sort_index()
+        mass = mass.set_index('No').sort_index()
+        rt = rt.set_index('No').sort_index()
+        origrt = origrt.set_index('No').sort_index()
+        replaced = replaced.set_index('No').sort_index()
 
         writer = pd.ExcelWriter(output_name)
         intensity.fillna('').to_excel(writer, 'Intensity matrix')
@@ -83,7 +96,8 @@ class Aggregator:
         curve.fillna('').to_excel(writer, 'Correction curves')
         writer.save()
 
-    def calculate_average(self, intensity, mass, rt, origrt, biorecs):
+    @staticmethod
+    def calculate_average(intensity, mass, rt, origrt, biorecs):
         """
         Calculates the average intensity, mass and retention index of biorecs
         :param intensity:
@@ -92,8 +106,8 @@ class Aggregator:
         :param biorecs:
         :return:
         """
-        print(f'{time.strftime("%H:%M:%S")} - Calculating average of biorecs for intensity, mass and RT (ignoring missing '
-              f'results)')
+        # print(f'{time.strftime("%H:%M:%S")} - Calculating average of biorecs for intensity, mass and RT (ignoring missing '
+        #       f'results)')
         np.seterr(invalid='log')
 
         for i in range(len(intensity)):
@@ -102,7 +116,8 @@ class Aggregator:
             rt.loc[i, AVG_BR_] = rt.loc[i, biorecs].mean()
             origrt.loc[i, AVG_BR_] = 'NA'
 
-    def calculate_rsd(self, intensity, mass, rt, origrt, biorecs):
+    @staticmethod
+    def calculate_rsd(intensity, mass, rt, origrt, biorecs):
         """
         Calculates intensity, mass and retention index Relative Standard Deviation of biorecs
         :param intensity:
@@ -111,8 +126,8 @@ class Aggregator:
         :param biorecs:
         :return:
         """
-        print(f'{time.strftime("%H:%M:%S")} - Calculating %RDS of biorecs for intensity, mass and RT (ignoring missing '
-              f'results)')
+        # print(f'{time.strftime("%H:%M:%S")} - Calculating %RDS of biorecs for intensity, mass and RT (ignoring missing '
+        #       f'results)')
         size = range(len(intensity))
         np.seterr(invalid='log')
 
@@ -139,8 +154,6 @@ class Aggregator:
         curve = []
         replaced = []
 
-        dupes = {}
-
         for k, v in sample['injections'].items():
             # Debugging
             # for x in v['results']:
@@ -164,26 +177,28 @@ class Aggregator:
 
         return [None, intensities, masses, rts, origrts, curve, replaced]
 
-    def build_worksheet(self, targets):
+    @staticmethod
+    def build_worksheet(targets, label=' working...'):
         rows = []
         pattern = re.compile(".*?_[A-Z]{14}-[A-Z]{10}-[A-Z]")
 
-        for x in targets:
+        i = 1
+        for x in tqdm.tqdm(targets, desc=label, unit=' targets'):
             rows.append({
-                # 'ID': x['id'],
-                'Target name': x['name'].rsplit('_', 1)[0],
+                'No': i,
+                'label': x['name'].rsplit('_', 1)[0],
                 'Target RI(s)': x['retentionTimeInSeconds'],
                 'Target mz': x['mass'],
                 'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,
             })
+            i = i + 1
 
         df = pd.DataFrame(rows)  # .set_index('ID')
-        df[AVG_BR_] = np.nan
-        df[RSD_BR_] = np.nan
 
-        return df[['Target name', 'Target RI(s)', 'Target mz', 'InChIKey', AVG_BR_, RSD_BR_]]
+        return df[['No', 'label', 'Target RI(s)', 'Target mz', 'InChIKey']]
 
-    def build_target_identifier(self, target):
+    @staticmethod
+    def build_target_identifier(target):
         return f"{target['name']}_{target['retentionTimeInSeconds'] / 60:.1f}_{target['mass']:.1f}"
 
     def build_target_list(self, targets, sample, intensity_filter=0):
@@ -192,7 +207,7 @@ class Aggregator:
                 print('Error:', sample)
             return targets
 
-        startIndex = 0
+        start_index = 0
         new_targets = []
 
         # Lookup for target names
@@ -227,17 +242,17 @@ class Aggregator:
             matched = False
             ri = x['target']['retentionTimeInSeconds']
 
-            for i in range(startIndex, len(targets)):
+            for i in range(start_index, len(targets)):
                 if targets[i]['mass'] < x['target']['mass'] - self.args.mz_tolerance:
-                    startIndex = i + 1
+                    start_index = i + 1
                     continue
                 if targets[i]['mass'] > x['target']['mass'] + self.args.mz_tolerance:
                     break
 
                 if ri - self.args.rt_tolerance <= targets[i]['retentionTimeInSeconds'] <= ri + self.args.rt_tolerance:
                     if self.args.log:
-                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']}, {
-                        targets[i]['name']}, {targets[i]['retentionTimeInSeconds']}, {targets[i]['mass']})")
+                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']},"
+                              f"{targets[i]['name']}, {targets[i]['retentionTimeInSeconds']}, {targets[i]['mass']})")
 
                     x['target']['id'] = targets[i]['id']
                     matched = True
@@ -250,7 +265,9 @@ class Aggregator:
                     new_targets.append(t)
                 else:
                     if self.args.log:
-                        print(f"Skipped feature ({x['target']['name']}, {ri}, {x['target']['mass']}, {x['annotation']['intensity']}), less than {intensity_filter * 100}% base peak intensity")
+                        print(f"Skipped feature ({x['target']['name']}, {ri}, {x['target']['mass']}, "
+                              f"{x['annotation']['intensity']}), "
+                              f"less than {intensity_filter * 100}% base peak intensity")
 
         return sorted(targets + new_targets, key=lambda x: x['mass'])
 
@@ -260,7 +277,7 @@ class Aggregator:
             exit(-1)
 
         with open(sample_file) as processed_samples:
-            samples = [p for p in processed_samples.read().strip().splitlines() if p]
+            samples = [p for p in processed_samples.read().strip().splitlines() if p and p != 'samples']
 
         # use subset of samples for testing
         if self.args.test:
@@ -268,13 +285,14 @@ class Aggregator:
 
         # creating target list
         results = []
-        targets = []
 
-        for sample in samples:
+        sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples')
+        for sample in sbar:
+            sbar.set_description(sample)
             if sample in ['samples']:
                 continue
 
-            data = get_file_results(sample, False, self.count, self.args.dir, self.args.save)
+            data = get_file_results(sample, self.args.log, self.count, self.args.dir, self.args.save)
             data['sample'] = sample
             self.count += 1
 
@@ -285,15 +303,15 @@ class Aggregator:
         targets = [x['target'] for x in results[0]['injections'][k]['results']]
 
         # creating spreadsheets
-        intensity = self.build_worksheet(targets)
-        mass = self.build_worksheet(targets)
-        rt = self.build_worksheet(targets)
-        origrt = self.build_worksheet(targets)
-        curve = self.build_worksheet(targets)
-        replaced = self.build_worksheet(targets)
+        intensity = self.build_worksheet(targets, 'intensity matrix')
+        mass = self.build_worksheet(targets, 'mass matrix')
+        rt = self.build_worksheet(targets, 'RI matrix')
+        origrt = self.build_worksheet(targets, 'RT matrix')
+        curve = self.build_worksheet(targets, 'curve data')
+        replaced = self.build_worksheet(targets, 'replacement matrix')
 
         # populating spreadsheets
-        for data in tqdm.tqdm(results):
+        for data in tqdm.tqdm(results, desc='Formatting results', unit=' samples'):
             sample = data['sample']
 
             if 'error' not in data:
@@ -315,19 +333,31 @@ class Aggregator:
                 origrt[sample] = np.nan
                 replaced[sample] = np.nan
 
-        biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower() or 'qc' in str(br).lower()]
+        # biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower() or 'qc' in str(br).lower()]
         pd.set_option('display.max_rows', 100)
-        pd.set_option('display.max_columns', 10)
+        pd.set_option('display.max_columns', 15)
         pd.set_option('display.width', 1000)
 
         try:
-            self.calculate_average(intensity, mass, rt, origrt, biorecs)
+            discovery = intensity[intensity.columns[5:]].apply(lambda row: row.astype(bool).sum() / row.count(), axis=1)
+            intensity.insert(loc=5, column='found %', value=discovery)
         except Exception as e:
-            print(f'Error in average calculation: {str(e.args)}')
-        try:
-            self.calculate_rsd(intensity, mass, rt, origrt, biorecs)
-        except Exception as e:
-            print(f'Error in average calculation: {str(e.args)}')
+            print(f'Error in discovery calculation: {str(e.args)}')
+
+        md = self.add_metadata(samples, results)
+
+        intensity = pd.concat([md, intensity], sort=False).reset_index(drop=True)
+        print(intensity.head(10))
+        print(intensity.tail(10))
+
+        # try:
+        #     self.calculate_average(intensity, mass, rt, origrt, biorecs)
+        # except Exception as e:
+        #     print(f'Error in average calculation: {str(e.args)}')
+        # try:
+        #     self.calculate_rsd(intensity, mass, rt, origrt, biorecs)
+        # except Exception as e:
+        #     print(f'Error in average calculation: {str(e.args)}')
         try:
             self.export_excel(intensity, mass, rt, origrt, curve, replaced, sample_file)
         except Exception as e:
@@ -348,4 +378,3 @@ class Aggregator:
 
         for file in self.args.infiles:
             self.process_sample_list(file)
-

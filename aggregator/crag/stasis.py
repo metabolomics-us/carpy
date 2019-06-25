@@ -78,12 +78,14 @@ def get_file_results(filename, log, count, local_dir=None, save=False):
     """
     Calls the stasis api to get the results for a single file
     :param filename: name of file to get results from
-    :param log:
+    :param log: whether to print response status
     :param count:
+    :param local_dir: folder where the sample should be saved
+    :param save: whether to save the result file or not
     :return: dictionary with results or {error: msg}
     """
 
-    print(f'{time.strftime("%H:%M:%S")} - [{count}] Getting results for file \'{filename}\'')
+    # print(f'{time.strftime("%H:%M:%S")} - [{count}] Getting results for file \'{filename}\'')
 
     if filename[-5:] == '.mzml':
         filename = filename[:-5]
