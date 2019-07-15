@@ -61,7 +61,7 @@ class Aggregator:
                         sample_type = 'sample'
 
                     dicdata[sample] = [species, organ, '', sample_type, idx]
-            except Exception as e:
+            except KeyError as e:
                 dicdata[sample] = ['', '', '', '', idx]
 
         return pd.DataFrame(dicdata)
