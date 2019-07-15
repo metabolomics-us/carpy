@@ -236,8 +236,8 @@ class Aggregator:
 
                 if ri - self.args.rt_tolerance <= targets[i]['retentionTimeInSeconds'] <= ri + self.args.rt_tolerance:
                     if self.args.log:
-                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']}, {
-                        targets[i]['name']}, {targets[i]['retentionTimeInSeconds']}, {targets[i]['mass']})")
+                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']},"
+                              f"{targets[i]['name']}, {targets[i]['retentionTimeInSeconds']}, {targets[i]['mass']})")
 
                     x['target']['id'] = targets[i]['id']
                     matched = True
