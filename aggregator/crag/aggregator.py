@@ -45,20 +45,24 @@ class Aggregator:
 
     @staticmethod
     def add_metadata(samples, data):
-        idx = 1
+
         dicdata = {'No': None, 'label': None, 'Target RI(s)': None, 'Target mz': None, 'InChIKey':
             ['species', 'organ', 'batch', 'sample_type', 'time'], 'found %': None}
-        for sample in samples:
-            for d in [t['metadata'] for t in data if t['sample'] == sample]:
-                if '_qc' in sample.lower():
-                    sample_type = 'qc'
-                elif '_nist' in sample.lower():
-                    sample_type = 'nist'
-                else:
-                    sample_type = 'sample'
+        for sample, idx in zip(samples, range(1, len(samples) + 1)):
+            try:
+                for d in [t['metadata'] for t in data if t['sample'] == sample]:
+                    species = d['metadata']['species']
+                    organ = d['metadata']['organ']
+                    if '_qc' in sample.lower():
+                        sample_type = 'qc'
+                    elif '_nist' in sample.lower():
+                        sample_type = 'nist'
+                    else:
+                        sample_type = 'sample'
 
-                dicdata[sample] = [d['metadata']['species'], d['metadata']['organ'], '', sample_type, idx]
-            idx += 1
+                    dicdata[sample] = [species, organ, '', sample_type, idx]
+            except Exception as e:
+                dicdata[sample] = ['', '', '', '', idx]
 
         return pd.DataFrame(dicdata)
 
@@ -347,8 +351,6 @@ class Aggregator:
         md = self.add_metadata(samples, results)
 
         intensity = pd.concat([md, intensity], sort=False).reset_index(drop=True)
-        print(intensity.head(10))
-        print(intensity.tail(10))
 
         # try:
         #     self.calculate_average(intensity, mass, rt, origrt, biorecs)
