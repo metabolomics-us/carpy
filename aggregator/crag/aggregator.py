@@ -17,14 +17,13 @@ def percent(x: float, intensity):
 class Aggregator:
 
     def __init__(self, args):
-        self.count = 0
         self.args = args
 
     def find_intensity(self, value) -> int:
         """
         Returns the intensity value only for replaced data
         :param value: the entire annotation object
-        :return: intensity value if replaced or 0 if not replaced
+        :return: intensity value if replaced and requesting replacement values or actual value if not replaced
         """
         if not value['replaced'] or (value['replaced'] and self.args.zero_replacement):
             return round(value["intensity"])
@@ -62,6 +61,7 @@ class Aggregator:
 
                     dicdata[sample] = [species, organ, '', sample_type, idx]
             except KeyError as e:
+                # print('missing sample, {}, {}'.format(idx, sample)) # save sample name to file.
                 dicdata[sample] = ['', '', '', '', idx]
 
         return pd.DataFrame(dicdata)
@@ -275,14 +275,7 @@ class Aggregator:
 
         return sorted(targets + new_targets, key=lambda x: x['mass'])
 
-    def process_sample_list(self, sample_file):
-        if not os.path.isfile(sample_file):
-            print(f'Can\'t find the file {sample_file}')
-            exit(-1)
-
-        with open(sample_file) as processed_samples:
-            samples = [p for p in processed_samples.read().strip().splitlines() if p and p != 'samples']
-
+    def process_sample_list(self, samples, sample_file):
         # use subset of samples for testing
         if self.args.test:
             samples = samples[:5]
@@ -296,15 +289,11 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
-            data = get_file_results(sample, self.args.log, self.count, self.args.dir, self.args.save)
-            data['sample'] = sample
-            self.count += 1
+            results.append(get_file_results(sample, self.args.log, self.args.dir, self.args.save))
 
-            results.append(data)
             # targets = self.build_target_list(targets, data)
 
-        k = list(results[0]['injections'].keys())[0]
-        targets = [x['target'] for x in results[0]['injections'][k]['results']]
+        targets = self.get_target_list(results)
 
         # creating spreadsheets
         intensity = self.build_worksheet(targets, 'intensity matrix')
@@ -343,13 +332,13 @@ class Aggregator:
         pd.set_option('display.width', 1000)
 
         try:
-            discovery = intensity[intensity.columns[5:]].apply(lambda row: row.astype(bool).sum() / row.count(), axis=1)
+            discovery = intensity[intensity.columns[5:]].apply(
+                lambda row: row.dropna()[row > 0].count() / len(row.dropna()), axis=1)
             intensity.insert(loc=5, column='found %', value=discovery)
         except Exception as e:
             print(f'Error in discovery calculation: {str(e.args)}')
-
+        print(intensity)
         md = self.add_metadata(samples, results)
-
         intensity = pd.concat([md, intensity], sort=False).reset_index(drop=True)
 
         # try:
@@ -365,6 +354,14 @@ class Aggregator:
         except Exception as e:
             print(f'Error in excel export: {str(e.args)}')
 
+    @staticmethod
+    def get_target_list(results):
+        k = list(results[0]['injections'].keys())[0]
+
+        targets = [x['target'] for x in results[0]['injections'][k]['results']]
+
+        return targets
+
     def aggregate(self):
         """
         Collects information on the experiment and decides if aggregation of the full experiment is possible
@@ -378,5 +375,11 @@ class Aggregator:
         # files = getExperimentFiles(args.experiment)
         # print(files)
 
-        for file in self.args.infiles:
-            self.process_sample_list(file)
+        for sample_file in self.args.infiles:
+            if not os.path.isfile(sample_file):
+                print(f'Can\'t find the file {sample_file}')
+                exit(-1)
+
+            with open(sample_file) as processed_samples:
+                samples = [p for p in processed_samples.read().strip().splitlines() if p and p != 'samples']
+                self.process_sample_list(samples, sample_file)

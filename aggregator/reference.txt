@@ -1,0 +1,56 @@
+# schema of result:
+
+{
+  "sample": str,
+  "time": timestamp,
+  "id": str,
+  "metadata": {
+    "id": str,
+    "sample": str,
+    "experiment": str,
+    "time": timestamp,
+    "metadata": {
+      "organ": str,
+      "species": str
+    },
+    "acquisition": {
+      "method": str,
+      "instrument": str,
+      "ionization": str
+    },
+    "processing": {
+      "method": str
+    }
+  },
+  "injections": {
+    str: {
+      "logid": str,
+      "correction": {
+        "polynomial": number,
+        "sampleUsed": "",
+        "curve": [ {"x": number, "y": number} ]
+      },
+      "results": [
+        {
+          "target": {
+            "retentionTimeInSeconds": number,
+            "name": str,
+            "id": str,
+            "mass": number
+          },
+          "annotation": {
+            "retentionIndex": number,
+            "intensity": number,
+            "replaced": bool,
+            "mass": number,
+            "nonCorrectedRt": number,
+            "massError": number,
+            "massErrorPPM": number
+          }
+        }
+      ]
+    }
+  }
+}
+
+

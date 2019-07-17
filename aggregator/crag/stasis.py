@@ -74,7 +74,7 @@ def get_sample_metadata(filename, log):
         return {"error": "no metadata info"}
 
 
-def get_file_results(filename, log, count, local_dir=None, save=False):
+def get_file_results(filename, log, local_dir=None, save=False):
     """
     Calls the stasis api to get the results for a single file
     :param filename: name of file to get results from
@@ -107,7 +107,13 @@ def get_file_results(filename, log, count, local_dir=None, save=False):
                 with (Path(local_dir) / filename).open('w') as fout:
                     print(json.dumps(data, indent=2), file=fout)
         else:
-            data = {'error': f'no results. {response.reason}'}
+            data = {
+                'id': filename,
+                'sample': filename,
+                'metadata': {},
+                'injections': {},
+                'error': f'no results. {response.reason}'
+            }
 
         if log:
             print_response(response)
