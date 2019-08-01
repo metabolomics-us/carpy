@@ -29,59 +29,13 @@ Parameters:
     * '-x', '--extra_profiles': Comma separated list of extra profiles to pass to springboot.
     * '-p', '--prepare': Preloads the acquisition data of samples.
     * '-r', '--schedule': Schedules the processing of samples.
-    * '-t', '--test': Test run. Do not submit but print any data.
+    * '-t', '--test': Test run. Do not submit any data but prints operations.
+    * '-v', '--version': Only used in development. Selects the executable version to run.
 ```
 
-_file_ must be a text file or csv with a header 'samples' followed by the list of sample filenames (preferably without extension), one per line.
+_file_ must be a text file or csv with a header 'samples' followed by the list of sample filenames, one per line.
 
----
-## Targets2Carrot
-Converts a list of MZ/RT targets into a yml file to use in carrot
-
-### Files
-- Launcher: targets2carrot/target2carrot.py
-
-### Usage
+### Example
 ```bash
-python3 targets2carrot.py -f <file> -s <name> [-o <filename>] [-i <instrument>] [-c <column>] [-m <ion-mode>] 
-
-Parameters:
-    * '-f', '--file': csv file with the list of targets (one per line) and with headers: 'Metabolite name,Average Mz,Average Rt(min),istd'. Required
-    * '-o', '--output': name of the yml file to be created
-    * '-s', '--study': name of the study/experiment. Required
-    * '-i', '--instrument': name of the instrument for the library. Default='test'
-    * '-c', '--column': name of the column for the library. Default='test'
-    * '-m', '--mode': ion mode. Choices='positive' or 'negative']. Default='positive'
+python3 runner.py -e teddy -i 6530 -m csh -n positive -c c18 -s human -o plasma -p -a -r /home/user/docs/samples.txt
 ```
----
-## AgilentTimes
-Extracts the acquisition timestamp of agilent samples directly from the raw data
-
-### Files
-- Launcher: agilentTimes.py
-
-### Usage
-```bash
-python3 agilentTimes.py -s <file> -o <folder>
-
-Parameters:
-    * '-s', '--raw_data_sources': File containing a list of folders (one per line) where the raw data lives. Required
-    * '-o', '--output_folder': Folder were to save the results. Required
-```
----
-## FileCheck
-Written specifically for Jenny's _Tribe_ experiment, due to the ammount of folders with raw data and the variability on sample filenames.
-Compares and produces feedback for several topics:
-- Checks the provided worklist agains the actual raw data files, saving a list of missing raw data files
-- Checks the list of raw data files against the converted mzml files, saving a list of missing conversions
-- Checks the list of converted files vs the mzml files in aws, saving a list of file to upload to aws
-- Checks the results on aws agains a previous list of result files (obtained with the aws-cli app)
-
-### Usage
-If you _REALLY, REALLY!_ want to use this, refer to the code.
-
----
-## Old incomplete and unused scripts
-Like the title implies: older, incomplete and/or obsolete files. **DO NOT USE**. 
-- experimentAnalyzer.py
-- older_scripts/ folder
