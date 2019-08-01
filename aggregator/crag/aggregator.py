@@ -337,7 +337,7 @@ class Aggregator:
             intensity.insert(loc=5, column='found %', value=discovery)
         except Exception as e:
             print(f'Error in discovery calculation: {str(e.args)}')
-        print(intensity)
+
         md = self.add_metadata(samples, results)
         intensity = pd.concat([md, intensity], sort=False).reset_index(drop=True)
 
