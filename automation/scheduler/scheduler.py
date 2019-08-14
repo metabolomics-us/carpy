@@ -192,6 +192,8 @@ class Scheduler(ABC):
         profiles = 'carrot.lcms'
         if self.args.extra_profiles:
             profiles += f',{self.args.extra_profiles}'
+        if self.args.msms and 'carrot.targets.dynamic' not in profiles:
+            profiles += f', carrot.targets.dynamic'
 
         data = {'profile': profiles,
                 'env': 'test' if self.args.test else 'prod',

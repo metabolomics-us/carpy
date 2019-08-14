@@ -19,11 +19,12 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--species', help='Species the sample comes from.', default='human')
     parser.add_argument('-o', '--organ', help='Organ from which the sample was extracted.', default='plasma')
     parser.add_argument('-a', '--acquisition', help='Creates acquisition metadata for each file.', action='store_true')
-    parser.add_argument('-v', '--task_version', help='Submits the sample to a specific task revision.', default='160')
+    parser.add_argument('-v', '--task_version', help='Submits the sample to a specific task revision.', default='163')
     parser.add_argument('-x', '--extra_profiles', help='Comma separated list of extra profiles to pass to springboot.')
     parser.add_argument('-p', '--prepare', help='Pre-loads the acquisition data of samples.', action='store_true')
     parser.add_argument('-r', '--schedule', help='Schedules the processing of samples.', action='store_true')
     parser.add_argument('-t', '--test', help='Test run. Do not submit any data.', action='store_true')
+    parser.add_argument('--msms', help='Flags the runner in the cloud to process MSMS spectra.', action='store_true')
 
     args = parser.parse_args()
     if args.file == '__unknown__':
