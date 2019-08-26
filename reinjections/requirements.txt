@@ -1,0 +1,5 @@
+pandas
+pytest
+xlrd >= 1.0.0
+openpyxl
+tqdm
