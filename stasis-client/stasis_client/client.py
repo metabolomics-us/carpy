@@ -50,10 +50,21 @@ class StasisClient:
         return requests.get("{}/acquisition/{}".format(self._url, sample_name), headers=self._header).json()
 
     def sample_state(self, sample_name: str):
-        """
-        returns the state of the given sample
-        :param sample_name:
-        :return:
+        """Returns the state of the given sample by calling Stasis' tracking API
+        Args:
+            sample_name: name of the sample
+
+        Returns:
+            the tracking object for the specified sample in json format.
+            e.a.:
+                "status": [
+                    {
+                        "time": 1530310132504,
+                        "priority": 100,
+                        "fileHandle": "123.d",
+                        "value": "acquired"
+                    }
+                ]
         """
         return requests.get("{}/tracking/{}".format(self._url, sample_name), headers=self._header).json()['status']
 
@@ -78,3 +89,19 @@ class StasisClient:
         """
         return requests.get("{}/result/{}".format(self._url, sample_name), headers=self._header).json()
 
+    # def get_experiment(self, experiment_name, samples, start_sample=None):
+    #
+    #     if start_sample is None:
+    #         print('getting initial page...')
+    #         response = requests.get("{}/experiment/{}".format(self._url, experiment_name), headers=self._header).json()
+    #         samples += response['items']
+    #     else:
+    #         print('getting mode pages...')
+    #         response = requests.get("{}/experiment/{}/25/{}".format(self._url, experiment_name, start_sample),
+    #                                 headers=self._header).json()
+    #         samples += response['items']
+    #
+    #     if 'last_item' in response and response['last_item']:
+    #         return self.get_experiment(experiment_name, samples, response['last_item']['id'])
+    #
+    #     return samples

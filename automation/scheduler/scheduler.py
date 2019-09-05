@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import pprint
 import re
 import time
 from abc import ABC
@@ -14,10 +15,20 @@ from requests import Timeout, HTTPError, RequestException
 
 class Scheduler(ABC):
     def __init__(self, args):
+        pprint.pprint(f'Received configuration: {args}')
         self.config = args
-        self.apiBase = 'https://api.metabolomics.us/stasis'
         self.common_extensions = ['.d', '.mzml', '.raw', '.cdf', '.wiff']
-        self.token_var_name = 'STASIS_API_TOKEN' if self.config['test'] else 'PROD_STASIS_API_TOKEN'
+
+        if self.config['env'] == 'prod':
+            self.apiBase = 'https://api.metabolomics.us/stasis'
+            self.token_var_name = 'PROD_STASIS_API_TOKEN'
+        else:
+            self.apiBase = 'https://test-api.metabolomics.us/stasis'
+            self.token_var_name = 'STASIS_API_TOKEN'
+
+        print(f'Stasis api address: {self.apiBase}')
+        print(f'Stasis api key from: {self.token_var_name}')
+
         self.tracking_status = []
         self.acquisition_status = []
         self.schedule_status = []
@@ -44,6 +55,7 @@ class Scheduler(ABC):
 
         Args:
             filename: sample filename
+            chromatography: specifies the 'instrument name', 'column', 'method' and 'ion mode' used to run the sample
             is_retry: indicates if the current call is a retry
 
         Returns:
@@ -62,18 +74,18 @@ class Scheduler(ABC):
 
         status = {}
         if self.config['test']:
-            print(f'{time.strftime("%H:%M:%S")} - {data}')
+            print(f'{time.strftime("%H:%M:%S")} - {data}', flush=True)
             status = {'status_code': 200}
         else:
             try:
                 response = requests.post('%s/acquisition' % self.apiBase, json=data, headers=self._api_token())
                 response.raise_for_status()
-                print(f'{time.strftime("%H:%M:%S")} - Added acquisition metadata for {filename}')
+                print(f'{time.strftime("%H:%M:%S")} - Added acquisition metadata for {filename}', flush=True)
                 status = response.status_code
 
             except Timeout as timeout:
                 if not is_retry:
-                    print('Timeout, retrying in 5 seconds...')
+                    print('Timeout, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
                     self.create_metadata(filename, chromatography, True)
                 else:
@@ -82,7 +94,7 @@ class Scheduler(ABC):
 
             except HTTPError as ex:
                 if not is_retry:
-                    print('Timeout, retrying in 5 seconds...')
+                    print('Timeout, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
                     self.create_metadata(filename, chromatography, True)
                 else:
@@ -90,7 +102,7 @@ class Scheduler(ABC):
                     status = ex.response.status_code
             except ConnectionError as ce:
                 if not is_retry:
-                    print('Connection error, retrying in 5 seconds...')
+                    print('Connection error, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
                     self.create_metadata(filename, chromatography, True)
                 else:
@@ -98,11 +110,11 @@ class Scheduler(ABC):
                     status = 999
             except Exception as e:
                 if not is_retry:
-                    print('Unknown error, retrying in 5 seconds...')
+                    print('Unknown error, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
                     self.create_metadata(filename, chromatography, True)
                 else:
-                    print(f'unknown error after retrying. Error: {str(e.args)}')
+                    print(f'unknown error after retrying. Error: {str(e.args)}', flush=True)
                     self.acquisition_status.append(filename)
                     status = 999
 
@@ -165,7 +177,7 @@ class Scheduler(ABC):
                 else:
                     print(f'unknown error after retrying. Error: {str(e.args)}')
                     self.tracking_status.append(filename)
-                    status = 999
+                    stat[trk] = 999
 
         print(f'{time.strftime("%H:%M:%S")} - Added tracking metadata for {filename}', flush=True)
 
@@ -176,6 +188,7 @@ class Scheduler(ABC):
 
         Args:
             sample: name of the sample
+            chromatography: dictionary containing values for method, instrument, column and ion_mode
             is_retry: indicates if the current call is a retry
 
         Returns:
@@ -184,13 +197,13 @@ class Scheduler(ABC):
         # TODO: enforce the library override to be the same as the method name to simplify the following check
 
         profiles = 'carrot.lcms'
-        if self.config['additional_profiles']:
+        if 'additional_profiles' in self.config and self.config['additional_profiles']:
             profiles += f',{self.config["additional_profiles"]}'
         if self.config['save_msms'] and 'carrot.targets.dynamic' not in profiles:
             profiles += f', carrot.targets.dynamic'
 
         data = {'profile': profiles,
-                'env': 'test' if self.config['test'] else 'prod',
+                'env': self.config['env'],
                 'secure': True,
                 'sample': f'{sample}.mzml',
                 'method': f'{chromatography["method"]} | '
@@ -200,7 +213,6 @@ class Scheduler(ABC):
                 'task_version': self.config['task_version']
                 }
 
-        status = ''
         if self.config['test']:
             print(f'{time.strftime("%H:%M:%S")} - {data}')
             return 200
@@ -264,6 +276,10 @@ class Scheduler(ABC):
 
     def process(self, folder):
         """Processes the samples listed in the sample file according to the arguments in args
+        Args:
+            folder: absolute folder where the experiment definition yaml file is stored.
+        Returns:
+            Nothing
         """
         data = {}
         input_file = ''
@@ -288,13 +304,15 @@ class Scheduler(ABC):
                         # print('Sample: %s' % sample)
                         results[sample] = {}
 
-                        if self.config['create_tracking']:
-                            # add upload to eclipse and conversion to mzml due to manual processing
-                            results[sample]['tracking'] = json.dumps(self.add_tracking(sample))
-
+                        # Acquisition Metadata should happen BEFORE tracking status
                         if self.config['create_acquisition']:
                             # add acquisition table generation due to manual processing
                             results[sample]['acquisition'] = json.dumps(self.create_metadata(sample, chromatography))
+
+                        # Tracking status should happen AFTER Acquisition table generation
+                        if self.config['create_tracking']:
+                            # add upload to eclipse and conversion to mzml due to manual processing
+                            results[sample]['tracking'] = json.dumps(self.add_tracking(sample))
 
                         if self.config['schedule']:
                             # push the sample to the pipeline
