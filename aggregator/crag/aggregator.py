@@ -110,8 +110,10 @@ class Aggregator:
         :param biorecs:
         :return:
         """
-        # print(f'{time.strftime("%H:%M:%S")} - Calculating average of biorecs for intensity, mass and RT (ignoring missing '
-        #       f'results)')
+
+        # print(f'{time.strftime("%H:%M:%S")} - Calculating average of biorecs for intensity, '
+        #       f'mass and RT (ignoring missing results)')
+
         np.seterr(invalid='log')
 
         for i in range(len(intensity)):
@@ -130,8 +132,10 @@ class Aggregator:
         :param biorecs:
         :return:
         """
-        # print(f'{time.strftime("%H:%M:%S")} - Calculating %RDS of biorecs for intensity, mass and RT (ignoring missing '
-        #       f'results)')
+
+        # print(f'{time.strftime("%H:%M:%S")} - Calculating %RDS of biorecs for intensity, '
+        #       f'mass and RT (ignoring missing results)')
+
         size = range(len(intensity))
         np.seterr(invalid='log')
 
@@ -159,18 +163,6 @@ class Aggregator:
         replaced = []
 
         for k, v in sample['injections'].items():
-            # Debugging
-            # for x in v['results']:
-            #     if x['target']['id'] not in dupes:
-            #         dupes[x['target']['id']] = x
-            #     else:
-            #         i = x['target']['id']
-            #         print(f"{i}: ({x['target']['name']}, {x['target']['mass']}, {x['target']['retentionIndex']}) ->
-            #           ({dupes[i]['target']['name']}, {dupes[i]['target']['mass']},
-            #            {dupes[i]['target']['retentionIndex']})")
-
-            # ids = [r['target']['id'] for r in v['results']]
-            # intensities = pd.Series([round(r['annotation']['intensity'], 4) for r in v['results']], index=ids)
 
             intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
             masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
@@ -201,80 +193,6 @@ class Aggregator:
 
         return df[['No', 'label', 'Target RI(s)', 'Target mz', 'InChIKey']]
 
-    @staticmethod
-    def build_target_identifier(target):
-        return f"{target['name']}_{target['retentionTimeInSeconds'] / 60:.1f}_{target['mass']:.1f}"
-
-    def build_target_list(self, targets, sample, intensity_filter=0):
-        if 'error' in sample:
-            if self.args.log:
-                print('Error:', sample)
-            return targets
-
-        start_index = 0
-        new_targets = []
-
-        # Lookup for target names
-        # Commented version for future when target RT m/z has been corrected
-        # target_lookup = {self.build_target_identifier(x): x['id'] for x in targets if x['name'] != 'Unknown'}
-        target_lookup = {x['name']: x['id'] for x in targets if x['name'] != 'Unknown'}
-
-        # Get all annotations and sort by mass
-        annotations = sum([v['results'] for v in sample['injections'].values()], [])
-        annotations.sort(key=lambda x: x['target']['mass'])
-
-        max_intensity = max(x['annotation']['intensity'] for x in annotations)
-
-        # Avoid duplicate targets
-        observed_targets = set()
-
-        # Match all targets in sample data to master target list 
-        for x in annotations:
-            # For now, horrible hack to handle duplicate targets
-            if x['target']['name'] != 'Unknown':
-                if x['target']['name'] in observed_targets:
-                    continue
-                observed_targets.add(x['target']['name'])
-
-            # target_identifier = self.build_target_identifier(x['target'])
-            target_identifier = x['target']['name']
-
-            if target_identifier in target_lookup:
-                x['target']['id'] = target_lookup[target_identifier]
-                continue
-
-            matched = False
-            ri = x['target']['retentionTimeInSeconds']
-
-            for i in range(start_index, len(targets)):
-                if targets[i]['mass'] < x['target']['mass'] - self.args.mz_tolerance:
-                    start_index = i + 1
-                    continue
-                if targets[i]['mass'] > x['target']['mass'] + self.args.mz_tolerance:
-                    break
-
-                if ri - self.args.rt_tolerance <= targets[i]['retentionTimeInSeconds'] <= ri + self.args.rt_tolerance:
-                    if self.args.log:
-                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']},"
-                              f"{targets[i]['name']}, {targets[i]['retentionTimeInSeconds']}, {targets[i]['mass']})")
-
-                    x['target']['id'] = targets[i]['id']
-                    matched = True
-                    break
-
-            if not matched:
-                if x['annotation']['intensity'] >= intensity_filter * max_intensity:
-                    t = x['target']
-                    t['id'] = len(targets) + len(new_targets) + 1
-                    new_targets.append(t)
-                else:
-                    if self.args.log:
-                        print(f"Skipped feature ({x['target']['name']}, {ri}, {x['target']['mass']}, "
-                              f"{x['annotation']['intensity']}), "
-                              f"less than {intensity_filter * 100}% base peak intensity")
-
-        return sorted(targets + new_targets, key=lambda x: x['mass'])
-
     def process_sample_list(self, samples, sample_file):
         # use subset of samples for testing
         if self.args.test:
@@ -290,8 +208,6 @@ class Aggregator:
                 continue
 
             results.append(get_file_results(sample, self.args.log, self.args.dir, self.args.save))
-
-            # targets = self.build_target_list(targets, data)
 
         targets = self.get_target_list(results)
 
@@ -369,11 +285,6 @@ class Aggregator:
         :param args: parameters containing the experiment name
         :return: the filename of the aggregated (excel) file
         """
-
-        # commented since it returns partial list of experiment files
-        # print(f"Aggregating results for experiment '{args.experiment}'")
-        # files = getExperimentFiles(args.experiment)
-        # print(files)
 
         for sample_file in self.args.infiles:
             if not os.path.isfile(sample_file):

@@ -87,7 +87,7 @@ def secure_schedule(event, context):
     body['secured'] = True
 
     if 'task_version' not in body:
-        body['task_version'] = 163
+        body['task_version'] = 164
 
     # get topic refrence
     import boto3
