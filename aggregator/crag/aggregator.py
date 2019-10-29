@@ -1,3 +1,4 @@
+import pprint
 import re
 
 import numpy as np
@@ -8,6 +9,12 @@ from .stasis import *
 
 AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
+sheet_names = {"intensity": "Intensity matrix",
+               "mass": "Mass matrix",
+               "ri": "Retention index matrix",
+               "rt": "Original RT matrix",
+               "repl": "Replaced values",
+               "curve": "Correction curve"}
 
 
 def percent(x: float, intensity):
@@ -22,8 +29,11 @@ class Aggregator:
     def find_intensity(self, value) -> int:
         """
         Returns the intensity value only for replaced data
-        :param value: the entire annotation object
-        :return: intensity value if replaced and requesting replacement values or actual value if not replaced
+        Args:
+            value:
+
+        Returns:
+
         """
         if not value['replaced'] or (value['replaced'] and self.args.zero_replacement):
             return round(value["intensity"])
@@ -34,8 +44,11 @@ class Aggregator:
     def find_replaced(value) -> int:
         """
         Returns the intensity value only for replaced data
-        :param value: the entire annotation object
-        :return: intensity value if replaced or 0 if not replaced
+        Args:
+            value:
+
+        Returns:
+
         """
         if value['replaced']:
             return round(value["intensity"])
@@ -44,7 +57,15 @@ class Aggregator:
 
     @staticmethod
     def add_metadata(samples, data):
+        """
+        Creates the column headers with sample metadata
+        Args:
+            samples: list of sample names
+            data: dataframe with result data
 
+        Returns: a dataframe with metadata on top of sample results
+
+        """
         dicdata = {'No': None, 'label': None, 'Target RI(s)': None, 'Target mz': None, 'InChIKey':
             ['species', 'organ', 'batch', 'sample_type', 'time'], 'found %': None}
         for sample, idx in zip(samples, range(1, len(samples) + 1)):
@@ -66,10 +87,21 @@ class Aggregator:
 
         return pd.DataFrame(dicdata)
 
-    def export_excel(self, intensity, mass, rt, origrt, curve, replaced, infile):
+    def export_excel(self, data, type, infile, sort_index=False):
+        """
+        Saves a dataframe to excel format
+        Args:
+            data: the dataframe to export
+            type: the name of the excel sheet
+            infile: filename of the result to use in excel filename
+            sort_index: sort the data on reindexing, True | False
+
+        Returns:
+
+        """
 
         # saving excel file
-        # print(f'{time.strftime("%H:%M:%S")} - Exporting excel file')
+        # print(f'{time.strftime("%H:%M:%S")} - Exporting excel file {type}')
         file, ext = os.path.splitext(infile)
 
         # Build suffix
@@ -83,35 +115,42 @@ class Aggregator:
         else:
             suffix += '-norepl'
 
-        output_name = f'{file}-{suffix}.xlsx'
+        output_name = f'{type.lower().replace(" ", "_")}-{file}-{suffix}.xlsx'
 
-        intensity = intensity.set_index('No')  # .sort_index()
-        mass = mass.set_index('No').sort_index()
-        rt = rt.set_index('No').sort_index()
-        origrt = origrt.set_index('No').sort_index()
-        replaced = replaced.set_index('No').sort_index()
+        if type == 'Correction curve':
+            data.drop(columns=['label', 'Target RI(s)', 'Target mz', 'InChIKey'], inplace=True)
+            data.dropna(inplace=True)
+            data.reset_index(drop=True, inplace=True)
+            print(data)
+
+
+        if sort_index:
+            reindexed = data.set_index('No').sort_index()
+        else:
+            reindexed = data.set_index('No')
 
         writer = pd.ExcelWriter(output_name)
-        intensity.fillna('').to_excel(writer, 'Intensity matrix')
-        mass.fillna('').to_excel(writer, 'Mass matrix')
-        rt.fillna('').to_excel(writer, 'Retention index matrix')
-        origrt.fillna('').to_excel(writer, 'Original RT matrix')
-        replaced.fillna('').to_excel(writer, 'Replaced values')
-        curve.fillna('').to_excel(writer, 'Correction curves')
+        reindexed.fillna('').to_excel(writer, type)
         writer.save()
 
     @staticmethod
     def calculate_average(intensity, mass, rt, origrt, biorecs):
         """
+        UNUSED
         Calculates the average intensity, mass and retention index of biorecs
-        :param intensity:
-        :param mass:
-        :param rt:
-        :param biorecs:
-        :return:
+
+        Args:
+            intensity:
+            mass:
+            rt:
+            origrt:
+            biorecs:
+
+        Returns:
+
         """
-        # print(f'{time.strftime("%H:%M:%S")} - Calculating average of biorecs for intensity, mass and RT (ignoring missing '
-        #       f'results)')
+        # print(f'{time.strftime("%H:%M:%S")} - Calculating average of biorecs for intensity, '
+        #       f'mass and RT (ignoring missing results)')
         np.seterr(invalid='log')
 
         for i in range(len(intensity)):
@@ -123,15 +162,20 @@ class Aggregator:
     @staticmethod
     def calculate_rsd(intensity, mass, rt, origrt, biorecs):
         """
+        UNUSED
         Calculates intensity, mass and retention index Relative Standard Deviation of biorecs
-        :param intensity:
-        :param mass:
-        :param rt:
-        :param biorecs:
-        :return:
+        Args:
+            intensity:
+            mass:
+            rt:
+            origrt:
+            biorecs:
+
+        Returns:
+
         """
-        # print(f'{time.strftime("%H:%M:%S")} - Calculating %RDS of biorecs for intensity, mass and RT (ignoring missing '
-        #       f'results)')
+        # print(f'{time.strftime("%H:%M:%S")} - Calculating %RDS of biorecs for intensity, '
+        #       f'mass and RT (ignoring missing results)')
         size = range(len(intensity))
         np.seterr(invalid='log')
 
@@ -139,17 +183,23 @@ class Aggregator:
             try:
                 intensity.loc[i, RSD_BR_] = (intensity.loc[i, biorecs].std() / intensity.loc[i, biorecs].mean()) * 100
             except Exception as e:
-                print(f'{time.strftime("%H:%M:%S")} - Can\'t calculate % RSD for target {intensity.loc[i, "name"]}.'
-                      f' Sum of intensities = {intensity.loc[i, biorecs].sum()}')
+                # print(f'{time.strftime("%H:%M:%S")} - Can\'t calculate % RSD for target {intensity.loc[i, "name"]}.'
+                #       f' Sum of intensities = {intensity.loc[i, biorecs].sum()}')
+                pass
+
             mass.loc[i, RSD_BR_] = (mass.loc[i, biorecs].std() / mass.loc[i, biorecs].mean()) * 100
             rt.loc[i, RSD_BR_] = (rt.loc[i, biorecs].std() / rt.loc[i, biorecs].mean()) * 100
             origrt.loc[i, RSD_BR_] = 'NA'
 
     def format_sample(self, sample):
         """
-        filters the incoming sample data separating intensity, mass, retention index and replacement values
-        :param data:
-        :return:
+        Filters the incoming sample data separating intensity, mass, retention index and replacement values
+
+        Args:
+            sample: result file
+
+        Returns:
+
         """
         intensities = []
         masses = []
@@ -159,43 +209,44 @@ class Aggregator:
         replaced = []
 
         for k, v in sample['injections'].items():
-            # Debugging
-            # for x in v['results']:
-            #     if x['target']['id'] not in dupes:
-            #         dupes[x['target']['id']] = x
-            #     else:
-            #         i = x['target']['id']
-            #         print(f"{i}: ({x['target']['name']}, {x['target']['mass']}, {x['target']['retentionIndex']}) ->
-            #           ({dupes[i]['target']['name']}, {dupes[i]['target']['mass']},
-            #            {dupes[i]['target']['retentionIndex']})")
-
-            # ids = [r['target']['id'] for r in v['results']]
-            # intensities = pd.Series([round(r['annotation']['intensity'], 4) for r in v['results']], index=ids)
-
             intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
             masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
             rts = {k: [round(r['annotation']['retentionIndex'], 2) for r in v['results']]}
             origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
-            curve = {k: v['correction']['curve']}
             replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
+            curve = {k: sample['injections'][k]['correction']['curve']}
+
 
         return [None, intensities, masses, rts, origrts, curve, replaced]
 
     @staticmethod
     def build_worksheet(targets, label=' working...'):
+        """
+        Structures the data to be 'worksheet' ready
+        Args:
+            targets: list of targets
+            label: progress bar message
+
+        Returns: a dataframe formatted with the first columns of a final report
+
+        """
         rows = []
         pattern = re.compile(".*?_[A-Z]{14}-[A-Z]{10}-[A-Z]")
 
         i = 1
         for x in tqdm.tqdm(targets, desc=label, unit=' targets'):
-            rows.append({
-                'No': i,
-                'label': x['name'].rsplit('_', 1)[0],
-                'Target RI(s)': x['retentionTimeInSeconds'],
-                'Target mz': x['mass'],
-                'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,
-            })
-            i = i + 1
+            try:
+                rows.append({
+                    'No': i,
+                    'label': x['name'].rsplit('_', 1)[0],
+                    'Target RI(s)': x['retentionTimeInSeconds'],
+                    'Target mz': x['mass'],
+                    'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,
+                })
+            except TypeError as e:
+                print(f'Error adding {x} to the result set. {e.args}')
+            finally:
+                i = i + 1
 
         df = pd.DataFrame(rows)  # .set_index('ID')
 
@@ -205,77 +256,95 @@ class Aggregator:
     def build_target_identifier(target):
         return f"{target['name']}_{target['retentionTimeInSeconds'] / 60:.1f}_{target['mass']:.1f}"
 
-    def build_target_list(self, targets, sample, intensity_filter=0):
-        if 'error' in sample:
-            if self.args.log:
-                print('Error:', sample)
-            return targets
-
-        start_index = 0
-        new_targets = []
-
-        # Lookup for target names
-        # Commented version for future when target RT m/z has been corrected
-        # target_lookup = {self.build_target_identifier(x): x['id'] for x in targets if x['name'] != 'Unknown'}
-        target_lookup = {x['name']: x['id'] for x in targets if x['name'] != 'Unknown'}
-
-        # Get all annotations and sort by mass
-        annotations = sum([v['results'] for v in sample['injections'].values()], [])
-        annotations.sort(key=lambda x: x['target']['mass'])
-
-        max_intensity = max(x['annotation']['intensity'] for x in annotations)
-
-        # Avoid duplicate targets
-        observed_targets = set()
-
-        # Match all targets in sample data to master target list 
-        for x in annotations:
-            # For now, horrible hack to handle duplicate targets
-            if x['target']['name'] != 'Unknown':
-                if x['target']['name'] in observed_targets:
-                    continue
-                observed_targets.add(x['target']['name'])
-
-            # target_identifier = self.build_target_identifier(x['target'])
-            target_identifier = x['target']['name']
-
-            if target_identifier in target_lookup:
-                x['target']['id'] = target_lookup[target_identifier]
-                continue
-
-            matched = False
-            ri = x['target']['retentionTimeInSeconds']
-
-            for i in range(start_index, len(targets)):
-                if targets[i]['mass'] < x['target']['mass'] - self.args.mz_tolerance:
-                    start_index = i + 1
-                    continue
-                if targets[i]['mass'] > x['target']['mass'] + self.args.mz_tolerance:
-                    break
-
-                if ri - self.args.rt_tolerance <= targets[i]['retentionTimeInSeconds'] <= ri + self.args.rt_tolerance:
-                    if self.args.log:
-                        print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']},"
-                              f"{targets[i]['name']}, {targets[i]['retentionTimeInSeconds']}, {targets[i]['mass']})")
-
-                    x['target']['id'] = targets[i]['id']
-                    matched = True
-                    break
-
-            if not matched:
-                if x['annotation']['intensity'] >= intensity_filter * max_intensity:
-                    t = x['target']
-                    t['id'] = len(targets) + len(new_targets) + 1
-                    new_targets.append(t)
-                else:
-                    if self.args.log:
-                        print(f"Skipped feature ({x['target']['name']}, {ri}, {x['target']['mass']}, "
-                              f"{x['annotation']['intensity']}), "
-                              f"less than {intensity_filter * 100}% base peak intensity")
-
-        return sorted(targets + new_targets, key=lambda x: x['mass'])
+    # DEPRECATED, it returns a different number of targets compared to the library
+    # def build_target_list(self, targets, sample, intensity_filter=0):
+    #     """Creates a list of unique targets from the list of sample results
+    #     Params
+    #         targets: list of 'target' dicts {'id': '', 'name': '', 'mass': 0.0, 'retentionTimeInSeconds': 0.0}
+    #         sample: result data in json format
+    #         intensity_filter: consider masses with intensity above this value. Default=0
+    #     Returns
+    #         A list of unique 'target' dicts.
+    #     """
+    #     if 'error' in sample:
+    #         if self.args.log:
+    #             print('Error:', sample)
+    #         return targets
+    #
+    #     start_index = 0
+    #     new_targets = []
+    #
+    #     # Lookup for target names
+    #     # Commented version for future when target RT m/z has been corrected
+    #     # target_lookup = {self.build_target_identifier(x): x['id'] for x in targets if x['name'] != 'Unknown'}
+    #     target_lookup = {x['name']: x['id'] for x in targets if x['name'] != 'Unknown'}
+    #
+    #     # Get all annotations and sort by mass
+    #     annotations = sum([v['results'] for v in sample['injections'].values()], [])
+    #     annotations.sort(key=lambda x: x['target']['mass'])
+    #
+    #     max_intensity = max(x['annotation']['intensity'] for x in annotations)
+    #
+    #     # Avoid duplicate targets
+    #     observed_targets = set()
+    #
+    #     # Match all targets in sample data to master target list
+    #     for x in annotations:
+    #         # For now, horrible hack to handle duplicate targets
+    #         if x['target']['name'] != 'Unknown':
+    #             if x['target']['name'] in observed_targets:
+    #                 continue
+    #             observed_targets.add(x['target']['name'])
+    #
+    #         # target_identifier = self.build_target_identifier(x['target'])
+    #         target_identifier = x['target']['name']
+    #
+    #         if target_identifier in target_lookup:
+    #             x['target']['id'] = target_lookup[target_identifier]
+    #             continue
+    #
+    #         matched = False
+    #         ri = x['target']['retentionTimeInSeconds']
+    #
+    #         for i in range(start_index, len(targets)):
+    #             if targets[i]['mass'] < x['target']['mass'] - self.args.mz_tolerance:
+    #                 start_index = i + 1
+    #                 continue
+    #             if targets[i]['mass'] > x['target']['mass'] + self.args.mz_tolerance:
+    #                 break
+    #
+    #             if ri - self.args.rt_tolerance <= targets[i]['retentionTimeInSeconds'] <= ri + self.args.rt_tolerance:
+    #                 if self.args.log:
+    #                     print(f"Matched ({x['target']['name']}, {ri}, {x['target']['mass']}) -> ({targets[i]['id']},"
+    #                           f"{targets[i]['name']}, {targets[i]['retentionTimeInSeconds']}, {targets[i]['mass']})")
+    #
+    #                 x['target']['id'] = targets[i]['id']
+    #                 matched = True
+    #                 break
+    #
+    #         if not matched:
+    #             if x['annotation']['intensity'] >= intensity_filter * max_intensity:
+    #                 t = x['target']
+    #                 t['id'] = len(targets) + len(new_targets) + 1
+    #                 new_targets.append(t)
+    #             else:
+    #                 if self.args.log:
+    #                     print(f"Skipped feature ({x['target']['name']}, {ri}, {x['target']['mass']}, "
+    #                           f"{x['annotation']['intensity']}), "
+    #                           f"less than {intensity_filter * 100}% base peak intensity")
+    #
+    #     return sorted(targets + new_targets, key=lambda x: x['mass'])
 
     def process_sample_list(self, samples, sample_file):
+        """
+        Runs the aggregation pipeline on the list of samples
+        Args:
+            samples: list of sample names
+            sample_file: input file with list of samples
+
+        Returns:
+
+        """
         # use subset of samples for testing
         if self.args.test:
             samples = samples[:5]
@@ -290,8 +359,6 @@ class Aggregator:
                 continue
 
             results.append(get_file_results(sample, self.args.log, self.args.dir, self.args.save))
-
-            # targets = self.build_target_list(targets, data)
 
         targets = self.get_target_list(results)
 
@@ -316,8 +383,6 @@ class Aggregator:
                 origrt[sample] = pd.DataFrame(formatted[4])
                 replaced[sample] = pd.DataFrame(formatted[6])
 
-                # curve_data = list(formatted[5].values())[0]
-                # curve[sample] = pd.DataFrame(formatted[5], index=formatted[0][: len(curve_data)])
                 curve[sample] = pd.DataFrame(formatted[5])
             else:
                 intensity[sample] = np.nan
@@ -341,24 +406,26 @@ class Aggregator:
         md = self.add_metadata(samples, results)
         intensity = pd.concat([md, intensity], sort=False).reset_index(drop=True)
 
-        # try:
-        #     self.calculate_average(intensity, mass, rt, origrt, biorecs)
-        # except Exception as e:
-        #     print(f'Error in average calculation: {str(e.args)}')
-        # try:
-        #     self.calculate_rsd(intensity, mass, rt, origrt, biorecs)
-        # except Exception as e:
-        #     print(f'Error in average calculation: {str(e.args)}')
-        try:
-            self.export_excel(intensity, mass, rt, origrt, curve, replaced, sample_file)
-        except Exception as e:
-            print(f'Error in excel export: {str(e.args)}')
+        for t in [sheet_names[k] for k in sheet_names.keys()]:
+            try:
+                self.export_excel(intensity, t, sample_file)
+            except Exception as exerr:
+                print(f'Error creating exel file for {t}')
+                print(exerr.args)
 
     @staticmethod
     def get_target_list(results):
-        k = list(results[0]['injections'].keys())[0]
+        """
+        Returns the list of targets from a result file
+        Args:
+            results: result data with target info
 
-        targets = [x['target'] for x in results[0]['injections'][k]['results']]
+        Returns: list of targets
+
+        """
+
+        targets = [x['target'] for x in
+                   [results[0]['injections'][k]['results'] for k in list(results[0]['injections'].keys())][0]]
 
         return targets
 
@@ -366,8 +433,7 @@ class Aggregator:
         """
         Collects information on the experiment and decides if aggregation of the full experiment is possible
 
-        :param args: parameters containing the experiment name
-        :return: the filename of the aggregated (excel) file
+        Returns: the filename of the aggregated (excel) file
         """
 
         # commented since it returns partial list of experiment files
