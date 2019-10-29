@@ -1,4 +1,3 @@
-import pprint
 import re
 
 import numpy as np
@@ -435,11 +434,6 @@ class Aggregator:
 
         Returns: the filename of the aggregated (excel) file
         """
-
-        # commented since it returns partial list of experiment files
-        # print(f"Aggregating results for experiment '{args.experiment}'")
-        # files = getExperimentFiles(args.experiment)
-        # print(files)
 
         for sample_file in self.args.infiles:
             if not os.path.isfile(sample_file):
