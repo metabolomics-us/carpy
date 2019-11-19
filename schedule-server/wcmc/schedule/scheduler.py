@@ -70,6 +70,7 @@ class JobState(Enum):
     DONE = "done"
     CANCELLED = "cancelled"
     NOT_FOUND = "not found"
+    FAILED = "failed"
 
 
 class SampleStateService:
@@ -172,11 +173,11 @@ class JobExecutor:
         self._scheduler = value
 
     @abstractmethod
-    def execute(self, job: Job):
+    def execute(self, job: Job) -> JobState:
         """
 
         :param job:
-        :return:
+        :return: the job state
         """
         pass
 
@@ -200,8 +201,12 @@ class Scheduler:
         :param job:
         :return:
         """
-        self.set_job_state(job.generate_id(), JobState.SCHEDULED)
-        self.executor.execute(job)
+
+        try:
+            self.set_job_state(job.generate_id(), self.executor.execute(job))
+        except Exception as e:
+            self.set_job_state(job.generate_id(), JobState.FAILED)
+            raise e
 
     @abstractmethod
     def set_job_state(self, id: str, state: JobState):
