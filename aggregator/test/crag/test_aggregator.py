@@ -3,9 +3,9 @@ import os
 import unittest
 
 import pandas as pd
+from stasis_client.client import StasisClient
 
 import cragLauncher as launcher
-from crag import stasis
 from crag.aggregator import Aggregator
 
 pd.set_option('display.max_rows', 100)
@@ -15,6 +15,7 @@ pd.set_option('display.width', 1000)
 
 class TestAggregator(unittest.TestCase):
     logger = logging.getLogger('DEBUG')
+    stasis = StasisClient('https://test-api.metabolomics.us/stasis', os.getenv('STASIS_API_TOKEN'), True)
 
     def setUp(self):
         self.parser = launcher.create_parser()
@@ -26,18 +27,20 @@ class TestAggregator(unittest.TestCase):
                         'B13A_SA11894_TeddyLipids_Pos_1MNF4']
 
     def test_get_target_list_negative_mode(self):
-        aggregator = Aggregator(self.parser.parse_args(['filename']))
+        aggregator = Aggregator(self.parser.parse_args(['filename']), self.stasis)
         self.samples = ['B7B_TeddyLipids_Neg_QC015',
                         'B12A_SA11202_TeddyLipids_Neg_1RXZX_2']
-        results = self.build_result()
+        results = self._build_result()
+        self.assertGreater(len(results), 0)
+
         targets = aggregator.get_target_list(results)
 
         self.assertTrue(len(targets) > 0)
         self.assertEqual(1228, len(targets))
 
     def test_get_target_list_positive_mode(self):
-        aggregator = Aggregator(self.parser.parse_args(['filename']))
-        results = self.build_result()
+        aggregator = Aggregator(self.parser.parse_args(['filename']), self.stasis)
+        results = self._build_result()
 
         targets = aggregator.get_target_list(results)
         self.assertTrue(len(targets) > 0)
@@ -45,7 +48,7 @@ class TestAggregator(unittest.TestCase):
 
     def test_find_intensity(self):
         # test find_intensity on non replaced data
-        aggregator = Aggregator(self.parser.parse_args(['filename']))
+        aggregator = Aggregator(self.parser.parse_args(['filename']), self.stasis)
         value = {'intensity': 1, 'replaced': False}
         self.assertEqual(1, aggregator.find_intensity(value))
 
@@ -54,7 +57,7 @@ class TestAggregator(unittest.TestCase):
         self.assertEqual(0, aggregator.find_intensity(value))
 
         # test find_intensity on zero replaced data requesting replaced data
-        aggregator = Aggregator(self.parser.parse_args(['filename', '-zr']))
+        aggregator = Aggregator(self.parser.parse_args(['filename', '-zr']), self.stasis)
         value = {'intensity': 2, 'replaced': True}
         self.assertEqual(2, aggregator.find_intensity(value))
 
@@ -65,16 +68,16 @@ class TestAggregator(unittest.TestCase):
     def test_add_metadata(self):
         # Test correct indexing of samples in header
 
-        aggregator = Aggregator(self.parser.parse_args(['filename', '-s', '-d', 'samples']))
-        results = self.build_result()
+        aggregator = Aggregator(self.parser.parse_args(['filename', '-s', '-d', 'samples']), self.stasis)
+        results = self._build_result()
 
         md = aggregator.add_metadata(self.samples, results)
 
         self.assertTrue(md.iloc[4, 6:].to_list() == list(range(1, 7)))
 
     def test_build_worksheet(self):
-        aggregator = Aggregator(self.parser.parse_args(['filename']))
-        results = self.build_result()
+        aggregator = Aggregator(self.parser.parse_args(['filename']), self.stasis)
+        results = self._build_result()
         targets = aggregator.get_target_list(results)
         intensity = aggregator.build_worksheet(targets, 'intensity matrix')
         self.assertEqual(len(targets), intensity.index.size)
@@ -87,17 +90,22 @@ class TestAggregator(unittest.TestCase):
                       'retention_index_matrix-test-results-norepl.xlsx',
                       'correction_curve-test-results-norepl.xlsx'}
 
-        aggregator = Aggregator(self.parser.parse_args(['filename', '-s', '-d', 'samples']))
+        aggregator = Aggregator(self.parser.parse_args(['filename', '-s', '-d', 'samples']), self.stasis)
         aggregator.process_sample_list(self.samples, 'test')
         [self.assertTrue(os.path.exists(f)) for f in excel_list]
         [os.remove(f) for f in excel_list]
 
-    def build_result(self):
+    def _build_result(self):
         results = []
 
         for sample in self.samples:
-            data = stasis.get_file_results(sample, False, 'samples', True)
+            filename = os.path.splitext(sample)[0] + '.json'
+
+            data = self.stasis.sample_result(filename)
             data['sample'] = sample
-            results.append(data)
+            if data.get('Error') is None:
+                results.append(data)
+            else:
+                results.append({})
 
         return results
