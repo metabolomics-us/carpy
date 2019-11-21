@@ -110,11 +110,11 @@ class StasisClient:
             a json object with the result data or error information
         """
 
+        jstr = ""
         if not os.path.exists(dest):
             os.makedirs(dest)
 
         filename = f'{dest}/{sample_name}'
-
         try:
             with open(filename, 'wb') as data:
                 self.bucket.download_fileobj(sample_name, data)
@@ -122,16 +122,20 @@ class StasisClient:
             with open(filename, 'rb') as data:
                 jstr = json.load(data)
 
-            return jstr
         except JSONDecodeError as jde:
-            return {'Error': jde.msg, 'filename': sample_name}
+            jstr = {'Error': jde.msg, 'filename': sample_name}
         except ClientError as ce:
-            return {'Error': ce.response['Error'], 'filename': sample_name}
+            jstr = {'Error': ce.response['Error'], 'filename': sample_name}
         finally:
-            # only remove downloads in ./tmp
-            if os.path.exists(f'tmp/{sample_name}'):
-                os.remove(f'tmp/{sample_name}')
+            try:
+                # only remove downloads in ./tmp
+                if os.path.exists(f'tmp/{sample_name}'):
+                    os.remove(f'tmp/{sample_name}')
 
-            # or empty files
-            if os.path.getsize(filename) <= 0:
-                os.remove(filename)
+                # or empty files
+                if os.path.getsize(filename) <= 0:
+                    os.remove(filename)
+            except FileNotFoundError:
+                pass
+
+            return jstr
