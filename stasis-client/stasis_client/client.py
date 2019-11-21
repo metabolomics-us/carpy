@@ -37,8 +37,6 @@ class StasisClient:
             'Accept': 'application/json',
             'x-api-key': f'{self._token}'
         }
-        print(f'HEADER: {self._header}')
-
 
         bucket_name = f'wcmc-data-stasis-result-{"test" if test else "prod"}'
         if boto3.client('s3').head_bucket(Bucket=bucket_name):
