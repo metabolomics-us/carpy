@@ -14,15 +14,28 @@ from scheduler.scheduler import Scheduler
 
 class TestScheduler(unittest.TestCase):
     pp = pprint.PrettyPrinter(indent=4)
+
     def setUp(self):
         config = {'test': True,
                   'experiment': {
-                      'chromatography': {},
+                      'chromatography': [{'method': 'teddy',
+                                          'instrument': '6530',
+                                          'column': 'test',
+                                          'ion_mode': 'positive',
+                                          'raw_files_list': 'samples-pos.csv',
+                                          'raw_files': []},
+                                         {'method': 'teddy',
+                                          'instrument': '6550',
+                                          'column': 'test',
+                                          'ion_mode': 'negative',
+                                          'raw_files_list': 'samples-neg.txt',
+                                          'raw_files': []}
+                                         ],
                       'metadata': {'species': 'human', 'organ': 'plasma'}
                   },
                   'task_version': 164,
                   'create_tracking': True,
-                  'create_metadata': True,
+                  'create_acquisition': True,
                   'schedule': True,
                   'env': 'test',
                   'additional_profiles': None
@@ -30,11 +43,6 @@ class TestScheduler(unittest.TestCase):
         self.mp = monkeypatch.MonkeyPatch()
         self.scheduler = Scheduler(config)
         self.scheduler.config['experiment']['name'] = 'teddy'
-        self.scheduler.config['experiment']['chromatography'] = {'method': 'teddy',
-                                                                 'instrument': '6530',
-                                                                 'column': 'test',
-                                                                 'ion_mode': 'positive',
-                                                                 'raw_files_list': 'resources/samples.csv'}
         self.scheduler.config['save_msms'] = False
 
     def test_api_token_with_test_env_set(self):
@@ -67,7 +75,7 @@ class TestScheduler(unittest.TestCase):
     def test_schedule_in_prod_mode(self):
         self.scheduler.config['test'] = False
 
-        # running with inexistent name to avoid rel processing
+        # running with inexistent name to avoid real processing
         self.assertEquals(200, self.scheduler.schedule('B2A_TeddyLipids_Pos_QC001x',
                                                        self.scheduler.config['experiment']['chromatography']))
 
@@ -110,3 +118,7 @@ class TestScheduler(unittest.TestCase):
     #     self.pp.pprint(f'size: {len(data)}')
     #     for sample in data:
     #         self.pp.pprint(f'{sample}\n------------------------------------------------\n')
+
+    def test_multi_chromatography_methods(self):
+        result = self.scheduler.process('../../resources')
+        pprint.pprint(result)
