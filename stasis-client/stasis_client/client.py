@@ -19,8 +19,9 @@ class StasisClient:
         the client requires an url where to connect against
         and the related token.
 
-        :param url:
-        :param token:
+        Args:
+            url:
+            token:
         """
 
         self._url = url
@@ -44,9 +45,10 @@ class StasisClient:
 
     def sample_acquisition_create(self, data: dict):
         """
-        updloads the
-        :param data: the data object containing the aquisiton description
-        :return:
+        adds sample metadata info to stasis
+        Args:
+             data: the data object containing the aquisiton description
+        Returns:
         """
         return requests.post(f'{self._url}/acquisition', json=data, headers=self._header)
 
@@ -54,8 +56,10 @@ class StasisClient:
         """
         returns the acquistion data of this sample
 
-        :param sample_name:
-        :return:
+        Args:
+             sample_name:
+
+        Returns:
         """
         return requests.get(f'{self._url}/acquisition/{sample_name}', headers=self._header).json()
 
@@ -76,46 +80,58 @@ class StasisClient:
                     }
                 ]
         """
-        return requests.get("{}/tracking/{}".format(self._url, sample_name), headers=self._header).json()['status']
+        return requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header).json()['status']
 
     def sample_state_update(self, sample_name: str, state):
         """
         updates a sample state in the remote system+
-        :param sample_name:
-        :param state:
-        :return:
+
+        Args:
+            sample_name:
+            state:
+
+        Returns:
         """
         data = {
             "sample": sample_name,
             "status": state
         }
-        return requests.post("{}/tracking".format(self._url), json=data, headers=self._header)
+        return requests.post(f'{self._url}/tracking', json=data, headers=self._header)
 
     def sample_result(self, sample_name: str, dest: Optional[str] = 'tmp') -> dict:
         """
-        returns the result for a specified sample
-        :param sample_name:
-        :return: a json object containing the result data
+        Downloads a sample's result
+
+        Args:
+            sample_name: filename to download
+            dest: Optional folder to store the file
+
+        Returns:
+            a json object with the result data or error information
         """
 
         if not os.path.exists(dest):
             os.makedirs(dest)
 
+        filename = f'{dest}/{sample_name}'
+
         try:
-            with open(f'{dest}/{sample_name}', 'wb') as data:
+            with open(filename, 'wb') as data:
                 self.bucket.download_fileobj(sample_name, data)
 
-            with open(f'{dest}/{sample_name}', 'rb') as data:
+            with open(filename, 'rb') as data:
                 jstr = json.load(data)
 
             return jstr
         except JSONDecodeError as jde:
-            print(f'Error deserializing json data. {jde.msg}')
-            return {'Error': jde.msg}
+            return {'Error': jde.msg, 'filename': sample_name}
         except ClientError as ce:
-            print(f'Error getting sample results {ce.response}')
-            return ce.response
+            return {'Error': ce.response['Error'], 'filename': sample_name}
         finally:
             # only remove downloads in ./tmp
             if os.path.exists(f'tmp/{sample_name}'):
                 os.remove(f'tmp/{sample_name}')
+
+            # or empty files
+            if os.path.getsize(filename) <= 0:
+                os.remove(filename)

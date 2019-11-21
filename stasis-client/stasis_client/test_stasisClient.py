@@ -34,7 +34,7 @@ def _create_sample(name: str = 'test'):
 class TestStasisClient(unittest.TestCase):
     url = 'https://test-api.metabolomics.us/stasis'
     key = os.getenv('STASIS_API_TOKEN')
-    client = StasisClient(url, key, True)
+    client = StasisClient(url, key)
 
     def test_sample_acquisition_create(self):
 
@@ -63,3 +63,12 @@ class TestStasisClient(unittest.TestCase):
         result = self.client.sample_result('blah.blah')
         print(f'RESULT: {result}')
         self.assertIn('Error', result, 'The response should have an "Error" key')
+        self.assertEqual('blah.blah', result.get('filename'))
+
+    def test_persist_inexistent_file(self):
+        if os.path.exists('stfu/blah.blah'):
+            os.remove('stfu/blah.blah')
+
+        result = self.client.sample_result('blah.blah', 'stfu')
+        self.assertIsNotNone(result['Error'])
+        self.assertFalse(os.path.exists('stfu/blah.blah'))
