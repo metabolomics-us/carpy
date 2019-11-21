@@ -120,7 +120,7 @@ class Aggregator:
         else:
             suffix += '-norepl'
 
-        output_name = f'{type.lower().replace(" ", "_")}-{file}-{suffix}.xlsx'
+        output_name = f'{file}-{type.lower().replace(" ", "_")}-{suffix}.xlsx'
 
         if type == 'Correction curve':
             data.drop(columns=['label', 'Target RI(s)', 'Target mz', 'InChIKey'], inplace=True)
@@ -342,7 +342,7 @@ class Aggregator:
                 self.export_excel(intensity, t, sample_file)
             except Exception as exerr:
                 print(f'Error creating exel file for {t}')
-                print(exerr.args)
+                print(str(exerr))
 
     @staticmethod
     def get_target_list(results):
