@@ -1,6 +1,16 @@
+import hashlib
 from abc import abstractmethod
 from enum import Enum
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Optional
+
+
+class JobState(Enum):
+    SCHEDULED = "scheduled"
+    RUNNING = "running"
+    DONE = "done"
+    CANCELLED = "cancelled"
+    NOT_FOUND = "not found"
+    FAILED = "failed"
 
 
 class Job(NamedTuple):
@@ -17,11 +27,23 @@ class Job(NamedTuple):
     # list of email address who to notify
     to_notify: List[str]
 
+    state: Optional[JobState] = None
+
     def generate_id(self) -> str:
         """
         this generates an unique id for this given job, based on it's data
         :return:
         """
+
+        return str(hashlib.sha224(
+            "{}-{}".format(self.samples, self.method).encode(
+                "utf-8")).hexdigest())
+
+
+class JobBuilder:
+    """
+    utility class to easily load job definitions
+    """
 
 
 class JobStore:
@@ -52,6 +74,15 @@ class JobStore:
         :return:
         """
 
+    def __setitem__(self, key, value: Job):
+        return self.store(value)
+
+    def __getitem__(self, item):
+        return self.load(item)
+
+    def __contains__(self, item: str):
+        return self.load(item) is not None
+
 
 class SampleState(Enum):
     """
@@ -62,15 +93,7 @@ class SampleState(Enum):
     FAILED = "failed"
     PROCESSED = "processed"
     AGGREGATED = "aggregated"
-
-
-class JobState(Enum):
-    SCHEDULED = "scheduled"
-    RUNNING = "running"
-    DONE = "done"
-    CANCELLED = "cancelled"
     NOT_FOUND = "not found"
-    FAILED = "failed"
 
 
 class SampleStateService:
@@ -114,7 +137,12 @@ class SampleStateService:
         :param id:
         :return:
         """
-        return self.job_store.load(id).samples
+        job = self.job_store.load(id)
+
+        if job is None:
+            return []
+
+        return job.samples
 
     @abstractmethod
     def _state_sample(self, id: str, sample_name: str) -> SampleState:
@@ -131,7 +159,14 @@ class SampleStateService:
         :param id:
         :return:
         """
-        return self._is_state_done(id, SampleState.PROCESSED)
+        if self._is_state_done(id, SampleState.PROCESSED) is True:
+            return True
+        if self._is_state_done(id, SampleState.FAILED) is True:
+            return True
+        if self._is_state_done(id, SampleState.FAILED) is True:
+            return True
+
+        return False
 
     def _is_state_done(self, id: str, state: SampleState) -> bool:
         """
@@ -140,6 +175,9 @@ class SampleStateService:
         :param state:
         :return:
         """
+        if self.job_store.load(id) is None:
+            return False
+
         sample_state = self._state(id)
         samples = self._load_samples(id)
         count = len(samples)
@@ -192,8 +230,11 @@ class Scheduler:
         :param state_service:
         """
         self.state_service = self._get_state_service()
+        assert self.state_service is not None, "state service cannot be none!"
         self.executor = executor
+        assert self.executor is not None, "executor cannot be none!"
         executor.scheduler = self
+        self.job_store = self._get_job_store()
 
     def submit(self, job: Job):
         """
@@ -201,8 +242,8 @@ class Scheduler:
         :param job:
         :return:
         """
-
         try:
+            self.job_store.store(job)
             self.set_job_state(job.generate_id(), self.executor.execute(job))
         except Exception as e:
             self.set_job_state(job.generate_id(), JobState.FAILED)
@@ -247,7 +288,10 @@ class Scheduler:
         :param id:
         :return:
         """
-        return self.state_service.processing_done(id)
+        if self.state_service.processing_done(id) is True:
+            if self.state_service.aggregation_done(id) is True:
+                return True
+        return False
 
     @abstractmethod
     def job_state(self, id: str) -> JobState:
@@ -260,5 +304,12 @@ class Scheduler:
     def _get_state_service(self) -> SampleStateService:
         """
         returns the associated sample state service
+        :return:
+        """
+
+    @abstractmethod
+    def _get_job_store(self) -> JobStore:
+        """
+        how are jobs stored in the internal data
         :return:
         """

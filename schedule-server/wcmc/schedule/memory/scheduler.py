@@ -1,3 +1,5 @@
+from typing import Optional
+
 from wcmc.schedule.scheduler import Scheduler, Job, SampleStateService, JobState, JobStore, SampleState, JobExecutor
 
 
@@ -6,21 +8,30 @@ class MemoryScheduler(Scheduler):
     non production memory scheduler
     """
 
+    def _get_job_store(self) -> JobStore:
+        return self.state_service.job_store
+
     def set_job_state(self, id: str, state: JobState):
-        self.store[id] = state
+        if id in self.store:
+            job = self.store.load(id)
+            job = job._replace(state=state)
+            self.store[id] = job
 
     def job_state(self, id: str) -> JobState:
-        return self.store.get(id, JobState.NOT_FOUND)
+        if id in self.store:
+            return self.store[id].state
+        else:
+            return JobState.NOT_FOUND
 
     def __init__(self, executor: JobExecutor):
         super().__init__(executor)
-        self.store = {}
+        self.store = self.state_service.job_store
 
     def _get_state_service(self) -> SampleStateService:
         return MemorySampleStateService()
 
     def job_cancel(self, id: str):
-        self.store[id] = JobState.CANCELLED
+        self.set_job_state(id, JobState.CANCELLED)
 
 
 class MemoryJobStore(JobStore):
@@ -37,8 +48,8 @@ class MemoryJobStore(JobStore):
     def delete(self, job_id: str):
         self.jobs[job_id] = None
 
-    def load(self, job_id: str) -> Job:
-        return self.jobs[job_id]
+    def load(self, job_id: str) -> Optional[Job]:
+        return self.jobs.get(job_id, None)
 
 
 class MemorySampleStateService(SampleStateService):
@@ -57,4 +68,9 @@ class MemorySampleStateService(SampleStateService):
         self.keeper["{}_{}".format(id, sample_name)] = state
 
     def _state_sample(self, id: str, sample_name: str) -> SampleState:
-        return self.keeper["{}_{}".format(id, sample_name)]
+        key = "{}_{}".format(id, sample_name)
+
+        if key in self.keeper:
+            return self.keeper[key]
+        else:
+            return SampleState.NOT_FOUND
