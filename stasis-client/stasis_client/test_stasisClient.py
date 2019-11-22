@@ -4,11 +4,13 @@ from time import time
 
 from stasis_client.client import StasisClient
 
+sample_time = time()
+
 
 def _create_sample(name: str = 'test'):
     data = {
-        'sample': '123-{}-{}'.format(name, time()),
-        'experiment': 'mySecretExp_{}'.format(123),
+        'sample': '123-{}-{}'.format(name, sample_time),
+        'experiment': f'mySecretExp_{123}',
         'acquisition': {
             'instrument': 'test inst',
             'ionisation': 'positive',
@@ -37,7 +39,6 @@ class TestStasisClient(unittest.TestCase):
     client = StasisClient(url, key)
 
     def test_sample_acquisition_create(self):
-
         data = _create_sample()
         result = self.client.sample_acquisition_create(data)
         self.assertEqual(200, result.status_code, "Response didn't have OK status code")
@@ -45,8 +46,15 @@ class TestStasisClient(unittest.TestCase):
         result = self.client.sample_acquisition_get(data['sample'])
         self.assertEqual(data['sample'], result['sample'])
 
-    def test_sample_state(self):
+    def test_acquisition_get(self):
+        result = self.client.sample_acquisition_get(f'test_1')
+        print(result)
+        metadata = {'class': '123456',
+                    'organ': 'tissue',
+                    'species': 'rat'}
+        self.assertEqual(metadata, result.get('metadata'))
 
+    def test_sample_state(self):
         sample = _create_sample('123')
         result = self.client.sample_state_update(sample['sample'], 'entered')
 
