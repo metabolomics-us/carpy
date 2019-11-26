@@ -124,7 +124,6 @@ class Aggregator:
         output_name = f'{file}-{type.lower().replace(" ", "_")}-{suffix}.xlsx'
 
         if type == 'Correction curve':
-            data.drop(columns=['label', 'Target RI(s)', 'Target mz', 'InChIKey'], inplace=True)
             data.dropna(inplace=True)
             data.reset_index(drop=True, inplace=True)
             # print(data)
@@ -324,6 +323,7 @@ class Aggregator:
                 mass[sample] = np.nan
                 rt[sample] = np.nan
                 origrt[sample] = np.nan
+                curve[sample] = np.nan
                 replaced[sample] = np.nan
                 msms[sample] = np.nan
 
