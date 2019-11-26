@@ -76,24 +76,45 @@ class TestAggregator(unittest.TestCase):
         self.assertTrue(md.iloc[4, 6:].to_list() == list(range(1, 7)))
 
     def test_build_worksheet(self):
-        aggregator = Aggregator(self.parser.parse_args(['filename']), self.stasis)
+        aggregator = Aggregator(self.parser.parse_args(['./']), self.stasis)
         results = self._build_result()
         targets = aggregator.get_target_list(results)
         intensity = aggregator.build_worksheet(targets, 'intensity matrix')
         self.assertEqual(len(targets), intensity.index.size)
 
     def test_process_sample_list(self):
-        excel_list = {'intensity_matrix-test-results-norepl.xlsx',
-                      'mass_matrix-test-results-norepl.xlsx',
-                      'original_rt_matrix-test-results-norepl.xlsx',
-                      'replaced_values-test-results-norepl.xlsx',
-                      'retention_index_matrix-test-results-norepl.xlsx',
-                      'correction_curve-test-results-norepl.xlsx'}
+        excel_list = {'test-intensity_matrix-results-norepl.xlsx',
+                      'test-mass_matrix-results-norepl.xlsx',
+                      'test-original_rt_matrix-results-norepl.xlsx',
+                      'test-replaced_values-results-norepl.xlsx',
+                      'test-retention_index_matrix-results-norepl.xlsx',
+                      'test-correction_curve-results-norepl.xlsx',
+                      'test-msms_spectrum-results-norepl.xlsx'}
 
+        self.samples = ['lgvty_cells_pilot_2_NEG_50K_BR_01',
+                        'lgvty_cells_pilot_2_NEG_50K_BR_03',
+                        'lgvty_cells_pilot_2_NEG_50K_BR_05']
+
+        aggregator = Aggregator(self.parser.parse_args(['samples/test.txt', '-d', 'samples']), self.stasis)
+        aggregator.process_sample_list(self.samples, 'samples/test.txt')
+
+        for f in excel_list:
+            try:
+                self.assertTrue(os.path.exists(f'samples/{f}'))
+            except AssertionError as ae:
+                print(f'{f} does not exist')
+                raise AssertionError(ae)
+            os.remove(f'samples/{f}')
+
+    def test_format_sample(self):
+        sample = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
+        samplefile = 'lgvty_cells_pilot_2_NEG_50K_BR_01.json'
         aggregator = Aggregator(self.parser.parse_args(['filename', '-s', '-d', 'samples']), self.stasis)
-        aggregator.process_sample_list(self.samples, 'test')
-        [self.assertTrue(os.path.exists(f)) for f in excel_list]
-        [os.remove(f) for f in excel_list]
+        result = self.stasis.sample_result(samplefile, 'samples')
+
+        formatted = aggregator.format_sample(result)
+
+        self.assertEqual('197.152847:5004.77979', formatted[7][sample][0])
 
     def _build_result(self):
         results = []
@@ -106,6 +127,6 @@ class TestAggregator(unittest.TestCase):
             if data.get('Error') is None:
                 results.append(data)
             else:
-                results.append({})
+                results.append({sample: {}})
 
         return results

@@ -9,12 +9,13 @@ from stasis_client.client import StasisClient
 
 AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
-sheet_names = {"intensity": "Intensity matrix",
-               "mass": "Mass matrix",
-               "ri": "Retention index matrix",
-               "rt": "Original RT matrix",
-               "repl": "Replaced values",
-               "curve": "Correction curve"}
+sheet_names = {"intensity": ["Intensity matrix"],
+               "mass": ["Mass matrix"],
+               "ri": ["Retention index matrix"],
+               "rt": ["Original RT matrix"],
+               "repl": ["Replaced values"],
+               "curve": ["Correction curve"],
+               "msms": ["MSMS Spectrum"]}
 
 
 def percent(x: float, intensity):
@@ -128,7 +129,6 @@ class Aggregator:
             data.reset_index(drop=True, inplace=True)
             # print(data)
 
-
         if sort_index:
             reindexed = data.set_index('No').sort_index()
         else:
@@ -201,7 +201,7 @@ class Aggregator:
         Filters the incoming sample data separating intensity, mass, retention index and replacement values
 
         Args:
-            sample: result file
+            sample: sample result file
 
         Returns:
 
@@ -212,6 +212,7 @@ class Aggregator:
         origrts = []
         curve = []
         replaced = []
+        msms = []
 
         for k, v in sample['injections'].items():
             intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
@@ -220,9 +221,9 @@ class Aggregator:
             origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
             replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
             curve = {k: sample['injections'][k]['correction']['curve']}
+            msms = {k: [r['annotation']['msms'] for r in v['results']]}
 
-
-        return [None, intensities, masses, rts, origrts, curve, replaced]
+        return [None, intensities, masses, rts, origrts, curve, replaced, msms]
 
     @staticmethod
     def build_worksheet(targets, label=' working...'):
@@ -267,7 +268,7 @@ class Aggregator:
         Runs the aggregation pipeline on the list of samples
         Args:
             samples: list of sample names
-            sample_file: input file with list of samples
+            sample_file:
 
         Returns:
 
@@ -285,11 +286,13 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
-            result_file = os.path.splitext(sample)[0] + '.json'
+            result_file = f'{os.path.splitext(sample)[0]}.json'
             resdata = self.stasis_cli.sample_result(result_file, self.args.dir)
 
             if resdata and resdata.get('Error') is None:
                 results.append(resdata)
+            else:
+                sbar.write(f'Failed getting {sample}; {resdata.get("Error")}')
 
         targets = self.get_target_list(results)
 
@@ -300,6 +303,7 @@ class Aggregator:
         origrt = self.build_worksheet(targets, 'RT matrix')
         curve = self.build_worksheet(targets, 'curve data')
         replaced = self.build_worksheet(targets, 'replacement matrix')
+        msms = self.build_worksheet(targets, 'MSMS Spectra')
 
         # populating spreadsheets
         for data in tqdm.tqdm(results, desc='Formatting results', unit=' samples'):
@@ -312,15 +316,18 @@ class Aggregator:
                 mass[sample] = pd.DataFrame(formatted[2])
                 rt[sample] = pd.DataFrame(formatted[3])
                 origrt[sample] = pd.DataFrame(formatted[4])
-                replaced[sample] = pd.DataFrame(formatted[6])
-
                 curve[sample] = pd.DataFrame(formatted[5])
+                replaced[sample] = pd.DataFrame(formatted[6])
+                msms[sample] = pd.DataFrame(formatted[7])
             else:
                 intensity[sample] = np.nan
                 mass[sample] = np.nan
                 rt[sample] = np.nan
                 origrt[sample] = np.nan
                 replaced[sample] = np.nan
+                msms[sample] = np.nan
+
+        self.filter_msms(msms, intensity)
 
         # biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower() or 'qc' in str(br).lower()]
         pd.set_option('display.max_rows', 100)
@@ -337,12 +344,29 @@ class Aggregator:
         md = self.add_metadata(samples, results)
         intensity = pd.concat([md, intensity], sort=False).reset_index(drop=True)
 
+        sheet_names['intensity'].append(intensity)
+        sheet_names['mass'].append(mass)
+        sheet_names['ri'].append(origrt)
+        sheet_names['rt'].append(rt)
+        sheet_names['repl'].append(replaced)
+        sheet_names['curve'].append(curve)
+        sheet_names['msms'].append(msms)
+
         for t in [sheet_names[k] for k in sheet_names.keys()]:
             try:
-                self.export_excel(intensity, t, sample_file)
+                self.export_excel(t[1], t[0], sample_file)
             except Exception as exerr:
                 print(f'Error creating exel file for {t}')
                 print(str(exerr))
+
+    def filter_msms(self, msms, intensity):
+
+        indices = intensity.iloc[:, 5:].idxmax(axis=1)
+
+        reducedMSMS = msms.apply(lambda x: x[indices[x['No'] - 1]], axis=1)
+        msms.drop(msms.columns[5:], axis=1, inplace=True)
+        msms['MSMS Spectrum'] = reducedMSMS
+        return msms
 
     @staticmethod
     def get_target_list(results):
