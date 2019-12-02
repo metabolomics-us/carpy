@@ -1,8 +1,8 @@
 import pytest
-from pytest import fail
 
 from wcmc.schedule.memory.scheduler import MemoryScheduler
-from wcmc.schedule.scheduler import Scheduler, JobExecutor, Job, JobState, SampleStateService, SampleState
+from wcmc.schedule.scheduler import JobExecutor, Job, JobState, SampleStateService, SampleState
+from wcmc.schedule.stasis.scheduler import AWSScheduler
 
 job_status_complete = Job(
     method="test_complete",
@@ -49,7 +49,7 @@ class TestExecutor(JobExecutor):
         return None
 
 
-schedulers = [MemoryScheduler(executor=TestExecutor())]
+schedulers = [MemoryScheduler(executor=TestExecutor()), AWSScheduler(executor=TestExecutor())]
 
 
 @pytest.mark.parametrize("scheduler", schedulers)
@@ -89,5 +89,3 @@ def test_done(scheduler):
 def test_done_with_failed_samples(scheduler):
     scheduler.submit(job=job_status_run)
     assert scheduler.job_done(job_status_run.generate_id()) is True
-
-

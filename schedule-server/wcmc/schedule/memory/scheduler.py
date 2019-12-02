@@ -9,7 +9,7 @@ class MemoryScheduler(Scheduler):
     """
 
     def _get_job_store(self) -> JobStore:
-        return self.state_service.job_store
+        return MemoryJobStore()
 
     def set_job_state(self, id: str, state: JobState):
         if id in self.store:
@@ -29,11 +29,14 @@ class MemoryScheduler(Scheduler):
         super().__init__(executor)
         self.store = self.state_service.job_store
 
-    def _get_state_service(self) -> SampleStateService:
-        return MemorySampleStateService()
+    def _get_state_service(self, job_store: JobStore) -> SampleStateService:
+        return MemorySampleStateService(job_store=job_store)
 
     def job_cancel(self, id: str):
         self.set_job_state(id, JobState.CANCELLED)
+
+    def __str__(self):
+        return "memory-scheduler"
 
 
 class MemoryJobStore(JobStore):
@@ -59,12 +62,9 @@ class MemorySampleStateService(SampleStateService):
     in memory implementation of the state service. This should not be used for production service obviously
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, job_store: JobStore):
+        super().__init__(job_store=job_store)
         self.keeper = {}
-
-    def _get_job_store(self) -> JobStore:
-        return MemoryJobStore()
 
     def set_state(self, id: str, sample_name: str, state: SampleState):
         self.keeper["{}_{}".format(id, sample_name)] = state

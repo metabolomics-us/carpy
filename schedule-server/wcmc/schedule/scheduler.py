@@ -101,15 +101,8 @@ class SampleStateService:
     utilized to process the state of a sample in the system
     """
 
-    def __init__(self):
-        self.job_store = self._get_job_store()
-
-    @abstractmethod
-    def _get_job_store(self) -> JobStore:
-        """
-        associated job store for this service
-        :return:
-        """
+    def __init__(self, job_store: JobStore):
+        self.job_store = job_store
 
     @abstractmethod
     def set_state(self, id: str, sample_name: str, state: SampleState):
@@ -230,12 +223,14 @@ class Scheduler:
         """
         :param state_service:
         """
-        self.state_service = self._get_state_service()
+        self.job_store = self._get_job_store()
+        assert self.job_store is not None, "job store cannot be none!"
+        self.state_service = self._get_state_service(self.job_store)
+
         assert self.state_service is not None, "state service cannot be none!"
         self.executor = executor
         assert self.executor is not None, "executor cannot be none!"
         executor.scheduler = self
-        self.job_store = self._get_job_store()
 
     def submit(self, job: Job):
         """
@@ -302,7 +297,7 @@ class Scheduler:
         """
 
     @abstractmethod
-    def _get_state_service(self) -> SampleStateService:
+    def _get_state_service(self, job_store: JobStore) -> SampleStateService:
         """
         returns the associated sample state service
         :return:
