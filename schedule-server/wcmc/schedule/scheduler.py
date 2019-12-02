@@ -163,8 +163,6 @@ class SampleStateService:
             return True
         if self._is_state_done(id, SampleState.FAILED) is True:
             return True
-        if self._is_state_done(id, SampleState.FAILED) is True:
-            return True
 
         return False
 
@@ -184,7 +182,7 @@ class SampleStateService:
         sample_state = self._state(id)
         samples = self._load_samples(id)
         count = len(samples)
-        count_done = sum(1 for x in sample_state if x in [state, SampleState.FAILED])
+        count_done = sum(1 for x in sample_state if x in [state, SampleState.FAILED, SampleState.DONE])
         return count == count_done
 
     def aggregation_done(self, id: str) -> bool:
