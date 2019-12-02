@@ -1,7 +1,7 @@
 import hashlib
 from abc import abstractmethod
 from enum import Enum
-from typing import NamedTuple, List, Optional
+from typing import NamedTuple, List, Optional, Tuple
 
 
 class JobState(Enum):
@@ -121,8 +121,23 @@ class SampleStateService:
         :param samples:
         :return:
         """
+        return list(map(lambda sample: sample[1], self.sample_by_state(id, state=None)))
+
+    def sample_by_state(self, id: str, state: Optional[SampleState] = None) -> List[Tuple[str, SampleState]]:
+        """
+        this computes the state for every sample for the given job id
+        :param id:
+        :param state:
+        :return:
+        """
         samples = self._load_samples(id)
-        return list(map(lambda sample: self._state_sample(id, sample), samples))
+
+        result = list(map(lambda sample: (sample, self._state_sample(id, sample)), samples))
+
+        if state is None:
+            return result
+        else:
+            return list(filter(lambda sample: sample[1] == state, result))
 
     def _load_samples(self, id: str) -> List[str]:
         """
@@ -193,7 +208,7 @@ class JobExecutor:
     """
 
     def __init__(self):
-        self._scheduler = None
+        self._scheduler: Optional[Scheduler] = None
 
     @property
     def scheduler(self):
