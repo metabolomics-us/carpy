@@ -178,6 +178,9 @@ class SampleStateService:
         if self.job_store.load(id) is None:
             return False
 
+        if self.job_store.load(id).state in [JobState.DONE]:
+            return True
+
         sample_state = self._state(id)
         samples = self._load_samples(id)
         count = len(samples)

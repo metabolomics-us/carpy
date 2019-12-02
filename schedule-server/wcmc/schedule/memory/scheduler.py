@@ -16,6 +16,8 @@ class MemoryScheduler(Scheduler):
             job = self.store.load(id)
             job = job._replace(state=state)
             self.store[id] = job
+        else:
+            raise KeyError("sorry job with id {} does not exist!".format(id))
 
     def job_state(self, id: str) -> JobState:
         if id in self.store:
