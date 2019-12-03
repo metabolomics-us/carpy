@@ -33,7 +33,7 @@ if __name__ == '__main__':
         parser.error('--save argument requires a local directory to be provided with --dir')
 
     # try:
-    Aggregator(args).aggregate()
+    Aggregator(vars(args)).aggregate()
     # except Exception as ex:
     #     print(str(ex.args))
     #     parser.print_help()

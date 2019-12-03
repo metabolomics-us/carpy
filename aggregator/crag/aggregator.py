@@ -1,6 +1,7 @@
 import os
 import re
-from typing import Optional
+from argparse import Namespace
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
@@ -24,13 +25,18 @@ def percent(x: float, intensity):
 
 class Aggregator:
 
-    def __init__(self, args, stasis: Optional[StasisClient] = None):
+    def __init__(self, args: dict, stasis: Optional[StasisClient] = None):
+        if isinstance(args, Namespace):
+            args = vars(args)
+
         self.args = args
+
         if stasis:
             self.stasis_cli = stasis
         else:
-            self.stasis_cli = StasisClient(f'https://{"test-" if args.test else ""}api.metabolomics.us/stasis', None,
-                                           args.test)
+            self.stasis_cli = StasisClient(f'https://{"test-" if "test" in args else ""}api.metabolomics.us/stasis',
+                                           None,
+                                           args["test"])
 
     def find_intensity(self, value) -> int:
         """
@@ -41,7 +47,7 @@ class Aggregator:
         Returns:
 
         """
-        if not value['replaced'] or (value['replaced'] and self.args.zero_replacement):
+        if not value['replaced'] or (value['replaced'] and self.args.get("zero_replacement", False)):
             return round(value['intensity'])
         else:
             return 0
@@ -111,12 +117,12 @@ class Aggregator:
         file, ext = os.path.splitext(infile)
 
         # Build suffix
-        if self.args.test:
+        if self.args.get("test", False):
             suffix = 'testResults'
         else:
             suffix = 'results'
 
-        if self.args.zero_replacement:
+        if self.args.get("zero_replacement", False):
             suffix += '-repl'
         else:
             suffix += '-norepl'
@@ -220,7 +226,7 @@ class Aggregator:
             origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
             replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
             curve = {k: sample['injections'][k]['correction']['curve']}
-            msms = {k: [r['annotation']['msms'] for r in v['results']]}
+            msms = {k: [r['annotation'].get('msms', "") for r in v['results']]}
 
         return [None, intensities, masses, rts, origrts, curve, replaced, msms]
 
@@ -273,7 +279,7 @@ class Aggregator:
 
         """
         # use subset of samples for testing
-        if self.args.test:
+        if self.args.get("test", False):
             samples = samples[:5]
 
         # creating target list
@@ -286,7 +292,11 @@ class Aggregator:
                 continue
 
             result_file = f'{os.path.splitext(sample)[0]}.json'
-            resdata = self.stasis_cli.sample_result(result_file, self.args.dir)
+            dir = self.args.get("dir", "tmp")
+            if dir is None:
+                dir = "tmp"
+
+            resdata = self.stasis_cli.sample_result(result_file, dir)
 
             if resdata and resdata.get('Error') is None:
                 results.append(resdata)
@@ -390,11 +400,22 @@ class Aggregator:
         Returns: the filename of the aggregated (excel) file
         """
 
-        for sample_file in self.args.infiles:
+        if "infiles" not in self.args:
+            raise KeyError("sorry you need to specify at least one input file for this function")
+
+        for sample_file in self.args["infiles"]:
             if not os.path.isfile(sample_file):
-                print(f'Can\'t find the file {sample_file}')
-                exit(-1)
+                raise FileNotFoundError("file name {} does not exist".format(sample_file))
 
             with open(sample_file) as processed_samples:
                 samples = [p for p in processed_samples.read().strip().splitlines() if p and p != 'samples']
-                self.process_sample_list(samples, sample_file)
+                self.aggregate_samples(samples, sample_file)
+
+    def aggregate_samples(self, samples: List[str], destination: str = "./"):
+        """
+        aggegrates the samples at the specifed destination
+        :param destination:
+        :param samples:
+        :return:
+        """
+        self.process_sample_list(samples, destination)
