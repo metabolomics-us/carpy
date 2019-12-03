@@ -14,7 +14,7 @@ class StasisClient:
     a simple client to interact with the stasis system in a safe and secure manner.
     """
 
-    def __init__(self, url: Optional[str] = None, token: Optional[str] = None, test: Optional[bool] = False):
+    def __init__(self, url: Optional[str] = None, token: Optional[str] = None, bucket: Optional[str] = None):
         """
         the client requires an url where to connect against
         and the related token.
@@ -26,12 +26,13 @@ class StasisClient:
 
         self._url = url
         self._token = token
+        self._bucket = bucket
 
         if self._token is None:
             # utilize env
-            self._token = os.getenv('STASIS_API_TOKEN') if test else os.getenv('PROD_STASIS_API_TOKEN')
+            self._token = os.getenv('PROD_STASIS_API_TOKEN')
         if self._url is None:
-            self._url = os.getenv('STASIS_URL')
+            self._url = 'https://api.metabolomics.us/stasis'
 
         self._header = {
             'Content-type': 'application/json',
@@ -39,9 +40,11 @@ class StasisClient:
             'x-api-key': f'{self._token}'
         }
 
-        bucket_name = f'wcmc-data-stasis-result-{"test" if test else "prod"}'
-        if boto3.client('s3').head_bucket(Bucket=bucket_name):
-            self.bucket = boto3.resource('s3').Bucket(bucket_name)
+        if self._bucket is None:
+            self._bucket = f'wcmc-data-stasis-result-prod'
+
+        if boto3.client('s3').head_bucket(Bucket=self._bucket):
+            self.bucket = boto3.resource('s3').Bucket(self._bucket)
 
     def sample_acquisition_create(self, data: dict):
         """
@@ -142,3 +145,6 @@ class StasisClient:
 
     def get_url(self):
         return self._url
+
+    def get_bucket(self):
+        return self._bucket
