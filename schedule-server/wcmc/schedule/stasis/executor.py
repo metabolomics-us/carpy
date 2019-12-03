@@ -2,7 +2,7 @@ from abc import ABC
 from time import sleep
 from typing import List
 
-from wcmc.schedule.scheduler import JobExecutor, Job, JobState, SampleState, BlockingJobExecutor
+from wcmc.schedule.scheduler import JobExecutor, Job, SampleState, BlockingJobExecutor
 
 
 class StasisExecutor(JobExecutor, ABC):
