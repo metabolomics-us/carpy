@@ -6,7 +6,7 @@ from wcmc.schedule.scheduler import BlockingJobExecutor, Job
 
 class DummyBlockingExecutor(BlockingJobExecutor):
     """
-
+    tests the general behavior of the super class
     """
 
     def _process(self, sample: str, job: Job):
