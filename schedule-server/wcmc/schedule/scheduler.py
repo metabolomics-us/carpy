@@ -25,7 +25,7 @@ class Job(NamedTuple):
     samples: List[str]
 
     # list of email address who to notify
-    to_notify: List[str]
+    to_notify: List[str] = []
 
     state: Optional[JobState] = None
 
@@ -225,6 +225,70 @@ class JobExecutor:
 
         :param job:
         :return: the job state
+        """
+        pass
+
+
+class BlockingJobExecutor(JobExecutor):
+    """
+    a blocking implementation of a job scheduler
+    """
+
+    def execute(self, job: Job) -> JobState:
+        """
+        does the actual execution and processing of the data in a simple blocking way. Which is far from perfect.
+
+        :param job:
+        :return:
+        """
+        # 1. submit all samples to stasis
+
+        for sample in job.samples:
+            self._process(sample=sample, job=job)
+        # 2. wait until processing is done
+        self._wait_for_processing(job)
+
+        # 3. get a list of all successfully completed samples
+        to_aggregate = self._get_successful_samples(job=job)
+
+        # 4. aggregate all samples, which are completed and not in the failed state
+        result = self._aggregate(to_aggregate, job=job)
+        # done
+        return JobState.DONE
+
+    @abstractmethod
+    def _process(self, sample: str, job: Job):
+        """
+        submits the given sample to stasis for calculation
+        :param sample:
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def _wait_for_processing(self, job: Job):
+        """
+        waits for the processing state to change
+        :param job:
+        :return:
+        """
+
+    @abstractmethod
+    def _get_successful_samples(self, job: Job) -> List[str]:
+        """
+        this loads all successful samples from the result
+        :param job:
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def _aggregate(self, samples: List[str], job: Job):
+        """
+        does the actual aggregation
+        :param samples:
+        :param job:
+        :return:
         """
         pass
 
