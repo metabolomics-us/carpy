@@ -15,7 +15,7 @@ pd.set_option('display.width', 1000)
 
 class TestAggregator(unittest.TestCase):
     logger = logging.getLogger('DEBUG')
-    stasis = StasisClient('https://test-api.metabolomics.us/stasis', os.getenv('STASIS_API_TOKEN'), True)
+    stasis = StasisClient('https://test-api.metabolomics.us/stasis', os.getenv('STASIS_API_TOKEN'))
 
     def setUp(self):
         self.parser = launcher.create_parser()
@@ -28,6 +28,7 @@ class TestAggregator(unittest.TestCase):
 
     def test_get_target_list_negative_mode(self):
         aggregator = Aggregator(self.parser.parse_args(['filename']), self.stasis)
+        self.assertEqual("https://test-api.metabolomics.us/stasis", aggregator.stasis_cli.get_url())
         self.samples = ['B7B_TeddyLipids_Neg_QC015',
                         'B12A_SA11202_TeddyLipids_Neg_1RXZX_2']
         results = self._build_result()
@@ -40,15 +41,18 @@ class TestAggregator(unittest.TestCase):
 
     def test_get_target_list_positive_mode(self):
         aggregator = Aggregator(self.parser.parse_args(['filename']), self.stasis)
+        self.assertEqual("https://test-api.metabolomics.us/stasis", aggregator.stasis_cli.get_url())
         results = self._build_result()
 
         targets = aggregator.get_target_list(results)
+        print(targets.head.keys())
         self.assertTrue(len(targets) > 0)
         self.assertEqual(964, len(targets), msg='# of positive mode targets should be 964')
 
     def test_find_intensity(self):
         # test find_intensity on non replaced data
         aggregator = Aggregator(self.parser.parse_args(['filename']), self.stasis)
+        self.assertEqual("https://test-api.metabolomics.us/stasis", aggregator.stasis_cli.get_url())
         value = {'intensity': 1, 'replaced': False}
         self.assertEqual(1, aggregator.find_intensity(value))
 
@@ -58,6 +62,7 @@ class TestAggregator(unittest.TestCase):
 
         # test find_intensity on zero replaced data requesting replaced data
         aggregator = Aggregator(self.parser.parse_args(['filename', '-zr']), self.stasis)
+        self.assertEqual("https://test-api.metabolomics.us/stasis", aggregator.stasis_cli.get_url())
         value = {'intensity': 2, 'replaced': True}
         self.assertEqual(2, aggregator.find_intensity(value))
 
@@ -69,6 +74,7 @@ class TestAggregator(unittest.TestCase):
         # Test correct indexing of samples in header
 
         aggregator = Aggregator(self.parser.parse_args(['filename', '-s', '-d', 'samples']), self.stasis)
+        self.assertEqual("https://test-api.metabolomics.us/stasis", aggregator.stasis_cli.get_url())
         results = self._build_result()
 
         md = aggregator.add_metadata(self.samples, results)
@@ -77,6 +83,8 @@ class TestAggregator(unittest.TestCase):
 
     def test_build_worksheet(self):
         aggregator = Aggregator(self.parser.parse_args(['./']), self.stasis)
+        self.assertEqual("https://test-api.metabolomics.us/stasis", aggregator.stasis_cli.get_url())
+
         results = self._build_result()
         targets = aggregator.get_target_list(results)
         intensity = aggregator.build_worksheet(targets, 'intensity matrix')
@@ -96,6 +104,7 @@ class TestAggregator(unittest.TestCase):
                         'lgvty_cells_pilot_2_NEG_50K_BR_05']
 
         aggregator = Aggregator(self.parser.parse_args(['samples/test.txt', '-d', 'samples']), self.stasis)
+        self.assertEqual("https://test-api.metabolomics.us/stasis", aggregator.stasis_cli.get_url())
         aggregator.process_sample_list(self.samples, 'samples/test.txt')
 
         for f in excel_list:
@@ -110,6 +119,7 @@ class TestAggregator(unittest.TestCase):
         sample = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
         samplefile = 'lgvty_cells_pilot_2_NEG_50K_BR_01.json'
         aggregator = Aggregator(self.parser.parse_args(['filename', '-s', '-d', 'samples']), self.stasis)
+        self.assertEqual("https://test-api.metabolomics.us/stasis", aggregator.stasis_cli.get_url())
         result = self.stasis.sample_result(samplefile, 'samples')
 
         formatted = aggregator.format_sample(result)
