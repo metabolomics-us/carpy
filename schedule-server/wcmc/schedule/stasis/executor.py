@@ -57,7 +57,7 @@ class BlockingStasisExecutor(StasisExecutor):
 
         # 3. aggregate all samples, which are completed and not in the failed state
         to_aggregate = list(
-            map(lambda sample: self.scheduler.state_service.sample_by_state(sample=sample, state=SampleState.PROCESSED)[
+            map(lambda s: self.scheduler.state_service.sample_by_state(sample=s, state=SampleState.PROCESSED)[
                 0], job.samples))
 
         # done
