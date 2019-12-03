@@ -139,3 +139,6 @@ class StasisClient:
                 pass
 
             return jstr
+
+    def get_url(self):
+        return self._url

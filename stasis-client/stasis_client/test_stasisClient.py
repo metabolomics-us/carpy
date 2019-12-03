@@ -80,3 +80,6 @@ class TestStasisClient(unittest.TestCase):
         result = self.client.sample_result('blah.blah', 'stfu')
         self.assertIsNotNone(result['Error'])
         self.assertFalse(os.path.exists('stfu/blah.blah'))
+
+    def test_get_url(self):
+        self.assertEqual("https://test-api.metabolomics.us/stasis", self.client.get_url())
