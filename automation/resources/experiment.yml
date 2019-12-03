@@ -1,0 +1,24 @@
+experiment:
+  name: test
+  chromatography:
+  - instrument: 6530
+    ion_mode: positive
+    method: csh
+    column: test
+    raw_files_list: samples_pos.csv
+    raw_files:
+  - instrument: 6550
+    ion_mode: negative
+    method: csh
+    column: test
+    raw_files_list: samples_neg.txt
+    raw_files:
+  metadata:
+    species: human
+    organ: plasma
+save_msms: false
+create_acquisition: false
+create_tracking: false
+schedule: false
+additional_profiles: carrot.targets.dummy
+env: test

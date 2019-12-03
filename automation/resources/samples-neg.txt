@@ -1,0 +1,3 @@
+samples
+B2A_TeddyLipids_Neg_QC001
+B2A_TeddyLipids_Neg_QC001

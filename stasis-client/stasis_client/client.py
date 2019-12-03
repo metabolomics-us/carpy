@@ -1,6 +1,12 @@
 import os
 from typing import Optional
+
+import boto3
+import boto3.s3
 import requests
+import simplejson as json
+from botocore.exceptions import ClientError
+from simplejson import JSONDecodeError
 
 
 class StasisClient:
@@ -8,13 +14,14 @@ class StasisClient:
     a simple client to interact with the stasis system in a safe and secure manner.
     """
 
-    def __init__(self, url: Optional[str] = None, token: Optional[str] = None):
+    def __init__(self, url: Optional[str] = None, token: Optional[str] = None, test: Optional[bool] = False):
         """
         the client requires an url where to connect against
         and the related token.
 
-        :param url:
-        :param token:
+        Args:
+            url:
+            token:
         """
 
         self._url = url
@@ -22,32 +29,39 @@ class StasisClient:
 
         if self._token is None:
             # utilize env
-            self._token = os.environ.get("STASIS_KEY")
+            self._token = os.getenv('STASIS_API_TOKEN') if test else os.getenv('PROD_STASIS_API_TOKEN')
         if self._url is None:
-            self._url = os.environ.get("STASIS_URL")
+            self._url = os.getenv('STASIS_URL')
 
         self._header = {
             'Content-type': 'application/json',
             'Accept': 'application/json',
-            'x-api-key': '{}'.format(self._token)
+            'x-api-key': f'{self._token}'
         }
+
+        bucket_name = f'wcmc-data-stasis-result-{"test" if test else "prod"}'
+        if boto3.client('s3').head_bucket(Bucket=bucket_name):
+            self.bucket = boto3.resource('s3').Bucket(bucket_name)
 
     def sample_acquisition_create(self, data: dict):
         """
-        updloads the
-        :param data: the data object containing the aquisiton description
-        :return:
+        adds sample metadata info to stasis
+        Args:
+             data: the data object containing the aquisiton description
+        Returns:
         """
-        return requests.post("{}/acquisition/".format(self._url), json=data, headers=self._header)
+        return requests.post(f'{self._url}/acquisition', json=data, headers=self._header)
 
     def sample_acquisition_get(self, sample_name):
         """
         returns the acquistion data of this sample
 
-        :param sample_name:
-        :return:
+        Args:
+             sample_name:
+
+        Returns:
         """
-        return requests.get("{}/acquisition/{}".format(self._url, sample_name), headers=self._header).json()
+        return requests.get(f'{self._url}/acquisition/{sample_name}', headers=self._header).json()
 
     def sample_state(self, sample_name: str):
         """Returns the state of the given sample by calling Stasis' tracking API
@@ -66,42 +80,65 @@ class StasisClient:
                     }
                 ]
         """
-        return requests.get("{}/tracking/{}".format(self._url, sample_name), headers=self._header).json()['status']
+        return requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header).json()['status']
 
     def sample_state_update(self, sample_name: str, state):
         """
         updates a sample state in the remote system+
-        :param sample_name:
-        :param state:
-        :return:
+
+        Args:
+            sample_name:
+            state:
+
+        Returns:
         """
         data = {
             "sample": sample_name,
             "status": state
         }
-        return requests.post("{}/tracking".format(self._url), json=data, headers=self._header)
+        return requests.post(f'{self._url}/tracking', json=data, headers=self._header)
 
-    def sample_result(self, sample_name: str) -> dict:
+    def sample_result(self, sample_name: str, dest: Optional[str] = 'tmp') -> dict:
         """
-        returns the result for a specified sample
-        :param sample_name:
-        :return:
-        """
-        return requests.get("{}/result/{}".format(self._url, sample_name), headers=self._header).json()
+        Downloads a sample's result
 
-    # def get_experiment(self, experiment_name, samples, start_sample=None):
-    #
-    #     if start_sample is None:
-    #         print('getting initial page...')
-    #         response = requests.get("{}/experiment/{}".format(self._url, experiment_name), headers=self._header).json()
-    #         samples += response['items']
-    #     else:
-    #         print('getting mode pages...')
-    #         response = requests.get("{}/experiment/{}/25/{}".format(self._url, experiment_name, start_sample),
-    #                                 headers=self._header).json()
-    #         samples += response['items']
-    #
-    #     if 'last_item' in response and response['last_item']:
-    #         return self.get_experiment(experiment_name, samples, response['last_item']['id'])
-    #
-    #     return samples
+        Args:
+            sample_name: filename to download
+            dest: Optional folder to store the file
+
+        Returns:
+            a json object with the result data or error information
+        """
+
+        jstr = ""
+        if not os.path.exists(dest):
+            os.makedirs(dest)
+
+        filename = f'{dest}/{sample_name}'
+        try:
+            with open(filename, 'wb') as data:
+                self.bucket.download_fileobj(sample_name, data)
+
+            with open(filename, 'rb') as data:
+                jstr = json.load(data)
+
+        except JSONDecodeError as jde:
+            jstr = {'Error': jde.msg, 'filename': sample_name}
+        except ClientError as ce:
+            jstr = {'Error': ce.response['Error'], 'filename': sample_name}
+        finally:
+            try:
+                # only remove downloads in ./tmp
+                if os.path.exists(f'tmp/{sample_name}'):
+                    os.remove(f'tmp/{sample_name}')
+
+                # or empty files
+                if os.path.getsize(filename) <= 0:
+                    os.remove(filename)
+            except FileNotFoundError:
+                pass
+
+            return jstr
+
+    def get_url(self):
+        return self._url

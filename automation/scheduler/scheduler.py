@@ -283,9 +283,14 @@ class Scheduler(ABC):
         """
         data = {}
         input_file = ''
+        results = {}
 
         for chromatography in self.config['experiment']['chromatography']:
-            if not chromatography['raw_files_list'] or chromatography['raw_files_folder']:
+            print(f'Preparing chromatographic method: {chromatography}')
+            mode = chromatography['ion_mode']
+            results[mode] = {}
+
+            if not chromatography['raw_files_list'] and not chromatography['raw_files']:
                 print('processing experiment from folder not implemented yet, sorry.')
             else:
                 input_file = chromatography['raw_files_list']
@@ -295,32 +300,38 @@ class Scheduler(ABC):
             else:
                 data = pd.read_csv(f'{folder}/{input_file}')
 
-            results = {}
-
             for sheet in data.keys():
                 for sample in data[sheet]:
                     sample = self.fix_sample_filename(sample)
                     if pd.notna(sample):
                         # print('Sample: %s' % sample)
-                        results[sample] = {}
+                        if sample in results[mode].keys():
+                            dupe = f'{sample}_{time.time()}'
+                            print(f'WARNING: Possible duplicate filename: {sample}, storing as {dupe}')
+                        else:
+                            dupe = sample
+
+                        results[mode][dupe] = {}
 
                         # Acquisition Metadata should happen BEFORE tracking status
                         if self.config['create_acquisition']:
                             # add acquisition table generation due to manual processing
-                            results[sample]['acquisition'] = json.dumps(self.create_metadata(sample, chromatography))
+                            results[mode][dupe]['acquisition'] = json.dumps(self.create_metadata(sample, chromatography))
 
                         # Tracking status should happen AFTER Acquisition table generation
                         if self.config['create_tracking']:
                             # add upload to eclipse and conversion to mzml due to manual processing
-                            results[sample]['tracking'] = json.dumps(self.add_tracking(sample))
+                            results[mode][dupe]['tracking'] = json.dumps(self.add_tracking(sample))
 
                         if self.config['schedule']:
                             # push the sample to the pipeline
-                            results[sample]['schedule'] = self.schedule(sample, chromatography)
+                            results[mode][dupe]['schedule'] = self.schedule(sample, chromatography)
 
             self.export_fails(f'missing-trk', self.tracking_status, folder, chromatography)
             self.export_fails(f'missing-acq', self.acquisition_status, folder, chromatography)
             self.export_fails(f'missing-sch', self.schedule_status, folder, chromatography)
+
+        return results
 
     def export_fails(self, prefix, data, folder, chromatography):
         curr_time = datetime.now().strftime("%Y%m%d_%H%M%S")
