@@ -20,6 +20,12 @@ class StasisExecutor(JobExecutor, ABC):
         """
         pass
 
+    def _get_stasis_client(self) -> StasisClient:
+        """
+        provides access to the stasis client for processing
+        :return:
+        """
+
 
 class BlockingStasisExecutor(BlockingJobExecutor, StasisExecutor):
     """
@@ -31,6 +37,7 @@ class BlockingStasisExecutor(BlockingJobExecutor, StasisExecutor):
         self._submit_to_stasis(sample=sample, job=job)
 
     def _aggregate(self, samples: List[str], job: Job):
+        aggregator = Aggregator({})
         pass
 
     def _wait_for_processing(self, job: Job):
