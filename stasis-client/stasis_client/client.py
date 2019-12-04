@@ -30,9 +30,9 @@ class StasisClient:
 
         if self._token is None:
             # utilize env
-            self._token = os.getenv('PROD_STASIS_API_TOKEN')
+            self._token = os.getenv('STASIS_API_TOKEN', os.getenv('PROD_STASIS_API_TOKEN'))
         if self._url is None:
-            self._url = 'https://api.metabolomics.us/stasis'
+            self._url = os.getenv('STASIS_API_URL', 'https://api.metabolomics.us/stasis')
 
         self._header = {
             'Content-type': 'application/json',
@@ -41,7 +41,7 @@ class StasisClient:
         }
 
         if self._bucket is None:
-            self._bucket = f'wcmc-data-stasis-result-prod'
+            self._bucket = os.getenv('STASIS_API_BUCKET', 'wcmc-data-stasis-result-prod')
 
         if boto3.client('s3').head_bucket(Bucket=self._bucket):
             self.bucket = boto3.resource('s3').Bucket(self._bucket)

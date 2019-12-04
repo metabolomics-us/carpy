@@ -16,10 +16,7 @@ class StasisExecutor(JobExecutor, ABC):
 
     def __init__(self):
         super().__init__()
-        test_mode = True
-        self.stasis_cli = StasisClient(f'https://{"test-" if test_mode else ""}api.metabolomics.us/stasis',
-                                       None
-                                       )
+        self.stasis_cli = StasisClient()
 
     def _submit_to_stasis(self, sample: str, job: Job):
         """
