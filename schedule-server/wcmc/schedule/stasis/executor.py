@@ -2,6 +2,9 @@ from abc import ABC
 from time import sleep
 from typing import List
 
+from crag.aggregator import Aggregator
+from stasis_client.client import StasisClient
+
 from wcmc.schedule.scheduler import JobExecutor, Job, SampleState, BlockingJobExecutor
 
 
@@ -11,6 +14,13 @@ class StasisExecutor(JobExecutor, ABC):
     additionally set the initial state of the process
     """
 
+    def __init__(self):
+        super().__init__()
+        test_mode = True
+        self.stasis_cli = StasisClient(f'https://{"test-" if test_mode else ""}api.metabolomics.us/stasis',
+                                       None
+                                       )
+
     def _submit_to_stasis(self, sample: str, job: Job):
         """
         submits a sample to stasis
@@ -18,13 +28,14 @@ class StasisExecutor(JobExecutor, ABC):
         :param job:
         :return:
         """
-        pass
+
 
     def _get_stasis_client(self) -> StasisClient:
         """
         provides access to the stasis client for processing
         :return:
         """
+        return self.stasis_cli
 
 
 class BlockingStasisExecutor(BlockingJobExecutor, StasisExecutor):
@@ -37,8 +48,8 @@ class BlockingStasisExecutor(BlockingJobExecutor, StasisExecutor):
         self._submit_to_stasis(sample=sample, job=job)
 
     def _aggregate(self, samples: List[str], job: Job):
-        aggregator = Aggregator({})
-        pass
+        aggregator = Aggregator({}, stasis=self._get_stasis_client())
+        aggregator.aggregate_samples(samples=samples, destination=self.destination)
 
     def _wait_for_processing(self, job: Job):
         while self.scheduler.state_service.processing_done(job.generate_id()) is False:
@@ -54,3 +65,4 @@ class BlockingStasisExecutor(BlockingJobExecutor, StasisExecutor):
     def __init__(self):
         super().__init__()
         self.sleep_time = 10
+        self.destination = "./"

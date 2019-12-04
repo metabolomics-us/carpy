@@ -46,6 +46,20 @@ class StasisClient:
         if boto3.client('s3').head_bucket(Bucket=self._bucket):
             self.bucket = boto3.resource('s3').Bucket(self._bucket)
 
+    def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
+                                        version: str = "86"):
+        """
+        schedules a sample for dataprocessing
+        """
+        result = requests.post(f"{self._url}/schedule",
+                               json={'sample': sample_name, 'env': env, 'method': method, 'profile': profile,
+                                     'task_version': version, 'secured': True}, headers=self._header)
+
+        if result.status_code != 200:
+            raise Exception("scheduling failed!")
+        else:
+            return result
+
     def sample_acquisition_create(self, data: dict):
         """
         adds sample metadata info to stasis

@@ -7,10 +7,9 @@ if version_info.major == 3 and version_info.minor < 6 or \
     print('Your Python interpreter must be 3.6 or greater!')
     exit(1)
 
-
-setup(name='stasis',
+setup(name='schedule-server',
       version='0.0.1',
-      description='Sample scheduling and processing api, which links stasis and the aggregator',
+      description='Schedules a computation of LCBinBase and aggregates the results',
       url='https://github.com/berlinguyinca/carpy',
       author='Gert Wohlgemuth',
       author_email='wohlgemuth@ucdavis.edu',
