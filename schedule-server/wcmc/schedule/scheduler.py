@@ -29,6 +29,14 @@ class Job(NamedTuple):
 
     state: Optional[JobState] = None
 
+    # which env to run in
+    env: str = "prod"
+
+    # which profile to utilize
+    profile: str = "lcms"
+
+    version: str = "164"
+
     def generate_id(self) -> str:
         """
         this generates an unique id for this given job, based on it's data

@@ -47,7 +47,7 @@ class StasisClient:
             self.bucket = boto3.resource('s3').Bucket(self._bucket)
 
     def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
-                                        version: str = "86"):
+                                        version: str = "164"):
         """
         schedules a sample for dataprocessing
         """
