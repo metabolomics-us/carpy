@@ -51,6 +51,14 @@ def test_get_url(stasis_cli):
     assert "https://test-api.metabolomics.us/stasis" == stasis_cli.get_url()
 
 
+def test_get_states(stasis_cli):
+    result = stasis_cli.get_states()
+
+    assert result is not None
+    assert len(result) == 12
+    assert 'failed' in result
+
+
 def test_sample_schedule(stasis_cli):
     result = stasis_cli.schedule_sample_for_computation(
         sample_name='lgvty_cells_pilot_2_NEG_50K_BR_01.json',

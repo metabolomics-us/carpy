@@ -162,3 +162,6 @@ class StasisClient:
 
     def get_bucket(self):
         return self._bucket
+
+    def get_states(self):
+        return requests.get(f"{self._url}/status", headers=self._header).json()

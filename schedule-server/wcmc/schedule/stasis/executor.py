@@ -28,7 +28,8 @@ class StasisExecutor(JobExecutor, ABC):
         :param job:
         :return:
         """
-        self.stasis_cli.schedule_sample_for_computation(sample_name=sample,method=job.method,env=job.env, profile=job.profile, version=job.version)
+        self.stasis_cli.schedule_sample_for_computation(sample_name=sample, method=job.method, env=job.env,
+                                                        profile=job.profile, version=job.version)
 
     def _get_stasis_client(self) -> StasisClient:
         """
