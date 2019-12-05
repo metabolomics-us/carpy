@@ -1,0 +1,163 @@
+service: jobs
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+plugins:
+  - serverless-domain-manager
+  - serverless-python-requirements
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-west-2
+
+  # simple security based on stages and api keys
+  # one fits all for production
+  apiKeys:
+    - "jobs-${self:custom.stage}"
+
+  #required permissions
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+      Resource: "*"
+
+    - Effect: Allow
+      Action:
+        - sqs:*
+      Resource: { "Fn::Join": [":", ["arn:aws:sqs:${self:custom.region}",  "*:*" ] ]  }
+
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource: "arn:aws:s3:::*"
+    - Effect: "Allow"
+      Action:
+        - ecs:RunTask
+        - ecs:ListTasks
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - iam:PassRole
+      Resource: "*"
+
+
+
+  memorySize: 128
+  timeout: 90
+  versionFunctions: false
+
+  logRetentionInDays: 3
+
+  #where to store out data, needs to be manually created!
+  deploymentBucket:
+    name: "lambdas-jobs"
+
+############################################################################################
+#custom configuration settings
+############################################################################################
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+  ###
+  # resources definitions
+  ###
+  trackingTable: "JobsTrackingTable-${self:custom.stage}"
+
+  ###
+  # Queues
+  ###
+  scheduleQueue: "JobsScheduleQueue-${self:custom.stage}"
+
+  ###
+  # custom domain management
+  ###
+
+  domains:
+    prod: api.metabolomics.us
+    test: test-api.metabolomics.us
+    dev:  dev-api.metabolomics.us
+
+  customDomain:
+    basePath: "jobs"
+    domainName: ${self:custom.domains.${self:custom.stage}}
+    stage: "${self:custom.stage}"
+    createRoute53Record: true
+
+  pythonRequirements:
+    dockerizePip: true
+    slim: true
+    noDeploy:
+      - "boto3"
+      - "botocore"
+      - "moto"
+      - "pytest"
+
+############################################################################################
+# this section defines what to include and exclud when packaging artifacts
+############################################################################################
+package:
+  exclude:
+    - .git/**
+    - .venv/**
+    - .idea/**
+    - .pytest_cache/**
+    - venv/**
+    - test/**
+    - tests/**
+    - node_modules/**
+    - integrationTests/**
+
+############################################################################################
+# this section defines all lambda function and triggers
+############################################################################################
+functions:
+
+  #creates a new tracking record in the system
+  trackingCreate:
+    handler: jobs/tracking.create
+    events:
+      - http:
+          path: tracking
+          private: true
+          method: post
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
+  #fetches an existing tracking record from the system
+  trackingGet:
+    handler: jobs/tracking.get
+    events:
+      - http:
+          path: tracking/{job}/{sample}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+                sample: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
+  #schedule data to for handling the processing on the backend
+  schedule:
+    handler: jobs/schedule.schedule
+    events:
+      - http:
+          path: secure_schedule
+          method: post
+          private: true
+          cors: true
+
+    #defines to which topic we want to connect
+    environment:
+      schedule_queue: ${self:custom.scheduleQueue}
+
