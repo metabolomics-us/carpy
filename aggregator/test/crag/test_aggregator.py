@@ -3,7 +3,6 @@ import os
 
 import pandas as pd
 
-import cragLauncher as launcher
 from crag.aggregator import Aggregator
 
 pd.set_option('display.max_rows', 100)
@@ -12,7 +11,7 @@ pd.set_option('display.width', 1000)
 
 logger = logging.getLogger('DEBUG')
 
-parser = launcher.create_parser()
+# parser = launcher.create_parser()
 samples = ['B13A_TeddyLipids_Pos_QC002',
            'B13A_SA11890_TeddyLipids_Pos_24G4N',
            'B13A_SA11891_TeddyLipids_Pos_16LNW',
@@ -25,7 +24,7 @@ samples2 = ['B7B_TeddyLipids_Neg_QC015',
 
 
 def test_get_target_list_negative_mode(stasis):
-    aggregator = Aggregator(parser.parse_args(['filename']), stasis)
+    aggregator = Aggregator({'infile': 'filename'}, stasis)
     assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
 
     results = _build_result(stasis, samples2)
@@ -38,7 +37,7 @@ def test_get_target_list_negative_mode(stasis):
 
 
 def test_get_target_list_positive_mode(stasis):
-    aggregator = Aggregator(parser.parse_args(['filename']), stasis)
+    aggregator = Aggregator({'infile': 'filename'}, stasis)
     assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     results = _build_result(stasis, samples)
 
@@ -49,7 +48,7 @@ def test_get_target_list_positive_mode(stasis):
 
 def test_find_intensity(stasis):
     # test find_intensity on non replaced data
-    aggregator = Aggregator(parser.parse_args(['filename']), stasis)
+    aggregator = Aggregator({'infile': 'filename'}, stasis)
     assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     value = {'intensity': 1, 'replaced': False}
     assert 1 == aggregator.find_intensity(value)
@@ -59,7 +58,7 @@ def test_find_intensity(stasis):
     assert 0 == aggregator.find_intensity(value)
 
     # test find_intensity on zero replaced data requesting replaced data
-    aggregator = Aggregator(parser.parse_args(['filename', '-zr']), stasis)
+    aggregator = Aggregator({'infile': 'filename', 'zero_replacement': True}, stasis)
     assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     value = {'intensity': 2, 'replaced': True}
     assert 2 == aggregator.find_intensity(value)
@@ -73,7 +72,7 @@ def test_find_replaced():
 def test_add_metadata(stasis):
     # Test correct indexing of samples in header
 
-    aggregator = Aggregator(parser.parse_args(['filename', '-s', '-d', 'samples']), stasis)
+    aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': 'samples'}, stasis)
     assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     results = _build_result(stasis, samples)
 
@@ -83,7 +82,7 @@ def test_add_metadata(stasis):
 
 
 def test_build_worksheet(stasis):
-    aggregator = Aggregator(parser.parse_args(['./']), stasis)
+    aggregator = Aggregator({'infile': './'}, stasis)
     assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
 
     results = _build_result(stasis, samples)
@@ -105,7 +104,7 @@ def test_process_sample_list(stasis):
                'lgvty_cells_pilot_2_NEG_50K_BR_03',
                'lgvty_cells_pilot_2_NEG_50K_BR_05']
 
-    aggregator = Aggregator(parser.parse_args(['samples/test.txt', '-d', 'samples']), stasis)
+    aggregator = Aggregator({'infile': 'samples/test.txt', 'dir': 'samples'}, stasis)
     assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     aggregator.process_sample_list(samples, 'samples/test.txt')
 
@@ -115,13 +114,13 @@ def test_process_sample_list(stasis):
         except AssertionError as ae:
             print(f'{f} does not exist')
             raise AssertionError(ae)
-        os.remove(f'samples/{f}')
+        # os.remove(f'samples/{f}')
 
 
 def test_format_sample(stasis):
     sample = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
     samplefile = 'lgvty_cells_pilot_2_NEG_50K_BR_01.json'
-    aggregator = Aggregator(parser.parse_args(['filename', '-s', '-d', 'samples']), stasis)
+    aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': 'samples'}, stasis)
     assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     result = stasis.sample_result(samplefile, 'samples')
 

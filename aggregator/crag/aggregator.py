@@ -24,13 +24,17 @@ def percent(x: float, intensity):
 
 class Aggregator:
 
-    def __init__(self, args, stasis: Optional[StasisClient] = None):
+    def __init__(self, args: dict, stasis: Optional[StasisClient] = None):
+
         self.args = args
         if stasis:
             self.stasis_cli = stasis
         else:
-            self.stasis_cli = StasisClient(f'https://{"test-" if args.test else ""}api.metabolomics.us/stasis', None,
-                                           args.test)
+            if not args.get("test"):
+                self.stasis_cli = StasisClient()
+            else:
+                self.stasis_cli = StasisClient(f'https://test-api.metabolomics.us/stasis', None,
+                                               'wcmc-data-stasis-results-test')
 
     def find_intensity(self, value) -> int:
         """
@@ -41,7 +45,7 @@ class Aggregator:
         Returns:
 
         """
-        if not value['replaced'] or (value['replaced'] and self.args.zero_replacement):
+        if not value['replaced'] or (value['replaced'] and self.args.get('zero_replacement')):
             return round(value['intensity'])
         else:
             return 0
@@ -111,12 +115,12 @@ class Aggregator:
         file, ext = os.path.splitext(infile)
 
         # Build suffix
-        if self.args.test:
+        if self.args.get('test'):
             suffix = 'testResults'
         else:
             suffix = 'results'
 
-        if self.args.zero_replacement:
+        if self.args.get('zero_replacement'):
             suffix += '-repl'
         else:
             suffix += '-norepl'
@@ -273,7 +277,7 @@ class Aggregator:
 
         """
         # use subset of samples for testing
-        if self.args.test:
+        if self.args.get('test'):
             samples = samples[:5]
 
         # creating target list
@@ -286,7 +290,7 @@ class Aggregator:
                 continue
 
             result_file = f'{os.path.splitext(sample)[0]}.json'
-            resdata = self.stasis_cli.sample_result(result_file, self.args.dir)
+            resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
 
             if resdata and resdata.get('Error') is None:
                 results.append(resdata)
@@ -378,6 +382,9 @@ class Aggregator:
         Returns: list of targets
 
         """
+
+        print(results[0])
+
         targets = [x['target'] for x in
                    [results[0]['injections'][k]['results'] for k in list(results[0]['injections'].keys())][0]]
 
@@ -390,7 +397,7 @@ class Aggregator:
         Returns: the filename of the aggregated (excel) file
         """
 
-        for sample_file in self.args.infiles:
+        for sample_file in self.args.get('infiles'):
             if not os.path.isfile(sample_file):
                 print(f'Can\'t find the file {sample_file}')
                 exit(-1)
