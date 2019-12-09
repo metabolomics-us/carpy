@@ -152,7 +152,7 @@ functions:
     handler: jobs/schedule.schedule
     events:
       - http:
-          path: secure_schedule
+          path: schedule
           method: post
           private: true
           cors: true

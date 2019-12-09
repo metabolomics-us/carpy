@@ -1,4 +1,4 @@
-import json
+import simplejson as json
 import time
 
 from boto3.dynamodb.conditions import Key
@@ -16,9 +16,24 @@ def create(event, context):
 
     timestamp = int(time.time() * 1000)
 
+    body['timestamp'] = timestamp
     body['id'] = "{}_{}".format(body['job'], body['sample'])
     tm = TableManager()
     trktable = tm.get_tracking_table()
+
+    result = trktable.query(
+        KeyConditionExpression=Key('id').eq(id)
+    )
+
+    if "Items" in result and len(result['Items']) > 0:
+        item = result['Items'][0]
+        states = result.get('past_states', [])
+        states.append(result['state'])
+        past_states = list(set(states))
+    else:
+        past_states = []
+
+    body['past_states'] = past_states
 
     body = tm.sanitize_json_for_dynamo(body)
     saved = trktable.put_item(Item=body)  # save or update our item
