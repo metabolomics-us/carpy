@@ -64,3 +64,77 @@ def test_create_and_get(requireMocking):
     result = json.loads(result['body'])
 
     assert result['state'] == 'processed'
+
+
+def test_status_not_found(requireMocking):
+    result = tracking.status({
+        "pathParameters": {
+            "job": "123456789"
+        }
+    }, {})
+
+    assert result is not None
+    assert result['statusCode'] == 404
+
+
+def test_status(requireMocking):
+    for x in range(0, 100):
+        # upload data
+        data = json.dumps({
+            "job": "123456",
+            "sample": "abc_{}".format(x),
+            "state": "scheduled"
+        })
+
+        result = tracking.create({'body': data}, {})
+
+    result = tracking.status({
+        "pathParameters": {
+            "job": "123456"
+        }
+    }, {})
+
+    assert result is not None
+    assert result['statusCode'] == 200
+
+    assert len(json.loads(result['body'])['states']) == 1
+
+    assert json.loads(result['body'])['dstate'] == 'scheduled'
+    for x in range(0, 10):
+        # upload data
+        data = json.dumps({
+            "job": "123456",
+            "sample": "abc_{}".format(x),
+            "state": "processed"
+        })
+
+        result = tracking.create({'body': data}, {})
+
+    result = tracking.status({
+        "pathParameters": {
+            "job": "123456"
+        }
+    }, {})
+
+    assert len(json.loads(result['body'])['states']) == 2
+    assert json.loads(result['body'])['dstate'] == 'scheduled'
+
+
+    for x in range(20, 70):
+        # upload data
+        data = json.dumps({
+            "job": "123456",
+            "sample": "abc_{}".format(x),
+            "state": "done"
+        })
+
+        result = tracking.create({'body': data}, {})
+
+    result = tracking.status({
+        "pathParameters": {
+            "job": "123456"
+        }
+    }, {})
+
+    assert len(json.loads(result['body'])['states']) == 3
+    assert json.loads(result['body'])['dstate'] == 'done'

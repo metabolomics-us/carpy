@@ -3,7 +3,7 @@ from stasis_client.client import StasisClient
 from wcmc.schedule.scheduler import SampleStateService, SampleState, JobStore
 
 
-class StasisSampleStateService(SampleStateService):
+class JobSampleStateService(SampleStateService):
     """
     utilizes stasis to keep track of sample states of the scheduled jobs.
     """

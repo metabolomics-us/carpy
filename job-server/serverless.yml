@@ -66,9 +66,21 @@ custom:
   trackingTable: "JobsTrackingTable-${self:custom.stage}"
 
   ###
-  # Queues
+  # this is the queue which contains all the tasks to be executed during the scheduling phase of the process
   ###
   scheduleQueue: "JobsScheduleQueue-${self:custom.stage}"
+
+  ###
+  # this queue will take care of holding all pending aggregation tasks
+  aggregationQueue: "JobsAggregationQueue-${self:custom.stage}"
+
+  ##
+  # this queue will take care of holding all pending processing tasks
+  processingQueue: "JobsProcessingQueue-${self:custom.stage}"
+
+  ##
+  # defined queue to send jobs to stasis fargate for processing
+  stasisQueue: "StasisScheduleQueue-${self:custom.stage}"
 
   ###
   # custom domain management
@@ -147,7 +159,25 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
 
-  #schedule data to for handling the processing on the backend
+  # computes the current state of the status
+  trackingStatus:
+    handler: job/tracking.status
+    events:
+      - http:
+          path: status/{job}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
+  #schedule data to for handling the processing and aggregation on the backend
   schedule:
     handler: jobs/schedule.schedule
     events:
@@ -160,4 +190,5 @@ functions:
     #defines to which topic we want to connect
     environment:
       schedule_queue: ${self:custom.scheduleQueue}
+
 

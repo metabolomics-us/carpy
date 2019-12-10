@@ -1,6 +1,6 @@
 from wcmc.schedule.scheduler import Scheduler, JobStore, SampleStateService, JobState, JobExecutor
 from wcmc.schedule.stasis.job import AWSJobStore
-from wcmc.schedule.stasis.state import StasisSampleStateService
+from wcmc.schedule.stasis.state import JobSampleStateService
 
 
 class AWSScheduler(Scheduler):
@@ -18,7 +18,7 @@ class AWSScheduler(Scheduler):
         pass
 
     def _get_state_service(self, job_store: JobStore) -> SampleStateService:
-        return StasisSampleStateService(job_store=job_store)
+        return JobSampleStateService(job_store=job_store)
 
     def _get_job_store(self) -> JobStore:
         return AWSJobStore()

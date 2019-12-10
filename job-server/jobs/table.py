@@ -64,7 +64,29 @@ class TableManager:
                     ProvisionedThroughput={
                         'ReadCapacityUnits': 10,
                         'WriteCapacityUnits': 5
-                    }
+                    },
+                    GlobalSecondaryIndexes=[
+                        {
+                            'IndexName': 'job-id-index',
+                            'KeySchema': [
+                                {
+                                    'AttributeName': 'job',
+                                    'KeyType': 'HASH'
+                                },
+                                {
+                                    'AttributeName': 'id',
+                                    'KeyType': 'RANGE'
+                                }
+                            ],
+                            'Projection': {
+                                'ProjectionType': 'ALL'
+                            },
+                            'ProvisionedThroughput': {
+                                'ReadCapacityUnits': 10,
+                                'WriteCapacityUnits': 5
+                            }
+                        }
+                    ]
                 ))
             except ResourceInUseException as e:
                 print("table already exist, ignoring error {}".format(e))

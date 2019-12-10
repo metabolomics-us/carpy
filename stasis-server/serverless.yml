@@ -81,7 +81,7 @@ custom:
   ###
   # Queues
   ###
-  scheduleQueue: "StatisScheduleQueue-${self:custom.stage}"
+  scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
 
   ###
   # custom domain management
@@ -217,36 +217,36 @@ functions:
   trackingExperiment:
     handler: stasis/experiment/experiment.get
     events:
-    - http:
-        path: experiment/{experiment}
-        method: get
-        private: true
-        cors: true
-        request:
-          parameter:
-            path:
-              experiment: true
-    - http:
-        path: experiment/{experiment}/{psize}
-        method: get
-        cors: true
-        private: true
-        request:
-          parameter:
-            path:
-              experiment: true
-              psize: true
-    - http:
-        path: experiment/{experiment}/{psize}/{lastSample}
-        method: get
-        cors: true
-        private: true
-        request:
-          parameter:
-            path:
-              experiment: true
-              psize: true
-              lastSample: true
+      - http:
+          path: experiment/{experiment}
+          method: get
+          private: true
+          cors: true
+          request:
+            parameter:
+              path:
+                experiment: true
+      - http:
+          path: experiment/{experiment}/{psize}
+          method: get
+          cors: true
+          private: true
+          request:
+            parameter:
+              path:
+                experiment: true
+                psize: true
+      - http:
+          path: experiment/{experiment}/{psize}/{lastSample}
+          method: get
+          cors: true
+          private: true
+          request:
+            parameter:
+              path:
+                experiment: true
+                psize: true
+                lastSample: true
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}

@@ -22,13 +22,13 @@ def create(event, context):
     trktable = tm.get_tracking_table()
 
     result = trktable.query(
-        KeyConditionExpression=Key('id').eq(id)
+        KeyConditionExpression=Key('id').eq(body['id'])
     )
 
     if "Items" in result and len(result['Items']) > 0:
         item = result['Items'][0]
         states = result.get('past_states', [])
-        states.append(result['state'])
+        states.append(item['state'])
         past_states = list(set(states))
     else:
         past_states = []
@@ -73,6 +73,60 @@ def get(event, context):
                     "headers": __HTTP_HEADERS__,
                     "body": json.dumps({"error": "no sample found with this identifier : {}".format(
                         event['pathParameters']['sample'])})
+                }
+        # invalid!
+    return {
+        'statusCode': 503
+    }
+
+
+def status(event, context):
+    """
+    returns the status of the current job. Which can be scheduled, done, , aggregated
+    """
+
+    if 'pathParameters' in event:
+        parameters = event['pathParameters']
+        if 'job' in parameters:
+            job = parameters['job']
+            tm = TableManager()
+            table = tm.get_tracking_table()
+
+            query_params = {
+                'IndexName': 'job-id-index',
+                'Select': 'ALL_ATTRIBUTES',
+                'KeyConditionExpression': Key('job').eq(job)
+            }
+            result = table.query(**query_params
+                                 )
+
+            if "Items" in result and len(result['Items']) > 0:
+
+                states = {}
+                for x in result['Items']:
+                    if x['state'] not in states:
+                        states[x['state']] = 0
+
+                    states[x['state']] = states[x['state']] + 1
+
+                return {
+                    "statusCode": 200,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps({
+                        "count": len(result['Items'
+                                     ]),
+                        "states": states,
+                        "dstate": max(states, key=states.get)
+
+                    }
+                    )
+                }
+            else:
+                return {
+                    "statusCode": 404,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps({"error": "no job found with this identifier : {}".format(
+                        event['pathParameters']['job'])})
                 }
         # invalid!
     return {
