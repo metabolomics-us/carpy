@@ -159,12 +159,30 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
 
-  # computes the current state of the status
+  # computes the current state of the given job
   trackingStatus:
     handler: job/tracking.status
     events:
       - http:
-          path: status/{job}
+          path: job/status/{job}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
+  # computes the complete job
+  job:
+    handler: job/tracking.description
+    events:
+      - http:
+          path: job/{job}
           private: true
           method: get
           cors: true

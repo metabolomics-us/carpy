@@ -9,6 +9,9 @@ def schedule(event, context):
     schedules a task to the processing queue as well as the aggregation queue
     """
 
+    # 1. send to statis processing queue
+    # 2. send to aggregating queue
+
 
 def schedule_processing(event, context):
     """

@@ -64,6 +64,8 @@ def test_create_and_get(requireMocking):
     result = json.loads(result['body'])
 
     assert result['state'] == 'processed'
+    assert 'past_states' in result
+    assert 'scheduled' in result['past_states']
 
 
 def test_status_not_found(requireMocking):
@@ -119,7 +121,6 @@ def test_status(requireMocking):
     assert len(json.loads(result['body'])['states']) == 2
     assert json.loads(result['body'])['dstate'] == 'scheduled'
 
-
     for x in range(20, 70):
         # upload data
         data = json.dumps({
@@ -138,3 +139,26 @@ def test_status(requireMocking):
 
     assert len(json.loads(result['body'])['states']) == 3
     assert json.loads(result['body'])['dstate'] == 'done'
+
+
+def test_description(requireMocking):
+    for x in range(0, 10000):
+        # upload data
+        data = json.dumps({
+            "job": "1234567",
+            "sample": "abc_{}".format(x),
+            "state": "scheduled"
+        })
+
+        result = tracking.create({'body': data}, {})
+
+    result = tracking.description({
+        "pathParameters": {
+            "job": "1234567"
+        }
+    }, {})
+
+    assert result is not None
+    assert result['statusCode'] == 200
+
+    assert len(json.loads(result['body'])) == 10000

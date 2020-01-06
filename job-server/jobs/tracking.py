@@ -1,3 +1,5 @@
+from enum import Enum
+
 import simplejson as json
 import time
 
@@ -5,6 +7,20 @@ from boto3.dynamodb.conditions import Key
 
 from jobs.table import TableManager
 from jobs.headers import __HTTP_HEADERS__
+
+
+class States(Enum):
+    """
+    some standard states
+    """
+
+    SCHEDULED = "scheduled",
+    PROCESSING = "processing",
+    PROCESSED = "processed",
+    AGGREGATING = "aggregating",
+    AGGREGATED = "aggregated",
+    FAILED = "failed",
+    DONE = "done"
 
 
 def create(event, context):
@@ -25,11 +41,14 @@ def create(event, context):
         KeyConditionExpression=Key('id').eq(body['id'])
     )
 
-    if "Items" in result and len(result['Items']) > 0:
-        item = result['Items'][0]
-        states = result.get('past_states', [])
-        states.append(item['state'])
-        past_states = list(set(states))
+    if body['state'] != States.SCHEDULED.value:
+        if "Items" in result and len(result['Items']) > 0:
+            item = result['Items'][0]
+            states = result.get('past_states', [])
+            states.append(item['state'])
+            past_states = list(set(states))
+        else:
+            past_states = []
     else:
         past_states = []
 
@@ -82,7 +101,7 @@ def get(event, context):
 
 def status(event, context):
     """
-    returns the status of the current job. Which can be scheduled, done, , aggregated
+    returns the status of the current job, as well as some meta information
     """
 
     if 'pathParameters' in event:
@@ -117,7 +136,6 @@ def status(event, context):
                                      ]),
                         "states": states,
                         "dstate": max(states, key=states.get)
-
                     }
                     )
                 }
@@ -132,3 +150,59 @@ def status(event, context):
     return {
         'statusCode': 503
     }
+
+
+def description(event, context):
+    """
+    returns the complete job description, which can be rather long
+    """
+    if 'pathParameters' in event:
+        parameters = event['pathParameters']
+        if 'job' in parameters:
+            job = parameters['job']
+            tm = TableManager()
+            table = tm.get_tracking_table()
+
+            query_params = {
+                'IndexName': 'job-id-index',
+                'Select': 'ALL_ATTRIBUTES',
+                'KeyConditionExpression': Key('job').eq(job)
+            }
+            result = table.query(**query_params
+                                 )
+
+            if "Items" in result and len(result['Items']) > 0:
+
+                return {
+                    "statusCode": 200,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps(
+                        result['Items']
+
+                    )
+                }
+            else:
+                return {
+                    "statusCode": 404,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps({"error": "no job found with this identifier : {}".format(
+                        event['pathParameters']['job'])})
+                }
+        # invalid!
+    return {
+        'statusCode': 503
+    }
+
+
+def job_can_aggregate(event, context):
+    """
+    computes if the given job can be aggregated. Basically the status of all items of the job has to be failed or processed
+    for this to be possible
+    """
+
+
+def job_is_done(event, context):
+    """
+    computes if the given job is done, meaning aggregation is completed and result can be downloaded. The states for all samples has to be
+    be failed or aggregated
+    """
