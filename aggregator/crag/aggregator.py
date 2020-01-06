@@ -380,10 +380,7 @@ class Aggregator:
             results: result data with target info
 
         Returns: list of targets
-
         """
-
-        print(results[0])
 
         targets = [x['target'] for x in
                    [results[0]['injections'][k]['results'] for k in list(results[0]['injections'].keys())][0]]
