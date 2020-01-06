@@ -5,6 +5,8 @@ frameworkVersion: ">=1.1.0 <2.0.0"
 plugins:
   - serverless-domain-manager
   - serverless-python-requirements
+  - serverless-aws-documentation
+
 provider:
   name: aws
   runtime: python3.6
@@ -106,6 +108,19 @@ custom:
       - "moto"
       - "pytest"
 
+  documentation:
+    api:
+      info:
+        version: '1'
+        title: 'LC BinBase Scheduler Server'
+        description: 'AWS powered interface to the AWS based schedule server'
+        contact:
+          name: Gert Wohlgemuth
+          email: wohlgemuth@ucdavis.edu
+        license:
+          name: LGPL3
+          url: https://www.gnu.org/licenses/lgpl-3.0.en.html
+
 ############################################################################################
 # this section defines what to include and exclud when packaging artifacts
 ############################################################################################
@@ -135,6 +150,8 @@ functions:
           private: true
           method: post
           cors: true
+          documentation:
+            summary: updates the tracking status of a sample with the associated job
 
     #defines to which topic we want to connect
     environment:
@@ -145,6 +162,16 @@ functions:
     handler: jobs/tracking.get
     events:
       - http:
+          documentation:
+            summary: Returns the tacking status of a sample with an associated job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+              - name: sample
+                description: the sample id
+                required: true
+
           path: tracking/{job}/{sample}
           private: true
           method: get
@@ -172,6 +199,12 @@ functions:
             parameter:
               paths:
                 job: true
+          documentation:
+            summary: returns the overal status of the given job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
 
     #defines to which topic we want to connect
     environment:
@@ -190,6 +223,12 @@ functions:
             parameter:
               paths:
                 job: true
+          documentation:
+            summary: return the complete job description with all associated samples and there states
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
 
     #defines to which topic we want to connect
     environment:
@@ -204,6 +243,8 @@ functions:
           method: post
           private: true
           cors: true
+          documentation:
+            summary: schedules a job to be computed to the backend queue
 
     #defines to which topic we want to connect
     environment:
