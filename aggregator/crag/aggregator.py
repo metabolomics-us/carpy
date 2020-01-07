@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+import simplejson as json
 import tqdm
 from stasis_client.client import StasisClient
 
@@ -290,7 +291,13 @@ class Aggregator:
                 continue
 
             result_file = f'{os.path.splitext(sample)[0]}.json'
-            resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
+
+            existing = f'{self.args.get("dir")}/{result_file}'
+
+            if self.args.get('save') or not os.path.exists(existing):
+                resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
+            else:
+                resdata = json.load(existing)
 
             if resdata and resdata.get('Error') is None:
                 results.append(resdata)
