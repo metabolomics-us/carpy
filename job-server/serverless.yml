@@ -77,12 +77,8 @@ custom:
   aggregationQueue: "JobsAggregationQueue-${self:custom.stage}"
 
   ##
-  # this queue will take care of holding all pending processing tasks
-  processingQueue: "JobsProcessingQueue-${self:custom.stage}"
-
-  ##
   # defined queue to send jobs to stasis fargate for processing
-  stasisQueue: "StasisScheduleQueue-${self:custom.stage}"
+  processingQueue: "StasisScheduleQueue-${self:custom.stage}"
 
   ###
   # custom domain management
@@ -248,6 +244,17 @@ functions:
 
     #defines to which topic we want to connect
     environment:
+
+      ##
+      # contains scheduling events
       schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+
+      ##
+      # contains processing events
+      processing_queue: ${self:custom.processingQueue}
 
 

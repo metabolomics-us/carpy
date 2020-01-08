@@ -1,5 +1,10 @@
 # Readme
 
+This tool provides an AWS lambda based API to schedule samples with LC-BinBase for data processing. Internally it delegates parts of this
+to the following the 'compute-server' module in the same git repository.
+
+This external module will do the actual computation and scaling, to allow the concurrent processing of 1000s of samples at a time and their aggregation.
+
 ## Requirements
 
 1. npm install serverless-domain-manager --save-dev
@@ -10,7 +15,7 @@
 
 ## Deployment
 
-sls deploy
+sls deploy --stage prod | dev | test
 
 ## Generating Documentation
 
