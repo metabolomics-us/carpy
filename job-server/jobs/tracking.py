@@ -1,29 +1,11 @@
-from enum import Enum
-
 import simplejson as json
-import time
 
 from boto3.dynamodb.conditions import Key
 
-from jobs.table import TableManager
+from jobs import jobs
+from jobs.states import States
+from jobs.table import TableManager, _set_job_state
 from jobs.headers import __HTTP_HEADERS__
-
-
-class States(Enum):
-    """
-    some standard states
-    """
-
-    SCHEDULED = "scheduled",
-    PROCESSING = "processing",
-    PROCESSED = "processed",
-    AGGREGATING = "aggregating",
-    AGGREGATED = "aggregated",
-    FAILED = "failed",
-    DONE = "done"
-
-    def __str__(self):
-        return '%s' % self.value
 
 
 def create(event, context):
@@ -33,38 +15,7 @@ def create(event, context):
     assert 'body' in event
     body: dict = json.loads(event['body'])
 
-    timestamp = int(time.time() * 1000)
-
-    body['timestamp'] = timestamp
-    body['id'] = "{}_{}".format(body['job'], body['sample'])
-    tm = TableManager()
-    trktable = tm.get_tracking_table()
-
-    result = trktable.query(
-        KeyConditionExpression=Key('id').eq(body['id'])
-    )
-
-    if body['state'] != States.SCHEDULED.value:
-        if "Items" in result and len(result['Items']) > 0:
-            item = result['Items'][0]
-            states = result.get('past_states', [])
-            states.append(item['state'])
-            past_states = list(set(states))
-        else:
-            past_states = []
-    else:
-        past_states = []
-
-    body['past_states'] = past_states
-
-    body = tm.sanitize_json_for_dynamo(body)
-    saved = trktable.put_item(Item=body)  # save or update our item
-
-    saved = saved['ResponseMetadata']
-
-    saved['statusCode'] = saved['HTTPStatusCode']
-
-    return saved
+    return _set_job_state(body)
 
 
 def get(event, context):
@@ -75,8 +26,8 @@ def get(event, context):
     if 'pathParameters' in event:
         parameters = event['pathParameters']
         if 'sample' in parameters and 'job' in parameters:
-            id = "{}_{}".format(parameters['job'], parameters['sample'])
             tm = TableManager()
+            id = tm.generate_job_id(parameters['job'], parameters['sample'])
             table = tm.get_tracking_table()
 
             result = table.query(

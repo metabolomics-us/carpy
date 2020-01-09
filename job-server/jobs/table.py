@@ -4,6 +4,13 @@ import boto3
 import simplejson as json
 from boto.dynamodb2.exceptions import ResourceInUseException, ValidationException
 
+import time
+from typing import Optional
+
+from boto3.dynamodb.conditions import Key
+
+from jobs.states import States
+
 
 class TableManager:
 
@@ -98,3 +105,78 @@ class TableManager:
                 pass
 
         return self.db.Table(table_name)
+
+    def generate_job_id(self, job: str, sample: str) -> str:
+        """
+        generates our job id
+        """
+        return "{}_{}".format(job, sample)
+
+
+def set_job_state(sample: str, job: str, state: States):
+    """
+    sets the state in the job table for the given sample and job
+    """
+    return _set_job_state(body={"job": job, "sample": sample, "state": str(state)})
+
+
+def _set_job_state(body: dict):
+    pass
+    timestamp = int(time.time() * 1000)
+
+    body['timestamp'] = timestamp
+    tm = TableManager()
+    body['id'] = tm.generate_job_id(body['job'], body['sample'])
+    trktable = tm.get_tracking_table()
+
+    result = trktable.query(
+        KeyConditionExpression=Key('id').eq(body['id'])
+    )
+
+    if body['state'] != States.SCHEDULED.value:
+        if "Items" in result and len(result['Items']) > 0:
+            item = result['Items'][0]
+            states = result.get('past_states', [])
+            states.append(item['state'])
+            past_states = list(set(states))
+        else:
+            past_states = []
+    else:
+        past_states = []
+
+    body['past_states'] = past_states
+
+    body = tm.sanitize_json_for_dynamo(body)
+    saved = trktable.put_item(Item=body)  # save or update our item
+
+    saved = saved['ResponseMetadata']
+
+    saved['statusCode'] = saved['HTTPStatusCode']
+
+    return saved
+
+
+def load_job(job: str) -> Optional[dict]:
+    """
+    loads the job from the job table for the given name
+    """
+
+    tm = TableManager()
+    table = tm.get_tracking_table()
+
+    query_params = {
+        'IndexName': 'job-id-index',
+        'Select': 'ALL_ATTRIBUTES',
+        'KeyConditionExpression': Key('job').eq(job)
+    }
+    result = table.query(**query_params
+                         )
+
+    if "Items" in result and len(result['Items']) > 0:
+        result = {}
+        for x in result['Items']:
+            result[x['sample']] = x['state']
+        return result
+
+    else:
+        return None

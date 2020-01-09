@@ -13,6 +13,10 @@ This external module will do the actual computation and scaling, to allow the co
 4. create the required bucket, as configured in the serverless yaml file
 
 
+## Service Requirements
+
+You require to have the AWS stasis service deployed and configured. Since this system makes heavy use of it.
+
 ## Deployment
 
 sls deploy --stage prod | dev | test

@@ -4,18 +4,6 @@ import os
 from jobs.headers import __HTTP_HEADERS__
 
 
-def schedule(event, context):
-    """
-    schedules a task to the processing queue as well as the aggregation queue. Only gets involved from a SQS queue!
-    """
-
-    # 1. send to stasis processing queue
-    # iterate over all the samples. Process one sample at a time
-
-    # 2. send to aggregating queue
-    #
-
-
 def schedule_processing(event, context):
     """
     schedules the actual processing of the job. Internally a lambda function will listen to the queue
@@ -24,7 +12,7 @@ def schedule_processing(event, context):
 
     body = json.loads(event['body'])
 
-    # get topic refrence
+    # get topic reference
     import boto3
     client = boto3.client('sqs')
 
