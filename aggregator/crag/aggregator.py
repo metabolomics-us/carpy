@@ -1,9 +1,11 @@
 import os
+import pprint
 import re
 from typing import Optional
 
 import numpy as np
 import pandas as pd
+import simplejson as json
 import tqdm
 from stasis_client.client import StasisClient
 
@@ -290,7 +292,13 @@ class Aggregator:
                 continue
 
             result_file = f'{os.path.splitext(sample)[0]}.json'
-            resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
+            saved_result = f'{self.args.get("dir")}/{result_file}'
+
+            if self.args.get('save') or not os.path.exists(saved_result):
+                resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
+            else:
+                with open(saved_result, 'rb') as data:
+                    resdata = json.load(data)
 
             if resdata and resdata.get('Error') is None:
                 results.append(resdata)
@@ -331,7 +339,8 @@ class Aggregator:
                 replaced[sample] = np.nan
                 msms[sample] = np.nan
 
-        self.filter_msms(msms, intensity)
+        if not self.args.get('keep_msms'):
+            self.filter_msms(msms, intensity)
 
         # biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower() or 'qc' in str(br).lower()]
         pd.set_option('display.max_rows', 100)
@@ -393,6 +402,8 @@ class Aggregator:
 
         Returns: the filename of the aggregated (excel) file
         """
+
+        pprint.pprint(self.args)
 
         for sample_file in self.args.get('infiles'):
             if not os.path.isfile(sample_file):
