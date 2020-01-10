@@ -47,6 +47,7 @@ def requireMocking():
     os.environ["processing_queue"] = "test_processing"
     os.environ["topic"] = "UnitTestTopic"
     os.environ["trackingTable"] = "UnitTrackingTable"
+    os.environ["stasisTrackingTable"] = "UnitStasisTrackingTable"
     os.environ["dataBucket"] = "data-carrot"
 
     dynamodb = boto3.resource('dynamodb')

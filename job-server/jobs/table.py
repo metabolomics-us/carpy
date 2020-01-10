@@ -33,6 +33,76 @@ class TableManager:
 
         return new_result
 
+    def get_stasis_tracking_table(self):
+        """
+            provides access to the table and if it doesn't exists
+            creates it for us
+        :return:
+        """
+
+        table_name = os.environ['stasisTrackingTable']
+        existing_tables = boto3.client('dynamodb').list_tables()['TableNames']
+
+        if table_name not in existing_tables:
+            try:
+                print(self.db.create_table(
+                    TableName=os.environ["stasisTrackingTable"],
+                    KeySchema=[
+                        {
+                            'AttributeName': 'id',
+                            'KeyType': 'HASH'
+                        },
+                        {
+                            'AttributeName': 'experiment',
+                            'KeyType': 'RANGE'
+                        }
+                    ],
+                    AttributeDefinitions=[
+                        {
+                            'AttributeName': 'id',
+                            'AttributeType': 'S'
+                        },
+                        {
+                            'AttributeName': 'experiment',
+                            'AttributeType': 'S'
+                        }
+                    ],
+                    ProvisionedThroughput={
+                        'ReadCapacityUnits': 10,
+                        'WriteCapacityUnits': 5
+                    },
+                    GlobalSecondaryIndexes=[
+                        {
+                            'IndexName': 'experiment-id-index',
+                            'KeySchema': [
+                                {
+                                    'AttributeName': 'experiment',
+                                    'KeyType': 'HASH'
+                                },
+                                {
+                                    'AttributeName': 'id',
+                                    'KeyType': 'RANGE'
+                                }
+                            ],
+                            'Projection': {
+                                'ProjectionType': 'ALL'
+                            },
+                            'ProvisionedThroughput': {
+                                'ReadCapacityUnits': 10,
+                                'WriteCapacityUnits': 5
+                            }
+                        }
+                    ]
+                ))
+            except ResourceInUseException as e:
+                print("table already exist, ignoring error {}".format(e))
+                pass
+            except Exception as ex:
+                print("table already exist, ignoring error {}".format(ex))
+                pass
+
+        return self.db.Table(table_name)
+
     def get_tracking_table(self):
         """
             provides access to the table and if it doesn't exists
@@ -173,10 +243,10 @@ def load_job(job: str) -> Optional[dict]:
                          )
 
     if "Items" in result and len(result['Items']) > 0:
-        result = {}
+        results = {}
         for x in result['Items']:
-            result[x['sample']] = x['state']
-        return result
+            results[x['sample']] = x['state']
+        return results
 
     else:
         return None

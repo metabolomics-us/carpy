@@ -1,5 +1,10 @@
 from typing import Optional
 
+from boto3.dynamodb.conditions import Key
+
+from jobs.states import States
+from jobs.table import TableManager, load_job, set_job_state
+
 
 def sync(job: str):
     """
@@ -8,17 +13,29 @@ def sync(job: str):
 
     # 1. load job definition
 
-    # 2. go over all samples
+    job_definition = load_job(job=job)
 
-    # 3. get state
+    if job_definition is not None:
 
-    # 4. if state is exported -> set state to processed
+        # 2. go over all samples
 
-    # 5. if state is failed -> set state to failed
+        for sample, tracking_state in job_definition.items():
 
-    # 6. if state is None -> ignore it doesn't exist
-
-    # 7. else return state to processing
+            #  get state
+            stasis_state = get_state(sample=sample)
+            # if state is None -> ignore it doesn't exist
+            if stasis_state is None:
+                print("sample for job {} not found in stasis: {}".format(job, sample))
+                pass
+            # if state is exported -> set state to processed
+            elif stasis_state == "exported":
+                set_job_state(job=job, sample=sample, state=States.PROCESSED)
+            # if state is failed -> set state to failed
+            elif stasis_state == "failed":
+                set_job_state(job=job, sample=sample, state=States.FAILED)
+            # else set state to processing
+            else:
+                set_job_state(job=job, sample=sample, state=States.PROCESSING)
 
 
 def get_sample(sample: str) -> Optional[dict]:
@@ -27,6 +44,18 @@ def get_sample(sample: str) -> Optional[dict]:
     this is the heart of the synchronization system
     """
 
+    tm = TableManager()
+    table = tm.get_stasis_tracking_table()
+
+    result = table.query(
+        KeyConditionExpression=Key('id').eq(sample)
+    )
+
+    if 'Items' in result and len(result['Items']) > 0:
+        return result['Items'][0]
+    else:
+        return None
+
 
 def get_state(sample: str) -> Optional[str]:
     """
@@ -34,9 +63,9 @@ def get_state(sample: str) -> Optional[str]:
     """
 
     data = get_sample(sample)
-
+    states = data['status']
+    state = states[-1]
     if data is None:
         return None
     else:
-        return "exported"
-
+        return state['value']

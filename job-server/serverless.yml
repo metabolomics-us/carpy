@@ -67,6 +67,8 @@ custom:
   ###
   trackingTable: "JobsTrackingTable-${self:custom.stage}"
 
+  stasisTrackingTable: "JobsTrackingTable-${self:custom.stage}"
+
   ###
   # this is the queue which contains all the tasks to be executed during the scheduling phase of the process
   ###
