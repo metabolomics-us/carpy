@@ -84,6 +84,10 @@ custom:
   scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
 
   ###
+  # this queue will take care of holding all pending aggregation tasks
+  aggregationQueue: "JobsAggregationQueue-${self:custom.stage}"
+
+  ###
   # custom domain management
   ###
 
@@ -470,3 +474,124 @@ functions:
                 sample: true
     environment:
       dataBucket: ${self:custom.dataBucketName}
+
+
+  #creates a new tracking record in the system
+  job_tracking_create:
+    handler: jobs/tracking.create
+    events:
+      - http:
+          path: tracking
+          private: true
+          method: post
+          cors: true
+          documentation:
+            summary: updates the tracking status of a sample with the associated job
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
+  #fetches an existing tracking record from the system
+  job_tracking_get:
+    handler: jobs/tracking.get
+    events:
+      - http:
+          documentation:
+            summary: Returns the tacking status of a sample with an associated job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+              - name: sample
+                description: the sample id
+                required: true
+
+          path: tracking/{job}/{sample}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+                sample: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
+  # computes the current state of the given job
+  job_tracking_status:
+    handler: job/tracking.status
+    events:
+      - http:
+          path: job/status/{job}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+          documentation:
+            summary: returns the overal status of the given job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
+  # computes the complete job
+  job_description:
+    handler: job/tracking.description
+    events:
+      - http:
+          path: job/{job}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+          documentation:
+            summary: return the complete job description with all associated samples and there states
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+
+  #schedule data to for handling the processing and aggregation on the backend
+  job_schedule:
+    handler: jobs/schedule.schedule
+    events:
+      - http:
+          path: schedule
+          method: post
+          private: true
+          cors: true
+          documentation:
+            summary: schedules a job to be computed to the backend queue
+
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+
+      ##
+      # contains processing events
+      processing_queue: ${self:custom.processingQueue}

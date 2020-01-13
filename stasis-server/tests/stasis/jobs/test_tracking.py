@@ -1,8 +1,8 @@
 import json
 import random
 
-from jobs import tracking
-from jobs.states import States
+from stasis.jobs import tracking
+from stasis.jobs.states import States
 
 
 def test_create_and_get(requireMocking):

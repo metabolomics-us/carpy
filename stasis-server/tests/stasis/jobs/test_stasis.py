@@ -1,9 +1,9 @@
 import json
 
-from jobs import tracking
-from jobs.stasis import sync
-from jobs.states import States
-from jobs.table import TableManager, load_job
+from stasis.jobs import tracking
+from stasis.jobs.stasis import sync
+from stasis.jobs.states import States
+from stasis.tables import TableManager, load_job
 
 
 def test_sync_processed(requireMocking):
@@ -20,7 +20,7 @@ def test_sync_processed(requireMocking):
 
         assert load_job("12345")['abc_{}'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
-        tm.get_stasis_tracking_table().put_item(Item=
+        tm.get_tracking_table().put_item(Item=
         {
             "experiment": "12345",
             "id": "abc_{}".format(i),
@@ -109,7 +109,7 @@ def test_sync_currently_processing(requireMocking):
 
         assert load_job("12345")['abc_{}'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
-        tm.get_stasis_tracking_table().put_item(Item=
+        tm.get_tracking_table().put_item(Item=
         {
             "experiment": "12345",
             "id": "abc_{}".format(i),
@@ -192,7 +192,7 @@ def test_sync_failed(requireMocking):
 
         assert load_job("12345")['abc_{}'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
-        tm.get_stasis_tracking_table().put_item(Item=
+        tm.get_tracking_table().put_item(Item=
         {
             "experiment": "12345",
             "id": "abc_{}".format(i),

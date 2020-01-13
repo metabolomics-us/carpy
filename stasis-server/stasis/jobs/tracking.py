@@ -1,11 +1,9 @@
 import simplejson as json
-
 from boto3.dynamodb.conditions import Key
 
-from jobs import jobs
-from jobs.states import States
-from jobs.table import TableManager, _set_job_state
-from jobs.headers import __HTTP_HEADERS__
+from stasis.headers import __HTTP_HEADERS__
+from stasis.jobs.states import States
+from stasis.tables import TableManager, _set_job_state
 
 
 def create(event, context):
@@ -28,7 +26,7 @@ def get(event, context):
         if 'sample' in parameters and 'job' in parameters:
             tm = TableManager()
             id = tm.generate_job_id(parameters['job'], parameters['sample'])
-            table = tm.get_tracking_table()
+            table = tm.get_job_table()
 
             result = table.query(
                 KeyConditionExpression=Key('id').eq(id)
@@ -63,7 +61,7 @@ def status(event, context):
         if 'job' in parameters:
             job = parameters['job']
             tm = TableManager()
-            table = tm.get_tracking_table()
+            table = tm.get_job_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
@@ -115,7 +113,7 @@ def description(event, context):
         if 'job' in parameters:
             job = parameters['job']
             tm = TableManager()
-            table = tm.get_tracking_table()
+            table = tm.get_job_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
@@ -158,7 +156,7 @@ def job_can_aggregate(event, context):
         if 'job' in parameters:
             job = parameters['job']
             tm = TableManager()
-            table = tm.get_tracking_table()
+            table = tm.get_job_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
@@ -172,7 +170,6 @@ def job_can_aggregate(event, context):
 
                 for item in result['Items']:
                     if item['state'] not in [str(States.PROCESSED), str(States.FAILED)]:
-                        print(item)
                         return {
                             "statusCode": 200,
                             "headers": __HTTP_HEADERS__,
@@ -211,7 +208,7 @@ def job_is_done(event, context):
         if 'job' in parameters:
             job = parameters['job']
             tm = TableManager()
-            table = tm.get_tracking_table()
+            table = tm.get_job_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
@@ -225,7 +222,6 @@ def job_is_done(event, context):
 
                 for item in result['Items']:
                     if item['state'] not in [str(States.AGGREGATED), str(States.FAILED)]:
-                        print(item)
                         return {
                             "statusCode": 200,
                             "headers": __HTTP_HEADERS__,

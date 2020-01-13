@@ -2,8 +2,8 @@ from typing import Optional
 
 from boto3.dynamodb.conditions import Key
 
-from jobs.states import States
-from jobs.table import TableManager, load_job, set_job_state
+from stasis.jobs.states import States
+from stasis.tables import TableManager, load_job, set_job_state
 
 
 def sync(job: str):
@@ -28,7 +28,7 @@ def sync(job: str):
                 print("sample for job {} not found in stasis: {}".format(job, sample))
                 pass
             # if state is exported -> set state to processed
-            elif stasis_state == "exported":
+            elif stasis_state == "exported" or stasis_state == "finished":
                 set_job_state(job=job, sample=sample, state=States.PROCESSED)
             # if state is failed -> set state to failed
             elif stasis_state == "failed":
@@ -45,7 +45,7 @@ def get_sample(sample: str) -> Optional[dict]:
     """
 
     tm = TableManager()
-    table = tm.get_stasis_tracking_table()
+    table = tm.get_tracking_table()
 
     result = table.query(
         KeyConditionExpression=Key('id').eq(sample)

@@ -1,7 +1,7 @@
 import json
 import os
 
-from jobs.headers import __HTTP_HEADERS__
+from stasis.headers import __HTTP_HEADERS__
 
 
 def schedule_processing(event, context):
@@ -67,8 +67,6 @@ def schedule_aggregation(event, context):
 
 def _get_queue(client, queue_name):
     try:
-        print("new queue")
         return client.create_queue(QueueName=queue_name)['QueueUrl']
     except Exception as ex:
-        print("queue exists")
         return client.get_queue_url(QueueName=queue_name)['QueueUrl']
