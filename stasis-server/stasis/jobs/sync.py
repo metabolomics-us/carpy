@@ -3,7 +3,7 @@ from typing import Optional
 from boto3.dynamodb.conditions import Key
 
 from stasis.jobs.states import States
-from stasis.tables import TableManager, load_job, set_job_state
+from stasis.tables import TableManager, load_job, set_job_state, get_tracked_state
 
 
 def sync(job: str):
@@ -22,7 +22,7 @@ def sync(job: str):
         for sample, tracking_state in job_definition.items():
 
             #  get state
-            stasis_state = get_state(sample=sample)
+            stasis_state = get_tracked_state(sample=sample)
             # if state is None -> ignore it doesn't exist
             if stasis_state is None:
                 print("sample for job {} not found in stasis: {}".format(job, sample))
@@ -37,35 +37,3 @@ def sync(job: str):
             else:
                 set_job_state(job=job, sample=sample, state=States.PROCESSING)
 
-
-def get_sample(sample: str) -> Optional[dict]:
-    """
-    this returns the complete sample definition for the given sample or none from the stasis tracking table
-    this is the heart of the synchronization system
-    """
-
-    tm = TableManager()
-    table = tm.get_tracking_table()
-
-    result = table.query(
-        KeyConditionExpression=Key('id').eq(sample)
-    )
-
-    if 'Items' in result and len(result['Items']) > 0:
-        return result['Items'][0]
-    else:
-        return None
-
-
-def get_state(sample: str) -> Optional[str]:
-    """
-    returns the state of a sample in stasis
-    """
-
-    data = get_sample(sample)
-    states = data['status']
-    state = states[-1]
-    if data is None:
-        return None
-    else:
-        return state['value']

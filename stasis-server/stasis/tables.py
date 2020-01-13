@@ -363,3 +363,36 @@ def load_job(job: str) -> Optional[dict]:
 
     else:
         return None
+
+
+def get_tracked_sample(sample: str) -> Optional[dict]:
+    """
+    this returns the complete sample definition for the given sample or none from the stasis tracking table
+    this is the heart of the synchronization system
+    """
+
+    tm = TableManager()
+    table = tm.get_tracking_table()
+
+    result = table.query(
+        KeyConditionExpression=Key('id').eq(sample)
+    )
+
+    if 'Items' in result and len(result['Items']) > 0:
+        return result['Items'][0]
+    else:
+        return None
+
+
+def get_tracked_state(sample: str) -> Optional[str]:
+    """
+    returns the state of a sample in stasis
+    """
+
+    data = get_tracked_sample(sample)
+    states = data['status']
+    state = states[-1]
+    if data is None:
+        return None
+    else:
+        return state['value']

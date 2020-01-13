@@ -1,7 +1,7 @@
 import json
 
 from stasis.jobs import tracking
-from stasis.jobs.stasis import sync
+from stasis.jobs.sync import sync
 from stasis.jobs.states import States
 from stasis.tables import TableManager, load_job
 
