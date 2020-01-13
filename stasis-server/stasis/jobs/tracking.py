@@ -3,7 +3,7 @@ from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
-from stasis.tables import TableManager, _set_job_state
+from stasis.tables import TableManager, _set_sample_job_state
 
 
 def create(event, context):
@@ -13,7 +13,7 @@ def create(event, context):
     assert 'body' in event
     body: dict = json.loads(event['body'])
 
-    return _set_job_state(body)
+    return _set_sample_job_state(body)
 
 
 def get(event, context):

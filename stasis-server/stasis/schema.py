@@ -77,6 +77,37 @@ __TRACKING_SCHEMA__ = {
     'required': ['sample', 'status']
 }
 
+# defines the incomming tracking schema
+__JOB_SCHEMA__ = {
+    'samples': {
+        'type': 'array',
+        'items': {
+            'type': 'string'
+        }
+    },
+    'status': {
+        'type': 'string'
+    },
+    'method': {
+        'type': 'string'
+    },
+    'profile': {
+        'type': 'string'
+    },
+    'env': {
+        'type': 'string'
+    },
+    'id': {
+        'type': 'string'
+    },
+    'required': [
+        'samples',
+        'profile',
+        'method',
+        'env',
+        'id'
+    ]
+}
 # defines the schema of the incoming data object
 __RESULT_SCHEMA__ = {
     'sample': {

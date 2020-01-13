@@ -45,9 +45,7 @@ def requireMocking():
     session.client('sns')
     session.client('s3')
 
-
     os.environ["aggregation_queue"] = "test_aggregation"
-    os.environ["processing_queue"] = "test_processing"
     os.environ["schedule_queue"] = "test_schedule"
     os.environ["topic"] = "UnitTestTopic"
     os.environ["trackingTable"] = "UnitTrackingTable"
@@ -72,7 +70,6 @@ def requireMocking():
 
 
 def create_cluster():
-
     ec2 = boto3.resource('ec2')
     cluster = boto3.client('ecs')
 

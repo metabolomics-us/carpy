@@ -3,7 +3,7 @@ import json
 from stasis.jobs import tracking
 from stasis.jobs.sync import sync
 from stasis.jobs.states import States
-from stasis.tables import TableManager, load_job
+from stasis.tables import TableManager, load_job_samples
 
 
 def test_sync_processed(requireMocking):
@@ -18,7 +18,7 @@ def test_sync_processed(requireMocking):
             }
         )}, {})
 
-        assert load_job("12345")['abc_{}'.format(i)] == "scheduled"
+        assert load_job_samples("12345")['abc_{}'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
         tm.get_tracking_table().put_item(Item=
         {
@@ -92,7 +92,7 @@ def test_sync_processed(requireMocking):
 
     sync(job="12345")
 
-    assert all(value == str(States.PROCESSED) for value in load_job("12345").values())
+    assert all(value == str(States.PROCESSED) for value in load_job_samples("12345").values())
 
 
 def test_sync_currently_processing(requireMocking):
@@ -107,7 +107,7 @@ def test_sync_currently_processing(requireMocking):
             }
         )}, {})
 
-        assert load_job("12345")['abc_{}'.format(i)] == "scheduled"
+        assert load_job_samples("12345")['abc_{}'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
         tm.get_tracking_table().put_item(Item=
         {
@@ -175,7 +175,7 @@ def test_sync_currently_processing(requireMocking):
 
     sync(job="12345")
 
-    assert all(value == str(States.PROCESSING) for value in load_job("12345").values())
+    assert all(value == str(States.PROCESSING) for value in load_job_samples("12345").values())
 
 
 def test_sync_failed(requireMocking):
@@ -190,7 +190,7 @@ def test_sync_failed(requireMocking):
             }
         )}, {})
 
-        assert load_job("12345")['abc_{}'.format(i)] == "scheduled"
+        assert load_job_samples("12345")['abc_{}'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
         tm.get_tracking_table().put_item(Item=
         {
@@ -258,4 +258,4 @@ def test_sync_failed(requireMocking):
 
     sync(job="12345")
 
-    assert all(value == str(States.FAILED) for value in load_job("12345").values())
+    assert all(value == str(States.FAILED) for value in load_job_samples("12345").values())

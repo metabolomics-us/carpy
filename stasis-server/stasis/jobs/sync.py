@@ -1,9 +1,5 @@
-from typing import Optional
-
-from boto3.dynamodb.conditions import Key
-
 from stasis.jobs.states import States
-from stasis.tables import TableManager, load_job, set_job_state, get_tracked_state
+from stasis.tables import load_job_samples, set_sample_job_state, get_tracked_state
 
 
 def sync(job: str):
@@ -13,7 +9,7 @@ def sync(job: str):
 
     # 1. load job definition
 
-    job_definition = load_job(job=job)
+    job_definition = load_job_samples(job=job)
 
     if job_definition is not None:
 
@@ -29,11 +25,11 @@ def sync(job: str):
                 pass
             # if state is exported -> set state to processed
             elif stasis_state == "exported" or stasis_state == "finished":
-                set_job_state(job=job, sample=sample, state=States.PROCESSED)
+                set_sample_job_state(job=job, sample=sample, state=States.PROCESSED)
             # if state is failed -> set state to failed
             elif stasis_state == "failed":
-                set_job_state(job=job, sample=sample, state=States.FAILED)
+                set_sample_job_state(job=job, sample=sample, state=States.FAILED)
             # else set state to processing
             else:
-                set_job_state(job=job, sample=sample, state=States.PROCESSING)
+                set_sample_job_state(job=job, sample=sample, state=States.PROCESSING)
 

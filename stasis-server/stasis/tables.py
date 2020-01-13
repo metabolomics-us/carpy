@@ -296,14 +296,17 @@ class TableManager:
         return new_result
 
 
-def set_job_state(sample: str, job: str, state: States):
+def set_sample_job_state(sample: str, job: str, state: States, reason: Optional[str] = None):
     """
     sets the state in the job table for the given sample and job
     """
-    return _set_job_state(body={"job": job, "sample": sample, "state": str(state)})
+    if reason is None:
+        return _set_sample_job_state(body={"job": job, "sample": sample, "state": str(state)})
+    else:
+        return _set_sample_job_state(body={"job": job, "sample": sample, "state": str(state), "reason": str(reason)})
 
 
-def _set_job_state(body: dict):
+def _set_sample_job_state(body: dict):
     pass
     timestamp = int(time.time() * 1000)
 
@@ -339,7 +342,7 @@ def _set_job_state(body: dict):
     return saved
 
 
-def load_job(job: str) -> Optional[dict]:
+def load_job_samples(job: str) -> Optional[dict]:
     """
     loads the job from the job table for the given name
     """
