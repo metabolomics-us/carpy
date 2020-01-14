@@ -54,6 +54,7 @@ def requireMocking():
     os.environ["targetTable"] = "CarrotTargetTable"
     os.environ["dataBucket"] = "data-carrot"
     os.environ["jobTrackingTable"] = "UnitJobTrackingTable"
+    os.environ["jobStateTable"] = "UnitJobStateTable"
 
     dynamodb = boto3.resource('dynamodb')
 
@@ -89,7 +90,7 @@ def create_cluster():
                 'memory': 10,
             },
         ],
-        family='test-carrot-runner',
+        family='carrot-runner',
         taskRoleArn='',
         volumes=[
         ],
@@ -109,7 +110,7 @@ def create_cluster():
                 'memory': 10,
             },
         ],
-        family='test-secure-carrot-runner',
+        family='secure-carrot-runner',
         taskRoleArn='',
         volumes=[],
     )

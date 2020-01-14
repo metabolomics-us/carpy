@@ -15,7 +15,80 @@ class TableManager:
     def __init__(self):
         self.db = boto3.resource('dynamodb', 'us-west-2')
 
-    def get_job_table(self):
+    def get_job_state_table(self):
+        """
+            provides access to the table and if it doesn't exists
+            creates it for us
+        :return:
+        """
+
+        table_name = os.environ['jobStateTable']
+        existing_tables = boto3.client('dynamodb').list_tables()['TableNames']
+
+        if table_name not in existing_tables:
+            try:
+                print(self.db.create_table(
+                    TableName=os.environ["jobStateTable"],
+                    KeySchema=[
+                        {
+                            'AttributeName': 'id',
+                            'KeyType': 'HASH'
+                        },
+                        {
+                            'AttributeName': 'job',
+                            'KeyType': 'RANGE'
+                        }
+                    ],
+                    AttributeDefinitions=[
+                        {
+                            'AttributeName': 'id',
+                            'AttributeType': 'S'
+                        },
+                        {
+                            'AttributeName': 'job',
+                            'AttributeType': 'S'
+                        },
+
+                    ],
+                    ProvisionedThroughput={
+                        'ReadCapacityUnits': 10,
+                        'WriteCapacityUnits': 5
+                    },
+                    GlobalSecondaryIndexes=[
+                        {
+                            'IndexName': 'job-id-index',
+                            'KeySchema': [
+                                {
+                                    'AttributeName': 'job',
+                                    'KeyType': 'HASH'
+                                },
+                                {
+                                    'AttributeName': 'id',
+                                    'KeyType': 'RANGE'
+                                }
+                            ],
+                            'Projection': {
+                                'ProjectionType': 'ALL'
+                            },
+                            'ProvisionedThroughput': {
+                                'ReadCapacityUnits': 10,
+                                'WriteCapacityUnits': 5
+                            }
+                        }
+                    ]
+                ))
+            except ResourceInUseException as e:
+                print("table already exist, ignoring error {}".format(e))
+                pass
+            except ValidationException as ex:
+                raise ex
+            except Exception as ex:
+                print("table already exist, ignoring error {}".format(ex))
+                pass
+
+        return self.db.Table(table_name)
+
+    def get_job_sample_state_table(self):
         """
             provides access to the table and if it doesn't exists
             creates it for us
@@ -296,6 +369,95 @@ class TableManager:
         return new_result
 
 
+def update_job_state(job: str, state: States, reason: Optional[str] = None):
+    """
+    updates the state of a job
+    """
+
+    tm = TableManager()
+    trktable = tm.get_job_state_table()
+
+    result = trktable.query(
+        KeyConditionExpression=Key('id').eq(job)
+    )
+
+    if "Items" in result and len(result['Items']) > 0:
+        item = result['Items'][0]
+        old_state = item['state']
+
+        item['state'] = str(state)
+
+        if 'durations' not in item:
+            item['durations'] = {}
+
+        ts = time.time() * 1000
+        item['durations']["{}->{}".format(old_state, item['state'])] = {
+            "seconds": (float(ts) - float(item['timestamp'])) / 1000,
+            "state_previous": old_state,
+            "state_current": item['state']
+        }
+        item['timestamp'] = ts
+        item["reason"] = reason
+
+        body = tm.sanitize_json_for_dynamo(item)
+        saved = trktable.put_item(Item=body)  # save or update our item
+
+        saved = saved['ResponseMetadata']
+
+        saved['statusCode'] = saved['HTTPStatusCode']
+
+
+def set_job_state(job: str, env: str, method: str, profile: str, task_version: int, state: States,
+                  reason: Optional[str] = None):
+    """
+    sets the state in the job table for the given sample and job
+    """
+    if reason is None:
+        return _set_job_state(
+            body={"job": job, "id": job, "state": str(state), "task_version": int(task_version), "method": method,
+                  "profile": profile, "env": env})
+    else:
+        return _set_job_state(
+            body={"job": job, "id": job, "state": str(state), "task_version": int(task_version), "method": method,
+                  "profile": profile, "reason": str(reason), "env": env})
+
+
+def get_job_state(job: str) -> Optional[States]:
+    """
+    returns the state of the job
+    """
+    tm = TableManager()
+    trktable = tm.get_job_state_table()
+
+    result = trktable.query(
+        KeyConditionExpression=Key('id').eq(job)
+    )
+
+    if "Items" in result and len(result['Items']) > 0:
+        item = result['Items'][0]
+        return States[item['state'].upper()]
+    else:
+        return None
+
+
+def _set_job_state(body: dict):
+    pass
+    timestamp = int(time.time() * 1000)
+
+    body['timestamp'] = timestamp
+    tm = TableManager()
+    t = tm.get_job_state_table()
+
+    body = tm.sanitize_json_for_dynamo(body)
+    saved = t.put_item(Item=body)  # save or update our item
+
+    saved = saved['ResponseMetadata']
+
+    saved['statusCode'] = saved['HTTPStatusCode']
+
+    return saved
+
+
 def set_sample_job_state(sample: str, job: str, state: States, reason: Optional[str] = None):
     """
     sets the state in the job table for the given sample and job
@@ -313,7 +475,7 @@ def _set_sample_job_state(body: dict):
     body['timestamp'] = timestamp
     tm = TableManager()
     body['id'] = tm.generate_job_id(body['job'], body['sample'])
-    trktable = tm.get_job_table()
+    trktable = tm.get_job_sample_state_table()
 
     result = trktable.query(
         KeyConditionExpression=Key('id').eq(body['id'])
@@ -348,7 +510,7 @@ def load_job_samples(job: str) -> Optional[dict]:
     """
 
     tm = TableManager()
-    table = tm.get_job_table()
+    table = tm.get_job_sample_state_table()
 
     query_params = {
         'IndexName': 'job-id-index',

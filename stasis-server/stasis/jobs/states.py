@@ -12,6 +12,7 @@ class States(Enum):
     AGGREGATING = "aggregating",
     AGGREGATED = "aggregated",
     FAILED = "failed",
+    AGGREGATION_SCHEDULED = "aggregation_scheduled"
     DONE = "done"
 
     def __str__(self):

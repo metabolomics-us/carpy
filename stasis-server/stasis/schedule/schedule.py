@@ -69,7 +69,6 @@ def schedule_to_queue(body):
         QueueUrl=arn,
         MessageBody=json.dumps({'default': serialized}),
     )
-    print(result)
     return {
         'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
         'headers': __HTTP_HEADERS__,
@@ -217,13 +216,9 @@ def schedule_to_fargate(event, context):
         }]}
 
         version = '1'
-        task_name = 'carrot-runner'
-
+        task_name = 'secure-carrot-runner'
         if 'task_version' in body:
             version = body["task_version"]
-
-        if 'secured' in body and body['secured']:
-            task_name = 'secure-carrot-runner'
 
         print('utilizing taskDefinition: {}:{}'.format(task_name, version))
 

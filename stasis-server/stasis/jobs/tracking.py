@@ -26,7 +26,7 @@ def get(event, context):
         if 'sample' in parameters and 'job' in parameters:
             tm = TableManager()
             id = tm.generate_job_id(parameters['job'], parameters['sample'])
-            table = tm.get_job_table()
+            table = tm.get_job_sample_state_table()
 
             result = table.query(
                 KeyConditionExpression=Key('id').eq(id)
@@ -61,7 +61,7 @@ def status(event, context):
         if 'job' in parameters:
             job = parameters['job']
             tm = TableManager()
-            table = tm.get_job_table()
+            table = tm.get_job_sample_state_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
@@ -113,7 +113,7 @@ def description(event, context):
         if 'job' in parameters:
             job = parameters['job']
             tm = TableManager()
-            table = tm.get_job_table()
+            table = tm.get_job_sample_state_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
@@ -156,7 +156,7 @@ def job_can_aggregate(event, context):
         if 'job' in parameters:
             job = parameters['job']
             tm = TableManager()
-            table = tm.get_job_table()
+            table = tm.get_job_sample_state_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
@@ -208,7 +208,7 @@ def job_is_done(event, context):
         if 'job' in parameters:
             job = parameters['job']
             tm = TableManager()
-            table = tm.get_job_table()
+            table = tm.get_job_sample_state_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
