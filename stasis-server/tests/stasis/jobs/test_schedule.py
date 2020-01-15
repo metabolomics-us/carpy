@@ -2,7 +2,7 @@ import json
 
 from stasis.jobs.schedule import schedule_job, monitor_jobs
 from stasis.jobs.states import States
-from stasis.schedule.schedule import monitor_queue
+from stasis.schedule.schedule import monitor_processing_queue
 from stasis.tables import load_job_samples, get_tracked_state, get_job_state
 from stasis.tracking import create
 
@@ -33,7 +33,7 @@ def test_schedule_job(requireMocking):
     for k, v in job.items():
         assert v == 'scheduled'
 
-    monitor_queue({}, {})
+    monitor_processing_queue({}, {})
 
     # synchronize the job and sample tracking table
     monitor_jobs({}, {})
@@ -60,7 +60,7 @@ def test_schedule_job(requireMocking):
         assert get_tracked_state(k) == "finished"
         assert v == 'processed'
 
-    # we should now have an aggregation scheduled
+    # we should now be in the aggregation state
     assert get_job_state("test_job") == States.AGGREGATION_SCHEDULED
 
     # simulate the receiving of an aggregation event

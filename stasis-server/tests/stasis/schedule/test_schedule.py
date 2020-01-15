@@ -3,6 +3,28 @@ import time
 import simplejson as json
 
 from stasis.schedule import schedule as s
+from stasis.schedule.schedule import SECURE_CARROT_RUNNER, MAX_FARGATE_TASKS, MAX_FARGATE_TASKS_BY_SERVICE
+
+
+def test_current_tasks(requireMocking):
+    jsonString = json.dumps(
+        {'secured': True, 'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms', 'task_version': 1})
+
+    response = s.schedule({'body': jsonString}, {})
+    response = s.schedule({'body': jsonString}, {})
+    response = s.schedule({'body': jsonString}, {})
+    response = s.schedule({'body': jsonString}, {})
+    response = s.schedule({'body': jsonString}, {})
+
+    assert 'isBase64Encoded' in response
+    assert 200 == response['statusCode']
+    assert 'secured' in response['body']
+    assert json.loads(response['body'])['secured'] == True
+
+    s.monitor_processing_queue({}, {})
+    print(s.current_tasks({}, {}))
+
+    assert len(json.loads(s.current_tasks({}, {})['body'])['tasks']) == 5
 
 
 def test_scheduled_task_size(requireMocking):
@@ -13,7 +35,7 @@ def test_schedule(requireMocking):
     timestamp = int(time.time() * 1000)
 
     jsonString = json.dumps(
-        {'secured': True, 'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms'})
+        {'secured': True, 'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms', 'task_version': 1})
 
     response = s.schedule({'body': jsonString}, {})
 
@@ -22,4 +44,20 @@ def test_schedule(requireMocking):
     assert 'secured' in response['body']
     assert json.loads(response['body'])['secured'] == True
 
-    s.monitor_queue({}, {})
+    s.monitor_processing_queue({}, {})
+
+
+def test__free_task_count_no_service(requireMocking):
+    jsonString = json.dumps(
+        {'secured': True, 'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms', 'task_version': 1})
+
+    for x in range(1, MAX_FARGATE_TASKS_BY_SERVICE[SECURE_CARROT_RUNNER]+1):
+        response = s.schedule({'body': jsonString}, {})
+        s.monitor_processing_queue({}, {})
+        assert s._free_task_count() == MAX_FARGATE_TASKS - x
+        assert s._free_task_count(service=SECURE_CARROT_RUNNER) == MAX_FARGATE_TASKS_BY_SERVICE[
+            SECURE_CARROT_RUNNER] - x
+
+    assert s._free_task_count(service=SECURE_CARROT_RUNNER) == 0
+    assert s._free_task_count() == MAX_FARGATE_TASKS - MAX_FARGATE_TASKS_BY_SERVICE[
+        SECURE_CARROT_RUNNER]

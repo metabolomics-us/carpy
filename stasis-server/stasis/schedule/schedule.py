@@ -1,5 +1,6 @@
 import os
 import traceback
+from typing import Optional
 
 import simplejson as json
 from jsonschema import validate
@@ -8,7 +9,16 @@ from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __SCHEDULE__
 from stasis.tracking.create import create
 
-MAX_FARGATE_TASKS = 50
+SECURE_CARROT_RUNNER = 'secure-carrot-runner'
+SECURE_CARROT_AGGREGATOR = 'secure-carrot-aggregator'
+
+MAX_FARGATE_TASKS_BY_SERVICE = {
+    SECURE_CARROT_RUNNER: 40,
+    SECURE_CARROT_AGGREGATOR: 10
+
+}
+
+MAX_FARGATE_TASKS = sum(MAX_FARGATE_TASKS_BY_SERVICE.values())
 
 
 def scheduled_queue_size(event, context):
@@ -20,6 +30,48 @@ def scheduled_queue_size(event, context):
     """
 
 
+def current_tasks(event, context):
+    """
+    returns all the currently running tasks
+    :param event:
+    :param context:
+    :return:
+    """
+
+    tasks = _current_tasks()
+
+    return {
+        'body': json.dumps({'tasks': tasks}),
+        'statusCode': 200,
+        'headers': __HTTP_HEADERS__
+    }
+
+
+def _current_tasks():
+    """
+    a list of all current tasks in the system
+    :return:
+    """
+    import boto3
+    client = boto3.client('ecs')
+    result = client.list_tasks(cluster='carrot')['taskArns']
+
+    if len(result) > 0:
+        desc = client.describe_tasks(cluster="carrot", tasks=result)
+        tasks = []
+        if 'tasks' in desc:
+            for task in desc['tasks']:
+                name = task['taskDefinitionArn'].split(':')[-2].split("/")[-1]
+
+                tasks.append({
+                    "name": name,
+                    "state": task['lastStatus']
+                })
+        return tasks
+    else:
+        return []
+
+
 def scheduled_task_size(event, context):
     """
 
@@ -29,15 +81,10 @@ def scheduled_task_size(event, context):
     :param context:
     :return:
     """
+    total_count = len(_current_tasks())
 
-    import boto3
-    client = boto3.client('ecs')
-
-    result = len(client.list_tasks(cluster='carrot')['taskArns'])
-
-    print(result)
     return {
-        'body': json.dumps({'count': result}),
+        'body': json.dumps({'count': total_count}),
         'statusCode': 200,
         'headers': __HTTP_HEADERS__
     }
@@ -77,22 +124,34 @@ def schedule_to_queue(body):
     }
 
 
-def _free_task_count() -> int:
-    # 1. check fargate queue
+def _free_task_count(service: Optional[str] = None) -> int:
+    """
+    reports the free task count by either
+    :param service:
+    :return:
+    """
+    tasks = _current_tasks()
 
-    import boto3
-    client = boto3.client('ecs')
+    if service is None:
 
-    result = len(client.list_tasks(cluster='carrot')['taskArns'])
+        result = len(tasks)
 
-    if result > (MAX_FARGATE_TASKS - 1):
-        print("fargate queue was full, no scheduling possible")
-        return 0
+        if result > (MAX_FARGATE_TASKS - 1):
+            print("fargate queue was full, no scheduling possible")
+            return 0
+        else:
+            return MAX_FARGATE_TASKS - result
     else:
-        return MAX_FARGATE_TASKS - result
+        filtered_tasks = list(filter(lambda d: d['name'] == service, tasks))
+        result = len(filtered_tasks)
+        if result > (MAX_FARGATE_TASKS_BY_SERVICE[service] - 1):
+            print("fargate queue was full for service {}, no scheduling possible".format(service))
+            return 0
+        else:
+            return MAX_FARGATE_TASKS_BY_SERVICE[service] - result
 
 
-def monitor_queue(event, context):
+def monitor_processing_queue(event, context):
     """
     monitors the fargate queue and if task size is less than < x it will
     try to schedule new tasks. This should be called from cron or another
@@ -109,7 +168,7 @@ def monitor_queue(event, context):
     # if topic exists, we just reuse it
     arn = _get_queue(client)
 
-    slots = _free_task_count()
+    slots = _free_task_count(service=SECURE_CARROT_RUNNER)
 
     if slots == 0:
         return {
@@ -155,7 +214,7 @@ def monitor_queue(event, context):
             body = json.loads(message['Body'])['default']
             # print("schedule: {}".format(body))
             try:
-                result.append(schedule_to_fargate({'body': body}, {}))
+                result.append(schedule_processing_to_fargate({'body': body}, {}))
                 client.delete_message(
                     QueueUrl=arn,
                     ReceiptHandle=receipt_handle
@@ -178,7 +237,7 @@ def monitor_queue(event, context):
         }
 
 
-def schedule_to_fargate(event, context):
+def schedule_processing_to_fargate(event, context):
     """
     submits a new task to the cluster - a fargate task will run it
     :param event:
@@ -216,7 +275,7 @@ def schedule_to_fargate(event, context):
         }]}
 
         version = '1'
-        task_name = 'secure-carrot-runner'
+        task_name = SECURE_CARROT_RUNNER
         if 'task_version' in body:
             version = body["task_version"]
 
