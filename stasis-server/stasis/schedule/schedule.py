@@ -9,6 +9,7 @@ from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __SCHEDULE__
 from stasis.tracking.create import create
 
+SERVICE = "stasis-service"
 MESSAGE_BUFFER = 10
 SECURE_CARROT_RUNNER = 'secure-carrot-runner'
 SECURE_CARROT_AGGREGATOR = 'secure-carrot-aggregator'
@@ -99,11 +100,13 @@ def schedule(event, context):
     :return:
     """
     body = json.loads(event['body'])
-    return schedule_to_queue(body)
+    return schedule_to_queue(body, service=SECURE_CARROT_RUNNER)
 
 
-def schedule_to_queue(body):
+def schedule_to_queue(body, service: str):
     body['secured'] = True
+    body[SERVICE] = service
+
     if 'task_version' not in body:
         body['task_version'] = 164
     # get topic refrence
@@ -118,7 +121,6 @@ def schedule_to_queue(body):
         MessageBody=json.dumps({'default': serialized}),
     )
 
-    print(result)
     return {
         'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
         'headers': __HTTP_HEADERS__,
@@ -154,7 +156,11 @@ def _free_task_count(service: Optional[str] = None) -> int:
             return MAX_FARGATE_TASKS_BY_SERVICE[service] - result
 
 
-def monitor_processing_queue(event, context):
+def schedule_aggregation_to_fargate(param, param1):
+    pass
+
+
+def monitor_queue(event, context):
     """
     monitors the fargate queue and if task size is less than < x it will
     try to schedule new tasks. This should be called from cron or another
@@ -171,7 +177,7 @@ def monitor_processing_queue(event, context):
     # if topic exists, we just reuse it
     arn = _get_queue(client)
 
-    slots = _free_task_count(service=SECURE_CARROT_RUNNER)
+    slots = _free_task_count()
 
     if slots == 0:
         return {
@@ -214,16 +220,34 @@ def monitor_processing_queue(event, context):
         for message in messages:
             receipt_handle = message['ReceiptHandle']
             # print("current message: {}".format(message))
-            body = json.loads(message['Body'])['default']
+            body = json.loads(json.loads(message['Body'])['default'])
             # print("schedule: {}".format(body))
             try:
-                result.append(schedule_processing_to_fargate({'body': body}, {}))
-                client.delete_message(
-                    QueueUrl=arn,
-                    ReceiptHandle=receipt_handle
-                )
+
+                slots = _free_task_count(service=body[SERVICE])
+
+                if slots > 0:
+                    if body[SERVICE] == SECURE_CARROT_RUNNER:
+                        result.append(schedule_processing_to_fargate({'body': json.dumps(body)}, {}))
+                    elif body[SERVICE] == SECURE_CARROT_AGGREGATOR:
+                        result.append(schedule_aggregation_to_fargate({'body': json.dumps(body)}, {}))
+                    else:
+                        raise Exception("unknown service specified: {}".format(body[SERVICE]))
+
+                    client.delete_message(
+                        QueueUrl=arn,
+                        ReceiptHandle=receipt_handle
+                    )
+                else:
+                    # nothing found
+                    pass
             except Exception as e:
-                return
+                return {
+                    'statusCode': 503,
+                    'headers': __HTTP_HEADERS__,
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'scheduled': len(result), 'errors': str(e)})
+                }
         return {
             'statusCode': 200,
             'headers': __HTTP_HEADERS__,
@@ -249,7 +273,6 @@ def schedule_processing_to_fargate(event, context):
     """
     body = json.loads(event['body'])
 
-    print(body)
     try:
 
         validate(body, __SCHEDULE__)

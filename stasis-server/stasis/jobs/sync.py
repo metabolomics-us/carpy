@@ -51,9 +51,12 @@ def sync(job: str) -> Optional[States]:
                 set_sample_job_state(job=job, sample=sample, state=States.PROCESSING)
                 states.append(States.PROCESSING)
 
+        if len(states) == 0:
+            # bigger issue nothing found to synchronize
+            return None
         # 4. sync general job state
         # if any in state processing => set job state to processing
-        if States.PROCESSING in states:
+        elif States.PROCESSING in states:
             update_job_state(job=job, state=States.PROCESSING)
             return States.PROCESSING
         elif States.SCHEDULED in states:

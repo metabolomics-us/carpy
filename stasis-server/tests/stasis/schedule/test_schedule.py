@@ -21,7 +21,7 @@ def test_current_tasks(requireMocking):
     assert 'secured' in response['body']
     assert json.loads(response['body'])['secured'] == True
 
-    s.monitor_processing_queue({}, {})
+    s.monitor_queue({}, {})
     print(s.current_tasks({}, {}))
 
     assert len(json.loads(s.current_tasks({}, {})['body'])['tasks']) == 5
@@ -44,7 +44,7 @@ def test_schedule(requireMocking):
     assert 'secured' in response['body']
     assert json.loads(response['body'])['secured'] == True
 
-    s.monitor_processing_queue({}, {})
+    s.monitor_queue({}, {})
 
 
 def test__free_task_count_no_service(requireMocking):
@@ -53,7 +53,7 @@ def test__free_task_count_no_service(requireMocking):
 
     for x in range(1, MAX_FARGATE_TASKS_BY_SERVICE[SECURE_CARROT_RUNNER]+1):
         response = s.schedule({'body': jsonString}, {})
-        s.monitor_processing_queue({}, {})
+        s.monitor_queue({}, {})
         assert s._free_task_count() == MAX_FARGATE_TASKS - x
         assert s._free_task_count(service=SECURE_CARROT_RUNNER) == MAX_FARGATE_TASKS_BY_SERVICE[
             SECURE_CARROT_RUNNER] - x

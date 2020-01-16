@@ -4,7 +4,7 @@ import random
 
 from stasis.jobs.schedule import schedule_job, monitor_jobs
 from stasis.jobs.states import States
-from stasis.schedule.schedule import monitor_processing_queue, MESSAGE_BUFFER
+from stasis.schedule.schedule import monitor_queue, MESSAGE_BUFFER
 from stasis.tables import load_job_samples, get_tracked_state, get_job_state
 from stasis.tracking import create
 
@@ -57,7 +57,7 @@ def test_schedule_job(requireMocking):
     # in production this is driven by a timer
     # and so a none issue
     for x in range(0, math.ceil(len(job) / MESSAGE_BUFFER)):
-        monitor_processing_queue({}, {})
+        monitor_queue({}, {})
 
     # synchronize the job and sample tracking table
     monitor_jobs({}, {})
