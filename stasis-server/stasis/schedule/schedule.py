@@ -9,6 +9,7 @@ from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __SCHEDULE__
 from stasis.tracking.create import create
 
+MESSAGE_BUFFER = 10
 SECURE_CARROT_RUNNER = 'secure-carrot-runner'
 SECURE_CARROT_AGGREGATOR = 'secure-carrot-aggregator'
 
@@ -116,6 +117,8 @@ def schedule_to_queue(body):
         QueueUrl=arn,
         MessageBody=json.dumps({'default': serialized}),
     )
+
+    print(result)
     return {
         'statusCode': result['ResponseMetadata']['HTTPStatusCode'],
         'headers': __HTTP_HEADERS__,
@@ -179,7 +182,7 @@ def monitor_processing_queue(event, context):
 
     print("we have: {} slots free for tasks".format(slots))
 
-    message_count = slots if 0 < slots <= 10 else 10 if slots > 0 else 1
+    message_count = slots if 0 < slots <= MESSAGE_BUFFER else MESSAGE_BUFFER if slots > 0 else 1
     message = client.receive_message(
         QueueUrl=arn,
         AttributeNames=[

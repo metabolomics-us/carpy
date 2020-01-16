@@ -555,9 +555,10 @@ def get_tracked_state(sample: str) -> Optional[str]:
     """
 
     data = get_tracked_sample(sample)
-    states = data['status']
-    state = states[-1]
+
     if data is None:
         return None
     else:
+        states = data['status']
+        state = states[-1]
         return state['value']

@@ -92,7 +92,8 @@ def test_sync_processed(requireMocking):
 
     sync(job="12345")
 
-    assert all(value == str(States.PROCESSED) for value in load_job_samples("12345").values())
+    samples = load_job_samples("12345")
+    assert all(value == str(States.PROCESSED) for value in samples.values())
 
 
 def test_sync_currently_processing(requireMocking):

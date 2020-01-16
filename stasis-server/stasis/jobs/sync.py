@@ -15,48 +15,53 @@ def sync(job: str) -> Optional[States]:
     state = get_job_state(job=job)
 
     if state is None:
-        return None
+        update_job_state(job=job, state=States.SCHEDULED)
     elif state in [States.PROCESSED, States.AGGREGATED, States.AGGREGATED]:
         return state
-    else:
-        # 2. load job definition
-        job_definition = load_job_samples(job=job)
 
-        if job_definition is not None:
+    # 2. load job definition
+    job_definition = load_job_samples(job=job)
 
-            # 3. go over all samples
+    if job_definition is not None:
 
-            states = []
-            for sample, tracking_state in job_definition.items():
+        # 3. go over all samples
 
-                #  get state
-                stasis_state = get_tracked_state(sample=sample)
-                # if state is None -> ignore it doesn't exist
-                if stasis_state is None:
-                    print("sample for job {} not found in stasis: {}".format(job, sample))
-                    pass
-                # if state is exported -> set state to processed
-                elif stasis_state == "exported" or stasis_state == "finished":
-                    set_sample_job_state(job=job, sample=sample, state=States.PROCESSED)
-                    states.append(States.PROCESSED)
-                # if state is failed -> set state to failed
-                elif stasis_state == "failed":
-                    set_sample_job_state(job=job, sample=sample, state=States.FAILED)
-                    states.append(States.FAILED)
-                # else set state to processing
-                else:
-                    set_sample_job_state(job=job, sample=sample, state=States.PROCESSING)
-                    states.append(States.PROCESSING)
+        states = []
+        for sample, tracking_state in job_definition.items():
 
-            # 4. sync general job state
-            # if any in state processing => set job state to processing
-            if States.PROCESSING in states:
-                update_job_state(job=job, state=States.PROCESSING)
-                return States.PROCESSING
+            #  get state
+            stasis_state = get_tracked_state(sample=sample)
+            # if state is None -> ignore it doesn't exist
+            if stasis_state is None:
+                print("sample for job {} not found in stasis: {}".format(job, sample))
+                pass
+            # if state is exported -> set state to processed
+            elif stasis_state == "exported" or stasis_state == "finished":
+                set_sample_job_state(job=job, sample=sample, state=States.PROCESSED)
+                states.append(States.PROCESSED)
+            # if state is failed -> set state to failed
+            elif stasis_state == "failed":
+                set_sample_job_state(job=job, sample=sample, state=States.FAILED)
+                states.append(States.FAILED)
+            # else set state to processing
+            elif stasis_state == "scheduled":
+                set_sample_job_state(job=job, sample=sample, state=States.SCHEDULED)
+                states.append(States.SCHEDULED)
             else:
-                # if all are either failed or processed => set job state to processed
-                update_job_state(job=job, state=States.PROCESSED)
-                return States.PROCESSED
+                set_sample_job_state(job=job, sample=sample, state=States.PROCESSING)
+                states.append(States.PROCESSING)
 
+        # 4. sync general job state
+        # if any in state processing => set job state to processing
+        if States.PROCESSING in states:
+            update_job_state(job=job, state=States.PROCESSING)
+            return States.PROCESSING
+        elif States.SCHEDULED in states:
+            update_job_state(job=job, state=States.SCHEDULED)
         else:
-            return None
+            # if all are either failed or processed => set job state to processed
+            update_job_state(job=job, state=States.PROCESSED)
+            return States.PROCESSED
+
+    else:
+        return None
