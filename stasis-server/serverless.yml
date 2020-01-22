@@ -141,6 +141,8 @@ functions:
           path: result/{sample}
           method: get
           cors: true
+          documentation:
+            summary: downloads a data processing result 
           request:
             parameter:
               paths:
@@ -158,6 +160,8 @@ functions:
           private: true
           method: post
           cors: true
+          documentation:
+            summary: uploads a new data processing result.
 
     #defines to which topic we want to connect
     environment:
@@ -173,6 +177,8 @@ functions:
           private: true
           method: post
           cors: true
+          documentation:
+            summary: creates a new tracking record in the database for the given sample 
 
     #defines to which topic we want to connect
     environment:
@@ -188,6 +194,8 @@ functions:
           private: true
           method: get
           cors: true
+          documentation:
+            summary: loads the tracking information for this sample 
           request:
             parameter:
               paths:
@@ -207,6 +215,8 @@ functions:
           private: true
           method: delete
           cors: true
+          documentation:
+            summary: deletes the tracking information for the given sample 
           request:
             parameter:
               paths:
@@ -226,6 +236,8 @@ functions:
           method: get
           private: true
           cors: true
+          documentation:
+            summary: loads the complete experiment definition and this can time out for large experiments. we recommend to use the paginated approaches
           request:
             parameter:
               path:
@@ -235,6 +247,8 @@ functions:
           method: get
           cors: true
           private: true
+          documentation:
+            summary: fetches an experiment in paginated mode in the given page size 
           request:
             parameter:
               path:
@@ -245,6 +259,8 @@ functions:
           method: get
           cors: true
           private: true
+          documentation:
+            summary: iterative way to load an experiment definition. Based on the page size and the last fetched sample 
           request:
             parameter:
               path:
@@ -269,6 +285,8 @@ functions:
             parameter:
               paths:
                 sample: true
+          documentation:
+            summary: fetches the acquisition information for the given sample 
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -283,6 +301,8 @@ functions:
           method: post
           private: true
           cors: true
+          documentation:
+            summary: creates a new record with the given acquisition information 
 
     #defines to which topic we want to connect
     environment:
@@ -298,6 +318,8 @@ functions:
           private: true
           method: post
           cors: true
+          documentation:
+            summary: this generates an acquisition table based on past minix study data and should be avoided!
 
     #defines to which topic we want to connect
     environment:
@@ -313,26 +335,14 @@ functions:
           method: post
           private: true
           cors: true
+          documentation:
+            summary: schedules a new processing tasks to the queue
 
     #defines to which topic we want to connect
     environment:
       schedule_queue: ${self:custom.scheduleQueue}
 
-  #schedule data to stasis, for handling the processing on the backend
-  secure_schedule:
-    handler: stasis/schedule/schedule.secure_schedule
-    events:
-      - http:
-          path: secure_schedule
-          method: post
-          private: true
-          cors: true
-
-    #defines to which topic we want to connect
-    environment:
-      schedule_queue: ${self:custom.scheduleQueue}
-
-  #returns the count of scheduled tasks in the fargate cluster
+      #returns the count of scheduled tasks in the fargate cluster
   #no to be confused with the actual queue
   schedule_task_count:
     handler: stasis/schedule/schedule.scheduled_task_size
@@ -341,6 +351,8 @@ functions:
           path: schedule/cluster/count
           method: get
           cors: true
+          documentation:
+            summary: returns the current scheduled tasks size
 
   # monitors the schedule queue and submits data for calculation
   # to the fargate cluster
@@ -349,6 +361,8 @@ functions:
     events:
       - schedule:
           rate: rate(1 minute)
+          documentation:
+            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs.
     environment:
       schedule_queue: ${self:custom.scheduleQueue}
       trackingTable: ${self:custom.trackingTable}
@@ -363,6 +377,8 @@ functions:
           method: get
           private: true
           cors: true
+          documentation:
+            summary: returns all possible status names and their priority
 
     #defines to which topic we want to connect
     environment:
@@ -383,6 +399,8 @@ functions:
               paths:
                 method: true
                 mz_rt: false
+          documentation:
+            summary: loads all targets for the given method
       - http:
           path: target/{method}/{mz_rt}
           method: get
@@ -407,6 +425,8 @@ functions:
           private: true
           method: post
           cors: true
+          documentation:
+            summary: creates a new target
 
     #defines to which topic we want to connect
     environment:
@@ -421,11 +441,13 @@ functions:
           private: true
           method: put
           cors: true
+          documentation:
+            summary: updates a target
+
 
     #defines to which topic we want to connect
     environment:
       targetTable: ${self:custom.targetTable}
-
   #updates a target
   targetDelete:
     handler: stasis/target/delete.delete
@@ -440,6 +462,8 @@ functions:
               path:
                 method: true
                 mz_rt: true
+          documentation:
+            summary: deletes a target
 
     #defines to which topic we want to connect
     environment:
@@ -454,6 +478,8 @@ functions:
           private: true
           method: get
           cors: true
+          documentation:
+            summary: lists all available libraries 
 
     #defines to which topic we want to connect
     environment:
@@ -472,7 +498,10 @@ functions:
             parameter:
               paths:
                 sample: true
-    environment:
+           documentation:
+              summary: evaluates if a certain file exists
+
+   environment:
       dataBucket: ${self:custom.dataBucketName}
 
 
