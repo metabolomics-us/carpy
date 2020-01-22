@@ -144,7 +144,7 @@ functions:
           method: get
           cors: true
           documentation:
-            summary: downloads a data processing result 
+            summary: downloads a data processing result
           request:
             parameter:
               paths:
@@ -180,7 +180,7 @@ functions:
           method: post
           cors: true
           documentation:
-            summary: creates a new tracking record in the database for the given sample 
+            summary: creates a new tracking record in the database for the given sample
 
     #defines to which topic we want to connect
     environment:
@@ -197,7 +197,7 @@ functions:
           method: get
           cors: true
           documentation:
-            summary: loads the tracking information for this sample 
+            summary: loads the tracking information for this sample
           request:
             parameter:
               paths:
@@ -218,7 +218,7 @@ functions:
           method: delete
           cors: true
           documentation:
-            summary: deletes the tracking information for the given sample 
+            summary: deletes the tracking information for the given sample
           request:
             parameter:
               paths:
@@ -250,7 +250,7 @@ functions:
           cors: true
           private: true
           documentation:
-            summary: fetches an experiment in paginated mode in the given page size 
+            summary: fetches an experiment in paginated mode in the given page size
           request:
             parameter:
               path:
@@ -262,7 +262,7 @@ functions:
           cors: true
           private: true
           documentation:
-            summary: iterative way to load an experiment definition. Based on the page size and the last fetched sample 
+            summary: iterative way to load an experiment definition. Based on the page size and the last fetched sample
           request:
             parameter:
               path:
@@ -288,7 +288,7 @@ functions:
               paths:
                 sample: true
           documentation:
-            summary: fetches the acquisition information for the given sample 
+            summary: fetches the acquisition information for the given sample
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -304,7 +304,7 @@ functions:
           private: true
           cors: true
           documentation:
-            summary: creates a new record with the given acquisition information 
+            summary: creates a new record with the given acquisition information
 
     #defines to which topic we want to connect
     environment:
@@ -481,7 +481,7 @@ functions:
           method: get
           cors: true
           documentation:
-            summary: lists all available libraries 
+            summary: lists all available libraries
 
     #defines to which topic we want to connect
     environment:
@@ -500,10 +500,10 @@ functions:
             parameter:
               paths:
                 sample: true
-           documentation:
-              summary: evaluates if a certain file exists
+          documentation:
+            summary: evaluates if a certain file exists
 
-   environment:
+    environment:
       dataBucket: ${self:custom.dataBucketName}
 
 
@@ -512,7 +512,7 @@ functions:
     handler: jobs/tracking.create
     events:
       - http:
-          path: tracking
+          path: job/tracking
           private: true
           method: post
           cors: true
@@ -538,7 +538,7 @@ functions:
                 description: the sample id
                 required: true
 
-          path: tracking/{job}/{sample}
+          path: job/tracking/{job}/{sample}
           private: true
           method: get
           cors: true
@@ -605,7 +605,7 @@ functions:
     handler: jobs/schedule.schedule
     events:
       - http:
-          path: schedule
+          path: job/schedule
           method: post
           private: true
           cors: true
@@ -623,6 +623,3 @@ functions:
       # contains aggregation events
       aggregation_queue: ${self:custom.aggregationQueue}
 
-      ##
-      # contains processing events
-      processing_queue: ${self:custom.processingQueue}
