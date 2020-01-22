@@ -69,7 +69,7 @@ def test_schedule_job(requireMocking):
 
     # at this stage all jobs should be scheduled
     for k, v in job.items():
-        assert get_tracked_state(k) == "scheduled", "assertion failed for {} with state {}".format(k,v)
+        assert get_tracked_state(k) == "scheduled", "assertion failed for {} with state {}".format(k, v)
         assert v == 'scheduled'
 
         # force stasis to be now have some processing samples and some scheduled samples
@@ -100,9 +100,18 @@ def test_schedule_job(requireMocking):
         assert get_tracked_state(k) == "finished"
         assert v == 'processed'
 
+    # since AWS only allows to process 10 messages at a time and we have more than that
+    # this has to be called several times
+    # in production this is driven by a timer
+    # and so a none issue
+
+    for x in range(0, math.ceil(len(job) / MESSAGE_BUFFER)):
+        monitor_queue({}, {})
+
     # we should now have jobs in the state aggregation scheduled
     # this means the jobs should be in the aggregator queue
     # but not processed by fargate yet
-    assert get_job_state("test_job") == States.AGGREGATION_SCHEDULED
+    state = get_job_state("test_job")
+    assert States.AGGREGATION_SCHEDULED == state
 
     # simulate the receiving of an aggregation event

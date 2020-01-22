@@ -426,22 +426,23 @@ def get_job_state(job: str) -> Optional[States]:
     """
     returns the state of the job
     """
-    tm = TableManager()
-    trktable = tm.get_job_state_table()
+    try:
+        tm = TableManager()
+        trktable = tm.get_job_state_table()
 
-    result = trktable.query(
-        KeyConditionExpression=Key('id').eq(job)
-    )
+        result = trktable.query(
+            KeyConditionExpression=Key('id').eq(job)
+        )
 
-    if "Items" in result and len(result['Items']) > 0:
-        item = result['Items'][0]
-        return States[item['state'].upper()]
-    else:
-        return None
-
+        if "Items" in result and len(result['Items']) > 0:
+            item = result['Items'][0]
+            return States[item['state'].upper()]
+        else:
+            return None
+    except Exception as e:
+        raise e
 
 def _set_job_state(body: dict):
-    pass
     timestamp = int(time.time() * 1000)
 
     body['timestamp'] = timestamp

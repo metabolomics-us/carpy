@@ -1,13 +1,11 @@
 import json
-import os
 import traceback
 
 from jsonschema import validate
 
-from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
-from stasis.schedule.schedule import _get_queue, schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
 from stasis.schema import __JOB_SCHEMA__
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state
 

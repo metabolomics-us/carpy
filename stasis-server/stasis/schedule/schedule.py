@@ -6,7 +6,9 @@ import simplejson as json
 from jsonschema import validate
 
 from stasis.headers import __HTTP_HEADERS__
+from stasis.jobs.states import States
 from stasis.schema import __SCHEDULE__
+from stasis.tables import update_job_state
 from stasis.tracking.create import create
 
 SERVICE = "stasis-service"
@@ -157,7 +159,14 @@ def _free_task_count(service: Optional[str] = None) -> int:
 
 
 def schedule_aggregation_to_fargate(param, param1):
-    pass
+    assert 'body' in param, "please ensure you have a body set!"
+    assert 'job' in param['body'], "please ensure your body contains the job name"
+
+    try:
+        job = json.loads(param['body'])['job']
+        update_job_state(job=job, state=States.AGGREGATION_SCHEDULED)
+    except Exception as e:
+        raise e
 
 
 def monitor_queue(event, context):
