@@ -9,7 +9,7 @@ plugins:
 
 provider:
   name: aws
-  runtime: python3.6
+  runtime: python3.7
   region: us-west-2
 
   # simple security based on stages and api keys
@@ -67,6 +67,8 @@ custom:
   ###
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
+  jobStateTable: "StasisJobStateTable-${self:custom.stage}"
+  jobTrackingTable: "StasisJobTrackingTable-${self:custom.stage}"
   resultTable: "wcmc-data-stasis-result-${self:custom.stage}"
 
   ###
@@ -106,7 +108,7 @@ custom:
 
   pythonRequirements:
     dockerizePip: true
-    slim: true
+    slim: false
     noDeploy:
       - "boto3"
       - "botocore"
@@ -509,7 +511,7 @@ functions:
 
   #creates a new tracking record in the system
   job_tracking_create:
-    handler: jobs/tracking.create
+    handler: stasis/jobs/tracking.create
     events:
       - http:
           path: job/tracking
@@ -525,7 +527,7 @@ functions:
 
   #fetches an existing tracking record from the system
   job_tracking_get:
-    handler: jobs/tracking.get
+    handler: stasis/jobs/tracking.get
     events:
       - http:
           documentation:
@@ -554,7 +556,7 @@ functions:
 
   # computes the current state of the given job
   job_tracking_status:
-    handler: job/tracking.status
+    handler: stasis/job/tracking.status
     events:
       - http:
           path: job/status/{job}
@@ -578,7 +580,7 @@ functions:
 
   # computes the complete job
   job_description:
-    handler: job/tracking.description
+    handler: stasis/job/tracking.description
     events:
       - http:
           path: job/{job}
@@ -602,7 +604,7 @@ functions:
 
   #schedule data to for handling the processing and aggregation on the backend
   job_schedule:
-    handler: jobs/schedule.schedule
+    handler: stasis/jobs/schedule.schedule_job
     events:
       - http:
           path: job/schedule
@@ -623,3 +625,6 @@ functions:
       # contains aggregation events
       aggregation_queue: ${self:custom.aggregationQueue}
 
+      jobStateTable: ${self:custom.jobStateTable}
+
+      jobTrackingTable: ${self:custom.jobTrackingTable}

@@ -442,6 +442,7 @@ def get_job_state(job: str) -> Optional[States]:
     except Exception as e:
         raise e
 
+
 def _set_job_state(body: dict):
     timestamp = int(time.time() * 1000)
 

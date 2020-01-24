@@ -109,8 +109,6 @@ def schedule_to_queue(body, service: str):
     body['secured'] = True
     body[SERVICE] = service
 
-    if 'task_version' not in body:
-        body['task_version'] = 164
     # get topic refrence
     import boto3
     client = boto3.client('sqs')

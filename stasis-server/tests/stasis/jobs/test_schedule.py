@@ -46,8 +46,9 @@ def test_schedule_job(requireMocking):
         "env": "test"
     }
 
-    schedule_job({'body': json.dumps(job)}, {})
+    result = schedule_job({'body': json.dumps(job)}, {})
 
+    assert json.loads(result['body'])['state'] == str(States.SCHEDULED)
     job = load_job_samples(job="test_job")
     for k, v in job.items():
         assert v == 'scheduled'

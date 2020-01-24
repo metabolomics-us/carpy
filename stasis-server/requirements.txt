@@ -9,3 +9,4 @@ pytest
 boltons
 moto
 simplejson
+importlib_metadata

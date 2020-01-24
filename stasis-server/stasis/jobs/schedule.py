@@ -9,6 +9,8 @@ from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SE
 from stasis.schema import __JOB_SCHEMA__
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state
 
+from stasis.headers import __HTTP_HEADERS__
+
 
 def schedule_job(event, context):
     """
@@ -32,7 +34,7 @@ def schedule_job(event, context):
 
         # store actual job in the job table with state scheduled
         set_job_state(job=job_id, method=method, env=env_, profile=profile, task_version=task_version,
-                      state=States.SCHEDULED)
+                      state=States.SCHEDULING)
         for sample in samples:
             try:
                 schedule_to_queue({
@@ -54,12 +56,37 @@ def schedule_job(event, context):
                     state=States.FAILED,
                     reason=str(e)
                 )
+        set_job_state(job=job_id, method=method, env=env_, profile=profile, task_version=task_version,
+                      state=States.SCHEDULED)
 
+        return {
+
+            'body': json.dumps({'state': str(States.SCHEDULED), 'job': job_id}),
+
+            'statusCode': 200,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
     except Exception as e:
         # update job state in the system to failed with the related reason
         set_job_state(job=job_id, method=method, env=env_, profile=profile, task_version=task_version,
                       state=States.FAILED, reason=str(e))
-        raise e
+
+        traceback.print_exc()
+        return {
+
+            'body': json.dumps({'state': str(States.FAILED), 'job': job_id, 'reason': str(e)}),
+
+            'statusCode': 500,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
 
 
 def monitor_jobs(event, context):
