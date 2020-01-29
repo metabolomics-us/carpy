@@ -37,13 +37,12 @@ provider:
       Action:
         - ecs:RunTask
         - ecs:ListTasks
+        - ecs:DescribeTasks
       Resource: "*"
     - Effect: Allow
       Action:
         - iam:PassRole
       Resource: "*"
-
-
 
   memorySize: 128
   timeout: 90
@@ -134,7 +133,56 @@ package:
 # this section defines all lambda function and triggers
 ############################################################################################
 functions:
+  #no to be confused with the actual queue
+  fargate_count:
+    handler: stasis/schedule/schedule.scheduled_task_size
+    events:
+      - http:
+          path: schedule/cluster/count
+          method: get
+          cors: true
+          documentation:
+            summary: returns the current scheduled tasks size
 
+  fargate_processing_monitor:
+    handler: stasis/schedule/schedule.monitor_queue
+    events:
+      - schedule:
+          rate: rate(1 minute)
+          documentation:
+            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs.
+    environment:
+      schedule_queue: ${self:custom.scheduleQueue}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+  fargate_job_monitor:
+    handler: stasis/jobs/schedule.monitor_jobs
+    events:
+      - schedule:
+          rate: rate(5 minutes)
+          documentation:
+            summary: monitors and synchronizes job states
+    environment:
+      schedule_queue: ${self:custom.scheduleQueue}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+  fargate_tasks:
+    handler: stasis/schedule/schedule.current_tasks
+    events:
+      - http:
+          private: true
+          path: schedule/cluster/tasks
+          method: get
+          cors: true
+          documentation:
+            summary: returns all currently pending tasks
 
   #fetches an result record
   resultGet:
@@ -347,30 +395,6 @@ functions:
       schedule_queue: ${self:custom.scheduleQueue}
 
       #returns the count of scheduled tasks in the fargate cluster
-  #no to be confused with the actual queue
-  schedule_task_count:
-    handler: stasis/schedule/schedule.scheduled_task_size
-    events:
-      - http:
-          path: schedule/cluster/count
-          method: get
-          cors: true
-          documentation:
-            summary: returns the current scheduled tasks size
-
-  # monitors the schedule queue and submits data for calculation
-  # to the fargate cluster
-  schedule_monitor:
-    handler: stasis/schedule/schedule.monitor_queue
-    events:
-      - schedule:
-          rate: rate(1 minute)
-          documentation:
-            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs.
-    environment:
-      schedule_queue: ${self:custom.scheduleQueue}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
 
   # fetches the list of tracking statuses
   statusGet:
@@ -524,7 +548,8 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
-
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
   #fetches an existing tracking record from the system
   job_tracking_get:
     handler: stasis/jobs/tracking.get
@@ -553,10 +578,11 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
-
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
   # computes the current state of the given job
   job_tracking_status:
-    handler: stasis/job/tracking.status
+    handler: stasis/jobs/tracking.status
     events:
       - http:
           path: job/status/{job}
@@ -577,10 +603,11 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
-
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
   # computes the complete job
   job_description:
-    handler: stasis/job/tracking.description
+    handler: stasis/jobs/tracking.description
     events:
       - http:
           path: job/{job}
@@ -601,7 +628,8 @@ functions:
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
-
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
   #schedule data to for handling the processing and aggregation on the backend
   job_schedule:
     handler: stasis/jobs/schedule.schedule_job
@@ -624,7 +652,5 @@ functions:
       ##
       # contains aggregation events
       aggregation_queue: ${self:custom.aggregationQueue}
-
       jobStateTable: ${self:custom.jobStateTable}
-
       jobTrackingTable: ${self:custom.jobTrackingTable}

@@ -13,12 +13,12 @@ def test_sync_processed(requireMocking):
         tracking.create({'body': json.dumps(
             {
                 "job": "12345",
-                "sample": "abc_{}".format(i),
+                "sample": "abc_{}.mzml".format(i),
                 "state": "scheduled"
             }
         )}, {})
 
-        assert load_job_samples("12345")['abc_{}'.format(i)] == "scheduled"
+        assert load_job_samples("12345")['abc_{}.mzml'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
         tm.get_tracking_table().put_item(Item=
         {
@@ -103,12 +103,12 @@ def test_sync_currently_processing(requireMocking):
         tracking.create({'body': json.dumps(
             {
                 "job": "12345",
-                "sample": "abc_{}".format(i),
+                "sample": "abc_{}.mzml".format(i),
                 "state": "scheduled"
             }
         )}, {})
 
-        assert load_job_samples("12345")['abc_{}'.format(i)] == "scheduled"
+        assert load_job_samples("12345")['abc_{}.mzml'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
         tm.get_tracking_table().put_item(Item=
         {
@@ -197,7 +197,7 @@ def test_sync_failed(requireMocking):
         {
             "experiment": "12345",
             "id": "abc_{}".format(i),
-            "sample": "abc_{}".format(i),
+            "sample": "abc_{}.mzml".format(i),
             "status": [
                 {
                     "fileHandle": "abc_{}.d".format(i),

@@ -25,15 +25,6 @@ MAX_FARGATE_TASKS_BY_SERVICE = {
 MAX_FARGATE_TASKS = sum(MAX_FARGATE_TASKS_BY_SERVICE.values())
 
 
-def scheduled_queue_size(event, context):
-    """
-    returns the size of the current queue, utilized for scheduling
-    :param event:
-    :param context:
-    :return:
-    """
-
-
 def current_tasks(event, context):
     """
     returns all the currently running tasks
@@ -233,6 +224,8 @@ def monitor_queue(event, context):
 
                 slots = _free_task_count(service=body[SERVICE])
 
+                print(body)
+
                 if slots > 0:
                     if body[SERVICE] == SECURE_CARROT_RUNNER:
                         result.append(schedule_processing_to_fargate({'body': json.dumps(body)}, {}))
@@ -249,12 +242,7 @@ def monitor_queue(event, context):
                     # nothing found
                     pass
             except Exception as e:
-                return {
-                    'statusCode': 503,
-                    'headers': __HTTP_HEADERS__,
-                    'isBase64Encoded': False,
-                    'body': json.dumps({'scheduled': len(result), 'errors': str(e)})
-                }
+                traceback.print_exc()
         return {
             'statusCode': 200,
             'headers': __HTTP_HEADERS__,
@@ -312,7 +300,16 @@ def schedule_processing_to_fargate(event, context):
         if 'task_version' in body:
             version = body["task_version"]
 
+        if 'key' in body and body['key'] is not None:
+            print(body)
+            overrides['containerOverrides'][0]['environment'].append({
+                "name": "STASIS_KEY",
+                "value": body['key']
+            })
+
         print('utilizing taskDefinition: {}:{}'.format(task_name, version))
+        print(overrides)
+        print("")
 
         # fire AWS fargate instance now
         client = boto3.client('ecs')

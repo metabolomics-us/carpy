@@ -75,6 +75,7 @@ def triggerEvent(data):
         'headers': __HTTP_HEADERS__
     }
 
+
 def create(event, context):
     """
         creates a new sample tracking object, from a html api request

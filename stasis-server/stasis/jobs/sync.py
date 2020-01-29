@@ -16,7 +16,7 @@ def sync(job: str) -> Optional[States]:
 
     if state is None:
         update_job_state(job=job, state=States.SCHEDULED)
-    elif state in [States.PROCESSED, States.AGGREGATED, States.AGGREGATED]:
+    elif state in [States.AGGREGATED, States.FAILED]:
         return state
 
     # 2. load job definition
@@ -61,8 +61,11 @@ def sync(job: str) -> Optional[States]:
             return States.PROCESSING
         elif States.SCHEDULED in states:
             update_job_state(job=job, state=States.SCHEDULED)
+
+        # if all samples are failed
+        elif len(states) == states.count(States.FAILED):
+            update_job_state(job=job, state=States.FAILED)
         else:
-            # if all are either failed or processed => set job state to processed
             update_job_state(job=job, state=States.PROCESSED)
             return States.PROCESSED
 

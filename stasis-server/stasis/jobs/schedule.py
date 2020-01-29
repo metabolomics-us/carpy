@@ -19,6 +19,11 @@ def schedule_job(event, context):
 
     body = json.loads(event['body'])
 
+    if 'headers' in event and 'x-api-key' in event['headers']:
+        stasis_key = event['headers']['x-api-key']
+    else:
+        stasis_key = None
+
     validate(body, __JOB_SCHEMA__)
 
     job_id = body['id']
@@ -42,7 +47,8 @@ def schedule_job(event, context):
                     "env": env_,
                     "method": method,
                     "profile": profile,
-                    "task_version": task_version
+                    "task_version": task_version,
+                    "key": stasis_key
                 }, service=SECURE_CARROT_RUNNER)
                 set_sample_job_state(
                     job=job_id,
@@ -98,6 +104,8 @@ def monitor_jobs(event, context):
     # 1. query JOB state table in state running
     tm = TableManager()
     table = tm.get_job_state_table()
+
+    # TODO fix this to a senseful query or it will generate some rather expensive runtimes over the years
     result = table.scan()
 
     if 'Items' in result:
@@ -106,7 +114,11 @@ def monitor_jobs(event, context):
                 state = sync(x['id'])
 
                 if state == States.PROCESSED:
-                    schedule_to_queue({"job": x['id']}, service=SECURE_CARROT_AGGREGATOR)
+                    print("schedule aggregation for {}".format(x))
+                    schedule_to_queue({"job": x['id'], "env": x['env'], "profile": x['profile']},
+                                      service=SECURE_CARROT_AGGREGATOR)
+                else:
+                    print("aggregation not possible yet for {}".format(x))
             except Exception as e:
                 traceback.print_exc()
                 update_job_state(job=x['id'], state=States.FAILED, reason=str(e))

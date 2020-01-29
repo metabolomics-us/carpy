@@ -386,16 +386,22 @@ def update_job_state(job: str, state: States, reason: Optional[str] = None):
         old_state = item['state']
 
         item['state'] = str(state)
+        ts = time.time() * 1000
 
         if 'durations' not in item:
             item['durations'] = {}
 
-        ts = time.time() * 1000
+        if 'past_states' not in item:
+            item['past_states'] = []
+
+        item['past_states'].append(old_state)
+
         item['durations']["{}->{}".format(old_state, item['state'])] = {
             "seconds": (float(ts) - float(item['timestamp'])) / 1000,
             "state_previous": old_state,
-            "state_current": item['state']
+            "state_current": str(state)
         }
+
         item['timestamp'] = ts
         item["reason"] = reason
 
@@ -542,7 +548,7 @@ def get_tracked_sample(sample: str) -> Optional[dict]:
     table = tm.get_tracking_table()
 
     result = table.query(
-        KeyConditionExpression=Key('id').eq(sample)
+        KeyConditionExpression=Key('id').eq(sample.split(".")[0])
     )
 
     if 'Items' in result and len(result['Items']) > 0:
