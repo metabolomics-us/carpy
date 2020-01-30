@@ -55,8 +55,24 @@ def test_schedule_job_integration(api_token):
     # we are exspecting the following states
     # 1 x failed, since it's a negative sample with a positive library
     # 2 x processed
-    while True:
+    origin = time()
+    duration = 0
+    result = None
+    exspectation_met = False
+    while duration < 900000 and exspectation_met is False:
         response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
                                 headers=api_token)
-        print(response.content)
+        result = json.loads(response.content)
+
+        if result['job_state'] == 'aggregation_scheduled':
+            exspectation_met = True
+            assert result['sample_states']['processed'] == 2
+            assert result['sample_states']['failed'] == 1
+            break
+
+        print(result)
         sleep(10)
+        duration = time() - origin
+
+    assert result is not None
+    assert exspectation_met is True

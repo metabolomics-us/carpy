@@ -62,6 +62,7 @@ def status(event, context):
             job = parameters['job']
             tm = TableManager()
             table = tm.get_job_sample_state_table()
+            table_overal_state = tm.get_job_state_table()
 
             query_params = {
                 'IndexName': 'job-id-index',
@@ -70,6 +71,7 @@ def status(event, context):
             }
             result = table.query(**query_params
                                  )
+            job_state = table_overal_state.query(KeyConditionExpression=Key('id').eq(job))
 
             if "Items" in result and len(result['Items']) > 0:
 
@@ -80,17 +82,35 @@ def status(event, context):
 
                     states[x['state']] = states[x['state']] + 1
 
-                return {
-                    "statusCode": 200,
-                    "headers": __HTTP_HEADERS__,
-                    "body": json.dumps({
-                        "count": len(result['Items'
-                                     ]),
-                        "states": states,
-                        "dstate": max(states, key=states.get)
-                    }
-                    )
-                }
+                # this queries the state of all the samples
+                if "Items" in job_state:
+                    job_state = job_state["Items"]
+
+                    if len(job_state) > 0:
+                        job_state = job_state[0]
+                        return {
+                            "statusCode": 200,
+                            "headers": __HTTP_HEADERS__,
+                            "body": json.dumps({
+                                "count": len(result['Items'
+                                             ]),
+                                "sample_states": states,
+                                "job_state": job_state['state'],
+                                "job_info": job_state
+                            }
+                            )
+                        }
+                    else:
+                        return {
+                            "statusCode": 503,
+                            "headers": __HTTP_HEADERS__,
+                            "body": json.dumps({
+                                "sample_states": states,
+                                "job_state": "no associated state found!",
+                            }
+                            )
+                        }
+
             else:
                 return {
                     "statusCode": 404,

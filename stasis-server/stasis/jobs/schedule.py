@@ -109,25 +109,32 @@ def monitor_jobs(event, context):
     query_params = {
         'IndexName': 'state-index',
         'Select': 'ALL_ATTRIBUTES',
-        'KeyConditionExpression': Key('state').eq(str(States.PROCESSED))
+        'KeyConditionExpression': Key('state').eq(str(States.SCHEDULED))
     }
 
     result = table.query(**query_params)
 
     if 'Items' in result:
         if len(result['Items']) == 0:
-            print("no jobs finished processing recently. ")
-        else:
-            for x in result['Items']:
-                try:
-                    state = sync(x['id'])
+            print("no jobs in state scheduled!")
 
+            query_params = {
+                'IndexName': 'state-index',
+                'Select': 'ALL_ATTRIBUTES',
+                'KeyConditionExpression': Key('state').eq(str(States.PROCESSING))
+            }
+
+            result = table.query(**query_params)
+
+        for x in result['Items']:
+            try:
+                state = sync(x['id'])
+
+                if state == States.PROCESSED:
                     print("schedule aggregation for {}".format(x))
                     schedule_to_queue({"job": x['id'], "env": x['env'], "profile": x['profile']},
                                       service=SECURE_CARROT_AGGREGATOR)
                     update_job_state(job=x['id'], state=States.AGGREGATION_SCHEDULED)
-                except Exception as e:
-                    traceback.print_exc()
-                    update_job_state(job=x['id'], state=States.FAILED, reason=str(e))
-    else:
-        print("no jobs finished processing recently. ")
+            except Exception as e:
+                traceback.print_exc()
+                update_job_state(job=x['id'], state=States.FAILED, reason=str(e))
