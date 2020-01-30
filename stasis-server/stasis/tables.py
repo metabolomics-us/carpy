@@ -74,6 +74,23 @@ class TableManager:
                                 'ReadCapacityUnits': 10,
                                 'WriteCapacityUnits': 5
                             }
+                        },
+
+                        {
+                            'IndexName': 'state-index',
+                            'KeySchema': [
+                                {
+                                    'AttributeName': 'state',
+                                    'KeyType': 'HASH'
+                                },
+                            ],
+                            'Projection': {
+                                'ProjectionType': 'ALL'
+                            },
+                            'ProvisionedThroughput': {
+                                'ReadCapacityUnits': 10,
+                                'WriteCapacityUnits': 5
+                            }
                         }
                     ]
                 ))
@@ -386,21 +403,7 @@ def update_job_state(job: str, state: States, reason: Optional[str] = None):
         old_state = item['state']
 
         item['state'] = str(state)
-        ts = time.time() * 1000
-
-        if 'durations' not in item:
-            item['durations'] = {}
-
-        if 'past_states' not in item:
-            item['past_states'] = []
-
-        item['past_states'].append(old_state)
-
-        item['durations']["{}->{}".format(old_state, item['state'])] = {
-            "seconds": (float(ts) - float(item['timestamp'])) / 1000,
-            "state_previous": old_state,
-            "state_current": str(state)
-        }
+        ts = _compute_state_change(item, old_state, state)
 
         item['timestamp'] = ts
         item["reason"] = reason
@@ -411,6 +414,21 @@ def update_job_state(job: str, state: States, reason: Optional[str] = None):
         saved = saved['ResponseMetadata']
 
         saved['statusCode'] = saved['HTTPStatusCode']
+
+
+def _compute_state_change(item, old_state, state):
+    ts = time.time() * 1000
+    if 'durations' not in item:
+        item['durations'] = {}
+    if 'past_states' not in item:
+        item['past_states'] = []
+    item['past_states'].append(old_state)
+    item['durations']["{}->{}".format(old_state, item['state'])] = {
+        "seconds": (float(ts) - float(item['timestamp'])) / 1000,
+        "state_previous": old_state,
+        "state_current": str(state)
+    }
+    return ts
 
 
 def set_job_state(job: str, env: str, method: str, profile: str, task_version: int, state: States,
@@ -477,10 +495,7 @@ def set_sample_job_state(sample: str, job: str, state: States, reason: Optional[
 
 
 def _set_sample_job_state(body: dict):
-    pass
-    timestamp = int(time.time() * 1000)
-
-    body['timestamp'] = timestamp
+    ts = None
     tm = TableManager()
     body['id'] = tm.generate_job_id(body['job'], body['sample'])
     trktable = tm.get_job_sample_state_table()
@@ -492,16 +507,12 @@ def _set_sample_job_state(body: dict):
     if body['state'] != States.SCHEDULED.value:
         if "Items" in result and len(result['Items']) > 0:
             item = result['Items'][0]
-            states = result.get('past_states', [])
-            states.append(item['state'])
-            past_states = list(set(states))
-        else:
-            past_states = []
-    else:
-        past_states = []
+            body['timestamp'] = item['timestamp']
+            ts = _compute_state_change(body, item['state'], body['state'])
 
-    body['past_states'] = past_states
-
+    if ts is None:
+        ts = int(time.time() * 1000)
+    body['timestamp'] = ts
     body = tm.sanitize_json_for_dynamo(body)
     saved = trktable.put_item(Item=body)  # save or update our item
 

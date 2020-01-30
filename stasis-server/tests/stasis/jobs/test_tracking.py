@@ -66,6 +66,7 @@ def test_create_and_get(requireMocking):
     result = json.loads(result['body'])
 
     assert result['state'] == 'processed'
+    print(result)
     assert 'past_states' in result
     assert 'scheduled' in result['past_states']
 

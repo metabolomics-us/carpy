@@ -301,7 +301,6 @@ def schedule_processing_to_fargate(event, context):
             version = body["task_version"]
 
         if 'key' in body and body['key'] is not None:
-            print(body)
             overrides['containerOverrides'][0]['environment'].append({
                 "name": "STASIS_KEY",
                 "value": body['key']

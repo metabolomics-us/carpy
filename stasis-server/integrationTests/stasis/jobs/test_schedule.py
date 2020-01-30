@@ -21,7 +21,9 @@ def test_schedule_job_integration(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001.mzml",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
+            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
         ],
         "profile": "carrot.lcms",
         "task_version": "164",
@@ -50,6 +52,9 @@ def test_schedule_job_integration(api_token):
     assert response.status_code == 200
 
     # watch the state of the job until it's processed
+    # we are exspecting the following states
+    # 1 x failed, since it's a negative sample with a positive library
+    # 2 x processed
     while True:
         response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
                                 headers=api_token)

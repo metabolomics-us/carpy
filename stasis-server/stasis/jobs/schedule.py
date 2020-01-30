@@ -1,6 +1,7 @@
 import json
 import traceback
 
+from boto3.dynamodb.conditions import Key
 from jsonschema import validate
 
 from stasis.jobs.states import States
@@ -105,20 +106,28 @@ def monitor_jobs(event, context):
     tm = TableManager()
     table = tm.get_job_state_table()
 
-    # TODO fix this to a senseful query or it will generate some rather expensive runtimes over the years
-    result = table.scan()
+    query_params = {
+        'IndexName': 'state-index',
+        'Select': 'ALL_ATTRIBUTES',
+        'KeyConditionExpression': Key('state').eq(States.PROCESSED)
+    }
+
+    result = table.query(**query_params)
 
     if 'Items' in result:
-        for x in result['Items']:
-            try:
-                state = sync(x['id'])
+        if len(result['Items']) == 0:
+            print("no jobs finished processing recently. ")
+        else:
+            for x in result['Items']:
+                try:
+                    state = sync(x['id'])
 
-                if state == States.PROCESSED:
                     print("schedule aggregation for {}".format(x))
                     schedule_to_queue({"job": x['id'], "env": x['env'], "profile": x['profile']},
                                       service=SECURE_CARROT_AGGREGATOR)
-                else:
-                    print("aggregation not possible yet for {}".format(x))
-            except Exception as e:
-                traceback.print_exc()
-                update_job_state(job=x['id'], state=States.FAILED, reason=str(e))
+                    update_job_state(job=x['id'], state=States.AGGREGATION_SCHEDULED)
+                except Exception as e:
+                    traceback.print_exc()
+                    update_job_state(job=x['id'], state=States.FAILED, reason=str(e))
+    else:
+        print("no jobs finished processing recently. ")
