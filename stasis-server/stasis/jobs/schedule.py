@@ -109,7 +109,7 @@ def monitor_jobs(event, context):
     query_params = {
         'IndexName': 'state-index',
         'Select': 'ALL_ATTRIBUTES',
-        'KeyConditionExpression': Key('state').eq(States.PROCESSED)
+        'KeyConditionExpression': Key('state').eq(str(States.PROCESSED))
     }
 
     result = table.query(**query_params)
