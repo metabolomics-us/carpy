@@ -48,6 +48,8 @@ def sync(job: str) -> Optional[States]:
                 set_sample_job_state(job=job, sample=sample, state=States.SCHEDULED)
                 states.append(States.SCHEDULED)
             else:
+                print(
+                    "unexplained stasis state.... State was: {}. We are assuming it's processing".format(stasis_state))
                 set_sample_job_state(job=job, sample=sample, state=States.PROCESSING)
                 states.append(States.PROCESSING)
 
@@ -56,18 +58,23 @@ def sync(job: str) -> Optional[States]:
             return None
         # 4. sync general job state
         # if any in state processing => set job state to processing
-        elif States.PROCESSING in states:
+        elif States.PROCESSED in states and len(states) == (
+                states.count(States.PROCESSED) + states.count(States.FAILED)):
+            update_job_state(job=job, state=States.PROCESSED)
+            return States.PROCESSED
+        elif States.PROCESSING in states or States.PROCESSED in states:
             update_job_state(job=job, state=States.PROCESSING)
             return States.PROCESSING
         elif States.SCHEDULED in states:
             update_job_state(job=job, state=States.SCHEDULED)
-
+            return States.SCHEDULED
         # if all samples are failed
         elif len(states) == states.count(States.FAILED):
             update_job_state(job=job, state=States.FAILED)
-        else:
-            update_job_state(job=job, state=States.PROCESSED)
-            return States.PROCESSED
-
+            return States.FAILED
+        elif States.FAILED in states:
+            update_job_state(job=job, state=States.PROCESSING)
+            return States.PROCESSING
+        raise Exception("unexspected combination of states received for {}. States were {}".format(job, states))
     else:
         return None

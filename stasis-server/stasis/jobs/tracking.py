@@ -3,6 +3,7 @@ from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
+from stasis.jobs.sync import sync
 from stasis.tables import TableManager, _set_sample_job_state
 
 
@@ -60,6 +61,11 @@ def status(event, context):
         parameters = event['pathParameters']
         if 'job' in parameters:
             job = parameters['job']
+
+            if 'sync' in parameters and bool(parameters['sync']) is True:
+                print("synchronization was forced!")
+                sync(job)
+
             tm = TableManager()
             table = tm.get_job_sample_state_table()
             table_overal_state = tm.get_job_state_table()
