@@ -98,6 +98,9 @@ custom:
     prod: api.metabolomics.us
     test: test-api.metabolomics.us
     dev:  dev-api.metabolomics.us
+    prod2: prod2.metabolomics.us
+    test2: test2.metabolomics.us
+    dev2:  dev2.metabolomics.us
 
   customDomain:
     basePath: "stasis"
@@ -151,12 +154,21 @@ functions:
           rate: rate(1 minute)
           documentation:
             summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs.
-    environment:
-      schedule_queue: ${self:custom.scheduleQueue}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+      - http:
+          private: true
+          path: sync/samples
+          method: get
+          cors: true
+          documentation:
+            summary: synchronizes the samples with the job state table
+
+          environment:
+        schedule_queue: ${self:custom.scheduleQueue}
+        trackingTable: ${self:custom.trackingTable}
+        acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+        jobStateTable: ${self:custom.jobStateTable}
+        jobTrackingTable: ${self:custom.jobTrackingTable}
 
   fargate_job_monitor:
     handler: stasis/jobs/schedule.monitor_jobs
@@ -165,6 +177,15 @@ functions:
           rate: rate(5 minutes)
           documentation:
             summary: monitors and synchronizes job states
+
+      - http:
+          private: true
+          path: sync/jobs
+          method: get
+          cors: true
+          documentation:
+            summary: synchronizes the job state
+
     environment:
       schedule_queue: ${self:custom.scheduleQueue}
       trackingTable: ${self:custom.trackingTable}
@@ -593,6 +614,7 @@ functions:
             parameter:
               paths:
                 job: true
+                sync: false
           documentation:
             summary: returns the overal status of the given job
             queryParams:
@@ -601,7 +623,22 @@ functions:
                 required: true
               - name: sync
                 description: do you want to force a synchronization, which is very expensive
-                required: false
+                required: true
+      - http:
+          path: job/status/{job}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+          documentation:
+            summary: returns the overal status of the given job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
 
     #defines to which topic we want to connect
     environment:
