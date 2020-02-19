@@ -48,6 +48,10 @@ class TableManager:
                             'AttributeName': 'job',
                             'AttributeType': 'S'
                         },
+                        {
+                            'AttributeName': 'state',
+                            'AttributeType': 'S'
+                        },
 
                     ],
                     ProvisionedThroughput={
@@ -56,7 +60,7 @@ class TableManager:
                     },
                     GlobalSecondaryIndexes=[
                         {
-                            'IndexName': 'job-id-index',
+                            'IndexName': 'job-id-state-index',
                             'KeySchema': [
                                 {
                                     'AttributeName': 'job',
@@ -557,9 +561,10 @@ def get_tracked_sample(sample: str) -> Optional[dict]:
 
     tm = TableManager()
     table = tm.get_tracking_table()
+    key = sample.split(".")[0]
 
     result = table.query(
-        KeyConditionExpression=Key('id').eq(sample.split(".")[0])
+        KeyConditionExpression=Key('id').eq(key)
     )
 
     if 'Items' in result and len(result['Items']) > 0:

@@ -2,7 +2,10 @@ import json
 import random
 
 from stasis.jobs import tracking
+from stasis.jobs.schedule import monitor_jobs
 from stasis.jobs.states import States
+from stasis.tables import set_job_state
+from stasis.tracking import create
 
 
 def test_create_and_get(requireMocking):
@@ -91,57 +94,65 @@ def test_status(requireMocking):
             "state": "scheduled"
         })
 
+        # store in stasis or we doomed!!!
+        response = create.create({'body': json.dumps({'sample': 'abc_{}'.format(x), 'status': 'scheduled'})}, {})
+
+        # store in the job state table
         result = tracking.create({'body': data}, {})
+
+        assert result['statusCode'] == 200
+
+    set_job_state(job="123456", method="test", env="test", profile="test", task_version=1234,
+                  state=States.SCHEDULED)
 
     result = tracking.status({
         "pathParameters": {
-            "job": "123456"
+            "job": "123456",
+            "sync": True
+
         }
     }, {})
 
     assert result is not None
     assert result['statusCode'] == 200
 
-    assert len(json.loads(result['body'])['states']) == 1
+    assert len(json.loads(result['body'])['sample_states']) == 1
 
-    assert json.loads(result['body'])['dstate'] == 'scheduled'
+    assert json.loads(result['body'])['job_state'] == 'scheduled'
+
     for x in range(0, 10):
-        # upload data
-        data = json.dumps({
-            "job": "123456",
-            "sample": "abc_{}".format(x),
-            "state": "processed"
-        })
-
-        result = tracking.create({'body': data}, {})
+        # pretend stasis has now exported the data
+        response = create.create({'body': json.dumps({'sample': 'abc_{}'.format(x), 'status': 'exported'})}, {})
 
     result = tracking.status({
         "pathParameters": {
-            "job": "123456"
+            "job": "123456",
+            "sync": True
         }
     }, {})
 
-    assert len(json.loads(result['body'])['states']) == 2
-    assert json.loads(result['body'])['dstate'] == 'scheduled'
+    assert len(json.loads(result['body'])['sample_states']) == 2
 
-    for x in range(20, 70):
-        # upload data
-        data = json.dumps({
-            "job": "123456",
-            "sample": "abc_{}".format(x),
-            "state": "done"
-        })
+    # since not yet aggregated, the job should be in state processing
+    assert json.loads(result['body'])['job_state'] == 'processing'
 
-        result = tracking.create({'body': data}, {})
+    for x in range(0, 100):
+        # pretend all samples are finished
+        response = create.create({'body': json.dumps({'sample': 'abc_{}'.format(x), 'status': "finished"})}, {})
 
     result = tracking.status({
         "pathParameters": {
-            "job": "123456"
+            "job": "123456",
+            "sync": True
         }
     }, {})
 
-    assert len(json.loads(result['body'])['states']) == 3
-    assert json.loads(result['body'])['dstate'] == 'done'
+    # we should now only have one sample state
+    assert len(json.loads(result['body'])['sample_states']) == 1
+
+    monitor_jobs({}, {})
+
+    assert json.loads(result['body'])['job_state'] == 'processed'
 
 
 def test_description(requireMocking):

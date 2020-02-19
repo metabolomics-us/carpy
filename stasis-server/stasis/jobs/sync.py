@@ -14,6 +14,7 @@ def sync(job: str) -> Optional[States]:
     # to avoid expensive synchronization
     state = get_job_state(job=job)
 
+    print("current job state is {}".format(state))
     if state is None:
         update_job_state(job=job, state=States.SCHEDULED)
     elif state in [States.AGGREGATED, States.FAILED]:
@@ -77,4 +78,5 @@ def sync(job: str) -> Optional[States]:
             return States.PROCESSING
         raise Exception("unexspected combination of states received for {}. States were {}".format(job, states))
     else:
+        print("we did not find a job definition for {}".format(job))
         return None

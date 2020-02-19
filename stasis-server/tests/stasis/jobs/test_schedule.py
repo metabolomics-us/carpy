@@ -53,6 +53,8 @@ def test_schedule_job(requireMocking):
     for k, v in job.items():
         assert v == 'scheduled'
 
+        response = create.create({'body': json.dumps({'sample': k.split(".")[0], 'status': v})}, {})
+
     # since AWS only allows to process 10 messages at a time and we have more than that
     # this has to be called several times
     # in production this is driven by a timer
