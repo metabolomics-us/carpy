@@ -1,9 +1,12 @@
+import os
+
 import simplejson as json
 from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
+from stasis.service.Bucket import Bucket
 from stasis.tables import TableManager, _set_sample_job_state
 
 
@@ -280,4 +283,15 @@ def job_is_done(event, context):
         # invalid!
     return {
         'statusCode': 503
+    }
+
+
+def result_bucket(event, context):
+    Bucket(bucket_name=os.environ.get('dataBucket'))
+    return {
+        "statusCode": 200,
+        "headers": __HTTP_HEADERS__,
+        "body": json.dumps({
+            'name': os.environ.get('dataBucket')
+        })
     }

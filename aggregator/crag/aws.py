@@ -1,5 +1,6 @@
 from typing import Optional
 
+import boto3
 from stasis_client.client import StasisClient
 
 from crag.aggregator import Aggregator, NoSamplesFoundException
@@ -40,6 +41,12 @@ class JobAggregator(Aggregator):
             if upload:
                 print("zipping data and uploading it to the result bucket...")
                 shutil.make_archive(f"result/{job}", 'zip', directory)
+
+                try:
+                    boto3.client('s3').create_bucket(Bucket=bucket_name, CreateBucketConfiguration={
+                        'LocationConstraint': 'us-west-2'})
+                except Exception as e:
+                    print("sorry this bucket caused an error - this mean it exist, no reason to worry")
             return True
         except NoSamplesFoundException:
             return False

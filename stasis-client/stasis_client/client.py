@@ -174,10 +174,17 @@ class StasisClient:
         """
         return requests.get(f"{self._url}/job/{job_id}", headers=self._header).json()
 
-    def load_job_state(self,job_id):
+    def load_job_state(self, job_id):
         """
         loads state details of a job
         :param job_id:
         :return:
         """
         return requests.get(f"{self._url}/job/status/{job_id}", headers=self._header).json()
+
+    def get_result_bucket(self):
+        """
+        :param job_id:
+        :return:
+        """
+        return requests.get(f"{self._url}/result/bucket", headers=self._header).json()

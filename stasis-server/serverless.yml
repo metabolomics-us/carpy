@@ -82,6 +82,11 @@ custom:
   dataBucketName: "data-carrot"
 
   ###
+  # Carrot bucket to store aggregated results
+  ###
+  dataResultBucketName: "data-result-carrot-${self:custom.stage}"
+
+  ###
   # Queues
   ###
   scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
@@ -694,3 +699,18 @@ functions:
       aggregation_queue: ${self:custom.aggregationQueue}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
+
+
+  job_bucket:
+    handler: stasis/jobs/tracking.result_bucket
+    events:
+      - http:
+          private: true
+          path: result/bucket
+          method: get
+          cors: true
+          documentation:
+            summary: returns the name of the result bucked for this stasis deployment
+
+    environment:
+      dataBucket: ${self:custom.dataResultBucketName}

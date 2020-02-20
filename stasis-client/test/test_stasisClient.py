@@ -129,3 +129,9 @@ def test_load_job(stasis_cli, api_token):
     print(data)
 
     assert len(data) == 3
+
+def test_get_result_bucket(stasis_cli,api_token):
+
+    data = stasis_cli.get_result_bucket()
+    print(data)
+
