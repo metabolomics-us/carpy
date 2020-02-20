@@ -187,4 +187,4 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        return requests.get(f"{self._url}/result/bucket", headers=self._header).json()
+        return requests.get(f"{self._url}/result/bucket", headers=self._header).json()['name']

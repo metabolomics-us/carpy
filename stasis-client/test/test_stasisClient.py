@@ -134,4 +134,5 @@ def test_get_result_bucket(stasis_cli,api_token):
 
     data = stasis_cli.get_result_bucket()
     print(data)
+    assert data == 'data-result-carrot-test'
 

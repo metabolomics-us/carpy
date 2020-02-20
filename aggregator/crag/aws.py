@@ -43,7 +43,7 @@ class JobAggregator(Aggregator):
                 shutil.make_archive(f"result/{job}", 'zip', directory)
 
                 try:
-                    boto3.client('s3').create_bucket(Bucket=bucket_name, CreateBucketConfiguration={
+                    boto3.client('s3').create_bucket(Bucket=, CreateBucketConfiguration={
                         'LocationConstraint': 'us-west-2'})
                 except Exception as e:
                     print("sorry this bucket caused an error - this mean it exist, no reason to worry")
