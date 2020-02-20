@@ -8,15 +8,15 @@ if version_info.major == 3 and version_info.minor < 6 or \
     exit(1)
 
 
-setup(name='aggregator',
+setup(name='crag',
       version='0.0.1',
       description='Sample Aggregation module',
       url='https://github.com/berlinguyinca/carpy',
       author='Gert Wohlgemuth',
       author_email='wohlgemuth@ucdavis.edu',
       license='GPLv3',
-      packages=find_packages(),
-      scripts=[],
+      packages=['crag'],
+      scripts=["bin/crag.py"],
       setup_requires=['pytest-runner'],
       tests_require=[
           'pytest',
