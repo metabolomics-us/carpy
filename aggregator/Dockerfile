@@ -14,4 +14,4 @@ RUN pip install -r requirements.txt
 COPY . /crag/
 RUN pip install -e .
 
-ENTRYPOINT ["python", "/crag/bin/crag.py"]
+ENTRYPOINT ["python", "/crag/bin/crag_local.py"]

@@ -7,7 +7,6 @@ if version_info.major == 3 and version_info.minor < 6 or \
     print('Your Python interpreter must be 3.6 or greater!')
     exit(1)
 
-
 setup(name='crag',
       version='0.0.1',
       description='Sample Aggregation module',
@@ -16,7 +15,7 @@ setup(name='crag',
       author_email='wohlgemuth@ucdavis.edu',
       license='GPLv3',
       packages=['crag'],
-      scripts=["bin/crag.py"],
+      scripts=["bin/crag_local.py", "bin/crag_aws.py"],
       setup_requires=['pytest-runner'],
       tests_require=[
           'pytest',
