@@ -2,7 +2,7 @@ import os
 import re
 from argparse import Namespace
 from typing import Optional, List
-
+import time
 import numpy as np
 import pandas as pd
 import tqdm
@@ -21,6 +21,10 @@ sheet_names = {"intensity": ["Intensity matrix"],
 
 def percent(x: float, intensity):
     return intensity['found %'] >= x
+
+
+class NoSamplesFoundException(Exception):
+    pass
 
 
 class Aggregator:
@@ -94,7 +98,7 @@ class Aggregator:
 
                     dicdata[sample] = [species, organ, '', sample_type, idx]
             except KeyError as e:
-                # print('missing sample, {}, {}'.format(idx, sample)) # save sample name to file.
+                print('missing sample, {}, {}'.format(idx, sample))  # save sample name to file.
                 dicdata[sample] = ['', '', '', '', idx]
 
         return pd.DataFrame(dicdata)
@@ -193,8 +197,8 @@ class Aggregator:
             try:
                 intensity.loc[i, RSD_BR_] = (intensity.loc[i, biorecs].std() / intensity.loc[i, biorecs].mean()) * 100
             except Exception as e:
-                # print(f'{time.strftime("%H:%M:%S")} - Can\'t calculate % RSD for target {intensity.loc[i, "name"]}.'
-                #       f' Sum of intensities = {intensity.loc[i, biorecs].sum()}')
+                print(f'{time.strftime("%H:%M:%S")} - Can\'t calculate % RSD for target {intensity.loc[i, "name"]}.'
+                      f' Sum of intensities = {intensity.loc[i, biorecs].sum()}')
                 pass
 
             mass.loc[i, RSD_BR_] = (mass.loc[i, biorecs].std() / mass.loc[i, biorecs].mean()) * 100
@@ -303,6 +307,8 @@ class Aggregator:
             else:
                 sbar.write(f'Failed getting {sample}; {resdata.get("Error")}')
 
+        if len(results) == 0:
+            raise NoSamplesFoundException("sorry none of your samples were found!")
         targets = self.get_target_list(results)
 
         # creating spreadsheets
@@ -418,4 +424,7 @@ class Aggregator:
         :param samples:
         :return:
         """
-        self.process_sample_list(samples, destination)
+        if os.path.exists(destination) is False:
+            os.makedirs(destination, exist_ok=True)
+
+        self.process_sample_list(samples, f"{destination}/result")
