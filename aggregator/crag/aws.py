@@ -42,11 +42,15 @@ class JobAggregator(Aggregator):
                 print("zipping data and uploading it to the result bucket...")
                 shutil.make_archive(f"result/{job}", 'zip', directory)
 
+                bucket_name = self.stasis_cli.get_result_bucket()
                 try:
-                    boto3.client('s3').create_bucket(Bucket=, CreateBucketConfiguration={
-                        'LocationConstraint': 'us-west-2'})
+                    boto3.client('s3').create_bucket(Bucket=bucket_name,
+                                                     CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
                 except Exception as e:
                     print("sorry this bucket caused an error - this mean it exist, no reason to worry")
+
+                boto3.client('s3').upload_file(f"result/{job}.zip", bucket_name, f"{job}.zip")
+
             return True
         except NoSamplesFoundException:
             return False
