@@ -131,7 +131,8 @@ class Aggregator:
         else:
             suffix += '-norepl'
 
-        output_name = f'{file}-{type.lower().replace(" ", "_")}-{suffix}.xlsx'
+        seperator = '' if file.endswith("/") else '-'
+        output_name = f'{file}{seperator}{type.lower().replace(" ", "_")}-{suffix}.xlsx'
 
         if type == 'Correction curve':
             data.dropna(inplace=True)
@@ -153,7 +154,7 @@ class Aggregator:
         UNUSED
         Calculates the average intensity, mass and retention index of biorecs
 
-        Args:
+        Argt:
             intensity:
             mass:
             rt:
@@ -427,4 +428,4 @@ class Aggregator:
         if os.path.exists(destination) is False:
             os.makedirs(destination, exist_ok=True)
 
-        self.process_sample_list(samples, f"{destination}/result")
+        self.process_sample_list(samples, f"{destination}/")

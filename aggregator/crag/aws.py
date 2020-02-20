@@ -4,6 +4,8 @@ from stasis_client.client import StasisClient
 
 from crag.aggregator import Aggregator, NoSamplesFoundException
 
+import shutil
+
 
 class JobAggregator(Aggregator):
     """
@@ -37,7 +39,7 @@ class JobAggregator(Aggregator):
 
             if upload:
                 print("zipping data and uploading it to the result bucket...")
-                
+                shutil.make_archive(f"result/{job}", 'zip', directory)
             return True
         except NoSamplesFoundException:
             return False
