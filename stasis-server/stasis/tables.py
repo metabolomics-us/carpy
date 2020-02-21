@@ -74,10 +74,7 @@ class TableManager:
                             'Projection': {
                                 'ProjectionType': 'ALL'
                             },
-                            'ProvisionedThroughput': {
-                                'ReadCapacityUnits': 10,
-                                'WriteCapacityUnits': 5
-                            }
+
                         },
 
                         {
@@ -91,10 +88,7 @@ class TableManager:
                             'Projection': {
                                 'ProjectionType': 'ALL'
                             },
-                            'ProvisionedThroughput': {
-                                'ReadCapacityUnits': 10,
-                                'WriteCapacityUnits': 5
-                            }
+
                         }
                     ]
                 ))
@@ -144,10 +138,7 @@ class TableManager:
                         },
 
                     ],
-                    ProvisionedThroughput={
-                        'ReadCapacityUnits': 10,
-                        'WriteCapacityUnits': 5
-                    },
+
                     GlobalSecondaryIndexes=[
                         {
                             'IndexName': 'job-id-index',
@@ -164,10 +155,7 @@ class TableManager:
                             'Projection': {
                                 'ProjectionType': 'ALL'
                             },
-                            'ProvisionedThroughput': {
-                                'ReadCapacityUnits': 10,
-                                'WriteCapacityUnits': 5
-                            }
+
                         }
                     ]
                 ))
@@ -222,10 +210,7 @@ class TableManager:
                             'AttributeType': 'S'
                         }
                     ],
-                    ProvisionedThroughput={
-                        'ReadCapacityUnits': 10,
-                        'WriteCapacityUnits': 5
-                    },
+
                     GlobalSecondaryIndexes=[
                         {
                             'IndexName': 'experiment-id-index',
@@ -242,10 +227,7 @@ class TableManager:
                             'Projection': {
                                 'ProjectionType': 'ALL'
                             },
-                            'ProvisionedThroughput': {
-                                'ReadCapacityUnits': 10,
-                                'WriteCapacityUnits': 5
-                            }
+
                         }
                     ]
                 ))
@@ -290,10 +272,7 @@ class TableManager:
                             'AttributeType': 'S'
                         }
                     ],
-                    ProvisionedThroughput={
-                        'ReadCapacityUnits': 10,
-                        'WriteCapacityUnits': 5
-                    },
+
                     GlobalSecondaryIndexes=[
                         {
                             'IndexName': 'experiment-id-index',
@@ -310,10 +289,7 @@ class TableManager:
                             'Projection': {
                                 'ProjectionType': 'ALL'
                             },
-                            'ProvisionedThroughput': {
-                                'ReadCapacityUnits': 10,
-                                'WriteCapacityUnits': 5
-                            }
+
                         }
                     ])
                 )
@@ -326,52 +302,6 @@ class TableManager:
 
         return self.db.Table(table_name)
 
-    def get_target_table(self):
-        """
-            provides access to the table and if it doesn't exists
-            creates it for us
-        :return:
-        """
-        table_name = os.environ['targetTable']
-        existing_tables = boto3.client('dynamodb').list_tables()['TableNames']
-
-        if table_name not in existing_tables:
-            try:
-                self.db.create_table(
-                    TableName=os.environ["targetTable"],
-                    KeySchema=[
-                        {
-                            'AttributeName': 'method',
-                            'KeyType': 'HASH'
-                        },
-                        {
-                            'AttributeName': 'mz_rt',
-                            'KeyType': 'RANGE'
-                        }
-                    ],
-                    AttributeDefinitions=[
-                        {
-                            'AttributeName': 'method',
-                            'AttributeType': 'S'
-                        },
-                        {
-                            'AttributeName': 'mz_rt',
-                            'AttributeType': 'S'
-                        }
-                    ],
-                    ProvisionedThroughput={
-                        'ReadCapacityUnits': 2,
-                        'WriteCapacityUnits': 2
-                    }
-                )
-            except ResourceInUseException as e:
-                print("table already exist, ignoring error {}".format(e))
-                pass
-            except Exception as ex:
-                print("error %s" % str(ex))
-                raise
-
-        return self.db.Table(table_name)
 
     def sanitize_json_for_dynamo(self, result):
         """
@@ -419,6 +349,9 @@ def update_job_state(job: str, state: States, reason: Optional[str] = None):
 
         saved['statusCode'] = saved['HTTPStatusCode']
 
+        return get_job_state(job)
+    else:
+        return None
 
 def _compute_state_change(item, old_state, state):
     ts = time.time() * 1000

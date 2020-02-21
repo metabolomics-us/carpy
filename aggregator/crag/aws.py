@@ -18,7 +18,7 @@ class JobAggregator(Aggregator):
         specific implementation of a AWS Aggregator
         :param aggregator:
         """
-        super().__init__(args, stasis)
+        super().__init__(args, stasis, disable_progress_bar=True)
 
     def aggregate_job(self, job: str, upload: bool = True) -> bool:
         """
@@ -29,7 +29,6 @@ class JobAggregator(Aggregator):
         # 1. load job definition from stasis
         job_data = self.stasis_cli.load_job(job)
 
-        print(job_data)
         # directory
         directory = "result/{}".format(job)
         # 2. generate sample list which are finished
@@ -40,18 +39,17 @@ class JobAggregator(Aggregator):
             self.aggregate_samples(samples, directory)
 
             if upload:
-                print("zipping data and uploading it to the result bucket...")
+                bucket_name = self.stasis_cli.get_aggregated_bucket()
+                print("zipping data and uploading it to the result bucket, {}. File name will be {}.{}".format(
+                    bucket_name, job, "zip"))
                 shutil.make_archive(f"result/{job}", 'zip', directory)
 
-                bucket_name = self.stasis_cli.get_aggregated_bucket()
                 try:
                     boto3.client('s3').create_bucket(Bucket=bucket_name,
                                                      CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
                 except Exception as e:
-                    print("sorry this bucket caused an error - this mean it exist, no reason to worry")
-
+                    pass
                 boto3.client('s3').upload_file(f"result/{job}.zip", bucket_name, f"{job}.zip")
-
             return True
         except NoSamplesFoundException:
             return False

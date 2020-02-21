@@ -224,3 +224,4 @@ class StasisClient:
         result = requests.get(f"{self._url}/data/json", headers=self._header)
         assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()['name']
+
