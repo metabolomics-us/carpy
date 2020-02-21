@@ -33,11 +33,11 @@ def test_sample_state(stasis_cli, sample):
 
 
 def test_sample_result(stasis_cli):
-    result = stasis_cli.sample_result('lgvty_cells_pilot_2_NEG_50K_BR_01.json')
+    result = stasis_cli.sample_result('B2a_TEDDYLipids_Neg_NIST001')
 
     print(result)
     assert result is not None
-    assert 'lgvty_cells_pilot_2_NEG_50K_BR_01' == result['sample']
+    assert 'B2a_TEDDYLipids_Neg_NIST001' == result['sample']
 
 
 def test_inexistent_result(stasis_cli):

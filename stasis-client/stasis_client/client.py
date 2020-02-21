@@ -67,7 +67,9 @@ class StasisClient:
              data: the data object containing the aquisiton description
         Returns:
         """
-        return requests.post(f'{self._url}/acquisition', json=data, headers=self._header)
+        result = requests.post(f'{self._url}/acquisition', json=data, headers=self._header)
+        assert result.status_code == 200
+        return result
 
     def sample_acquisition_get(self, sample_name):
         """
@@ -78,7 +80,9 @@ class StasisClient:
 
         Returns:
         """
-        return requests.get(f'{self._url}/acquisition/{sample_name}', headers=self._header).json()
+        result = requests.get(f'{self._url}/acquisition/{sample_name}', headers=self._header)
+        assert result.status_code == 200
+        return result.json()
 
     def sample_state(self, sample_name: str):
         """Returns the state of the given sample by calling Stasis' tracking API
@@ -97,7 +101,9 @@ class StasisClient:
                     }
                 ]
         """
-        return requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header).json()['status']
+        result = requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
+        assert result.status_code == 200
+        return result.json()['status']
 
     def sample_state_update(self, sample_name: str, state):
         """
@@ -113,7 +119,9 @@ class StasisClient:
             "sample": sample_name,
             "status": state
         }
-        return requests.post(f'{self._url}/tracking', json=data, headers=self._header)
+        result = requests.post(f'{self._url}/tracking', json=data, headers=self._header)
+        assert result.status_code == 200
+        return result
 
     def sample_result(self, sample_name: str, dest: Optional[str] = 'tmp') -> dict:
         """
@@ -164,7 +172,10 @@ class StasisClient:
         return self._processed_bucket
 
     def get_states(self):
-        return requests.get(f"{self._url}/status", headers=self._header).json()
+        result = requests.get(f"{self._url}/status", headers=self._header)
+
+        assert result.status_code == 200
+        return result.json()
 
     def load_job(self, job_id):
         """
@@ -172,7 +183,9 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        return requests.get(f"{self._url}/job/{job_id}", headers=self._header).json()
+        result = requests.get(f"{self._url}/job/{job_id}", headers=self._header)
+        assert result.status_code == 200
+        return result.json()
 
     def load_job_state(self, job_id):
         """
@@ -180,25 +193,33 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        return requests.get(f"{self._url}/job/status/{job_id}", headers=self._header).json()
+        result = requests.get(f"{self._url}/job/status/{job_id}", headers=self._header)
+        assert result.status_code == 200
+        return result.json()
 
     def get_raw_bucket(self):
         """
         :param job_id:
         :return:
         """
-        return requests.get(f"{self._url}/data/raw", headers=self._header).json()['name']
+        result = requests.get(f"{self._url}/data/raw", headers=self._header)
+        assert result.status_code == 200
+        return result.json()['name']
 
     def get_aggregated_bucket(self):
         """
         :param job_id:
         :return:
         """
-        return requests.get(f"{self._url}/data/zip", headers=self._header).json()['name']
+        result = requests.get(f"{self._url}/data/zip", headers=self._header)
+        assert result.status_code == 200
+        return result.json()['name']
 
     def get_processed_bucket(self):
         """
         :param job_id:
         :return:
         """
-        return requests.get(f"{self._url}/data/json", headers=self._header).json()['name']
+        result = requests.get(f"{self._url}/data/json", headers=self._header)
+        assert result.status_code == 200
+        return result.json()['name']
