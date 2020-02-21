@@ -33,6 +33,8 @@ class StasisClient:
         if self._url is None:
             self._url = os.getenv('STASIS_API_URL', 'https://api.metabolomics.us/stasis')
 
+        assert self._token is not None, "you need to to provide a stasis api token in the env variable 'STASIS_API_TOKEN'"
+        assert self._url is not None, "you need to provide a url in the env variable 'STASIS_API_URL'"
         self._header = {
             'Content-type': 'application/json',
             'Accept': 'application/json',
