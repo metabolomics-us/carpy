@@ -41,12 +41,11 @@ class StasisClient:
             'x-api-key': f'{self._token}'
         }
 
+        print(f"using url: {self._url}")
+        print(f"using bucket: {self._processed_bucket}")
         self._processed_bucket = self.get_processed_bucket()
 
         self.json_data_bucket = boto3.resource('s3').Bucket(self._processed_bucket)
-
-        print(f"using url: {self._url}")
-        print(f"using bucket: {self._processed_bucket}")
 
     def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
                                         version: str = "164"):
