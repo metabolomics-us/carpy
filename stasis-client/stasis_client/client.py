@@ -68,7 +68,7 @@ class StasisClient:
         Returns:
         """
         result = requests.post(f'{self._url}/acquisition', json=data, headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result
 
     def sample_acquisition_get(self, sample_name):
@@ -81,7 +81,7 @@ class StasisClient:
         Returns:
         """
         result = requests.get(f'{self._url}/acquisition/{sample_name}', headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()
 
     def sample_state(self, sample_name: str):
@@ -102,7 +102,7 @@ class StasisClient:
                 ]
         """
         result = requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()['status']
 
     def sample_state_update(self, sample_name: str, state):
@@ -120,7 +120,7 @@ class StasisClient:
             "status": state
         }
         result = requests.post(f'{self._url}/tracking', json=data, headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result
 
     def sample_result(self, sample_name: str, dest: Optional[str] = 'tmp') -> dict:
@@ -174,7 +174,7 @@ class StasisClient:
     def get_states(self):
         result = requests.get(f"{self._url}/status", headers=self._header)
 
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()
 
     def load_job(self, job_id):
@@ -184,7 +184,7 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/job/{job_id}", headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()
 
     def load_job_state(self, job_id):
@@ -194,7 +194,7 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/job/status/{job_id}", headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()
 
     def get_raw_bucket(self):
@@ -203,7 +203,7 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/data/raw", headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()['name']
 
     def get_aggregated_bucket(self):
@@ -212,7 +212,7 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/data/zip", headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()['name']
 
     def get_processed_bucket(self):
@@ -221,5 +221,5 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/data/json", headers=self._header)
-        assert result.status_code == 200
+        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()['name']
