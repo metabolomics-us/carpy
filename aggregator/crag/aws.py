@@ -43,7 +43,7 @@ class JobAggregator(Aggregator):
                 print("zipping data and uploading it to the result bucket...")
                 shutil.make_archive(f"result/{job}", 'zip', directory)
 
-                bucket_name = self.stasis_cli.get_result_bucket()
+                bucket_name = self.stasis_cli.get_aggregated_bucket()
                 try:
                     boto3.client('s3').create_bucket(Bucket=bucket_name,
                                                      CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})

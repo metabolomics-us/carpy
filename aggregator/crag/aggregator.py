@@ -29,7 +29,7 @@ class NoSamplesFoundException(Exception):
 
 class Aggregator:
 
-    def __init__(self, args: dict, stasis: Optional[StasisClient] = None):
+    def __init__(self, args: dict, stasis: Optional[StasisClient] = None, disable_progress_bar=False):
         if isinstance(args, Namespace):
             args = vars(args)
 
@@ -39,6 +39,9 @@ class Aggregator:
             self.stasis_cli = stasis
         else:
             self.stasis_cli = StasisClient()
+
+        self.bucket_used = self.stasis_cli.get_processed_bucket()
+        self.disable_progress_bar = disable_progress_bar
 
     def find_intensity(self, value) -> int:
         """
@@ -234,7 +237,7 @@ class Aggregator:
         return [None, intensities, masses, rts, origrts, curve, replaced, msms]
 
     @staticmethod
-    def build_worksheet(targets, label=' working...'):
+    def build_worksheet(targets, upb, label=' working...', ):
         """
         Structures the data to be 'worksheet' ready
         Args:
@@ -248,7 +251,7 @@ class Aggregator:
         pattern = re.compile(".*?_[A-Z]{14}-[A-Z]{10}-[A-Z]")
 
         i = 1
-        bar = tqdm.tqdm(targets, desc=label, unit=' targets')
+        bar = tqdm.tqdm(targets, desc=label, unit=' targets', disable=upb)
         for x in bar:
             try:
                 rows.append({
@@ -288,39 +291,39 @@ class Aggregator:
         # creating target list
         results = []
 
-        sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples')
+        sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples', disable=self.disable_progress_bar)
         for sample in sbar:
             sbar.set_description(sample)
             if sample in ['samples']:
                 continue
 
-            result_file = f'{os.path.splitext(sample)[0]}.json'
             dir = self.args.get("dir", "tmp")
             if dir is None:
                 dir = "tmp"
 
-            resdata = self.stasis_cli.sample_result(result_file, dir)
+            resdata = self.stasis_cli.sample_result(os.path.splitext(sample)[0], dir)
 
             if resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
-                sbar.write(f'Failed getting {sample}; {resdata.get("Error")}')
+                sbar.write(
+                    f'Failed getting {sample}; {resdata.get("Error")}. We looked in bucket {self.bucket_used}')
 
         if len(results) == 0:
             raise NoSamplesFoundException("sorry none of your samples were found!")
         targets = self.get_target_list(results)
 
         # creating spreadsheets
-        intensity = self.build_worksheet(targets, 'intensity matrix')
-        mass = self.build_worksheet(targets, 'mass matrix')
-        rt = self.build_worksheet(targets, 'RI matrix')
-        origrt = self.build_worksheet(targets, 'RT matrix')
-        curve = self.build_worksheet(targets, 'curve data')
-        replaced = self.build_worksheet(targets, 'replacement matrix')
-        msms = self.build_worksheet(targets, 'MSMS Spectra')
+        intensity = self.build_worksheet(targets, upb=self.disable_progress_bar, label='intensity matrix')
+        mass = self.build_worksheet(targets, upb=self.disable_progress_bar, label='mass matrix')
+        rt = self.build_worksheet(targets, upb=self.disable_progress_bar, label='RI matrix')
+        origrt = self.build_worksheet(targets, upb=self.disable_progress_bar, label='RT matrix')
+        curve = self.build_worksheet(targets, upb=self.disable_progress_bar, label='curve data')
+        replaced = self.build_worksheet(targets, upb=self.disable_progress_bar, label='replacement matrix')
+        msms = self.build_worksheet(targets, upb=self.disable_progress_bar, label='MSMS Spectra')
 
         # populating spreadsheets
-        for data in tqdm.tqdm(results, desc='Formatting results', unit=' samples'):
+        for data in tqdm.tqdm(results, desc='Formatting results', unit=' samples', disable=self.disable_progress_bar):
             sample = data['sample']
 
             if 'error' not in data:
