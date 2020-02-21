@@ -9,7 +9,6 @@ sample_time = time()
 
 
 def pytest_generate_tests(metafunc):
-    os.environ['STASIS_BUCKET'] = 'wcmc-data-stasis-result-test'
     os.environ['STASIS_URL'] = 'https://test-api.metabolomics.us/stasis'
     os.environ['STASIS_API_TOKEN'] = '9MjbJRbAtj8spCJJVTPbP3YWc4wjlW0c7AP47Pmi'
 
@@ -50,4 +49,4 @@ def api_token():
     return {'x-api-key': api_token.strip()}
 @pytest.fixture
 def stasis_cli():
-    return StasisClient(os.getenv('STASIS_URL'), os.getenv('STASIS_API_TOKEN'), os.getenv('STASIS_BUCKET'))
+    return StasisClient(os.getenv('STASIS_URL'), os.getenv('STASIS_API_TOKEN'))

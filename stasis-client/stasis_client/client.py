@@ -14,7 +14,7 @@ class StasisClient:
     a simple client to interact with the stasis system in a safe and secure manner.
     """
 
-    def __init__(self, url: Optional[str] = None, token: Optional[str] = None, bucket: Optional[str] = None):
+    def __init__(self, url: Optional[str] = None, token: Optional[str] = None):
         """
         the client requires an url where to connect against
         and the related token.
@@ -26,7 +26,6 @@ class StasisClient:
 
         self._url = url
         self._token = token
-        self._bucket = bucket
 
         if self._token is None:
             # utilize env
@@ -40,15 +39,12 @@ class StasisClient:
             'x-api-key': f'{self._token}'
         }
 
-        if self._bucket is None:
-            self._bucket = os.getenv('STASIS_API_BUCKET', self.get_bucket())
+        self._processed_bucket = self.get_processed_bucket()
 
-        if boto3.client('s3').head_bucket(Bucket=self._bucket):
-            self.bucket = boto3.resource('s3').Bucket(self._bucket)
+        self.json_data_bucket = boto3.resource('s3').Bucket(self._processed_bucket)
 
         print(f"using url: {self._url}")
-        print(f"using bucket: {self._bucket}")
-
+        print(f"using bucket: {self._processed_bucket}")
 
     def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
                                         version: str = "164"):
@@ -138,7 +134,7 @@ class StasisClient:
         filename = f'{dest}/{sample_name}'
         try:
             with open(filename, 'wb') as data:
-                self.bucket.download_fileobj(sample_name, data)
+                self.json_data_bucket.download_fileobj(sample_name, data)
 
             with open(filename, 'rb') as data:
                 jstr = json.load(data)
@@ -165,7 +161,7 @@ class StasisClient:
         return self._url
 
     def get_bucket(self):
-        return self._bucket
+        return self._processed_bucket
 
     def get_states(self):
         return requests.get(f"{self._url}/status", headers=self._header).json()
@@ -186,9 +182,23 @@ class StasisClient:
         """
         return requests.get(f"{self._url}/job/status/{job_id}", headers=self._header).json()
 
-    def get_result_bucket(self):
+    def get_raw_bucket(self):
         """
         :param job_id:
         :return:
         """
-        return requests.get(f"{self._url}/result/bucket", headers=self._header).json()['name']
+        return requests.get(f"{self._url}/data/raw", headers=self._header).json()['name']
+
+    def get_aggregated_bucket(self):
+        """
+        :param job_id:
+        :return:
+        """
+        return requests.get(f"{self._url}/data/zip", headers=self._header).json()['name']
+
+    def get_processed_bucket(self):
+        """
+        :param job_id:
+        :return:
+        """
+        return requests.get(f"{self._url}/data/json", headers=self._header).json()['name']

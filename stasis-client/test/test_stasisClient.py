@@ -130,9 +130,19 @@ def test_load_job(stasis_cli, api_token):
 
     assert len(data) == 3
 
-def test_get_result_bucket(stasis_cli,api_token):
 
-    data = stasis_cli.get_result_bucket()
+def test_get_raw_bucket(stasis_cli, api_token):
+    data = stasis_cli.get_raw_bucket()
     print(data)
-    assert data == 'data-result-carrot-test'
+    assert data == 'data-carrot'
 
+def test_get_aggregated_bucket(stasis_cli, api_token):
+    data = stasis_cli.get_aggregated_bucket()
+    print(data)
+    assert data == 'wcmc-data-stasis-agg-test'
+
+
+def test_get_result_bucket(stasis_cli, api_token):
+    data = stasis_cli.get_processed_bucket()
+    print(data)
+    assert data == 'wcmc-data-stasis-result-test'
