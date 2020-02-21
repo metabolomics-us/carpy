@@ -41,10 +41,14 @@ class StasisClient:
         }
 
         if self._bucket is None:
-            self._bucket = os.getenv('STASIS_API_BUCKET', 'wcmc-data-stasis-result-prod')
+            self._bucket = os.getenv('STASIS_API_BUCKET', self.get_bucket())
 
         if boto3.client('s3').head_bucket(Bucket=self._bucket):
             self.bucket = boto3.resource('s3').Bucket(self._bucket)
+
+        print(f"using url: {self._url}")
+        print(f"using bucket: {self._bucket}")
+
 
     def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
                                         version: str = "164"):

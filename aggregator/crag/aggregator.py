@@ -38,9 +38,7 @@ class Aggregator:
         if stasis:
             self.stasis_cli = stasis
         else:
-            self.stasis_cli = StasisClient(f'https://{"test-" if "test" in args else ""}api.metabolomics.us/stasis',
-                                           None,
-                                           args["test"])
+            self.stasis_cli = StasisClient()
 
     def find_intensity(self, value) -> int:
         """

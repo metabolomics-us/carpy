@@ -29,6 +29,7 @@ class JobAggregator(Aggregator):
         # 1. load job definition from stasis
         job_data = self.stasis_cli.load_job(job)
 
+        print(job_data)
         # directory
         directory = "result/{}".format(job)
         # 2. generate sample list which are finished

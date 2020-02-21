@@ -77,14 +77,18 @@ custom:
   # spectra bucket S3 or cheaper version
 
   ###
-  # Carrot bucket definition
+  # Carrot bucket definition. This contains all the rawdata in carrot
   ###
-  dataBucketName: "data-carrot"
+  dataRawBucketName: "data-carrot"
 
   ###
   # Carrot bucket to store aggregated results
   ###
-  dataResultBucketName: "data-result-carrot-${self:custom.stage}"
+  dataZipBucketName: "wcmc-data-stasis-agg-${self:custom.stage}"
+
+  ###
+  # Carrot bucket containing all the json results
+  dataJSONBucketName: "wcmc-data-stasis-result-${self:custom.stage}"
 
   ###
   # Queues
@@ -439,106 +443,6 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
 
-  #returns all targets for a method or a target matching method and mz_rt
-  targetGet:
-    handler: stasis/target/get.get
-    events:
-      - http:
-          path: target/{method}
-          method: get
-          private: true
-          cors: true
-          request:
-            parameter:
-              paths:
-                method: true
-                mz_rt: false
-          documentation:
-            summary: loads all targets for the given method
-      - http:
-          path: target/{method}/{mz_rt}
-          method: get
-          private: true
-          cors: true
-          request:
-            parameter:
-              path:
-                method: true
-                mz_rt: true
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-
-  #creates a target
-  targetPost:
-    handler: stasis/target/create.create
-    events:
-      - http:
-          path: target
-          private: true
-          method: post
-          cors: true
-          documentation:
-            summary: creates a new target
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-
-  #updates a target
-  targetPut:
-    handler: stasis/target/update.update
-    events:
-      - http:
-          path: target
-          private: true
-          method: put
-          cors: true
-          documentation:
-            summary: updates a target
-
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-  #updates a target
-  targetDelete:
-    handler: stasis/target/delete.delete
-    events:
-      - http:
-          path: target/{method}/{mz_rt}
-          method: delete
-          cors: true
-          private: true
-          request:
-            parameter:
-              path:
-                method: true
-                mz_rt: true
-          documentation:
-            summary: deletes a target
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-
-  #return available libraries
-  libraryGet:
-    handler: stasis/library/get.get
-    events:
-      - http:
-          path: library
-          private: true
-          method: get
-          cors: true
-          documentation:
-            summary: lists all available libraries
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-
   #checks existence of a raw data file
   fileExists:
     handler: stasis/file/exists.exists
@@ -556,7 +460,7 @@ functions:
             summary: evaluates if a certain file exists
 
     environment:
-      dataBucket: ${self:custom.dataBucketName}
+      dataBucket: ${self:custom.dataRawBucketName}
 
 
   #creates a new tracking record in the system
@@ -701,16 +605,46 @@ functions:
       jobTrackingTable: ${self:custom.jobTrackingTable}
 
 
-  job_bucket:
-    handler: stasis/jobs/tracking.result_bucket
+  zip_bucket:
+    handler: stasis/bucket/bucket.bucket_zip
     events:
       - http:
           private: true
-          path: result/bucket
+          path: data/zip
           method: get
           cors: true
           documentation:
-            summary: returns the name of the result bucked for this stasis deployment
+            summary: returns the name of the bucket for zipped aggregated data
 
     environment:
-      dataBucket: ${self:custom.dataResultBucketName}
+      dataBucket: ${self:custom.dataZipBucketName}
+
+  json_bucket:
+    handler: stasis/bucket/bucket.bucket_json
+    events:
+      - http:
+          private: true
+          path: data/json
+          method: get
+          cors: true
+          documentation:
+            summary: returns the name of the bucket for json result data
+
+    environment:
+      dataBucket: ${self:custom.dataJSONBucketName}
+
+  raw_bucket:
+    handler: stasis/bucket/bucket.bucket_raw
+    events:
+      - http:
+          private: true
+          path: data/raw
+          method: get
+          cors: true
+          documentation:
+            summary: returns the name of the bucket for all raw data
+
+    environment:
+      dataBucket: ${self:custom.dataRawBucketName}
+
+
