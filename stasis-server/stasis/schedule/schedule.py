@@ -151,9 +151,69 @@ def schedule_aggregation_to_fargate(param, param1):
     assert 'body' in param, "please ensure you have a body set!"
     assert 'job' in param['body'], "please ensure your body contains the job name"
 
+    body = param['body']
+
     try:
         job = json.loads(param['body'])['job']
+
+        import boto3
+        overrides = {"containerOverrides": [{
+            "name": "carrot-aggregator",
+            "environment": [
+                {
+                    "name": "CARROT_JOB",
+                    "value": "{}".format(job)
+                }
+            ]
+        }]}
+
+        version = '1'
+        task_name = SECURE_CARROT_AGGREGATOR
+        if 'task_version' in body:
+            version = body["task_version"]
+
+        if 'key' in body and body['key'] is not None:
+            overrides['containerOverrides'][0]['environment'].append({
+                "name": "STASIS_API_TOKEN",
+                "value": body['key']
+            })
+
+        if 'url' in body and body['url'] is not None:
+            overrides['containerOverrides'][0]['environment'].append({
+                "name": "STASIS_URL",
+                "value": body['url']
+            })
+
+        print('utilizing taskDefinition: {}:{}'.format(task_name, version))
+        print(overrides)
+        print("")
+
+        # fire AWS fargate instance now
+        client = boto3.client('ecs')
+        response = client.run_task(
+            cluster='carrot',  # name of the cluster
+            launchType='FARGATE',
+            taskDefinition='{}:{}'.format(task_name, version),
+            count=1,
+            platformVersion='LATEST',
+            networkConfiguration={
+                'awsvpcConfiguration': {
+                    'subnets': [
+                        # we need at least 2, to insure network stability
+                        os.environ.get('SUBNET', 'subnet-064fbf05a666c6557')],
+                    'assignPublicIp': 'ENABLED'
+                }
+            },
+            overrides=overrides,
+        )
+
         update_job_state(job=job, state=States.AGGREGATION_SCHEDULED)
+        print(f'Response: {response}')
+        return {
+            'statusCode': 200,
+            'isBase64Encoded': False,
+            'headers': __HTTP_HEADERS__
+        }
     except Exception as e:
         raise e
 
