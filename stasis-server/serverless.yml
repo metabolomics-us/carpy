@@ -6,6 +6,7 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
+  - serverless-plugin-existing-s3
 
 provider:
   name: aws
@@ -125,6 +126,7 @@ custom:
       - "botocore"
       - "moto"
       - "pytest"
+
 
 ############################################################################################
 # this section defines what to include and exclud when packaging artifacts
@@ -650,7 +652,7 @@ functions:
   zip_bucket_triggers:
     handler: stasis/bucket/triggers.bucket_zip
     events:
-      - s3:
+      - existingS3:
           bucket: ${self:custom.dataZipBucketName}
           event: s3:ObjectCreated:*
 
