@@ -26,14 +26,23 @@ class JobAggregator(Aggregator):
         :param job:
         :return:
         """
+        print("aggregating job: {}".format(job))
         # 1. load job definition from stasis
         job_data = self.stasis_cli.load_job(job)
+
+        assert isinstance(job_data, list), "something went wrong during loading the job data"
+        print("job consists of: \n\n{}\n".format(job_data))
 
         # directory
         directory = "result/{}".format(job)
         # 2. generate sample list which are finished
         samples = list(map(lambda x: x['sample'], filter(lambda x: x['state'] != 'failed', job_data)))
 
+        print("extracted samples for job are")
+        for x in samples:
+            print(x)
+
+        print("starting aggregation")
         # 3. aggregate
         try:
             self.aggregate_samples(samples, directory)

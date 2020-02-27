@@ -303,6 +303,7 @@ class Aggregator:
 
             resdata = self.stasis_cli.sample_result(os.path.splitext(sample)[0], dir)
 
+            print("retrieved result data are: {}".format(resdata))
             if resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
