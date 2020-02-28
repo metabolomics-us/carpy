@@ -15,6 +15,8 @@ SERVICE = "stasis-service"
 MESSAGE_BUFFER = 10
 SECURE_CARROT_RUNNER = 'secure-carrot-runner'
 SECURE_CARROT_AGGREGATOR = 'secure-carrot-aggregator'
+SECURE_CARROT_RUNNER_VERSION = 164
+SECURE_CARROT_AGGREGATOR_VERSION = 5
 
 MAX_FARGATE_TASKS_BY_SERVICE = {
     SECURE_CARROT_RUNNER: 40,
@@ -167,7 +169,7 @@ def schedule_aggregation_to_fargate(param, param1):
             ]
         }]}
 
-        version = '1'
+        version = SECURE_CARROT_AGGREGATOR_VERSION
         task_name = SECURE_CARROT_AGGREGATOR
         if 'task_version' in body:
             version = body["task_version"]
@@ -355,7 +357,7 @@ def schedule_processing_to_fargate(event, context):
             ]
         }]}
 
-        version = '1'
+        version = SECURE_CARROT_RUNNER_VERSION
         task_name = SECURE_CARROT_RUNNER
         if 'task_version' in body:
             version = body["task_version"]

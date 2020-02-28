@@ -32,7 +32,7 @@ def schedule_job(event, context):
     method = body['method']
     env_ = body['env']
     profile = body['profile']
-    task_version = body.get('task_version')
+    task_version = body.get('task_version',CURRENT_JOB_VERSION)
 
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
