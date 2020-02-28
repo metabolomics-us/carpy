@@ -297,14 +297,14 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
-            dir = self.args.get("dir", "tmp")
-            if dir is None:
-                dir = "tmp"
+            dir = self.args.get("dir", "/tmp")
 
             resdata = self.stasis_cli.sample_result(os.path.splitext(sample)[0], dir)
 
-            print("retrieved result data are: {}".format(resdata))
-            if resdata and resdata.get('Error') is None:
+            print("retrieved result data are: '{}'".format(resdata))
+            if resdata == '':
+                sbar.write (f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {os.path.splitext(sample)[0]} located at {dir}')
+            elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
                 sbar.write(
