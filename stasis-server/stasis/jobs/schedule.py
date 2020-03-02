@@ -6,7 +6,7 @@ from jsonschema import validate
 
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, SECURE_CARROT_AGGREGATOR_VERSION
 from stasis.schema import __JOB_SCHEMA__
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state
 
@@ -32,7 +32,7 @@ def schedule_job(event, context):
     method = body['method']
     env_ = body['env']
     profile = body['profile']
-    task_version = body.get('task_version',CURRENT_JOB_VERSION)
+    task_version = body.get('task_version',SECURE_CARROT_AGGREGATOR_VERSION)
 
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
