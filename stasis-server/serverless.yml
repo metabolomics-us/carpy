@@ -174,12 +174,12 @@ functions:
           documentation:
             summary: synchronizes the samples with the job state table
 
-          environment:
-            schedule_queue: ${self:custom.scheduleQueue}
-            trackingTable: ${self:custom.trackingTable}
-            acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
-            jobStateTable: ${self:custom.jobStateTable}
-            jobTrackingTable: ${self:custom.jobTrackingTable}
+    environment:
+      schedule_queue: ${self:custom.scheduleQueue}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
 
   fargate_job_monitor:
     handler: stasis/jobs/schedule.monitor_jobs
@@ -663,3 +663,21 @@ functions:
     environment:
       dataBucket: ${self:custom.dataZipBucketName}
       jobStateTable: ${self:custom.jobStateTable}
+
+
+  json_bucket_triggers:
+    handler: stasis/bucket/triggers.bucket_json
+    events:
+      - existingS3:
+          bucket: ${self:custom.dataJSONBucketName}
+          event: s3:ObjectCreated:*
+
+          existing: true
+          documentation:
+            summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync. Especially samples
+
+    environment:
+      dataBucket: ${self:custom.dataJSONBucketName}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+

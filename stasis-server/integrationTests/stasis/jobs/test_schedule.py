@@ -70,7 +70,26 @@ def test_schedule_job_integration(api_token):
 
     assert exspectation_met is True
 
+    origin = time()
+    duration = 0
+    exspectation_met = False
     print("job is in the aggregating stage")
     # wait until the job is in state aggregated
     # fargate should automatically start and process this task for us
     # this should be called infrequently
+    while duration < 90000 and exspectation_met is False:
+        response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
+                                headers=api_token)
+        result = json.loads(response.content)
+
+        print(result)
+        if result['job_state'] == 'aggregated':
+            exspectation_met = True
+            assert result['sample_states']['processed'] == 2
+            assert result['sample_states']['failed'] == 1
+            break
+
+        sleep(10)
+        duration = time() - origin
+
+    assert exspectation_met is True

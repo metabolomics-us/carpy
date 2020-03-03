@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Optional
+from typing import Optional, List
 
 import boto3
 import simplejson as json
@@ -54,10 +54,7 @@ class TableManager:
                         },
 
                     ],
-                    ProvisionedThroughput={
-                        'ReadCapacityUnits': 10,
-                        'WriteCapacityUnits': 5
-                    },
+                    BillingMode='PAY_PER_REQUEST',
                     GlobalSecondaryIndexes=[
                         {
                             'IndexName': 'job-id-state-index',
@@ -93,12 +90,12 @@ class TableManager:
                     ]
                 ))
             except ResourceInUseException as e:
-                print("table already exist, ignoring error {}".format(e))
+                print("table {} exist, ignoring error {}".format(table_name, e))
                 pass
             except ValidationException as ex:
                 raise ex
             except Exception as ex:
-                print("table already exist, ignoring error {}".format(ex))
+                print("table {} exist, ignoring error {}".format(table_name, ex))
                 pass
 
         return self.db.Table(table_name)
@@ -138,7 +135,7 @@ class TableManager:
                         },
 
                     ],
-
+                    BillingMode='PAY_PER_REQUEST',
                     GlobalSecondaryIndexes=[
                         {
                             'IndexName': 'job-id-index',
@@ -160,12 +157,12 @@ class TableManager:
                     ]
                 ))
             except ResourceInUseException as e:
-                print("table already exist, ignoring error {}".format(e))
+                print("table {} exist, ignoring error {}".format(table_name, e))
                 pass
             except ValidationException as ex:
                 raise ex
             except Exception as ex:
-                print("table already exist, ignoring error {}".format(ex))
+                print("table {} exist, ignoring error {}".format(table_name, ex))
                 pass
 
         return self.db.Table(table_name)
@@ -210,7 +207,7 @@ class TableManager:
                             'AttributeType': 'S'
                         }
                     ],
-
+                    BillingMode='PAY_PER_REQUEST',
                     GlobalSecondaryIndexes=[
                         {
                             'IndexName': 'experiment-id-index',
@@ -232,10 +229,10 @@ class TableManager:
                     ]
                 ))
             except ResourceInUseException as e:
-                print("table already exist, ignoring error {}".format(e))
+                print("table {} exist, ignoring error {}".format(table_name, e))
                 pass
             except Exception as ex:
-                print("table already exist, ignoring error {}".format(ex))
+                print("table {} exist, ignoring error {}".format(table_name, ex))
                 pass
 
         return self.db.Table(table_name)
@@ -272,7 +269,7 @@ class TableManager:
                             'AttributeType': 'S'
                         }
                     ],
-
+                    BillingMode='PAY_PER_REQUEST',
                     GlobalSecondaryIndexes=[
                         {
                             'IndexName': 'experiment-id-index',
@@ -294,14 +291,13 @@ class TableManager:
                     ])
                 )
             except ResourceInUseException as e:
-                print("table already exist, ignoring error {}".format(e))
+                print("table {} exist, ignoring error {}".format(table_name, e))
                 pass
             except Exception as ex:
                 print("table already exist, ignoring error {}".format(ex))
                 pass
 
         return self.db.Table(table_name)
-
 
     def sanitize_json_for_dynamo(self, result):
         """
@@ -353,6 +349,7 @@ def update_job_state(job: str, state: States, reason: Optional[str] = None):
     else:
         return None
 
+
 def _compute_state_change(item, old_state, state):
     ts = time.time() * 1000
     if 'durations' not in item:
@@ -391,8 +388,13 @@ def get_job_state(job: str) -> Optional[States]:
         tm = TableManager()
         trktable = tm.get_job_state_table()
 
+        query_params = {
+            'IndexName': 'job-id-state-index',
+            'Select': 'ALL_ATTRIBUTES',
+            'KeyConditionExpression': Key('job').eq(job)
+        }
         result = trktable.query(
-            KeyConditionExpression=Key('id').eq(job)
+            **query_params
         )
 
         if "Items" in result and len(result['Items']) > 0:
@@ -429,6 +431,25 @@ def set_sample_job_state(sample: str, job: str, state: States, reason: Optional[
         return _set_sample_job_state(body={"job": job, "sample": sample, "state": str(state)})
     else:
         return _set_sample_job_state(body={"job": job, "sample": sample, "state": str(state), "reason": str(reason)})
+
+
+def update_sample_state(sample: str, state: States, reason: Optional[str] = None) -> List[str]:
+    """
+    updates the state for this sample in the job tracking table to ensure it's up to date. Since it's called without a job id, it will updates all related jobs. So it's expensive and can take
+    quite a while
+    :param sample:
+    :param state:
+    :param reason:
+    :return: list of job id's affected by this change
+    """
+
+    # 1. query sample tracking table to get all job ids
+
+    # 2. updated the state accordingly
+
+    # 3. return affect sample id's
+
+    # 4. technically we should modify stasis states, but I don't think we want todo this....
 
 
 def _set_sample_job_state(body: dict):

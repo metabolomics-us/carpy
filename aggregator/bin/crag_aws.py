@@ -7,7 +7,7 @@ from crag.aws import JobAggregator
 def create_parser():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--job', type=str, help='This is the job you would like to process', required=True)
+    parser.add_argument('--job', type=str, help='This is the job you would like to process', default=os.getenv('CARROT_JOB'))
     parser.add_argument('-zr', '--zero-replacement', help='Include replaced intensity values', action='store_true',
                         default=True)
     parser.add_argument('-u', '--upload', help='uploads results to S3',

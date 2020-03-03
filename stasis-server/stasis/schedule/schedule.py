@@ -235,7 +235,7 @@ def monitor_queue(event, context):
     client = boto3.client('sqs')
 
     # if topic exists, we just reuse it
-    arn = _get_queue(client)
+    arn = _get_queue(client=client)
 
     slots = _free_task_count()
 
@@ -420,8 +420,10 @@ def _get_queue(client, queue_name: str = "schedule_queue"):
     generates queues for us on demand as required
     """
     try:
-        print("new queue")
         return client.create_queue(QueueName=os.environ[queue_name])['QueueUrl']
+    except KeyError as ex:
+        raise Exception(
+            "you forgot to specify your env variable {} to define the queue which you want to create/monitor".format(
+                queue_name))
     except Exception as ex:
-        print("queue exists")
         return client.get_queue_url(QueueName=os.environ[queue_name])['QueueUrl']

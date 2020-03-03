@@ -50,7 +50,7 @@ def sync(job: str) -> Optional[States]:
                 states.append(States.SCHEDULED)
             else:
                 print(
-                    "unexplained stasis state.... State was: {}. We are assuming it's processing".format(stasis_state))
+                    "unexplained stasis state.... State was: {}. We are assuming {} is processing".format(stasis_state,sample))
                 set_sample_job_state(job=job, sample=sample, state=States.PROCESSING)
                 states.append(States.PROCESSING)
 
