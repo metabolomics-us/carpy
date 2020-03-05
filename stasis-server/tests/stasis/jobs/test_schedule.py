@@ -42,7 +42,6 @@ def test_schedule_job(requireMocking):
             "abz_12345.mzml"
         ],
         "profile": "lcms",
-        "task_version": "1",
         "env": "test"
     }
 

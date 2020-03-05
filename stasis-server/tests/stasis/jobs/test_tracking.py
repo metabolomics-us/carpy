@@ -102,7 +102,7 @@ def test_status(requireMocking):
 
         assert result['statusCode'] == 200
 
-    set_job_state(job="123456", method="test", env="test", profile="test", task_version=1234,
+    set_job_state(job="123456", method="test", env="test", profile="test",
                   state=States.SCHEDULED)
 
     result = tracking.status({

@@ -6,7 +6,7 @@ from jsonschema import validate
 
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, SECURE_CARROT_AGGREGATOR_VERSION
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
 from stasis.schema import __JOB_SCHEMA__
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state
 
@@ -32,14 +32,13 @@ def schedule_job(event, context):
     method = body['method']
     env_ = body['env']
     profile = body['profile']
-    task_version = body.get('task_version',SECURE_CARROT_AGGREGATOR_VERSION)
 
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
     try:
 
         # store actual job in the job table with state scheduled
-        set_job_state(job=job_id, method=method, env=env_, profile=profile, task_version=task_version,
+        set_job_state(job=job_id, method=method, env=env_, profile=profile,
                       state=States.SCHEDULING)
         for sample in samples:
             try:
@@ -48,7 +47,6 @@ def schedule_job(event, context):
                     "env": env_,
                     "method": method,
                     "profile": profile,
-                    "task_version": task_version,
                     "key": stasis_key
                 }, service=SECURE_CARROT_RUNNER)
                 set_sample_job_state(
@@ -63,7 +61,7 @@ def schedule_job(event, context):
                     state=States.FAILED,
                     reason=str(e)
                 )
-        set_job_state(job=job_id, method=method, env=env_, profile=profile, task_version=task_version,
+        set_job_state(job=job_id, method=method, env=env_, profile=profile,
                       state=States.SCHEDULED)
 
         return {
@@ -79,7 +77,7 @@ def schedule_job(event, context):
         }
     except Exception as e:
         # update job state in the system to failed with the related reason
-        set_job_state(job=job_id, method=method, env=env_, profile=profile, task_version=task_version,
+        set_job_state(job=job_id, method=method, env=env_, profile=profile,
                       state=States.FAILED, reason=str(e))
 
         traceback.print_exc()

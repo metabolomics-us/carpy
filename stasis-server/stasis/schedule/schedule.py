@@ -15,8 +15,6 @@ SERVICE = "stasis-service"
 MESSAGE_BUFFER = 10
 SECURE_CARROT_RUNNER = 'secure-carrot-runner'
 SECURE_CARROT_AGGREGATOR = 'secure-carrot-aggregator'
-SECURE_CARROT_RUNNER_VERSION = 164
-SECURE_CARROT_AGGREGATOR_VERSION = 5
 
 MAX_FARGATE_TASKS_BY_SERVICE = {
     SECURE_CARROT_RUNNER: 40,
@@ -169,10 +167,7 @@ def schedule_aggregation_to_fargate(param, param1):
             ]
         }]}
 
-        version = SECURE_CARROT_AGGREGATOR_VERSION
-        task_name = SECURE_CARROT_AGGREGATOR
-        if 'task_version' in body:
-            version = body["task_version"]
+        task_name ="{}-{}".format(os.getenv("current_stage"), SECURE_CARROT_AGGREGATOR)
 
         if 'key' in body and body['key'] is not None:
             overrides['containerOverrides'][0]['environment'].append({
@@ -186,7 +181,7 @@ def schedule_aggregation_to_fargate(param, param1):
                 "value": body['url']
             })
 
-        print('utilizing taskDefinition: {}:{}'.format(task_name, version))
+        print('utilizing taskDefinition: {}'.format(task_name))
         print(overrides)
         print("")
 
@@ -195,7 +190,7 @@ def schedule_aggregation_to_fargate(param, param1):
         response = client.run_task(
             cluster='carrot',  # name of the cluster
             launchType='FARGATE',
-            taskDefinition='{}:{}'.format(task_name, version),
+            taskDefinition=task_name,
             count=1,
             platformVersion='LATEST',
             networkConfiguration={
@@ -357,10 +352,7 @@ def schedule_processing_to_fargate(event, context):
             ]
         }]}
 
-        version = SECURE_CARROT_RUNNER_VERSION
-        task_name = SECURE_CARROT_RUNNER
-        if 'task_version' in body:
-            version = body["task_version"]
+        task_name = "{}-{}".format(os.getenv("current_stage"), SECURE_CARROT_RUNNER)
 
         if 'key' in body and body['key'] is not None:
             overrides['containerOverrides'][0]['environment'].append({
@@ -368,7 +360,7 @@ def schedule_processing_to_fargate(event, context):
                 "value": body['key']
             })
 
-        print('utilizing taskDefinition: {}:{}'.format(task_name, version))
+        print('utilizing taskDefinition: {}'.format(task_name))
         print(overrides)
         print("")
 
@@ -377,7 +369,7 @@ def schedule_processing_to_fargate(event, context):
         response = client.run_task(
             cluster='carrot',  # name of the cluster
             launchType='FARGATE',
-            taskDefinition='{}:{}'.format(task_name, version),
+            taskDefinition=task_name,
             count=1,
             platformVersion='LATEST',
             networkConfiguration={

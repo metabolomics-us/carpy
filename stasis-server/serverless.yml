@@ -157,7 +157,9 @@ functions:
           cors: true
           documentation:
             summary: returns the current scheduled tasks size
-
+    environment:
+      current_stage: ${self:custom.stage}
+ 
   fargate_processing_monitor:
     handler: stasis/schedule/schedule.monitor_queue
     events:
@@ -175,6 +177,7 @@ functions:
             summary: synchronizes the samples with the job state table
 
     environment:
+      current_stage: ${self:custom.stage}
       schedule_queue: ${self:custom.scheduleQueue}
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
@@ -198,6 +201,7 @@ functions:
             summary: synchronizes the job state
 
     environment:
+      current_stage: ${self:custom.stage}
       schedule_queue: ${self:custom.scheduleQueue}
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
@@ -215,7 +219,9 @@ functions:
           cors: true
           documentation:
             summary: returns all currently pending tasks
-
+    environment:
+      current_stage: ${self:custom.stage}
+ 
   #fetches an result record
   resultGet:
     handler: stasis/results/get.get

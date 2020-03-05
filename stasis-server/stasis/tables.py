@@ -365,18 +365,18 @@ def _compute_state_change(item, old_state, state):
     return ts
 
 
-def set_job_state(job: str, env: str, method: str, profile: str, task_version: int, state: States,
+def set_job_state(job: str, env: str, method: str, profile: str, state: States,
                   reason: Optional[str] = None):
     """
     sets the state in the job table for the given sample and job
     """
     if reason is None:
         return _set_job_state(
-            body={"job": job, "id": job, "state": str(state), "task_version": int(task_version), "method": method,
+            body={"job": job, "id": job, "state": str(state), "method": method,
                   "profile": profile, "env": env})
     else:
         return _set_job_state(
-            body={"job": job, "id": job, "state": str(state), "task_version": int(task_version), "method": method,
+            body={"job": job, "id": job, "state": str(state), "method": method,
                   "profile": profile, "reason": str(reason), "env": env})
 
 

@@ -39,7 +39,6 @@ def requireMocking():
     ec2 = moto.mock_ec2()
     ec2.start()
 
-    create_cluster()
 
     session = boto3.session.Session()
     session.client('sns')
@@ -55,9 +54,11 @@ def requireMocking():
     os.environ["dataBucket"] = "data-carrot"
     os.environ["jobTrackingTable"] = "UnitJobTrackingTable"
     os.environ["jobStateTable"] = "UnitJobStateTable"
+    os.environ["current_stage"] = "test"
 
     dynamodb = boto3.resource('dynamodb')
 
+    create_cluster()
     yield
     sqs.stop()
     sns.stop()
@@ -75,7 +76,6 @@ def create_cluster():
     cluster = boto3.client('ecs')
 
     cluster.create_cluster(clusterName='carrot')
-
     cluster.register_task_definition(
         containerDefinitions=[
             {
@@ -90,31 +90,29 @@ def create_cluster():
                 'memory': 10,
             },
         ],
-        family='carrot-runner',
-        taskRoleArn='',
-        volumes=[
-        ],
-    )
-
-    cluster.register_task_definition(
-        containerDefinitions=[
-            {
-                'name': 'carrot-runner',
-                'command': [
-                    'sleep',
-                    '360',
-                ],
-                'cpu': 10,
-                'essential': True,
-                'image': 'busybox',
-                'memory': 10,
-            },
-        ],
-        family='secure-carrot-runner',
+        family="{}-secure-carrot-runner".format(os.getenv("current_stage")),
         taskRoleArn='',
         volumes=[],
     )
 
+    cluster.register_task_definition(
+        containerDefinitions=[
+            {
+                'name': 'carrot-aggregator',
+                'command': [
+                    'sleep',
+                    '360',
+                ],
+                'cpu': 10,
+                'essential': True,
+                'image': 'busybox',
+                'memory': 10,
+            },
+        ],
+        family="{}-secure-carrot-aggregator".format(os.getenv("current_stage")),
+        taskRoleArn='',
+        volumes=[],
+    )
     test_instance = ec2.create_instances(
         ImageId="ami-1234abcd",
         MinCount=1,
