@@ -141,6 +141,10 @@ class StasisClient:
             os.makedirs(dest)
 
         filename = f'{dest}/{sample_name}'
+
+        if not filename.endswith(".json"):
+            filename = "{}.json".format(filename)
+
         try:
             with open(filename, 'wb') as data:
                 self.json_data_bucket.download_fileobj(sample_name, data)
@@ -224,4 +228,3 @@ class StasisClient:
         result = requests.get(f"{self._url}/data/json", headers=self._header)
         assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
         return result.json()['name']
-
