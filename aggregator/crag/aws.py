@@ -59,6 +59,7 @@ class JobAggregator(Aggregator):
                 except Exception as e:
                     pass
                 boto3.client('s3').upload_file(f"result/{job}.zip", bucket_name, f"{job}.zip")
+
             return True
         except NoSamplesFoundException:
             return False
