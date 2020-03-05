@@ -297,13 +297,17 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
+            sample_name = "{}.json".format(os.path.splitext(sample)[0])
             dir = self.args.get("dir", "/tmp")
 
-            resdata = self.stasis_cli.sample_result(os.path.splitext(sample)[0], dir)
+            print("looking for {}".format(sample_name))
+
+            resdata = self.stasis_cli.sample_result(sample_name, dir)
 
             print("retrieved result data are: '{}'".format(resdata))
             if resdata == '':
-                sbar.write (f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {os.path.splitext(sample)[0]} located at {dir}')
+                sbar.write(
+                    f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {sample_name} located at {dir}')
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
