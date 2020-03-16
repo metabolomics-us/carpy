@@ -100,6 +100,15 @@ __JOB_SCHEMA__ = {
     'id': {
         'type': 'string'
     },
+    'notify': {
+        'type': 'object',
+        'email': {
+            'type': 'array',
+            'items': {
+                'type': 'string'
+            }
+        }
+    },
     'required': [
         'samples',
         'profile',

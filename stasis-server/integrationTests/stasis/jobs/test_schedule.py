@@ -25,7 +25,11 @@ def test_schedule_job_integration(api_token):
         ],
         "profile": "carrot.lcms",
         "task_version": "164",
-        "env": "test"
+        "env": "test",
+        "notify": [
+            "wohlgemuth@ucdavis.edu",
+            "berlinguyinca@gmail.com"
+        ]
     }
 
     response = requests.post("https://test-api.metabolomics.us/stasis/job/schedule", json=job, headers=api_token)
