@@ -14,8 +14,10 @@ def bucket_zip(event, context):
         o = record['s3']['object']
         k = str(o['key'])
 
+        print(f"received a new file: {k}")
         if k.endswith(".zip"):
             job = k.replace(".zip", "")
+            print( "belongs to job {job}")
 
             result = update_job_state(job=job, state=States.AGGREGATED, reason="client uploaded file")
 

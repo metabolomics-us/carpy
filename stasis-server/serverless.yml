@@ -660,9 +660,9 @@ functions:
     events:
       - existingS3:
           bucket: ${self:custom.dataZipBucketName}
-          event: s3:ObjectCreated:*
+          events:
+            - s3:ObjectCreated:*
 
-          existing: true
           documentation:
             summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync
 
@@ -676,7 +676,8 @@ functions:
     events:
       - existingS3:
           bucket: ${self:custom.dataJSONBucketName}
-          event: s3:ObjectCreated:*
+          events:
+            - s3:ObjectCreated:*
 
           existing: true
           documentation:

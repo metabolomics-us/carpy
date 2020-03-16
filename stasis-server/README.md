@@ -21,3 +21,7 @@ this only needs to be done once and might take 45m until the service is register
 sls deploy --stage <NAME>
 
 deploys the stage, assuming you setup the domain
+
+sls s3deploy --stage <NAME>
+
+this initializes all the bucket event bindings. Rather hacky

@@ -49,7 +49,7 @@ class JobAggregator(Aggregator):
 
             if upload:
                 bucket_name = self.stasis_cli.get_aggregated_bucket()
-                print("zipping data and uploading it to the result bucket, {}. File name will be {}.{}".format(
+                print("zipping data and uploading it to the result bucket: {}. File name will be {}.{}".format(
                     bucket_name, job, "zip"))
                 shutil.make_archive(f"result/{job}", 'zip', directory)
 
@@ -58,7 +58,10 @@ class JobAggregator(Aggregator):
                                                      CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
                 except Exception as e:
                     pass
-                boto3.client('s3').upload_file(f"result/{job}.zip", bucket_name, f"{job}.zip")
+
+                # upload new file
+                print(
+                    boto3.client('s3').upload_file(Filename=f"result/{job}.zip", Bucket=bucket_name, Key=f"{job}.zip"))
 
             return True
         except NoSamplesFoundException:
