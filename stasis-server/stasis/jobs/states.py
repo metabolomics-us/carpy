@@ -6,6 +6,7 @@ class States(Enum):
     some standard states
     """
 
+    STORED = "stored",
     SCHEDULING = "scheduling",
     SCHEDULED = "scheduled",
     PROCESSING = "processing",

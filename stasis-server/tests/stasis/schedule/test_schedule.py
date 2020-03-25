@@ -51,12 +51,14 @@ def test__free_task_count_no_service(requireMocking):
     jsonString = json.dumps(
         {'secured': True, 'sample': 'myTest', 'env': 'test', 'method': 'hello', 'profile': 'lcms', 'task_version': 1})
 
-    for x in range(1, MAX_FARGATE_TASKS_BY_SERVICE[SECURE_CARROT_RUNNER]+1):
+    for x in range(0, MAX_FARGATE_TASKS_BY_SERVICE[SECURE_CARROT_RUNNER]):
         response = s.schedule({'body': jsonString}, {})
         s.monitor_queue({}, {})
-        assert s._free_task_count() == MAX_FARGATE_TASKS - x
-        assert s._free_task_count(service=SECURE_CARROT_RUNNER) == MAX_FARGATE_TASKS_BY_SERVICE[
-            SECURE_CARROT_RUNNER] - x
+
+        tasks_for_service = s._free_task_count(service=SECURE_CARROT_RUNNER)
+        max_tasks_for_service = MAX_FARGATE_TASKS_BY_SERVICE[SECURE_CARROT_RUNNER]
+
+        assert max_tasks_for_service - x - 1 == tasks_for_service
 
     assert s._free_task_count(service=SECURE_CARROT_RUNNER) == 0
     assert s._free_task_count() == MAX_FARGATE_TASKS - MAX_FARGATE_TASKS_BY_SERVICE[

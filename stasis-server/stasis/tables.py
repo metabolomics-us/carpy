@@ -6,6 +6,7 @@ import boto3
 import simplejson as json
 from boto.dynamodb2.exceptions import ResourceInUseException, ValidationException
 from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ParamValidationError
 
 from stasis.jobs.states import States
 
@@ -89,6 +90,9 @@ class TableManager:
                         }
                     ]
                 ))
+            except ParamValidationError as e:
+                raise e
+
             except ResourceInUseException as e:
                 print("table {} exist, ignoring error {}".format(table_name, e))
                 pass
@@ -156,6 +160,8 @@ class TableManager:
                         }
                     ]
                 ))
+            except ParamValidationError as e:
+                raise e
             except ResourceInUseException as e:
                 print("table {} exist, ignoring error {}".format(table_name, e))
                 pass
@@ -228,6 +234,8 @@ class TableManager:
                         }
                     ]
                 ))
+            except ParamValidationError as e:
+                raise e
             except ResourceInUseException as e:
                 print("table {} exist, ignoring error {}".format(table_name, e))
                 pass
@@ -290,6 +298,8 @@ class TableManager:
                         }
                     ])
                 )
+            except ParamValidationError as e:
+                raise e
             except ResourceInUseException as e:
                 print("table {} exist, ignoring error {}".format(table_name, e))
                 pass

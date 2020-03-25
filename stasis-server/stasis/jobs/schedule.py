@@ -4,13 +4,72 @@ import traceback
 from boto3.dynamodb.conditions import Key
 from jsonschema import validate
 
+from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
 from stasis.schema import __JOB_SCHEMA__
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state
 
-from stasis.headers import __HTTP_HEADERS__
+
+def store_job(event, context):
+    """
+    stores a job in the internal database
+    :param event:
+    :param context:
+    :return:
+    """
+
+    body = json.loads(event['body'])
+    validate(body, __JOB_SCHEMA__)
+
+    job_id = body['id']
+    samples = body['samples']
+    method = body['method']
+    env_ = body['env']
+    profile = body['profile']
+
+    # send to processing queue, might timeout web session for very large jobs
+    # refactor later accordingly to let it get processed in a lambda itself to avoid this
+    try:
+
+        # store actual job in the job table with state scheduled
+        set_job_state(job=job_id, method=method, env=env_, profile=profile,
+                      state=States.STORED)
+        for sample in samples:
+            set_sample_job_state(
+                job=job_id,
+                sample=sample,
+                state=States.SCHEDULED
+            )
+        return {
+
+            'body': json.dumps({'state': str(States.SCHEDULED), 'job': job_id}),
+
+            'statusCode': 200,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
+    except Exception as e:
+        # update job state in the system to failed with the related reason
+        set_job_state(job=job_id, method=method, env=env_, profile=profile,
+                      state=States.FAILED, reason=str(e))
+
+        traceback.print_exc()
+        return {
+
+            'body': json.dumps({'state': str(States.FAILED), 'job': job_id, 'reason': str(e)}),
+
+            'statusCode': 500,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
 
 
 def schedule_job(event, context):
@@ -25,7 +84,11 @@ def schedule_job(event, context):
     else:
         stasis_key = None
 
-    validate(body, __JOB_SCHEMA__)
+    # 1. load job description
+
+    # 2. submit samples
+
+    # 3. return new state
 
     job_id = body['id']
     samples = body['samples']

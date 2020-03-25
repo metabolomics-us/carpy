@@ -7,6 +7,7 @@ jsonschema
 watchdog
 pytest
 boltons
-moto
 simplejson
 importlib_metadata
+git+https://github.com/spulec/moto.git
+pytest

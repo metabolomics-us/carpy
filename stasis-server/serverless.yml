@@ -587,7 +587,34 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
+
   #schedule data to for handling the processing and aggregation on the backend
+  job_store:
+    handler: stasis/jobs/schedule.store_job
+    events:
+      - http:
+          path: job/store
+          method: post
+          private: true
+          cors: true
+          documentation:
+            summary: schedules a job to be computed to the backend queue
+
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+
+    #schedule data to for handling the processing and aggregation on the backend
   job_schedule:
     handler: stasis/jobs/schedule.schedule_job
     events:

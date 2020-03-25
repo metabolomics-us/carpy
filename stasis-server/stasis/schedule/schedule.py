@@ -128,6 +128,11 @@ def _free_task_count(service: Optional[str] = None) -> int:
     """
     tasks = _current_tasks()
 
+    def new_taskname(x):
+        x['name'] = x['name'].replace("{}-".format(os.getenv("current_stage")),'')
+        return x
+
+    tasks = list(map(lambda x: new_taskname(x), tasks))
     if service is None:
 
         result = len(tasks)
@@ -167,7 +172,7 @@ def schedule_aggregation_to_fargate(param, param1):
             ]
         }]}
 
-        task_name ="{}-{}".format(os.getenv("current_stage"), SECURE_CARROT_AGGREGATOR)
+        task_name = "{}-{}".format(os.getenv("current_stage"), SECURE_CARROT_AGGREGATOR)
 
         if 'key' in body and body['key'] is not None:
             overrides['containerOverrides'][0]['environment'].append({
