@@ -2,11 +2,99 @@ import json
 import math
 import random
 
-from stasis.jobs.schedule import schedule_job, monitor_jobs
+from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
 from stasis.jobs.states import States
 from stasis.schedule.schedule import monitor_queue, MESSAGE_BUFFER
 from stasis.tables import load_job_samples, get_tracked_state, get_job_state
 from stasis.tracking import create
+
+
+def test_store_job(requireMocking):
+    """
+    tests storing a job in the database
+    :param requireMocking:
+    :return:
+    """
+
+    job = {
+        "id": "stored_test_job",
+        "method": "test",
+        "samples": [
+            "abc_12345.mzml",
+            "abd_12345.mzml",
+            "abe_12345.mzml",
+            "abf_1234.mzml",
+            "abg_12345.mzml",
+            "abh_12345.mzml",
+            "abi_12345.mzml",
+            "abj_12345.mzml",
+            "abk_12345.mzml",
+            "abl_12345.mzml",
+            "abm_12345.mzml",
+            "abn_12345.mzml",
+            "abo_12345.mzml",
+            "abp_12345.mzml",
+            "abq_12345.mzml",
+            "abr_12345.mzml",
+            "abs_12345.mzml",
+            "abt_12345.mzml",
+            "abu_12345.mzml",
+            "abx_12345.mzml",
+            "aby_12345.mzml",
+            "abz_12345.mzml"
+        ],
+        "profile": "lcms",
+        "env": "test"
+    }
+
+    result = store_job({'body': json.dumps(job)}, {})
+
+    # check result state
+    assert json.loads(result['body'])['state'] == 'stored'
+
+    # query actual db and check internal state
+    assert get_job_state("stored_test_job") == States.STORED
+
+
+def test_schedule_job_fails_no_job_stored(requireMocking):
+    """
+    tests the scheduling of a job
+    """
+
+    job = {
+        "id": "test_job",
+        "method": "",
+        "samples": [
+            "abc_12345.mzml",
+            "abd_12345.mzml",
+            "abe_12345.mzml",
+            "abf_1234.mzml",
+            "abg_12345.mzml",
+            "abh_12345.mzml",
+            "abi_12345.mzml",
+            "abj_12345.mzml",
+            "abk_12345.mzml",
+            "abl_12345.mzml",
+            "abm_12345.mzml",
+            "abn_12345.mzml",
+            "abo_12345.mzml",
+            "abp_12345.mzml",
+            "abq_12345.mzml",
+            "abr_12345.mzml",
+            "abs_12345.mzml",
+            "abt_12345.mzml",
+            "abu_12345.mzml",
+            "abx_12345.mzml",
+            "aby_12345.mzml",
+            "abz_12345.mzml"
+        ],
+        "profile": "lcms",
+        "env": "test"
+    }
+
+    result = schedule_job({'body': json.dumps(job)}, {})
+
+    assert result['statusCode'] == 404
 
 
 def test_schedule_job(requireMocking):
@@ -45,6 +133,7 @@ def test_schedule_job(requireMocking):
         "env": "test"
     }
 
+    store_job({'body': json.dumps(job)}, {})
     result = schedule_job({'body': json.dumps(job)}, {})
 
     assert json.loads(result['body'])['state'] == str(States.SCHEDULED)

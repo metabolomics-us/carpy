@@ -7,6 +7,7 @@ from jsonschema import validate
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
+from stasis.jobs.tracking import description
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
 from stasis.schema import __JOB_SCHEMA__
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state
@@ -40,11 +41,11 @@ def store_job(event, context):
             set_sample_job_state(
                 job=job_id,
                 sample=sample,
-                state=States.SCHEDULED
+                state=States.STORED
             )
         return {
 
-            'body': json.dumps({'state': str(States.SCHEDULED), 'job': job_id}),
+            'body': json.dumps({'state': str(States.STORED), 'job': job_id}),
 
             'statusCode': 200,
 
@@ -91,6 +92,30 @@ def schedule_job(event, context):
     # 3. return new state
 
     job_id = body['id']
+
+    tm = TableManager()
+    table = tm.get_job_sample_state_table()
+
+    query_params = {
+        'IndexName': 'job-id-index',
+        'Select': 'ALL_ATTRIBUTES',
+        'KeyConditionExpression': Key('job').eq(job_id)
+    }
+    result = table.query(**query_params
+                         )
+
+    if len(result['Items']) == 0:
+        return {
+
+            'body': json.dumps({'error': 'this job has not been stored yet!', 'job': job_id}),
+
+            'statusCode': 404,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
     samples = body['samples']
     method = body['method']
     env_ = body['env']

@@ -6,6 +6,13 @@ import requests
 from stasis.jobs.states import States
 
 
+def test_store_job_integration(api_token):
+    """
+    test the storing of a job
+    :param api_token:
+    :return:
+    """
+
 def test_schedule_job_integration(api_token):
     """
     test the scheduling of a job
