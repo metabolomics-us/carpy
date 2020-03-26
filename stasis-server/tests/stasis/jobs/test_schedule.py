@@ -61,38 +61,9 @@ def test_schedule_job_fails_no_job_stored(requireMocking):
     tests the scheduling of a job
     """
 
-    job = {
-        "id": "test_job",
-        "method": "",
-        "samples": [
-            "abc_12345.mzml",
-            "abd_12345.mzml",
-            "abe_12345.mzml",
-            "abf_1234.mzml",
-            "abg_12345.mzml",
-            "abh_12345.mzml",
-            "abi_12345.mzml",
-            "abj_12345.mzml",
-            "abk_12345.mzml",
-            "abl_12345.mzml",
-            "abm_12345.mzml",
-            "abn_12345.mzml",
-            "abo_12345.mzml",
-            "abp_12345.mzml",
-            "abq_12345.mzml",
-            "abr_12345.mzml",
-            "abs_12345.mzml",
-            "abt_12345.mzml",
-            "abu_12345.mzml",
-            "abx_12345.mzml",
-            "aby_12345.mzml",
-            "abz_12345.mzml"
-        ],
-        "profile": "lcms",
-        "env": "test"
-    }
-
-    result = schedule_job({'body': json.dumps(job)}, {})
+    result = schedule_job({'pathParameters': {
+        "job": "test_job"
+    }}, {})
 
     assert result['statusCode'] == 404
 
@@ -104,7 +75,7 @@ def test_schedule_job(requireMocking):
 
     job = {
         "id": "test_job",
-        "method": "",
+        "method": "test",
         "samples": [
             "abc_12345.mzml",
             "abd_12345.mzml",
@@ -134,7 +105,12 @@ def test_schedule_job(requireMocking):
     }
 
     store_job({'body': json.dumps(job)}, {})
-    result = schedule_job({'body': json.dumps(job)}, {})
+
+    ##
+    # here we do the actual schedulign now
+    result = schedule_job({'pathParameters': {
+        "job": "test_job"
+    }}, {})
 
     assert json.loads(result['body'])['state'] == str(States.SCHEDULED)
     job = load_job_samples(job="test_job")

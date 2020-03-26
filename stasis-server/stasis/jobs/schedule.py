@@ -7,10 +7,10 @@ from jsonschema import validate
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
-from stasis.jobs.tracking import description
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
 from stasis.schema import __JOB_SCHEMA__
-from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state
+from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, load_job_samples, \
+    get_job_config
 
 
 def store_job(event, context):
@@ -78,33 +78,16 @@ def schedule_job(event, context):
     schedules the job for our processing
     """
 
-    body = json.loads(event['body'])
-
     if 'headers' in event and 'x-api-key' in event['headers']:
         stasis_key = event['headers']['x-api-key']
     else:
         stasis_key = None
 
-    # 1. load job description
+    job_id = event['pathParameters']['job']
 
-    # 2. submit samples
+    details = get_job_config(job_id)
 
-    # 3. return new state
-
-    job_id = body['id']
-
-    tm = TableManager()
-    table = tm.get_job_sample_state_table()
-
-    query_params = {
-        'IndexName': 'job-id-index',
-        'Select': 'ALL_ATTRIBUTES',
-        'KeyConditionExpression': Key('job').eq(job_id)
-    }
-    result = table.query(**query_params
-                         )
-
-    if len(result['Items']) == 0:
+    if details is None:
         return {
 
             'body': json.dumps({'error': 'this job has not been stored yet!', 'job': job_id}),
@@ -116,10 +99,11 @@ def schedule_job(event, context):
             'headers': __HTTP_HEADERS__
 
         }
-    samples = body['samples']
-    method = body['method']
-    env_ = body['env']
-    profile = body['profile']
+
+    samples = list(load_job_samples(job_id).keys())
+    method = details['method']
+    env_ = details['env']
+    profile = details['profile']
 
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this

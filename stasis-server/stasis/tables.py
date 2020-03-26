@@ -390,6 +390,32 @@ def set_job_state(job: str, env: str, method: str, profile: str, state: States,
                   "profile": profile, "reason": str(reason), "env": env})
 
 
+def get_job_config(job: str) -> Optional[dict]:
+    """
+    returns the basic config of a job
+    """
+    try:
+        tm = TableManager()
+        trktable = tm.get_job_state_table()
+
+        query_params = {
+            'IndexName': 'job-id-state-index',
+            'Select': 'ALL_ATTRIBUTES',
+            'KeyConditionExpression': Key('job').eq(job)
+        }
+        result = trktable.query(
+            **query_params
+        )
+
+        if "Items" in result and len(result['Items']) > 0:
+            item = result['Items'][0]
+            return item
+        else:
+            return None
+    except Exception as e:
+        raise e
+
+
 def get_job_state(job: str) -> Optional[States]:
     """
     returns the state of the job

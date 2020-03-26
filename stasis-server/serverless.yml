@@ -7,7 +7,6 @@ plugins:
   - serverless-python-requirements
   - serverless-aws-documentation
   - serverless-plugin-existing-s3
-
 provider:
   name: aws
   runtime: python3.7
@@ -619,13 +618,18 @@ functions:
     handler: stasis/jobs/schedule.schedule_job
     events:
       - http:
-          path: job/schedule
-          method: post
+          path: job/schedule/{job}
+          method: put
           private: true
           cors: true
           documentation:
             summary: schedules a job to be computed to the backend queue
 
+          request:
+            parameter:
+              paths:
+                job: true
+                sync: false
     #defines to which topic we want to connect
     environment:
 

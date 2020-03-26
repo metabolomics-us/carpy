@@ -13,6 +13,46 @@ def test_store_job_integration(api_token):
     :return:
     """
 
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+        "samples": [
+            "B2a_TEDDYLipids_Neg_NIST001.mzml",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
+            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+        ],
+        "profile": "carrot.lcms",
+        "task_version": "164",
+        "env": "test",
+        "notify": [
+            "wohlgemuth@ucdavis.edu",
+            "berlinguyinca@gmail.com"
+        ]
+    }
+
+    # store it
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+
+    assert response.status_code == 200
+
+
+def test_schedule_job_integration_failed(api_token):
+    """
+    test the storing of a job
+    :param api_token:
+    :return:
+    """
+
+    test_id = "test_job_{}".format(time())
+
+    response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
+                            headers=api_token)
+
+    assert response.status_code == 404
+
+
 def test_schedule_job_integration(api_token):
     """
     test the scheduling of a job
@@ -39,7 +79,14 @@ def test_schedule_job_integration(api_token):
         ]
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/schedule", json=job, headers=api_token)
+    # store it
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+
+    assert response.status_code == 200
+
+    # schedule it
+    response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
+                            headers=api_token)
 
     print(response)
     assert response.status_code == 200
