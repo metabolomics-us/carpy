@@ -151,3 +151,10 @@ def test_schedule_job_integration(api_token):
         duration = time() - origin
 
     assert exspectation_met is True
+
+    print("downloading the result now"
+          )
+    response = requests.get("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
+                            headers=api_token)
+
+    assert response.status_code == 200

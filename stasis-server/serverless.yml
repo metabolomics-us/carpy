@@ -158,7 +158,7 @@ functions:
             summary: returns the current scheduled tasks size
     environment:
       current_stage: ${self:custom.stage}
- 
+
   fargate_processing_monitor:
     handler: stasis/schedule/schedule.monitor_queue
     events:
@@ -220,7 +220,7 @@ functions:
             summary: returns all currently pending tasks
     environment:
       current_stage: ${self:custom.stage}
- 
+
   #fetches an result record
   resultGet:
     handler: stasis/results/get.get
@@ -643,6 +643,34 @@ functions:
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
 
+
+  job_result:
+    handler: stasis/jobs/result.get
+    events:
+      - http:
+          path: job/result/{job}
+          method: get
+          private: true
+          cors: true
+          documentation:
+            summary: downloads a finsihed job from the system
+
+          request:
+            parameter:
+              paths:
+                job: true
+    #defines to which topic we want to connect
+    environment:
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+      dataBucket: ${self:custom.dataZipBucketName}
 
   zip_bucket:
     handler: stasis/bucket/bucket.bucket_zip
