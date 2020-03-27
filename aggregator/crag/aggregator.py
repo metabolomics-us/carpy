@@ -1,10 +1,12 @@
 import os
+import pprint
 import re
 from argparse import Namespace
 from typing import Optional, List
 import time
 import numpy as np
 import pandas as pd
+import simplejson as json
 import tqdm
 from stasis_client.client import StasisClient
 
@@ -302,8 +304,15 @@ class Aggregator:
 
             print("looking for {}".format(sample_name))
 
-            resdata = self.stasis_cli.sample_result(sample_name, dir)
+            saved_result = f'{self.args.get("dir")}/{result_file}'
 
+            if self.args.get('save') or not os.path.exists(saved_result):
+                print("downloading result data from stasis")
+                resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
+            else:
+                print("loading existing result data")
+                with open(saved_result, 'rb') as data:
+                    resdata = json.load(data)
             print("retrieved result data are: '{}'".format(resdata))
             if resdata == '':
                 sbar.write(
@@ -350,7 +359,8 @@ class Aggregator:
                 replaced[sample] = np.nan
                 msms[sample] = np.nan
 
-        self.filter_msms(msms, intensity)
+        if not self.args.get('keep_msms'):
+            self.filter_msms(msms, intensity)
 
         # biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower() or 'qc' in str(br).lower()]
         pd.set_option('display.max_rows', 100)
@@ -399,8 +409,8 @@ class Aggregator:
             results: result data with target info
 
         Returns: list of targets
-
         """
+
         targets = [x['target'] for x in
                    [results[0]['injections'][k]['results'] for k in list(results[0]['injections'].keys())][0]]
 

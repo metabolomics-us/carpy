@@ -21,7 +21,7 @@ def test_aggregate_success(api_token, stasis):
         "env": "test"
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/schedule", json=job, headers=api_token)
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
     aggregate = JobAggregator({}, stasis)
 
@@ -44,7 +44,7 @@ def test_aggregate_false(api_token, stasis):
         "env": "test"
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/schedule", json=job, headers=api_token)
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
     aggregate = JobAggregator({}, stasis)
 

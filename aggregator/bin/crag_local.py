@@ -17,6 +17,8 @@ def create_parser():
     parser.add_argument('-d', '--dir', help='local directory with results files')
     parser.add_argument('-s', '--save', help='save results files to local directory (requires --dir)',
                         action='store_true')
+    parser.add_argument('--keep-msms', help='reports msms spectra for all samples containing msms data.',
+                        action='store_true')
 
     parser.add_argument('--mz-tolerance', help='m/z alignment tolerance', type=float, default=0.01)
     parser.add_argument('--rt-tolerance', help='retention time alignment tolerance', type=float, default=0.1)
