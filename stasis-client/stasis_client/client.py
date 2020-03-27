@@ -33,8 +33,12 @@ class StasisClient:
         if self._url is None:
             self._url = os.getenv('STASIS_API_URL', 'https://api.metabolomics.us/stasis')
 
-        assert self._token is not None, "you need to to provide a stasis api token in the env variable 'STASIS_API_TOKEN'"
-        assert self._url is not None, "you need to provide a url in the env variable 'STASIS_API_URL'"
+        if self._token is None:
+            raise Exception("you need to to provide a stasis api token in the env variable 'STASIS_API_TOKEN'")
+
+        if self._url is None:
+            raise Exception("you need to provide a url in the env variable 'STASIS_API_URL'")
+
         self._header = {
             'Content-type': 'application/json',
             'Accept': 'application/json',
@@ -69,7 +73,8 @@ class StasisClient:
         Returns:
         """
         result = requests.post(f'{self._url}/acquisition', json=data, headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result
 
     def sample_acquisition_get(self, sample_name):
@@ -82,7 +87,8 @@ class StasisClient:
         Returns:
         """
         result = requests.get(f'{self._url}/acquisition/{sample_name}', headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
 
     def sample_state(self, sample_name: str):
@@ -103,7 +109,9 @@ class StasisClient:
                 ]
         """
         result = requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+
         return result.json()['status']
 
     def sample_state_update(self, sample_name: str, state):
@@ -121,7 +129,8 @@ class StasisClient:
             "status": state
         }
         result = requests.post(f'{self._url}/tracking', json=data, headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result
 
     def sample_result(self, sample_name: str, dest: Optional[str] = 'tmp') -> dict:
@@ -179,7 +188,8 @@ class StasisClient:
     def get_states(self):
         result = requests.get(f"{self._url}/status", headers=self._header)
 
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
 
     def load_job(self, job_id):
@@ -189,7 +199,8 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/job/{job_id}", headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
 
     def load_job_state(self, job_id):
@@ -199,7 +210,8 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/job/status/{job_id}", headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200:
+            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
 
     def get_raw_bucket(self):
@@ -208,7 +220,8 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/data/raw", headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200:
+            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
 
     def get_aggregated_bucket(self):
@@ -217,7 +230,8 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/data/zip", headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
 
     def get_processed_bucket(self):
@@ -226,5 +240,40 @@ class StasisClient:
         :return:
         """
         result = requests.get(f"{self._url}/data/json", headers=self._header)
-        assert result.status_code == 200, f"we observed an error. Status code was {result.status_code} and error was {result.reason}"
+        if result.status_code != 200:
+            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
+
+    def download_job_result(self, job: str) -> Optional[str]:
+        """
+        downloads the result of a job as base64 encoded string
+        :return:
+        """
+        result = requests.get(f"{self._url}/job/result/{job}", headers=self._header)
+        if result.status_code == 503:
+            return None
+        elif result.status_code != 200:
+            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+        return result.json()['content']
+
+    def store_job(self, job: dict):
+        """
+        stores a job in the system in preparation for scheduling
+        :param job:
+        :return:
+        """
+        response = requests.post(f"{self._url}/job/store", json=job, headers=self._header)
+        if response.status_code != 200:
+            raise Exception(
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
+
+    def schedule_job(self, job_id: str):
+        """
+        scheduels a job for calculation
+        :param job_id:
+        :return:
+        """
+        response = requests.put(f"{self._url}/job/schedule/{job_id}", headers=self._header)
+        if response.status_code != 200:
+            raise Exception(
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason}")

@@ -1,5 +1,5 @@
 import os
-from time import time
+from time import time, sleep
 
 import requests
 
@@ -93,11 +93,10 @@ def test_load_job_state(stasis_cli, api_token):
             "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
         ],
         "profile": "carrot.lcms",
-        "task_version": "164",
         "env": "test"
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/schedule", json=job, headers=api_token)
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
     data = stasis_cli.load_job_state(test_id)
     print(data)
@@ -119,11 +118,10 @@ def test_load_job(stasis_cli, api_token):
             "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
         ],
         "profile": "carrot.lcms",
-        "task_version": "164",
         "env": "test"
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/schedule", json=job, headers=api_token)
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
     data = stasis_cli.load_job(test_id)
     print(data)
@@ -136,6 +134,7 @@ def test_get_raw_bucket(stasis_cli, api_token):
     print(data)
     assert data == 'data-carrot'
 
+
 def test_get_aggregated_bucket(stasis_cli, api_token):
     data = stasis_cli.get_aggregated_bucket()
     print(data)
@@ -146,3 +145,44 @@ def test_get_result_bucket(stasis_cli, api_token):
     data = stasis_cli.get_processed_bucket()
     print(data)
     assert data == 'wcmc-data-stasis-result-test'
+
+
+def test_download_result_is_none(stasis_cli, api_token):
+    data = stasis_cli.download_job_result("i_do_not_exist")
+
+    assert data is None
+
+
+def test_download_result(stasis_cli, api_token):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+        "samples": [
+            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+        ],
+        "profile": "carrot.lcms",
+        "env": "test"
+    }
+
+    stasis_cli.store_job(job)
+
+    assert stasis_cli.load_job_state(test_id)['job_state'] == "stored"
+
+    stasis_cli.schedule_job(test_id)
+    origin = time()
+    duration = 0
+    while duration < 90000:
+        state = stasis_cli.load_job_state(test_id)['job_state']
+        print(f"current state for job {test_id} is {state} and duration is {duration}")
+        if state == 'aggregated':
+            break
+
+        sleep(10)
+        duration = time() - origin
+
+    content = stasis_cli.download_job_result(test_id)
+
+    assert content is not None
+    print(content)
