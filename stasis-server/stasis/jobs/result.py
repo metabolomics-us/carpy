@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+import traceback
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
@@ -22,6 +24,12 @@ def get(events, context):
 
             state: States = get_job_state(job)
 
+            if state is None:
+                return {
+                    "statusCode": 503,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps({"error": "job does not exist!", "job": job})
+                }
             if state is not States.AGGREGATED:
                 return {
                     "statusCode": 503,
@@ -33,14 +41,28 @@ def get(events, context):
             filename = "{}.zip".format(job)
 
             if db.exists(filename):
-                result = db.load(filename)
+                try:
+                    content = base64.b64encode(db.load(filename, binary=True)).decode("utf-8")
+                    # create a response
+                    return {
+                        "statusCode": 200,
+                        "headers": __HTTP_HEADERS__,
+                        "body": json.dumps({
+                            "content": content,
+                            "job": job
+                        })
+                    }
+                except Exception as e:
+                    traceback.print_exc()
+                    return {
+                        "statusCode": 503,
+                        "headers": __HTTP_HEADERS__,
+                        "body": json.dumps({
+                            "error": str(e),
+                            "job": job
+                        })
+                    }
 
-                # create a response
-                return {
-                    "statusCode": 200,
-                    "headers": __HTTP_HEADERS__,
-                    "body": result
-                }
             else:
                 return {
                     "statusCode": 404,
