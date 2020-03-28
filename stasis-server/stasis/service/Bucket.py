@@ -1,4 +1,5 @@
 import boto3
+from botocore.response import StreamingBody
 
 
 class Bucket:
@@ -12,10 +13,9 @@ class Bucket:
         self.bucket_name = bucket_name
         self.s3 = boto3.resource('s3')
 
-
         try:
             boto3.client('s3').create_bucket(Bucket=bucket_name, CreateBucketConfiguration={
-    'LocationConstraint': 'us-west-2'})
+                'LocationConstraint': 'us-west-2'})
         except Exception as e:
             print("sorry this bucket caused an error - this mean it exist, no reason to worry")
 
@@ -28,7 +28,7 @@ class Bucket:
         """
         return self.s3.Object(self.bucket_name, name).put(Body=content)
 
-    def load(self, name):
+    def load(self, name,binary=False):
         """
             loads the specified content
         :param name: the name of the content
@@ -38,12 +38,12 @@ class Bucket:
             print("loading: {}".format(name))
             data = self.s3.Object(self.bucket_name, name).get()['Body']
 
-            return data.read().decode()
-        except Exception as e:
-            if e.response['Error']['Code'] == "404":
-                print("The object does not exist.")
+            if binary:
+                return data.read()
             else:
-                raise
+                return data.read().decode()
+        except Exception as e:
+            raise
 
     def exists(self, name) -> bool:
         """

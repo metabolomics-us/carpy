@@ -1,0 +1,2 @@
+git+git://github.com/metabolomics-us/carpy.git@schedule-server#egg=stasis-client&subdirectory=stasis-client
+git+git://github.com/metabolomics-us/carpy.git@schedule-server#egg=aggregator&subdirectory=aggregator

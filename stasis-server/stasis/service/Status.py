@@ -17,6 +17,7 @@ class Status:
             'quantified': 440,
             'replaced': 450,
             'exported': 500,
+            'finished': 600,
             'failed': 900
         }
 

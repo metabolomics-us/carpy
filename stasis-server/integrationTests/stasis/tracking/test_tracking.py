@@ -25,6 +25,25 @@ def test_create(api_token):
     assert samplename == sample['sample']
 
 
+def test_create_with_processed_state(api_token):
+    data = {
+        'sample': "dummy_{}".format(samplename),
+        'status': 'processing'
+    }
+
+    response = requests.post(apiUrl + '/tracking', json=data, headers=api_token)
+    print(response)
+    assert 200 == response.status_code
+    time.sleep(delay)
+
+    response = requests.get(apiUrl + '/tracking/' + "dummy_{}".format(samplename), headers=api_token)
+    assert 200 == response.status_code
+
+    sample = json.loads(response.content)
+    assert "dummy_{}".format(samplename) == sample['sample']
+    print(sample)
+
+
 def test_create_with_file_handle(api_token):
     data = {
         'sample': samplename,

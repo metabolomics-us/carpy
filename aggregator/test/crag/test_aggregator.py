@@ -2,6 +2,7 @@ import logging
 import os
 
 import pandas as pd
+from pytest import fail
 
 from crag.aggregator import Aggregator
 
@@ -143,3 +144,33 @@ def _build_result(stasis, locsamples):
             results.append({sample: {}})
 
     return results
+
+
+def test_aggregate(stasis):
+    aggregator = Aggregator(args=parser.parse_args(['test/test.txt']), stasis=stasis)
+    aggregator.aggregate()
+
+
+def test_aggregate_file_not_found(stasis):
+    aggregator = Aggregator(args=parser.parse_args(['bad.txt']), stasis=stasis)
+    try:
+        aggregator.aggregate()
+        fail()
+    except FileNotFoundError:
+        pass
+
+
+def test_aggregate_no_args(stasis):
+    aggregator = Aggregator({}, stasis)
+
+    try:
+        aggregator.aggregate()
+        fail()
+    except KeyError:
+        pass
+
+
+def test_aggregate_sample_only(stasis):
+    aggregator = Aggregator({}, stasis)
+
+    aggregator.aggregate_samples(samples=samples)

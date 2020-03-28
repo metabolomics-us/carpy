@@ -16,6 +16,7 @@ def test_get_status_map(requireMocking):
         'quantified': 440,
         'replaced': 450,
         'exported': 500,
+        'finished': 600,
         'failed': 900
     }
 

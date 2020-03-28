@@ -5,9 +5,11 @@ frameworkVersion: ">=1.1.0 <2.0.0"
 plugins:
   - serverless-domain-manager
   - serverless-python-requirements
+  - serverless-aws-documentation
+  - serverless-plugin-existing-s3
 provider:
   name: aws
-  runtime: python3.6
+  runtime: python3.7
   region: us-west-2
 
   # simple security based on stages and api keys
@@ -35,13 +37,12 @@ provider:
       Action:
         - ecs:RunTask
         - ecs:ListTasks
+        - ecs:DescribeTasks
       Resource: "*"
     - Effect: Allow
       Action:
         - iam:PassRole
       Resource: "*"
-
-
 
   memorySize: 128
   timeout: 90
@@ -65,6 +66,8 @@ custom:
   ###
   trackingTable: "StasisTrackingTable-${self:custom.stage}"
   acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
+  jobStateTable: "StasisJobStateTable-${self:custom.stage}"
+  jobTrackingTable: "StasisJobTrackingTable-${self:custom.stage}"
   resultTable: "wcmc-data-stasis-result-${self:custom.stage}"
 
   ###
@@ -74,14 +77,27 @@ custom:
   # spectra bucket S3 or cheaper version
 
   ###
-  # Carrot bucket definition
+  # Carrot bucket definition. This contains all the rawdata in carrot
   ###
-  dataBucketName: "data-carrot"
+  dataRawBucketName: "data-carrot"
+
+  ###
+  # Carrot bucket to store aggregated results
+  ###
+  dataZipBucketName: "wcmc-data-stasis-agg-${self:custom.stage}"
+
+  ###
+  # Carrot bucket containing all the json results
+  dataJSONBucketName: "wcmc-data-stasis-result-${self:custom.stage}"
 
   ###
   # Queues
   ###
-  scheduleQueue: "StatisScheduleQueue-${self:custom.stage}"
+  scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
+
+  ###
+  # this queue will take care of holding all pending aggregation tasks
+  aggregationQueue: "JobsAggregationQueue-${self:custom.stage}"
 
   ###
   # custom domain management
@@ -91,6 +107,9 @@ custom:
     prod: api.metabolomics.us
     test: test-api.metabolomics.us
     dev:  dev-api.metabolomics.us
+    prod2: prod2.metabolomics.us
+    test2: test2.metabolomics.us
+    dev2:  dev2.metabolomics.us
 
   customDomain:
     basePath: "stasis"
@@ -100,12 +119,13 @@ custom:
 
   pythonRequirements:
     dockerizePip: true
-    slim: true
+    slim: false
     noDeploy:
       - "boto3"
       - "botocore"
       - "moto"
       - "pytest"
+
 
 ############################################################################################
 # this section defines what to include and exclud when packaging artifacts
@@ -126,7 +146,80 @@ package:
 # this section defines all lambda function and triggers
 ############################################################################################
 functions:
+  #no to be confused with the actual queue
+  fargate_count:
+    handler: stasis/schedule/schedule.scheduled_task_size
+    events:
+      - http:
+          path: schedule/cluster/count
+          method: get
+          cors: true
+          documentation:
+            summary: returns the current scheduled tasks size
+    environment:
+      current_stage: ${self:custom.stage}
 
+  fargate_processing_monitor:
+    handler: stasis/schedule/schedule.monitor_queue
+    events:
+      - schedule:
+          rate: rate(1 minute)
+          documentation:
+            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs.
+
+      - http:
+          private: true
+          path: sync/samples
+          method: get
+          cors: true
+          documentation:
+            summary: synchronizes the samples with the job state table
+
+    environment:
+      current_stage: ${self:custom.stage}
+      schedule_queue: ${self:custom.scheduleQueue}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+  fargate_job_monitor:
+    handler: stasis/jobs/schedule.monitor_jobs
+    events:
+      - schedule:
+          rate: rate(5 minutes)
+          documentation:
+            summary: monitors and synchronizes job states
+
+      - http:
+          private: true
+          path: sync/jobs
+          method: get
+          cors: true
+          documentation:
+            summary: synchronizes the job state
+
+    environment:
+      current_stage: ${self:custom.stage}
+      schedule_queue: ${self:custom.scheduleQueue}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+  fargate_tasks:
+    handler: stasis/schedule/schedule.current_tasks
+    events:
+      - http:
+          private: true
+          path: schedule/cluster/tasks
+          method: get
+          cors: true
+          documentation:
+            summary: returns all currently pending tasks
+    environment:
+      current_stage: ${self:custom.stage}
 
   #fetches an result record
   resultGet:
@@ -137,6 +230,8 @@ functions:
           path: result/{sample}
           method: get
           cors: true
+          documentation:
+            summary: downloads a data processing result
           request:
             parameter:
               paths:
@@ -154,6 +249,8 @@ functions:
           private: true
           method: post
           cors: true
+          documentation:
+            summary: uploads a new data processing result.
 
     #defines to which topic we want to connect
     environment:
@@ -169,6 +266,8 @@ functions:
           private: true
           method: post
           cors: true
+          documentation:
+            summary: creates a new tracking record in the database for the given sample
 
     #defines to which topic we want to connect
     environment:
@@ -184,6 +283,8 @@ functions:
           private: true
           method: get
           cors: true
+          documentation:
+            summary: loads the tracking information for this sample
           request:
             parameter:
               paths:
@@ -203,6 +304,8 @@ functions:
           private: true
           method: delete
           cors: true
+          documentation:
+            summary: deletes the tracking information for the given sample
           request:
             parameter:
               paths:
@@ -217,36 +320,42 @@ functions:
   trackingExperiment:
     handler: stasis/experiment/experiment.get
     events:
-    - http:
-        path: experiment/{experiment}
-        method: get
-        private: true
-        cors: true
-        request:
-          parameter:
-            path:
-              experiment: true
-    - http:
-        path: experiment/{experiment}/{psize}
-        method: get
-        cors: true
-        private: true
-        request:
-          parameter:
-            path:
-              experiment: true
-              psize: true
-    - http:
-        path: experiment/{experiment}/{psize}/{lastSample}
-        method: get
-        cors: true
-        private: true
-        request:
-          parameter:
-            path:
-              experiment: true
-              psize: true
-              lastSample: true
+      - http:
+          path: experiment/{experiment}
+          method: get
+          private: true
+          cors: true
+          documentation:
+            summary: loads the complete experiment definition and this can time out for large experiments. we recommend to use the paginated approaches
+          request:
+            parameter:
+              path:
+                experiment: true
+      - http:
+          path: experiment/{experiment}/{psize}
+          method: get
+          cors: true
+          private: true
+          documentation:
+            summary: fetches an experiment in paginated mode in the given page size
+          request:
+            parameter:
+              path:
+                experiment: true
+                psize: true
+      - http:
+          path: experiment/{experiment}/{psize}/{lastSample}
+          method: get
+          cors: true
+          private: true
+          documentation:
+            summary: iterative way to load an experiment definition. Based on the page size and the last fetched sample
+          request:
+            parameter:
+              path:
+                experiment: true
+                psize: true
+                lastSample: true
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -265,6 +374,8 @@ functions:
             parameter:
               paths:
                 sample: true
+          documentation:
+            summary: fetches the acquisition information for the given sample
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -279,6 +390,8 @@ functions:
           method: post
           private: true
           cors: true
+          documentation:
+            summary: creates a new record with the given acquisition information
 
     #defines to which topic we want to connect
     environment:
@@ -294,6 +407,8 @@ functions:
           private: true
           method: post
           cors: true
+          documentation:
+            summary: this generates an acquisition table based on past minix study data and should be avoided!
 
     #defines to which topic we want to connect
     environment:
@@ -309,46 +424,14 @@ functions:
           method: post
           private: true
           cors: true
+          documentation:
+            summary: schedules a new processing tasks to the queue
 
     #defines to which topic we want to connect
     environment:
       schedule_queue: ${self:custom.scheduleQueue}
 
-  #schedule data to stasis, for handling the processing on the backend
-  secure_schedule:
-    handler: stasis/schedule/schedule.secure_schedule
-    events:
-      - http:
-          path: secure_schedule
-          method: post
-          private: true
-          cors: true
-
-    #defines to which topic we want to connect
-    environment:
-      schedule_queue: ${self:custom.scheduleQueue}
-
-  #returns the count of scheduled tasks in the fargate cluster
-  #no to be confused with the actual queue
-  schedule_task_count:
-    handler: stasis/schedule/schedule.scheduled_task_size
-    events:
-      - http:
-          path: schedule/cluster/count
-          method: get
-          cors: true
-
-  # monitors the schedule queue and submits data for calculation
-  # to the fargate cluster
-  schedule_monitor:
-    handler: stasis/schedule/schedule.monitor_queue
-    events:
-      - schedule:
-          rate: rate(1 minute)
-    environment:
-      schedule_queue: ${self:custom.scheduleQueue}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+      #returns the count of scheduled tasks in the fargate cluster
 
   # fetches the list of tracking statuses
   statusGet:
@@ -359,101 +442,13 @@ functions:
           method: get
           private: true
           cors: true
+          documentation:
+            summary: returns all possible status names and their priority
 
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
-
-  #returns all targets for a method or a target matching method and mz_rt
-  targetGet:
-    handler: stasis/target/get.get
-    events:
-      - http:
-          path: target/{method}
-          method: get
-          private: true
-          cors: true
-          request:
-            parameter:
-              paths:
-                method: true
-                mz_rt: false
-      - http:
-          path: target/{method}/{mz_rt}
-          method: get
-          private: true
-          cors: true
-          request:
-            parameter:
-              path:
-                method: true
-                mz_rt: true
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-
-  #creates a target
-  targetPost:
-    handler: stasis/target/create.create
-    events:
-      - http:
-          path: target
-          private: true
-          method: post
-          cors: true
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-
-  #updates a target
-  targetPut:
-    handler: stasis/target/update.update
-    events:
-      - http:
-          path: target
-          private: true
-          method: put
-          cors: true
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-
-  #updates a target
-  targetDelete:
-    handler: stasis/target/delete.delete
-    events:
-      - http:
-          path: target/{method}/{mz_rt}
-          method: delete
-          cors: true
-          private: true
-          request:
-            parameter:
-              path:
-                method: true
-                mz_rt: true
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
-
-  #return available libraries
-  libraryGet:
-    handler: stasis/library/get.get
-    events:
-      - http:
-          path: library
-          private: true
-          method: get
-          cors: true
-
-    #defines to which topic we want to connect
-    environment:
-      targetTable: ${self:custom.targetTable}
 
   #checks existence of a raw data file
   fileExists:
@@ -468,5 +463,287 @@ functions:
             parameter:
               paths:
                 sample: true
+          documentation:
+            summary: evaluates if a certain file exists
+
     environment:
-      dataBucket: ${self:custom.dataBucketName}
+      dataBucket: ${self:custom.dataRawBucketName}
+
+
+  #creates a new tracking record in the system
+  job_tracking_create:
+    handler: stasis/jobs/tracking.create
+    events:
+      - http:
+          path: job/tracking
+          private: true
+          method: post
+          cors: true
+          documentation:
+            summary: updates the tracking status of a sample with the associated job
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+  #fetches an existing tracking record from the system
+  job_tracking_get:
+    handler: stasis/jobs/tracking.get
+    events:
+      - http:
+          documentation:
+            summary: Returns the tacking status of a sample with an associated job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+              - name: sample
+                description: the sample id
+                required: true
+
+          path: job/tracking/{job}/{sample}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+                sample: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+  # computes the current state of the given job
+  job_tracking_status:
+    handler: stasis/jobs/tracking.status
+    events:
+      - http:
+          path: job/status/{job}/{sync}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+                sync: false
+          documentation:
+            summary: returns the overal status of the given job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+              - name: sync
+                description: do you want to force a synchronization, which is very expensive
+                required: true
+      - http:
+          path: job/status/{job}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+          documentation:
+            summary: returns the overal status of the given job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+  # computes the complete job
+  job_description:
+    handler: stasis/jobs/tracking.description
+    events:
+      - http:
+          path: job/{job}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+          documentation:
+            summary: return the complete job description with all associated samples and there states
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+
+    #defines to which topic we want to connect
+    environment:
+      trackingTable: ${self:custom.trackingTable}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+  #schedule data to for handling the processing and aggregation on the backend
+  job_store:
+    handler: stasis/jobs/schedule.store_job
+    events:
+      - http:
+          path: job/store
+          method: post
+          private: true
+          cors: true
+          documentation:
+            summary: schedules a job to be computed to the backend queue
+
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+
+    #schedule data to for handling the processing and aggregation on the backend
+  job_schedule:
+    handler: stasis/jobs/schedule.schedule_job
+    events:
+      - http:
+          path: job/schedule/{job}
+          method: put
+          private: true
+          cors: true
+          documentation:
+            summary: schedules a job to be computed to the backend queue
+
+          request:
+            parameter:
+              paths:
+                job: true
+                sync: false
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+
+
+  job_result:
+    handler: stasis/jobs/result.get
+    events:
+      - http:
+          path: job/result/{job}
+          method: get
+          private: true
+          cors: true
+          documentation:
+            summary: downloads a finsihed job from the system
+
+          request:
+            parameter:
+              paths:
+                job: true
+    #defines to which topic we want to connect
+    environment:
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+      dataBucket: ${self:custom.dataZipBucketName}
+
+  zip_bucket:
+    handler: stasis/bucket/bucket.bucket_zip
+    events:
+      - http:
+          private: true
+          path: data/zip
+          method: get
+          cors: true
+          documentation:
+            summary: returns the name of the bucket for zipped aggregated data
+
+    environment:
+      dataBucket: ${self:custom.dataZipBucketName}
+
+  json_bucket:
+    handler: stasis/bucket/bucket.bucket_json
+    events:
+      - http:
+          private: true
+          path: data/json
+          method: get
+          cors: true
+          documentation:
+            summary: returns the name of the bucket for json result data
+
+    environment:
+      dataBucket: ${self:custom.dataJSONBucketName}
+
+  raw_bucket:
+    handler: stasis/bucket/bucket.bucket_raw
+    events:
+      - http:
+          private: true
+          path: data/raw
+          method: get
+          cors: true
+          documentation:
+            summary: returns the name of the bucket for all raw data
+
+    environment:
+      dataBucket: ${self:custom.dataRawBucketName}
+
+  zip_bucket_triggers:
+    handler: stasis/bucket/triggers.bucket_zip
+    events:
+      - existingS3:
+          bucket: ${self:custom.dataZipBucketName}
+          events:
+            - s3:ObjectCreated:*
+
+          documentation:
+            summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync
+
+    environment:
+      dataBucket: ${self:custom.dataZipBucketName}
+      jobStateTable: ${self:custom.jobStateTable}
+
+
+  json_bucket_triggers:
+    handler: stasis/bucket/triggers.bucket_json
+    events:
+      - existingS3:
+          bucket: ${self:custom.dataJSONBucketName}
+          events:
+            - s3:ObjectCreated:*
+
+          existing: true
+          documentation:
+            summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync. Especially samples
+
+    environment:
+      dataBucket: ${self:custom.dataJSONBucketName}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+

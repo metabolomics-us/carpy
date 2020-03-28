@@ -1,8 +1,9 @@
 import os
 import pprint
 import re
-from typing import Optional
-
+from argparse import Namespace
+from typing import Optional, List
+import time
 import numpy as np
 import pandas as pd
 import simplejson as json
@@ -24,19 +25,25 @@ def percent(x: float, intensity):
     return intensity['found %'] >= x
 
 
+class NoSamplesFoundException(Exception):
+    pass
+
+
 class Aggregator:
 
-    def __init__(self, args: dict, stasis: Optional[StasisClient] = None):
+    def __init__(self, args: dict, stasis: Optional[StasisClient] = None, disable_progress_bar=False):
+        if isinstance(args, Namespace):
+            args = vars(args)
 
         self.args = args
+
         if stasis:
             self.stasis_cli = stasis
         else:
-            if not args.get("test"):
-                self.stasis_cli = StasisClient()
-            else:
-                self.stasis_cli = StasisClient(f'https://test-api.metabolomics.us/stasis', None,
-                                               'wcmc-data-stasis-results-test')
+            self.stasis_cli = StasisClient()
+
+        self.bucket_used = self.stasis_cli.get_processed_bucket()
+        self.disable_progress_bar = disable_progress_bar
 
     def find_intensity(self, value) -> int:
         """
@@ -47,7 +54,7 @@ class Aggregator:
         Returns:
 
         """
-        if not value['replaced'] or (value['replaced'] and self.args.get('zero_replacement')):
+        if not value['replaced'] or (value['replaced'] and self.args.get("zero_replacement", False)):
             return round(value['intensity'])
         else:
             return 0
@@ -94,7 +101,7 @@ class Aggregator:
 
                     dicdata[sample] = [species, organ, '', sample_type, idx]
             except KeyError as e:
-                # print('missing sample, {}, {}'.format(idx, sample)) # save sample name to file.
+                print('missing sample, {}, {}'.format(idx, sample))  # save sample name to file.
                 dicdata[sample] = ['', '', '', '', idx]
 
         return pd.DataFrame(dicdata)
@@ -117,17 +124,18 @@ class Aggregator:
         file, ext = os.path.splitext(infile)
 
         # Build suffix
-        if self.args.get('test'):
+        if self.args.get("test", False):
             suffix = 'testResults'
         else:
             suffix = 'results'
 
-        if self.args.get('zero_replacement'):
+        if self.args.get("zero_replacement", False):
             suffix += '-repl'
         else:
             suffix += '-norepl'
 
-        output_name = f'{file}-{type.lower().replace(" ", "_")}-{suffix}.xlsx'
+        seperator = '' if file.endswith("/") else '-'
+        output_name = f'{file}{seperator}{type.lower().replace(" ", "_")}-{suffix}.xlsx'
 
         if type == 'Correction curve':
             data.dropna(inplace=True)
@@ -149,7 +157,7 @@ class Aggregator:
         UNUSED
         Calculates the average intensity, mass and retention index of biorecs
 
-        Args:
+        Argt:
             intensity:
             mass:
             rt:
@@ -193,8 +201,8 @@ class Aggregator:
             try:
                 intensity.loc[i, RSD_BR_] = (intensity.loc[i, biorecs].std() / intensity.loc[i, biorecs].mean()) * 100
             except Exception as e:
-                # print(f'{time.strftime("%H:%M:%S")} - Can\'t calculate % RSD for target {intensity.loc[i, "name"]}.'
-                #       f' Sum of intensities = {intensity.loc[i, biorecs].sum()}')
+                print(f'{time.strftime("%H:%M:%S")} - Can\'t calculate % RSD for target {intensity.loc[i, "name"]}.'
+                      f' Sum of intensities = {intensity.loc[i, biorecs].sum()}')
                 pass
 
             mass.loc[i, RSD_BR_] = (mass.loc[i, biorecs].std() / mass.loc[i, biorecs].mean()) * 100
@@ -226,12 +234,12 @@ class Aggregator:
             origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
             replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
             curve = {k: sample['injections'][k]['correction']['curve']}
-            msms = {k: [r['annotation']['msms'] for r in v['results']]}
+            msms = {k: [r['annotation'].get('msms', "") for r in v['results']]}
 
         return [None, intensities, masses, rts, origrts, curve, replaced, msms]
 
     @staticmethod
-    def build_worksheet(targets, label=' working...'):
+    def build_worksheet(targets, upb, label=' working...', ):
         """
         Structures the data to be 'worksheet' ready
         Args:
@@ -245,7 +253,7 @@ class Aggregator:
         pattern = re.compile(".*?_[A-Z]{14}-[A-Z]{10}-[A-Z]")
 
         i = 1
-        bar = tqdm.tqdm(targets, desc=label, unit=' targets')
+        bar = tqdm.tqdm(targets, desc=label, unit=' targets', disable=upb)
         for x in bar:
             try:
                 rows.append({
@@ -279,45 +287,57 @@ class Aggregator:
 
         """
         # use subset of samples for testing
-        if self.args.get('test'):
+        if self.args.get("test", False):
             samples = samples[:5]
 
         # creating target list
         results = []
 
-        sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples')
+        sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples', disable=self.disable_progress_bar)
         for sample in sbar:
             sbar.set_description(sample)
             if sample in ['samples']:
                 continue
 
-            result_file = f'{os.path.splitext(sample)[0]}.json'
+            sample_name = "{}.json".format(os.path.splitext(sample)[0])
+            dir = self.args.get("dir", "/tmp")
+
+            print("looking for {}".format(sample_name))
+
             saved_result = f'{self.args.get("dir")}/{result_file}'
 
             if self.args.get('save') or not os.path.exists(saved_result):
+                print("downloading result data from stasis")
                 resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
             else:
+                print("loading existing result data")
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
-
-            if resdata and resdata.get('Error') is None:
+            print("retrieved result data are: '{}'".format(resdata))
+            if resdata == '':
+                sbar.write(
+                    f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {sample_name} located at {dir}')
+            elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
-                sbar.write(f'Failed getting {sample}; {resdata.get("Error")}')
+                sbar.write(
+                    f'Failed getting {sample}; {resdata.get("Error")}. We looked in bucket {self.bucket_used}')
 
+        if len(results) == 0:
+            raise NoSamplesFoundException("sorry none of your samples were found!")
         targets = self.get_target_list(results)
 
         # creating spreadsheets
-        intensity = self.build_worksheet(targets, 'intensity matrix')
-        mass = self.build_worksheet(targets, 'mass matrix')
-        rt = self.build_worksheet(targets, 'RI matrix')
-        origrt = self.build_worksheet(targets, 'RT matrix')
-        curve = self.build_worksheet(targets, 'curve data')
-        replaced = self.build_worksheet(targets, 'replacement matrix')
-        msms = self.build_worksheet(targets, 'MSMS Spectra')
+        intensity = self.build_worksheet(targets, upb=self.disable_progress_bar, label='intensity matrix')
+        mass = self.build_worksheet(targets, upb=self.disable_progress_bar, label='mass matrix')
+        rt = self.build_worksheet(targets, upb=self.disable_progress_bar, label='RI matrix')
+        origrt = self.build_worksheet(targets, upb=self.disable_progress_bar, label='RT matrix')
+        curve = self.build_worksheet(targets, upb=self.disable_progress_bar, label='curve data')
+        replaced = self.build_worksheet(targets, upb=self.disable_progress_bar, label='replacement matrix')
+        msms = self.build_worksheet(targets, upb=self.disable_progress_bar, label='MSMS Spectra')
 
         # populating spreadsheets
-        for data in tqdm.tqdm(results, desc='Formatting results', unit=' samples'):
+        for data in tqdm.tqdm(results, desc='Formatting results', unit=' samples', disable=self.disable_progress_bar):
             sample = data['sample']
 
             if 'error' not in data:
@@ -403,13 +423,25 @@ class Aggregator:
         Returns: the filename of the aggregated (excel) file
         """
 
-        pprint.pprint(self.args)
+        if "infiles" not in self.args:
+            raise KeyError("sorry you need to specify at least one input file for this function")
 
-        for sample_file in self.args.get('infiles'):
+        for sample_file in self.args["infiles"]:
             if not os.path.isfile(sample_file):
-                print(f'Can\'t find the file {sample_file}')
-                exit(-1)
+                raise FileNotFoundError("file name {} does not exist".format(sample_file))
 
             with open(sample_file) as processed_samples:
                 samples = [p for p in processed_samples.read().strip().splitlines() if p and p != 'samples']
-                self.process_sample_list(samples, sample_file)
+                self.aggregate_samples(samples, sample_file)
+
+    def aggregate_samples(self, samples: List[str], destination: str = "./"):
+        """
+        aggegrates the samples at the specifed destination
+        :param destination:
+        :param samples:
+        :return:
+        """
+        if os.path.exists(destination) is False:
+            os.makedirs(destination, exist_ok=True)
+
+        self.process_sample_list(samples, f"{destination}/")

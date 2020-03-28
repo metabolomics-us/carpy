@@ -30,7 +30,7 @@ def triggerEvent(data):
     table = tm.get_tracking_table()
 
     resp = table.query(
-        KeyConditionExpression=Key('id').eq(data['sample'])
+        KeyConditionExpression=Key('id').eq(data['sample'].split(".")[0])
     )
 
     timestamp = int(time.time() * 1000)
@@ -74,6 +74,7 @@ def triggerEvent(data):
         'isBase64Encoded': False,
         'headers': __HTTP_HEADERS__
     }
+
 
 def create(event, context):
     """

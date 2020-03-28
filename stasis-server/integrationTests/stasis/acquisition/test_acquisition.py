@@ -34,11 +34,12 @@ def test_create(samples, api_token):
         assert 'entered' == tracking['status'][0]['value']
 
 
-
 @pytest.mark.parametrize("samples", [1, 10, 25])
 def test_just_create(samples, api_token):
-    for sample in range(0,samples):
-        _upload_test_sample(samplename="test", samples=samples, api_token=api_token)
+    for sample in range(0, samples):
+        response = _upload_test_sample(samplename="test", samples=samples, api_token=api_token)
+
+        assert 200 == response.status_code
 
 
 def _upload_test_sample(samplename, samples, api_token):
