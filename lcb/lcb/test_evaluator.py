@@ -1,28 +1,33 @@
 def test_evaluate_no_args(sample_evaluator):
-    sample_evaluator.evaluate({})
+    result = sample_evaluator.evaluate({})
     pass
+    assert len(result) == 1
 
 
-def test_evaluate_sample_job_and_status(sample_evaluator, test_sample):
-    sample_evaluator.evaluate({'id': test_sample['sample'], 'status': True})
+def test_evaluate_sample_and_status(sample_evaluator, test_sample):
+    result = sample_evaluator.evaluate({'id': test_sample['sample'], 'status': True})
     pass
+    assert len(result) == 1
 
 
-def test_evaluate_sample_job_and_process(sample_evaluator, test_sample):
-    sample_evaluator.evaluate({'id': test_sample['sample'], 'process': True, 'profile': 'lcms', 'env': 'test'})
+def test_evaluate_sample_and_process(sample_evaluator, test_sample):
+    result = sample_evaluator.evaluate({'id': test_sample['sample'], 'process': True, 'profile': 'lcms', 'env': 'test'})
     pass
+    assert len(result) == 1
 
 
-def test_evaluate_sample_job_and_download(sample_evaluator, test_sample):
-    sample_evaluator.evaluate({'id': test_sample['sample'], 'download': True})
+def test_evaluate_sample_and_download(sample_evaluator, test_sample):
+    result = sample_evaluator.evaluate({'id': test_sample['sample'], 'retrieve': True})
+    assert len(result) == 1
+
+
+def test_evaluate_sample_and_exist(sample_evaluator, test_sample):
+    result = sample_evaluator.evaluate({'id': test_sample['sample'], 'exist': True})
     pass
+    assert len(result) == 1
 
 
-def test_evaluate_sample_job_and_exist(sample_evaluator, test_sample):
-    sample_evaluator.evaluate({'id': test_sample['sample'], 'exist': True})
+def test_evaluate_sample_and_info(sample_evaluator, test_sample):
+    result = sample_evaluator.evaluate({'id': test_sample['sample'], 'detail': True})
     pass
-
-
-def test_evaluate_sample_job_and_info(sample_evaluator, test_sample):
-    sample_evaluator.evaluate({'id': test_sample['sample'], 'detail': True})
-    pass
+    assert len(result) == 1
