@@ -57,7 +57,7 @@ class StasisClient:
         if result.status_code != 200:
             raise Exception("scheduling failed!")
         else:
-            return result
+            return result.json()
 
     def sample_acquisition_create(self, data: dict):
         """
