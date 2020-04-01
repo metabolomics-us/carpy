@@ -24,5 +24,5 @@ def test_evaluate_sample_job_and_exist(sample_evaluator, test_sample):
 
 
 def test_evaluate_sample_job_and_info(sample_evaluator, test_sample):
-    sample_evaluator.evaluate({'id': test_sample['sample'], 'info': True})
+    sample_evaluator.evaluate({'id': test_sample['sample'], 'detail': True})
     pass

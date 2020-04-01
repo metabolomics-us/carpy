@@ -127,6 +127,12 @@ class StasisClient:
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result
 
+    def sample_result_as_json(self, sample_name) -> dict:
+        result = requests.get(f"{self._url}/sample/{sample_name}", headers=self._header)
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+        return result.json()
+
     def sample_result(self, sample_name: str, dest: Optional[str] = 'tmp') -> dict:
         """
         Downloads a sample's result

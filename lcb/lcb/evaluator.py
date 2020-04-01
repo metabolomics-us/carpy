@@ -1,3 +1,4 @@
+import json
 from abc import abstractmethod
 from datetime import datetime
 
@@ -64,10 +65,7 @@ class SampleEvaluator(Evaluator):
             env=args['env']
         )
 
-        if result.status_code == 200:
-            print("sample was scheduled for processing")
-        else:
-            print("something went wrong during scheduling")
+        print("sample was scheduled for processing")
 
         pass
         # 3. return
@@ -84,9 +82,9 @@ class SampleEvaluator(Evaluator):
 
         priority = result['priority']
         state = result['value']
-        timestamp = datetime.fromtimestamp(result['time'])
+        timestamp = datetime.fromtimestamp(result['time'] / 1000)
 
-        print(f"sample {id} current state is {state} and it was entered at {timestamp}")
+        print(f"sample {id} current state is '{state}' with '{priority}' and it was last updated at {timestamp}")
 
         return result
 
@@ -96,6 +94,7 @@ class SampleEvaluator(Evaluator):
         :param id:
         :return:
         """
+        pass
 
     def info(self, id, args):
         """
@@ -106,6 +105,11 @@ class SampleEvaluator(Evaluator):
         acquistion_data = self.client.sample_acquisition_get(id)
         state = self.client.sample_state(sample_name=id)
 
+        result = {
+            'meta': acquistion_data,
+            'state': state
+        }
+        print(json.dumps(result, indent=4))
         pass
         # pretty print
 
@@ -115,3 +119,4 @@ class SampleEvaluator(Evaluator):
         :param id:
         :return:
         """
+        pass
