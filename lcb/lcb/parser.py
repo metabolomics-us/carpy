@@ -68,7 +68,11 @@ class Parser:
                             action='store_true')
         parser.add_argument("-p", "--process", help="this starts the processing of the specified sample",
                             action='store_true')
-        parser.add_argument("-d", "--download", help="this downloads the specified sample result", action='store_true')
+        parser.add_argument("-r", "--retrieve", help="this downloads the specified sample result", action='store_true')
         parser.add_argument("-e", "--exist", help="checks if the given sample exist", action='store_true')
+        parser.add_argument("-d", "--detail", help="provides a complete detailed view of the sample",
+                            action='store_true')
+        parser.add_argument("--profile", help="which profile to utilize for scheduling", default="lcms", required=False)
+        parser.add_argument("--env", help="which env to utilize for scheduling", default="test", required=False)
 
         return parser

@@ -6,7 +6,7 @@ from lcb.parser import Parser
 def test_parse_no_mapping():
     try:
         parser = Parser({})
-        parser.parse({})
+        parser.parse([])
         fail()
     except KeyError:
         # expected error
@@ -22,7 +22,7 @@ def test_parse_job_mapping_empty():
         "sample": call
     })
     try:
-        parser.parse({})
+        parser.parse([])
         fail()
     except KeyError as e:
         pass

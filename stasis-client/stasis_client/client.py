@@ -45,12 +45,6 @@ class StasisClient:
             'x-api-key': f'{self._token}'
         }
 
-        print(f"using url: {self._url}")
-        self._processed_bucket = self.get_processed_bucket()
-
-        print(f"using bucket: {self._processed_bucket}")
-        self.json_data_bucket = boto3.resource('s3').Bucket(self._processed_bucket)
-
     def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
                                         version: str = "164"):
         """
@@ -156,7 +150,12 @@ class StasisClient:
 
         try:
             with open(filename, 'wb') as data:
-                self.json_data_bucket.download_fileobj(sample_name, data)
+
+                print(f"using url: {self._url}")
+                processed_bucket = self.get_processed_bucket()
+
+                json_data_bucket = boto3.resource('s3').Bucket(processed_bucket)
+                json_data_bucket.download_fileobj(sample_name, data)
 
             with open(filename, 'rb') as data:
                 jstr = json.load(data)
@@ -181,9 +180,6 @@ class StasisClient:
 
     def get_url(self):
         return self._url
-
-    def get_bucket(self):
-        return self._processed_bucket
 
     def get_states(self):
         result = requests.get(f"{self._url}/status", headers=self._header)
@@ -277,3 +273,5 @@ class StasisClient:
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
+        else:
+            return json.loads(response.content)

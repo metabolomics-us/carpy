@@ -1,6 +1,4 @@
 simplejson
-botocore
-boto3
 numpy
 openpyxl
 pandas
@@ -8,3 +6,4 @@ requests
 pytest
 tqdm
 git+git://github.com/metabolomics-us/carpy.git@master#egg=stasis-client&subdirectory=stasis-client
+colorama
