@@ -79,7 +79,7 @@ custom:
   ###
   # Carrot bucket definition. This contains all the rawdata in carrot
   ###
-  dataRawBucketName: "data-carrot"
+  dataRawBucketName: "wcmc-data-stasis-raw-${self:custom.stage}"
 
   ###
   # Carrot bucket to store aggregated results
@@ -232,6 +232,23 @@ functions:
           cors: true
           documentation:
             summary: downloads a data processing result
+          request:
+            parameter:
+              paths:
+                sample: true
+    #defines to which topic we want to connect
+    environment:
+      resultTable: ${self:custom.resultTable}
+  processingResultExits:
+    handler: stasis/results/exists.exist
+    events:
+      - http:
+          private: true
+          path: result/{sample}
+          method: head
+          cors: true
+          documentation:
+            summary: check if a data processing result exists already
           request:
             parameter:
               paths:
@@ -456,8 +473,8 @@ functions:
     events:
       - http:
           private: true
-          path: file/exists/{sample}
-          method: get
+          path: file/{sample}
+          method: head
           cors: true
           request:
             parameter:
@@ -469,6 +486,23 @@ functions:
     environment:
       dataBucket: ${self:custom.dataRawBucketName}
 
+  jobResultExits:
+    handler: stasis/jobs/result.exist
+    events:
+      - http:
+          private: true
+          path: job/result/{job}
+          method: head
+          cors: true
+          documentation:
+            summary: check if a job result exists
+          request:
+            parameter:
+              paths:
+                job: true
+    #defines to which topic we want to connect
+    environment:
+      dataBucket: ${self:custom.dataZipBucketName}
 
   #creates a new tracking record in the system
   job_tracking_create:

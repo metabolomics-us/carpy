@@ -5,5 +5,5 @@ pandas
 requests
 pytest
 tqdm
-git+git://github.com/metabolomics-us/carpy.git@master#egg=stasis-client&subdirectory=stasis-client
+git+git://github.com/metabolomics-us/carpy.git@lcb#egg=stasis-client&subdirectory=stasis-client
 colorama

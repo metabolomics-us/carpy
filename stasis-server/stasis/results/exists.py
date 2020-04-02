@@ -6,16 +6,19 @@ from stasis.headers import __HTTP_HEADERS__
 from stasis.service.Bucket import Bucket
 
 
-def exists(events, context):
-    """returns the existence status of a file on S3"""
-    print(f'raw file check for bucket {os.environ["dataBucket"]}')
+def exist(events, context):
+    """returns the specific element from the storage"""
+
+    print(f'processed file check for bucket {os.environ["resultTable"]}')
 
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
-            data = Bucket(os.environ['dataBucket'])
-            sample = events['pathParameters']['sample']
+
+            sample = f"{events['pathParameters']['sample']}.json"
+            db = Bucket(os.environ["resultTable"])
+
             print("looking for file: {}".format(sample))
-            if data.exists(sample):
+            if db.exists(sample):
                 # create a response
                 return {
                     "statusCode": 200,

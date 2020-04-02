@@ -88,6 +88,23 @@ def test_job_result_not_finished(api_token):
     assert response.status_code == 503
 
 
+
+
+def test_job_result_file_not_exist(api_token):
+    """
+    tests for a job which doesn't exist yet
+    :param api_token:
+    :return:
+    """
+
+    test_id = "test_job_i_do_not_exist_{}".format(time())
+
+    print(test_id)
+    response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
+                            headers=api_token)
+
+    assert response.status_code == 404
+
 def test_job_result_not_exist(api_token):
     """
     tests for a job which doesn't exist yet
@@ -204,7 +221,7 @@ def test_schedule_job_integration(api_token):
 
     print("downloading the result now for {}".format(test_id)
           )
-    response = requests.get("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
+    response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
                             headers=api_token)
 
     assert response.status_code == 200

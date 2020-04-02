@@ -1,5 +1,4 @@
 import boto3
-from botocore.response import StreamingBody
 
 
 class Bucket:
@@ -17,7 +16,9 @@ class Bucket:
             boto3.client('s3').create_bucket(Bucket=bucket_name, CreateBucketConfiguration={
                 'LocationConstraint': 'us-west-2'})
         except Exception as e:
-            print("sorry this bucket caused an error - this mean it exist, no reason to worry")
+            pass
+
+    #            print("sorry this bucket caused an error - this mean it exist, no reason to worry")
 
     def save(self, name, content):
         """
@@ -28,7 +29,7 @@ class Bucket:
         """
         return self.s3.Object(self.bucket_name, name).put(Body=content)
 
-    def load(self, name,binary=False):
+    def load(self, name, binary=False):
         """
             loads the specified content
         :param name: the name of the content

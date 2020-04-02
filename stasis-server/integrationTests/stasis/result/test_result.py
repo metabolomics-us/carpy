@@ -2,17 +2,19 @@ import time
 
 import requests
 import simplejson as json
+from pytest import fail
 
 apiUrl = "https://test-api.metabolomics.us/stasis/result"
 samplename = f'test_{time.time()}'
 
 
 def test_create(api_token):
+    print(samplename)
     data = {
         'sample': samplename,
         'injections': {
             'test_1': {
-                'logid':'1234',
+                'logid': '1234',
                 'correction': {
                     'polynomial': 5,
                     'sampleUsed': 'test',
@@ -71,3 +73,11 @@ def test_create(api_token):
 
     sample = json.loads(response.content)
     assert samplename == sample['sample']
+
+    response = requests.head(apiUrl + '/' + samplename, headers=api_token)
+    assert 200 == response.status_code
+
+
+def test_exists_false(api_token):
+    response = requests.head(apiUrl + '/i_dont_exist' + samplename, headers=api_token)
+    assert 404 == response.status_code

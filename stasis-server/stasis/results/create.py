@@ -28,15 +28,15 @@ def triggerEvent(data):
 
     if 'sample' in data:
         table = Bucket(os.environ['resultTable'])
-
-        existing = table.exists(data['id'])
+        name = f"{data['id']}.json"
+        existing = table.exists(name)
 
         if existing:
-            existing = json.loads(table.load(data['id']))
+            existing = json.loads(name)
             # need to append and/or update result to injections
             data['injections'] = {**existing['injections'], **data['injections']}
 
-        result = table.save(data['id'], json.dumps(TableManager().sanitize_json_for_dynamo(data)))
+        result = table.save(name, json.dumps(TableManager().sanitize_json_for_dynamo(data)))
 
         return {
             'body': json.dumps(data),
