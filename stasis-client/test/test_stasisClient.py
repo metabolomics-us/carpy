@@ -132,7 +132,7 @@ def test_load_job(stasis_cli, api_token):
 def test_get_raw_bucket(stasis_cli, api_token):
     data = stasis_cli.get_raw_bucket()
     print(data)
-    assert data == 'data-carrot'
+    assert data == 'wcmc-data-stasis-raw-test'
 
 
 def test_get_aggregated_bucket(stasis_cli, api_token):

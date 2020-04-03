@@ -129,7 +129,7 @@ def _free_task_count(service: Optional[str] = None) -> int:
     tasks = _current_tasks()
 
     def new_taskname(x):
-        x['name'] = x['name'].replace("{}-".format(os.getenv("current_stage")),'')
+        x['name'] = x['name'].replace("{}-".format(os.getenv("current_stage")), '')
         return x
 
     tasks = list(map(lambda x: new_taskname(x), tasks))
@@ -353,6 +353,10 @@ def schedule_processing_to_fargate(event, context):
                 {
                     "name": "CARROT_MODE",
                     "value": "{}".format(body['profile'])
+                },
+                {
+                    "name": "CARROT_ENV",
+                    "value": body['env']
                 }
             ]
         }]}
