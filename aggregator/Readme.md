@@ -25,3 +25,9 @@ This might require you to login into ECR first
 ```.env
 docker push 702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest
 ```
+
+Login in to ECR
+
+`aws ecr get-login --no-include-email --region us-west-2`
+
+
