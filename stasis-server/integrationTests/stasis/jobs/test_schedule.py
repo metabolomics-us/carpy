@@ -140,7 +140,7 @@ def test_schedule_job_integration(api_token):
         "profile": "carrot.lcms",
         "task_version": "164",
         "env": "test",
-        "notify": [
+        "notif": [
             "wohlgemuth@ucdavis.edu",
             "berlinguyinca@gmail.com"
         ]
