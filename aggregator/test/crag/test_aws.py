@@ -17,7 +17,6 @@ def test_aggregate_success(api_token, stasis):
             "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
         ],
         "profile": "carrot.lcms",
-        "task_version": "164",
         "env": "test"
     }
 
@@ -40,7 +39,6 @@ def test_aggregate_false(api_token, stasis):
             "B10A_SA8922_TeddyFAILEDLipids_Pos_122WP.mzml"
         ],
         "profile": "carrot.lcms",
-        "task_version": "164",
         "env": "test"
     }
 

@@ -1,9 +1,9 @@
 import os
-import pprint
 import re
+import time
 from argparse import Namespace
 from typing import Optional, List
-import time
+
 import numpy as np
 import pandas as pd
 import simplejson as json
@@ -299,16 +299,14 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
-            sample_name = "{}.json".format(os.path.splitext(sample)[0])
             dir = self.args.get("dir", "/tmp")
+            result_file = f'{sample}.json'
+            saved_result = f'{dir}/{result_file}'
 
-            print("looking for {}".format(sample_name))
-
-            saved_result = f'{self.args.get("dir")}/{result_file}'
-
+            print("looking for {}".format(result_file))
             if self.args.get('save') or not os.path.exists(saved_result):
                 print("downloading result data from stasis")
-                resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
+                resdata = self.stasis_cli.sample_result(result_file, dir)
             else:
                 print("loading existing result data")
                 with open(saved_result, 'rb') as data:
@@ -316,7 +314,7 @@ class Aggregator:
             print("retrieved result data are: '{}'".format(resdata))
             if resdata == '':
                 sbar.write(
-                    f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {sample_name} located at {dir}')
+                    f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {result_file} located at {dir}')
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
