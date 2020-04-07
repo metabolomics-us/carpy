@@ -9,6 +9,7 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ParamValidationError
 
 from stasis.jobs.states import States
+from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 
 
 class TableManager:
@@ -376,7 +377,7 @@ def _compute_state_change(item, old_state, state):
 
 
 def set_job_state(job: str, env: str, method: str, profile: str, state: States,
-                  reason: Optional[str] = None, resource: Optional[str] = None):
+                  reason: Optional[str] = None, resource: Optional[Backend] = None):
     """
     sets the state in the job table for the given sample and job
     """
@@ -409,6 +410,11 @@ def get_job_config(job: str) -> Optional[dict]:
 
         if "Items" in result and len(result['Items']) > 0:
             item = result['Items'][0]
+
+            if 'resource' in item:
+                item['resource'] = Backend(item['resource'])
+            else:
+                item['resource'] = DEFAULT_PROCESSING_BACKEND
             return item
         else:
             return None
@@ -446,6 +452,12 @@ def _set_job_state(body: dict):
     timestamp = int(time.time() * 1000)
 
     body['timestamp'] = timestamp
+
+    if 'resource' in body and body['resource'] is not None:
+        body['resource'] = body['resource'].value
+    else:
+        body['resource'] = DEFAULT_PROCESSING_BACKEND.value
+
     tm = TableManager()
     t = tm.get_job_state_table()
 

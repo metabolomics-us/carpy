@@ -1,6 +1,5 @@
 import os
 import traceback
-from enum import Enum
 from typing import Optional
 
 import simplejson as json
@@ -8,20 +7,10 @@ from jsonschema import validate
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
+from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schema import __SCHEDULE__
 from stasis.tables import update_job_state
 from stasis.tracking.create import create
-
-
-class Backend(Enum):
-    """
-    these are the different permitted backends for processing. Might be extended down the line
-    """
-    FARGATE = "FARGATE"
-    LOCAL = "LOCAL"
-
-
-DEFAULT_PROCESSING_BACKEND = Backend.FARGATE
 
 SERVICE = "stasis-service"
 MESSAGE_BUFFER = 10
@@ -122,7 +111,7 @@ def schedule_to_queue(body, service: str, resource: Backend):
     import boto3
     client = boto3.client('sqs')
     # if topic exists, we just reuse it
-    arn = _get_queue(client, resource=resource, queue_name="schedule")
+    arn = _get_queue(client, resource=resource, queue_name="schedule_queue")
     serialized = json.dumps(body, use_decimal=True)
     # submit item to queue for routing to the correct persistence
     result = client.send_message(

@@ -7,8 +7,8 @@ from jsonschema import validate
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, \
-    DEFAULT_PROCESSING_BACKEND
+from stasis.schedule.backend import DEFAULT_PROCESSING_BACKEND, Backend
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
 from stasis.schema import __JOB_SCHEMA__
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, load_job_samples, \
     get_job_config
@@ -32,7 +32,7 @@ def store_job(event, context):
     profile = body['profile']
 
     if 'resource' in body:
-        resource = body['resource']
+        resource = Backend(body['resource'])
     else:
         resource = DEFAULT_PROCESSING_BACKEND
 
@@ -110,11 +110,7 @@ def schedule_job(event, context):
     method = details['method']
     env_ = details['env']
     profile = details['profile']
-
-    if 'resource' in details:
-        resource = details['resource']
-    else:
-        resource = DEFAULT_PROCESSING_BACKEND
+    resource = details['resource']
 
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
@@ -122,7 +118,7 @@ def schedule_job(event, context):
 
         # store actual job in the job table with state scheduled
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=States.SCHEDULING)
+                      state=States.SCHEDULING, resource=resource)
         for sample in samples:
             try:
                 schedule_to_queue({
@@ -145,7 +141,7 @@ def schedule_job(event, context):
                     reason=str(e)
                 )
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=States.SCHEDULED)
+                      state=States.SCHEDULED, resource=resource)
 
         return {
 
@@ -212,7 +208,7 @@ def monitor_jobs(event, context):
                 state = sync(x['id'])
 
                 if 'resource' in x:
-                    resource = x['resource']
+                    resource = Backend(x['resource'])
                 else:
                     resource = DEFAULT_PROCESSING_BACKEND
 

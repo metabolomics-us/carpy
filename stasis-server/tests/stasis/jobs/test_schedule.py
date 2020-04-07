@@ -2,10 +2,13 @@ import json
 import math
 import random
 
+import pytest
+
 from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
 from stasis.jobs.states import States
+from stasis.schedule.backend import Backend
 from stasis.schedule.schedule import monitor_queue, MESSAGE_BUFFER
-from stasis.tables import load_job_samples, get_tracked_state, get_job_state
+from stasis.tables import load_job_samples, get_tracked_state, get_job_state, get_job_config
 from stasis.tracking import create
 
 
@@ -68,7 +71,8 @@ def test_schedule_job_fails_no_job_stored(requireMocking):
     assert result['statusCode'] == 404
 
 
-def test_schedule_job(requireMocking):
+@pytest.mark.parametrize("backend", [Backend.FARGATE, Backend.LOCAL])
+def test_schedule_job(requireMocking, backend):
     """
     tests the scheduling of a job
     """
@@ -101,12 +105,17 @@ def test_schedule_job(requireMocking):
             "abz_12345.mzml"
         ],
         "profile": "lcms",
-        "env": "test"
+        "env": "test",
+        "resource": backend.value
     }
 
     store_job({'body': json.dumps(job)}, {})
 
     ##
+    # check for the correct backend
+    ##
+    validate_backened(backend)
+
     # here we do the actual schedulign now
     result = schedule_job({'pathParameters': {
         "job": "test_job"
@@ -129,6 +138,7 @@ def test_schedule_job(requireMocking):
     # synchronize the job and sample tracking table
     monitor_jobs({}, {})
 
+    validate_backened(backend)
     assert get_job_state("test_job") == States.SCHEDULED
 
     job = load_job_samples(job="test_job")
@@ -147,6 +157,7 @@ def test_schedule_job(requireMocking):
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
 
+    validate_backened(backend)
     # the overal job state is currently processing
     assert get_job_state("test_job") == States.PROCESSING
 
@@ -161,6 +172,7 @@ def test_schedule_job(requireMocking):
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
 
+    validate_backened(backend)
     # all job items should be in state finished on the stasis side and processed on the job side
     job = load_job_samples(job="test_job")
     for k, v in job.items():
@@ -175,6 +187,7 @@ def test_schedule_job(requireMocking):
     for x in range(0, math.ceil(len(job) / MESSAGE_BUFFER)):
         monitor_queue({}, {})
 
+    validate_backened(backend)
     # we should now have jobs in the state aggregation scheduled
     # this means the jobs should be in the aggregator queue
     # but not processed by fargate yet
@@ -182,3 +195,9 @@ def test_schedule_job(requireMocking):
     assert States.AGGREGATION_SCHEDULED == state
 
     # simulate the receiving of an aggregation event
+
+    validate_backened(backend)
+
+def validate_backened(backend):
+    job_config = get_job_config("test_job")
+    assert job_config['resource'] == backend
