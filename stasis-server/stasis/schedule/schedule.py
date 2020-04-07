@@ -1,5 +1,6 @@
 import os
 import traceback
+from enum import Enum
 from typing import Optional
 
 import simplejson as json
@@ -10,6 +11,17 @@ from stasis.jobs.states import States
 from stasis.schema import __SCHEDULE__
 from stasis.tables import update_job_state
 from stasis.tracking.create import create
+
+
+class Backend(Enum):
+    """
+    these are the different permitted backends for processing. Might be extended down the line
+    """
+    FARGATE = "FARGATE"
+    LOCAL = "LOCAL"
+
+
+DEFAULT_PROCESSING_BACKEND = Backend.FARGATE
 
 SERVICE = "stasis-service"
 MESSAGE_BUFFER = 10
@@ -93,10 +105,16 @@ def schedule(event, context):
     :return:
     """
     body = json.loads(event['body'])
-    return schedule_to_queue(body, service=SECURE_CARROT_RUNNER)
+
+    if 'resource' in body:
+        resource = Backend(body['resource'])
+    else:
+        resource = DEFAULT_PROCESSING_BACKEND
+
+    return schedule_to_queue(body, service=SECURE_CARROT_RUNNER, resource=resource)
 
 
-def schedule_to_queue(body, service: str):
+def schedule_to_queue(body, service: str, resource: Backend):
     body['secured'] = True
     body[SERVICE] = service
 
@@ -104,7 +122,7 @@ def schedule_to_queue(body, service: str):
     import boto3
     client = boto3.client('sqs')
     # if topic exists, we just reuse it
-    arn = _get_queue(client)
+    arn = _get_queue(client, resource=resource, queue_name="schedule")
     serialized = json.dumps(body, use_decimal=True)
     # submit item to queue for routing to the correct persistence
     result = client.send_message(
@@ -237,7 +255,7 @@ def monitor_queue(event, context):
     # if topic exists, we just reuse it
     arn = _get_queue(client=client)
 
-    slots = _free_task_count()
+    slots = _free_task_count(service=SECURE_CARROT_RUNNER) + _free_task_count(service=SECURE_CARROT_AGGREGATOR)
 
     if slots == 0:
         return {
@@ -285,8 +303,6 @@ def monitor_queue(event, context):
             try:
 
                 slots = _free_task_count(service=body[SERVICE])
-
-                print(body)
 
                 if slots > 0:
                     if body[SERVICE] == SECURE_CARROT_RUNNER:
@@ -369,10 +385,6 @@ def schedule_processing_to_fargate(event, context):
                 "value": body['key']
             })
 
-        print('utilizing taskDefinition: {}'.format(task_name))
-        print(overrides)
-        print("")
-
         # fire AWS fargate instance now
         client = boto3.client('ecs')
         response = client.run_task(
@@ -416,15 +428,19 @@ def schedule_processing_to_fargate(event, context):
         }
 
 
-def _get_queue(client, queue_name: str = "schedule_queue"):
+def _get_queue(client, queue_name: str = "schedule_queue", resource: Backend = None):
     """
     generates queues for us on demand as required
     """
+    if resource is None:
+        resource = DEFAULT_PROCESSING_BACKEND
+
+    name = "{}_{}".format(os.environ[queue_name], resource.value)
     try:
-        return client.create_queue(QueueName=os.environ[queue_name])['QueueUrl']
+        return client.create_queue(QueueName=name)['QueueUrl']
     except KeyError as ex:
         raise Exception(
             "you forgot to specify your env variable {} to define the queue which you want to create/monitor".format(
                 queue_name))
     except Exception as ex:
-        return client.get_queue_url(QueueName=os.environ[queue_name])['QueueUrl']
+        return client.get_queue_url(QueueName=os.environ[name])['QueueUrl']

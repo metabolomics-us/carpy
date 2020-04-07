@@ -7,7 +7,8 @@ from jsonschema import validate
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.states import States
 from stasis.jobs.sync import sync
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, \
+    DEFAULT_PROCESSING_BACKEND
 from stasis.schema import __JOB_SCHEMA__
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, load_job_samples, \
     get_job_config
@@ -30,13 +31,18 @@ def store_job(event, context):
     env_ = body['env']
     profile = body['profile']
 
+    if 'resource' in body:
+        resource = body['resource']
+    else:
+        resource = DEFAULT_PROCESSING_BACKEND
+
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
     try:
 
         # store actual job in the job table with state scheduled
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=States.STORED)
+                      state=States.STORED, resource=resource)
         for sample in samples:
             set_sample_job_state(
                 job=job_id,
@@ -105,6 +111,11 @@ def schedule_job(event, context):
     env_ = details['env']
     profile = details['profile']
 
+    if 'resource' in details:
+        resource = details['resource']
+    else:
+        resource = DEFAULT_PROCESSING_BACKEND
+
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
     try:
@@ -120,7 +131,7 @@ def schedule_job(event, context):
                     "method": method,
                     "profile": profile,
                     "key": stasis_key
-                }, service=SECURE_CARROT_RUNNER)
+                }, service=SECURE_CARROT_RUNNER, resource=resource)
                 set_sample_job_state(
                     job=job_id,
                     sample=sample,
@@ -200,10 +211,16 @@ def monitor_jobs(event, context):
             try:
                 state = sync(x['id'])
 
+                if 'resource' in x:
+                    resource = x['resource']
+                else:
+                    resource = DEFAULT_PROCESSING_BACKEND
+
                 if state == States.PROCESSED:
                     print("schedule aggregation for {}".format(x))
                     schedule_to_queue({"job": x['id'], "env": x['env'], "profile": x['profile']},
-                                      service=SECURE_CARROT_AGGREGATOR)
+                                      service=SECURE_CARROT_AGGREGATOR,
+                                      resource=resource)
                     update_job_state(job=x['id'], state=States.AGGREGATION_SCHEDULED)
             except Exception as e:
                 traceback.print_exc()
