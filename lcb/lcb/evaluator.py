@@ -18,6 +18,11 @@ class Evaluator:
         pass
 
 
+class JobEvaluator(Evaluator):
+    def evaluate(self, args: dict):
+        pass
+
+
 class SampleEvaluator(Evaluator):
     """
     evaluates received commands from the client

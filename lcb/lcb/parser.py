@@ -1,14 +1,25 @@
 import argparse
 
+from stasis_client.client import StasisClient
+
+from lcb.evaluator import SampleEvaluator, JobEvaluator
+
 
 class Parser:
     """
     general command line parser
     """
 
-    def __init__(self, mapping: dict):
+    def __init__(self, mapping: dict = None):
         parser = argparse.ArgumentParser(prog="lcb")
         sub = parser.add_subparsers(help="this contains all the different scopes, available to LCB")
+
+        if mapping is None:
+            # registers the default mapping
+            mapping = {
+                'sample': SampleEvaluator(StasisClient()).evaluate,
+                'job': JobEvaluator(StasisClient()).evaluate
+            }
 
         jobs = self.configure_jobs(main_parser=parser, sub_parser=sub)
         jobs.set_defaults(func=mapping.get(jobs.prog.replace(parser.prog, "").strip()))
@@ -18,7 +29,7 @@ class Parser:
 
         self.parser = parser
 
-    def parse(self, args):
+    def parse(self, args=None):
         """
         does the actual parsing and calls the associated functions
         :return:

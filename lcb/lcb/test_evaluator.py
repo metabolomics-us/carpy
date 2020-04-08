@@ -1,4 +1,4 @@
-def test_evaluate_no_args(sample_evaluator):
+def test_evaluate_empty_args(sample_evaluator):
     result = sample_evaluator.evaluate({})
     pass
     assert len(result) == 0

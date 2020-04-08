@@ -3,7 +3,16 @@ from pytest import fail
 from lcb.parser import Parser
 
 
-def test_parse_no_mapping():
+def test_parse_default_mapping():
+    try:
+        parser = Parser()
+        parser.parse()
+        fail()
+    except SystemExit as e:
+        pass
+
+
+def test_parse_empty_mapping():
     try:
         parser = Parser({})
         parser.parse([])
@@ -56,3 +65,17 @@ def test_parse_job_mapping_job_id_specified():
     parser.parse(['job', '-i', 'test'])
 
 
+def test_parse_no_arguments():
+    def call(args):
+        print(args)
+
+    parser = Parser({
+        "job": call,
+        "sample": call
+    })
+
+    try:
+        parser.parse()
+        fail()
+    except SystemExit as e:
+        pass
