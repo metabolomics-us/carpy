@@ -37,7 +37,9 @@ class Parser:
 
         result = vars(self.parser.parse_args(args))
 
-        if 'func' in result:
+        if len(result) == 0:
+            self.parser.print_usage()
+        elif 'func' in result:
             result['func'](result)
         else:
             raise KeyError("you need to make sure that a 'func' is registered when you create the parser!")
@@ -58,10 +60,12 @@ class Parser:
                             help="this starts the processing of the specified job id in the remote system",
                             action='store_true')
         parser.add_argument("-a", "--aggregate", help="this aggregates the specified job locally", action='store_true')
-        parser.add_argument("-d", "--download", help="this downloads the specified job, if available",
+        parser.add_argument("-r", "--retrieve", help="this downloads the specified job, if available",
                             action='store_true')
         parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
-        parser.add_argument("-r", "--register", help="registers the specified job file in the system", type=str)
+        parser.add_argument("-u", "--upload",
+                            help="registers the specified job file in the system in preparation for processing. You steel need to start the processing",
+                            type=str)
 
         return parser
 

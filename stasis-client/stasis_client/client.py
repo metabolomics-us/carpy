@@ -85,7 +85,7 @@ class StasisClient:
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
 
-    def sample_state(self, sample_name: str):
+    def sample_state(self, sample_name: str, full_response: bool = False):
         """Returns the state of the given sample by calling Stasis' tracking API
         Args:
             sample_name: name of the sample
@@ -106,7 +106,10 @@ class StasisClient:
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
 
-        return result.json()['status']
+        if full_response is True:
+            return result.json()
+        else:
+            return result.json()['status']
 
     def sample_state_update(self, sample_name: str, state):
         """

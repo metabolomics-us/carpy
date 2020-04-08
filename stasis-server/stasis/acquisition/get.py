@@ -12,9 +12,11 @@ def get(events, context):
         if 'sample' in events['pathParameters']:
             tm = TableManager()
             table = tm.get_acquisition_table()
+            sample = events['pathParameters']['sample']
 
+            print("looking for sample: {}".format(sample))
             result = table.query(
-                KeyConditionExpression=Key('id').eq(events['pathParameters']['sample'])
+                KeyConditionExpression=Key('id').eq(sample)
             )
 
             if "Items" in result and len(result['Items']) > 0:

@@ -58,6 +58,11 @@ def test_sample(stasis_cli):
     return sample
 
 
+@pytest.fixture()
+def test_sample_tracking_data(stasis_cli, test_sample):
+    pass
+
+
 @pytest.fixture
 def test_sample_result(stasis_cli, test_sample, stasis_token, stasis_url):
     """

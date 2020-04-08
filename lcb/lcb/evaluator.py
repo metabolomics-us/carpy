@@ -63,6 +63,7 @@ class SampleEvaluator(Evaluator):
         acquistion_data = self.client.sample_acquisition_get(id)
         # 2. schedule
 
+        print()
         result = self.client.schedule_sample_for_computation(
             sample_name=id,
             method=acquistion_data['processing']['method'],
@@ -89,6 +90,7 @@ class SampleEvaluator(Evaluator):
         state = result['value']
         timestamp = datetime.fromtimestamp(result['time'] / 1000)
 
+        print()
         print(f"sample {id} current state is '{state}' with '{priority}' and it was last updated at {timestamp}")
 
         return result
@@ -102,7 +104,10 @@ class SampleEvaluator(Evaluator):
 
         result = self.client.sample_result_as_json(sample_name=id)
 
-        print(json.dumps(result, indent=4))
+        with open("{}.json".format(id), 'w') as file:
+            json.dump(result, file, indent=4)
+
+        print("stored result at {}.json".format(id))
 
     def info(self, id, args):
         """
@@ -110,16 +115,19 @@ class SampleEvaluator(Evaluator):
         :param id:
         :return:
         """
-        acquistion_data = self.client.sample_acquisition_get(id)
-        state = self.client.sample_state(sample_name=id)
+        print()
+        try:
+            acquistion_data = self.client.sample_acquisition_get(id)
+            state = self.client.sample_state(sample_name=id)
 
-        result = {
-            'meta': acquistion_data,
-            'state': state
-        }
-        print(json.dumps(result, indent=4))
-        pass
-        # pretty print
+            result = {
+                'meta': acquistion_data,
+                'state': state
+            }
+
+            print(json.dumps(result, indent=4))
+        except Exception as e:
+            print("exception observed during query for sample {}.\nThe exact message is: {}".format(id, e))
 
     def exists(self, id, args):
         """

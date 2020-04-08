@@ -7,7 +7,7 @@ if version_info.major == 3 and version_info.minor < 6 or \
     print('Your Python interpreter must be 3.6 or greater!')
     exit(1)
 
-setup(name='crag',
+setup(name='lcb',
       version='0.0.1',
       description='LCB - A command line interface to the LC BinBase system',
       url='https://github.com/berlinguyinca/carpy',
@@ -15,7 +15,7 @@ setup(name='crag',
       author_email='wohlgemuth@ucdavis.edu',
       license='GPLv3',
       packages=['lcb'],
-      scripts=["bin/lcb.py"],
+      scripts=["bin/lcb-client.py"],
       setup_requires=['pytest-runner'],
       tests_require=[
           'pytest',
