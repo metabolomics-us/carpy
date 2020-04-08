@@ -94,6 +94,7 @@ class SampleEvaluator(Evaluator):
         :param id:
         :return:
         """
+
         result = self.client.sample_result_as_json(sample_name=id)
 
         print(json.dumps(result, indent=4))

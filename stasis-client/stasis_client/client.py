@@ -46,13 +46,13 @@ class StasisClient:
         }
 
     def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
-                                        version: str = "164"):
+                                        resource: str = "FARGATE"):
         """
         schedules a sample for dataprocessing
         """
         result = requests.post(f"{self._url}/schedule",
                                json={'sample': sample_name, 'env': env, 'method': method, 'profile': profile,
-                                     'task_version': version, 'secured': True}, headers=self._header)
+                                     'resource': resource, 'secured': True}, headers=self._header)
 
         if result.status_code != 200:
             raise Exception("scheduling failed!")
@@ -128,7 +128,7 @@ class StasisClient:
         return result
 
     def sample_result_as_json(self, sample_name) -> dict:
-        result = requests.get(f"{self._url}/sample/{sample_name}", headers=self._header)
+        result = requests.get(f"{self._url}/result/{sample_name}", headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()

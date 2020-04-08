@@ -15,6 +15,7 @@ def get(events, context):
             db = Bucket(os.environ["resultTable"])
 
             sample = f"{events['pathParameters']['sample']}.json"
+            print("looking in bucket {} for sample {}".format(os.environ["resultTable"], sample))
             if db.exists(sample):
                 result = db.load(sample)
 

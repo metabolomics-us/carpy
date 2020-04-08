@@ -1,7 +1,7 @@
 def test_evaluate_no_args(sample_evaluator):
     result = sample_evaluator.evaluate({})
     pass
-    assert len(result) == 1
+    assert len(result) == 0
 
 
 def test_evaluate_sample_and_status(sample_evaluator, test_sample):
@@ -16,7 +16,7 @@ def test_evaluate_sample_and_process(sample_evaluator, test_sample):
     assert len(result) == 1
 
 
-def test_evaluate_sample_and_download(sample_evaluator, test_sample):
+def test_evaluate_sample_and_download(sample_evaluator, test_sample, test_sample_result):
     result = sample_evaluator.evaluate({'id': test_sample['sample'], 'retrieve': True})
     assert len(result) == 1
 
