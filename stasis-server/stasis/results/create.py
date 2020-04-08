@@ -18,8 +18,6 @@ def triggerEvent(data):
     :return: a serialized version of the submitted message
     """
 
-    print("trigger event: %s" % data)
-
     validate(data, __RESULT_SCHEMA__)
 
     timestamp = int(time.time() * 1000)
@@ -32,7 +30,7 @@ def triggerEvent(data):
         existing = table.exists(name)
 
         if existing:
-            existing = json.loads(name)
+            existing = json.loads(table.load(name))
             # need to append and/or update result to injections
             data['injections'] = {**existing['injections'], **data['injections']}
 
@@ -62,11 +60,10 @@ def create(event, context):
         :return:
     """
 
-    print(event)
-
     if 'body' not in event:
         raise Exception("please ensure you provide a valid body")
 
     data = json.loads(event['body'])
 
+    print("loaded data was: {}".format(data))
     return triggerEvent(data)

@@ -66,7 +66,7 @@ def test_sample_result(stasis_cli, test_sample, stasis_token, stasis_url):
     :return:
     """
     data = {
-        'sample': test_sample['sample'],
+        'sample': "{}".format(test_sample['sample']),
         'injections': {
             'test_1': {
                 'logid': '1234',
