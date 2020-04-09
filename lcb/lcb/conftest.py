@@ -60,6 +60,57 @@ def test_sample(stasis_cli):
 
 @pytest.fixture()
 def test_sample_tracking_data(stasis_cli, test_sample):
+    data = {
+        "experiment": "unknown",
+        "id": "{}".format(test_sample['sample']),
+        "sample": "{}".format(test_sample['sample']),
+        "status": [
+            {
+                "fileHandle": "{}.mzml".format(test_sample['sample']),
+                "priority": 300,
+                "time": 1586322573393,
+                "value": "scheduled"
+            },
+            {
+                "fileHandle": "{}.mzml".format(test_sample['sample']),
+                "priority": 410,
+                "time": 1586322704393,
+                "value": "deconvoluted"
+            },
+            {
+                "fileHandle": "{}.mzml".format(test_sample['sample']),
+                "priority": 420,
+                "time": 1586322705771,
+                "value": "corrected"
+            },
+            {
+                "fileHandle": "{}.mzml".format(test_sample['sample']),
+                "priority": 430,
+                "time": 1586322708855,
+                "value": "annotated"
+            },
+            {
+                "fileHandle": "{}.mzml".format(test_sample['sample']),
+                "priority": 440,
+                "time": 1586322710035,
+                "value": "quantified"
+            },
+            {
+                "fileHandle": "{}.mzml".format(test_sample['sample']),
+                "priority": 450,
+                "time": 1586322820028,
+                "value": "replaced"
+            },
+            {
+                "fileHandle": "{}.mzml.json".format(test_sample['sample']),
+                "priority": 500,
+                "time": 1586322821927,
+                "value": "exported"
+            }
+        ]
+    }
+
+    stasis_cli.sample_state_update()
     pass
 
 

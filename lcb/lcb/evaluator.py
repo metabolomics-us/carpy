@@ -84,14 +84,13 @@ class SampleEvaluator(Evaluator):
         :return:
         """
 
-        result = self.client.sample_state(sample_name=id)[0]
+        result = self.client.sample_state(sample_name=id, full_response=True)
 
-        priority = result['priority']
-        state = result['value']
-        timestamp = datetime.fromtimestamp(result['time'] / 1000)
+        for x in result['status']:
+            timestamp = datetime.fromtimestamp(x['time'] / 1000)
+            x['date'] = timestamp.strftime("%m/%d/%Y, %H:%M:%S")
 
-        print()
-        print(f"sample {id} current state is '{state}' with '{priority}' and it was last updated at {timestamp}")
+        print(json.dumps(result, indent=4))
 
         return result
 

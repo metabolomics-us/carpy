@@ -55,7 +55,8 @@ def triggerEvent(data):
         }
 
     if "fileHandle" in data:
-        item['status'][-1]['fileHandle'] = data['fileHandle']
+        if 'fileHandle' not in item['status'][-1]:
+            item['status'][-1]['fileHandle'] = data['fileHandle']
 
     item = tm.sanitize_json_for_dynamo(item)
 

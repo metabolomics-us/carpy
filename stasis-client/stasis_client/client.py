@@ -111,7 +111,7 @@ class StasisClient:
         else:
             return result.json()['status']
 
-    def sample_state_update(self, sample_name: str, state):
+    def sample_state_update(self, sample_name: str, state, file_handle: Optional[str] = None):
         """
         updates a sample state in the remote system+
 
@@ -123,8 +123,12 @@ class StasisClient:
         """
         data = {
             "sample": sample_name,
-            "status": state
+            "status": state,
         }
+
+        if file_handle is not None:
+            data['fileHandle'] = file_handle
+
         result = requests.post(f'{self._url}/tracking', json=data, headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
