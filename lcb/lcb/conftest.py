@@ -9,12 +9,12 @@ from lcb.evaluator import SampleEvaluator
 
 @pytest.fixture
 def stasis_token():
-    return os.getenv('STASIS_API_TOKEN')
+    return "9MjbJRbAtj8spCJJVTPbP3YWc4wjlW0c7AP47Pmi"
 
 
 @pytest.fixture
 def stasis_url():
-    return os.getenv('STASIS_API_URL')
+    return "https://test-api.metabolomics.us/stasis"
 
 
 @pytest.fixture

@@ -3,18 +3,18 @@ from pytest import fail
 from lcb.parser import Parser
 
 
-def test_parse_default_mapping():
+def test_parse_default_mapping(stasis_cli):
     try:
-        parser = Parser()
+        parser = Parser(stasis_cli)
         parser.parse()
         fail()
     except SystemExit as e:
         pass
 
 
-def test_parse_empty_mapping():
+def test_parse_empty_mapping(stasis_cli):
     try:
-        parser = Parser({})
+        parser = Parser(stasis_cli, {})
         parser.parse([])
         fail()
     except KeyError:
@@ -22,22 +22,22 @@ def test_parse_empty_mapping():
         pass
 
 
-def test_parse_job_mapping_empty():
+def test_parse_job_mapping_empty(stasis_cli):
     def call(args):
         pass
 
-    parser = Parser({
+    parser = Parser(stasis_cli, {
         "job": call,
         "sample": call
     })
     parser.parse([])
 
 
-def test_parse_job_mapping_empty_job_specified():
+def test_parse_job_mapping_empty_job_specified(stasis_cli):
     def call(args):
         pass
 
-    parser = Parser({
+    parser = Parser(stasis_cli, {
         "job": call,
         "sample": call
     })
@@ -49,11 +49,11 @@ def test_parse_job_mapping_empty_job_specified():
         pass
 
 
-def test_parse_job_mapping_job_id_specified():
+def test_parse_job_mapping_job_id_specified(stasis_cli):
     def call(args):
         print(args)
 
-    parser = Parser({
+    parser = Parser(stasis_cli, {
         "job": call,
         "sample": call
     })
@@ -61,11 +61,11 @@ def test_parse_job_mapping_job_id_specified():
     parser.parse(['job', '-i', 'test'])
 
 
-def test_parse_no_arguments():
+def test_parse_no_arguments(stasis_cli):
     def call(args):
         print(args)
 
-    parser = Parser({
+    parser = Parser(stasis_cli, {
         "job": call,
         "sample": call
     })

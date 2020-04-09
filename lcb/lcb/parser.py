@@ -10,15 +10,15 @@ class Parser:
     general command line parser
     """
 
-    def __init__(self, mapping: dict = None):
+    def __init__(self, stasisClient: StasisClient, mapping: dict = None):
         parser = argparse.ArgumentParser(prog="lcb")
         sub = parser.add_subparsers(help="this contains all the different scopes, available to LCB")
 
         if mapping is None:
             # registers the default mapping
             mapping = {
-                'sample': SampleEvaluator(StasisClient()).evaluate,
-                'job': JobEvaluator(StasisClient()).evaluate
+                'sample': SampleEvaluator(stasisClient).evaluate,
+                'job': JobEvaluator(stasisClient).evaluate
             }
 
         jobs = self.configure_jobs(main_parser=parser, sub_parser=sub)

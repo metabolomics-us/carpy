@@ -7,3 +7,4 @@ pytest
 tqdm
 git+git://github.com/metabolomics-us/carpy.git@lcb#egg=stasis-client&subdirectory=stasis-client
 colorama
+boto3
