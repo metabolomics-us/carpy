@@ -59,6 +59,19 @@ class StasisClient:
         else:
             return result.json()
 
+    def sample_raw_data_exists(self, sample_name) -> bool:
+        """
+        checks if the raw data exist
+        """
+        result = requests.head(f"{self._url}/sample/{sample_name}")
+
+        if result.status_code == 200:
+            return True
+        elif result.status_code == 404:
+            return False
+        else:
+            raise Exception("error checkign state, status code was {}".format(result.status_code))
+
     def sample_acquisition_create(self, data: dict):
         """
         adds sample metadata info to stasis
@@ -139,57 +152,6 @@ class StasisClient:
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
-
-    def sample_result(self, sample_name: str, dest: Optional[str] = 'tmp') -> dict:
-        """
-        Downloads a sample's result
-
-        Args:
-            sample_name: filename to download
-            dest: Optional folder to store the file
-
-        Returns:
-            a json object with the result data or error information
-        """
-
-        jstr = ""
-        if not os.path.exists(dest):
-            os.makedirs(dest)
-
-        filename = f'{dest}/{sample_name}'
-
-        if not filename.endswith(".json"):
-            filename = "{}.json".format(filename)
-
-        try:
-            with open(filename, 'wb') as data:
-
-                print(f"using url: {self._url}")
-                processed_bucket = self.get_processed_bucket()
-
-                json_data_bucket = boto3.resource('s3').Bucket(processed_bucket)
-                json_data_bucket.download_fileobj(sample_name, data)
-
-            with open(filename, 'rb') as data:
-                jstr = json.load(data)
-
-        except JSONDecodeError as jde:
-            jstr = {'Error': jde.msg, 'filename': sample_name}
-        except ClientError as ce:
-            jstr = {'Error': ce.response['Error'], 'filename': sample_name}
-        finally:
-            try:
-                # only remove downloads in ./tmp
-                if os.path.exists(f'tmp/{sample_name}'):
-                    os.remove(f'tmp/{sample_name}')
-
-                # or empty files
-                if os.path.getsize(filename) <= 0:
-                    os.remove(filename)
-            except FileNotFoundError:
-                pass
-
-            return jstr
 
     def get_url(self):
         return self._url

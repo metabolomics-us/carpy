@@ -2,6 +2,7 @@ import pytest
 import requests
 from stasis_client.client import StasisClient
 
+from lcb.job_evaluator import JobEvaluator
 from lcb.sample_evaluator import SampleEvaluator
 
 
@@ -23,6 +24,10 @@ def stasis_cli(stasis_token, stasis_url):
 @pytest.fixture
 def sample_evaluator(stasis_cli):
     return SampleEvaluator(stasis=stasis_cli)
+
+@pytest.fixture
+def job_evaluator(stasis_cli):
+    return JobEvaluator(stasis=stasis_cli)
 
 
 @pytest.fixture

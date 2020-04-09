@@ -142,4 +142,4 @@ class SampleEvaluator(Evaluator):
         :param id:
         :return:
         """
-        raise Exception("not implemented")
+        self.client

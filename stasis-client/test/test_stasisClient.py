@@ -2,6 +2,7 @@ import os
 from time import time, sleep
 
 import requests
+from pytest import fail
 
 
 def test_sample_acquisition_create(stasis_cli, sample):
@@ -33,29 +34,17 @@ def test_sample_state(stasis_cli, sample):
 
 
 def test_sample_result(stasis_cli):
-    result = stasis_cli.sample_result('B2a_TEDDYLipids_Neg_NIST001')
+    result = stasis_cli.sample_result_as_json('B2a_TEDDYLipids_Neg_NIST001')
 
     print(result)
-    assert result is not None
-    assert 'B2a_TEDDYLipids_Neg_NIST001' == result['sample']
 
 
 def test_inexistent_result(stasis_cli):
-    result = stasis_cli.sample_result('blah.blah')
-    print(result)
-    assert 'Error' in result
-    assert 'blah.blah' == result.get('filename')
-
-
-def test_persist_inexistent_file(stasis_cli):
-    if os.path.exists('stfu/blah.blah'):
-        os.remove('stfu/blah.blah')
-
-    result = stasis_cli.sample_result('blah.blah', 'stfu')
-    print(result)
-    assert result['Error'] is not None
-    assert os.path.exists('stfu/blah.blah') is False
-
+    try:
+        result = stasis_cli.sample_result_as_json('blah.blah')
+        fail()
+    except Exception as e:
+        pass
 
 def test_get_url(stasis_cli):
     assert "https://test-api.metabolomics.us/stasis" == stasis_cli.get_url()
