@@ -30,11 +30,7 @@ def test_parse_job_mapping_empty():
         "job": call,
         "sample": call
     })
-    try:
-        parser.parse([])
-        fail()
-    except KeyError as e:
-        pass
+    parser.parse([])
 
 
 def test_parse_job_mapping_empty_job_specified():

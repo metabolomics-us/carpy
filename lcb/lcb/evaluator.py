@@ -41,6 +41,7 @@ class SampleEvaluator(Evaluator):
             'exist': self.exists,
             'retrieve': self.download,
             'detail': self.info,
+            'full': self.record
 
         }
 
@@ -125,6 +126,30 @@ class SampleEvaluator(Evaluator):
             }
 
             print(json.dumps(result, indent=4))
+        except Exception as e:
+            print("exception observed during query for sample {}.\nThe exact message is: {}".format(id, e))
+
+    def record(self, id, args):
+        """
+
+        :param id:
+        :return:
+        """
+        print()
+        try:
+            acquistion_data = self.client.sample_acquisition_get(id)
+            state = self.client.sample_state(sample_name=id)
+            processing_result = self.client.sample_result_as_json(sample_name=id)
+            result = {
+                'meta': acquistion_data,
+                'state': state,
+                'processed': processing_result
+            }
+
+            with open("{}.record.json".format(id), 'w') as file:
+                json.dump(result, file, indent=4)
+            print("stored result at {}.record.json".format(id))
+
         except Exception as e:
             print("exception observed during query for sample {}.\nThe exact message is: {}".format(id, e))
 

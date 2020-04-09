@@ -84,6 +84,9 @@ class Parser:
         parser.add_argument("-p", "--process", help="this starts the processing of the specified sample",
                             action='store_true')
         parser.add_argument("-r", "--retrieve", help="this downloads the specified sample result", action='store_true')
+        parser.add_argument("-f", "--full",
+                            help="this downloads the specified sample result and all associated metadata",
+                            action='store_true')
         parser.add_argument("-e", "--exist", help="checks if the given sample exist", action='store_true')
         parser.add_argument("-d", "--detail", help="provides a complete detailed view of the sample",
                             action='store_true')

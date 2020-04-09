@@ -27,7 +27,13 @@ def test_evaluate_sample_and_exist(sample_evaluator, test_sample):
     assert len(result) == 1
 
 
-def test_evaluate_sample_and_info(sample_evaluator, test_sample):
+def test_evaluate_sample_and_info(sample_evaluator, test_sample, test_sample_tracking_data):
     result = sample_evaluator.evaluate({'id': test_sample['sample'], 'detail': True})
+    pass
+    assert len(result) == 1
+
+
+def test_evaluate_sample_and_full_record(sample_evaluator, test_sample, test_sample_tracking_data):
+    result = sample_evaluator.evaluate({'id': test_sample['sample'], 'full': True})
     pass
     assert len(result) == 1
