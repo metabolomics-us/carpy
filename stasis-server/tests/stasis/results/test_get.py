@@ -92,8 +92,6 @@ def test_get(requireMocking):
             }
         }
     )
-    print(jsonString)
-
     result = create.create({'body': jsonString}, {})
     assert 200 == result['statusCode']
 

@@ -7,7 +7,7 @@ from jsonschema import validate
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __RESULT_SCHEMA__
 from stasis.service.Bucket import Bucket
-from stasis.tables import TableManager
+from stasis.tables import TableManager, get_file_handle
 
 
 def triggerEvent(data):
@@ -26,7 +26,10 @@ def triggerEvent(data):
 
     if 'sample' in data:
         table = Bucket(os.environ['resultTable'])
-        name = f"{data['id']}.json"
+
+        # lookup from the stasis tables the correct file handle
+        # TODO right now we are faking it
+        name = get_file_handle(data['id'])
         existing = table.exists(name)
 
         if existing:

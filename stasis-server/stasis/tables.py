@@ -588,3 +588,11 @@ def get_tracked_state(sample: str) -> Optional[str]:
         states = data['status']
         state = states[-1]
         return state['value']
+
+
+def get_file_handle(sample: str, state: str = "exported") -> Optional[str]:
+    """
+    returns the file handle for the given sample and state
+    """
+    # TODO needs a real implemenations by looking it up from stasis tracking data. Just a dummy solution for now
+    return "{}.mzml.json".format(sample)

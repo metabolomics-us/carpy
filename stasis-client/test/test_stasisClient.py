@@ -16,13 +16,18 @@ def test_sample_acquisition_create(stasis_cli, sample):
     assert data['sample'] == result['sample']
 
 
-def test_acquisition_get(stasis_cli):
-    result = stasis_cli.sample_acquisition_get(f'test_1')
-    metadata = {'class': '123456',
-                'organ': 'tissue',
-                'species': 'rat'}
-    print(result)
-    assert metadata == result.get('metadata')
+def test_acquisition_get_fail_not_found(stasis_cli):
+    try:
+        result = stasis_cli.sample_acquisition_get(f'test_1-{time()}')
+        fail()
+    except Exception as e:
+        pass
+
+def test_file_handle_by_state(stasis_cli, sample, sample_tracking_data):
+    result = stasis_cli.file_handle_by_state(sample['sample'], 'exported')
+    assert result == "{}.mzml.json".format(sample['sample'])
+    result = stasis_cli.file_handle_by_state(sample['sample'], 'deconvoluted')
+    assert result == "{}.mzml".format(sample['sample'])
 
 
 def test_sample_state(stasis_cli, sample):
@@ -45,6 +50,7 @@ def test_inexistent_result(stasis_cli):
         fail()
     except Exception as e:
         pass
+
 
 def test_get_url(stasis_cli):
     assert "https://test-api.metabolomics.us/stasis" == stasis_cli.get_url()

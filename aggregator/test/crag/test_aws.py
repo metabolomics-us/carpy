@@ -12,9 +12,9 @@ def test_aggregate_success(api_token, stasis):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "env": "test"
@@ -34,9 +34,9 @@ def test_aggregate_false(api_token, stasis):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLiNO_EXISTpids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyNO_EXISTLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyFAILEDLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLiNO_EXISTpids_Neg_NIST001",
+            "B10A_SA8931_TeddyNO_EXISTLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyFAILEDLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "env": "test"

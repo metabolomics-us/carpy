@@ -4,6 +4,7 @@ import simplejson as json
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.service.Bucket import Bucket
+from stasis.tables import get_file_handle
 
 
 def get(events, context):
@@ -14,7 +15,7 @@ def get(events, context):
 
             db = Bucket(os.environ["resultTable"])
 
-            sample = f"{events['pathParameters']['sample']}.json"
+            sample = get_file_handle(events['pathParameters']['sample'])
             print("looking in bucket {} for sample {}".format(os.environ["resultTable"], sample))
             if db.exists(sample):
                 result = db.load(sample)
@@ -33,13 +34,13 @@ def get(events, context):
                 }
         else:
             return {
-                "statusCode": 404,
+                "statusCode": 503,
                 "headers": __HTTP_HEADERS__,
                 "body": json.dumps({"error": "sample name is not provided!"})
             }
     else:
         return {
-            "statusCode": 404,
+            "statusCode": 503,
             "headers": __HTTP_HEADERS__,
             "body": json.dumps({"error": "not supported, need's be called from a http event!"})
         }

@@ -124,6 +124,23 @@ class StasisClient:
         else:
             return result.json()['status']
 
+    def file_handle_by_state(self, sample_name:str, state:str):
+        """
+        returns the correct file handle for the given sample name in the system
+        """
+
+        result = requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+
+        states =  result.json()['status']
+
+        for x in states:
+            if x['value'] == state and 'fileHandle' in x:
+                return x['fileHandle']
+
+        raise Exception("state not found or has no file handle")
+
     def sample_state_update(self, sample_name: str, state, file_handle: Optional[str] = None):
         """
         updates a sample state in the remote system+

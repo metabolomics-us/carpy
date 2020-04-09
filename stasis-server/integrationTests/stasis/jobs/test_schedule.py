@@ -19,9 +19,9 @@ def test_store_job_integration(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "task_version": "164",
@@ -66,9 +66,9 @@ def test_job_result_not_finished(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "task_version": "164",

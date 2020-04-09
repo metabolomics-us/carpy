@@ -306,7 +306,7 @@ class Aggregator:
             print("looking for {}".format(result_file))
             if self.args.get('save') or not os.path.exists(saved_result):
                 print("downloading result data from stasis")
-                resdata = self.stasis_cli.sample_result(result_file, dir)
+                resdata = self.stasis_cli.sample_result_as_json(result_file)
             else:
                 print("loading existing result data")
                 with open(saved_result, 'rb') as data:
