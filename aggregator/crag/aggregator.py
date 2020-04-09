@@ -300,26 +300,31 @@ class Aggregator:
                 continue
 
             dir = self.args.get("dir", "/tmp")
-            result_file = f'{sample}.json'
+            result_file = f'{sample}'
             saved_result = f'{dir}/{result_file}'
 
             print("looking for {}".format(result_file))
             if self.args.get('save') or not os.path.exists(saved_result):
                 print("downloading result data from stasis")
-                resdata = self.stasis_cli.sample_result_as_json(result_file)
+                try:
+                    resdata = self.stasis_cli.sample_result_as_json(result_file)
+                except Exception as e:
+                    resdata = None
             else:
                 print("loading existing result data")
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
             print("retrieved result data are: '{}'".format(resdata))
-            if resdata == '':
+            if resdata is None:
+                sbar.write(
+                    f'Failed getting {sample}. We looked in bucket {self.bucket_used}')
+            elif resdata == '':
                 sbar.write(
                     f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {result_file} located at {dir}')
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
-                sbar.write(
-                    f'Failed getting {sample}; {resdata.get("Error")}. We looked in bucket {self.bucket_used}')
+                raise Exception("this should not have happened!")
 
         if len(results) == 0:
             raise NoSamplesFoundException("sorry none of your samples were found!")

@@ -38,12 +38,6 @@ def test_sample_state(stasis_cli, sample):
     assert 'entered' == stasis_cli.sample_state(sample['sample'])[0]['value']
 
 
-def test_sample_result(stasis_cli):
-    result = stasis_cli.sample_result_as_json('B2a_TEDDYLipids_Neg_NIST001')
-
-    print(result)
-
-
 def test_inexistent_result(stasis_cli):
     try:
         result = stasis_cli.sample_result_as_json('blah.blah')
@@ -155,7 +149,7 @@ def test_download_result(stasis_cli, api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "env": "test"
@@ -176,6 +170,9 @@ def test_download_result(stasis_cli, api_token):
 
         sleep(10)
         duration = time() - origin
+
+    # side test to ensure results are generated and can be downloaded
+    stasis_cli.sample_result_as_json('B10A_SA8922_TeddyLipids_Pos_122WP')
 
     content = stasis_cli.download_job_result(test_id)
 
