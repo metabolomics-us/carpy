@@ -303,18 +303,17 @@ class Aggregator:
             result_file = f'{sample}'
             saved_result = f'{dir}/{result_file}'
 
-            print("looking for {}".format(result_file))
+            sbar.write("looking for {}".format(result_file))
             if self.args.get('save') or not os.path.exists(saved_result):
-                print("downloading result data from stasis")
+                sbar.write("downloading result data from stasis")
                 try:
                     resdata = self.stasis_cli.sample_result_as_json(result_file)
                 except Exception as e:
                     resdata = None
             else:
-                print("loading existing result data")
+                sbar.write("loading existing result data")
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
-            print("retrieved result data are: '{}'".format(resdata))
             if resdata is None:
                 sbar.write(
                     f'Failed getting {sample}. We looked in bucket {self.bucket_used}')

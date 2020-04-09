@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Optional
 
 import boto3
@@ -124,7 +125,7 @@ class StasisClient:
         else:
             return result.json()['status']
 
-    def file_handle_by_state(self, sample_name:str, state:str):
+    def file_handle_by_state(self, sample_name: str, state: str):
         """
         returns the correct file handle for the given sample name in the system
         """
@@ -133,7 +134,7 @@ class StasisClient:
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
 
-        states =  result.json()['status']
+        states = result.json()['status']
 
         for x in states:
             if x['value'] == state and 'fileHandle' in x:
@@ -231,6 +232,25 @@ class StasisClient:
         if result.status_code != 200:
             raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
+
+    def upload_job_result(self, job: str, directory: str):
+        """
+        uploads the content of the given directory to the remote storage facility.
+        """
+
+        bucket_name = self.get_aggregated_bucket()
+        print("zipping data and uploading it to the result bucket: {}. File name will be {}.{}".format(
+            bucket_name, job, "zip"))
+        shutil.make_archive(f"result/{job}", 'zip', directory)
+
+        try:
+            boto3.client('s3').create_bucket(Bucket=bucket_name,
+                                             CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
+        except Exception as e:
+            pass
+
+        # upload new file
+        return boto3.client('s3').upload_file(Filename=f"result/{job}.zip", Bucket=bucket_name, Key=f"{job}.zip")
 
     def download_job_result(self, job: str) -> Optional[str]:
         """
