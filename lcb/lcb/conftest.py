@@ -1,10 +1,8 @@
-import os
-
 import pytest
 import requests
 from stasis_client.client import StasisClient
 
-from lcb.evaluator import SampleEvaluator
+from lcb.sample_evaluator import SampleEvaluator
 
 
 @pytest.fixture

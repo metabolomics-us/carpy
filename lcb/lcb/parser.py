@@ -2,7 +2,8 @@ import argparse
 
 from stasis_client.client import StasisClient
 
-from lcb.evaluator import SampleEvaluator, JobEvaluator
+from lcb.job_evaluator import JobEvaluator
+from lcb.sample_evaluator import SampleEvaluator
 
 
 class Parser:
