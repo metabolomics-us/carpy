@@ -44,7 +44,6 @@ class JobAggregator(Aggregator):
             self.aggregate_samples(samples, directory)
 
             if upload:
-
-            return True
+                self.stasis_cli.upload_job_result(job, directory)
         except NoSamplesFoundException:
             return False

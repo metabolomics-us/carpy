@@ -305,7 +305,7 @@ class Aggregator:
 
             sbar.write("looking for {}".format(result_file))
             if self.args.get('save') or not os.path.exists(saved_result):
-                sbar.write("downloading result data from stasis")
+                sbar.write("downloading result data from stasis for {}".format(sample))
                 try:
                     resdata = self.stasis_cli.sample_result_as_json(result_file)
                 except Exception as e:
