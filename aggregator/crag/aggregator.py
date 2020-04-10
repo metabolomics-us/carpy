@@ -89,11 +89,13 @@ class Aggregator:
         dicdata = {'No': None, 'label': None, 'Target RI(s)': None, 'Target mz': None, 'InChIKey':
             ['species', 'organ', 'batch', 'sample_type', 'time'], 'found %': None}
         for sample, idx in zip(samples, range(1, len(samples) + 1)):
-            try:
-                filtered_sample = next(filter(lambda x: x['sample'] == sample, data))
+            filtered_sample = list(filter(lambda x: x.get('sample',None) == sample, data))
 
-                for d in [t['metadata'] for t in data if t['sample'] == sample]:
-                    species = d['metadata']['species']
+            if len(filtered_sample) > 0:
+
+                try:
+                    for d in [t['metadata'] for t in data if t['sample'] == sample]:
+                        species = d['metadata']['species']
                     organ = d['metadata']['organ']
                     if '_qc' in sample.lower():
                         sample_type = 'qc'
@@ -103,11 +105,14 @@ class Aggregator:
                         sample_type = 'sample'
 
                     dicdata[sample] = [species, organ, '', sample_type, idx]
-            except KeyError as e:
-                print('missing sample, {}, {}'.format(idx, sample))  # save sample name to file.
+                except KeyError as e:
+                    print('missing sample, {}, {}'.format(idx, sample))  # save sample name to file.
+                    dicdata[sample] = ['', '', '', '', idx]
+            else:
                 dicdata[sample] = ['', '', '', '', idx]
-
-        return pd.DataFrame(dicdata)
+        else:
+            result = pd.DataFrame(dicdata)
+        return result
 
     def export_excel(self, data, type, infile, sort_index=False):
         """

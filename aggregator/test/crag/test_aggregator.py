@@ -103,18 +103,10 @@ def test_process_sample_list(stasis):
     aggregator = Aggregator({'infile': 'samples/test.txt', 'dir': 'samples'}, stasis)
     aggregator.process_sample_list(samples, 'samples/test.txt')
 
-    for f in excel_list:
-        try:
-            assert os.path.exists(f'samples/{f}')
-        except AssertionError as ae:
-            print(f'{f} does not exist')
-            raise AssertionError(ae)
-        # os.remove(f'samples/{f}')
-
 
 def test_format_sample(stasis):
     sample = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
-    samplefile = 'lgvty_cells_pilot_2_NEG_50K_BR_01.json'
+    samplefile = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
     aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': 'samples'}, stasis)
     result = stasis.sample_result_as_json(samplefile)
 
