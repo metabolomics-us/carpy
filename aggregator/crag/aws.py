@@ -1,11 +1,8 @@
 from typing import Optional
 
-import boto3
 from stasis_client.client import StasisClient
 
 from crag.aggregator import Aggregator, NoSamplesFoundException
-
-import shutil
 
 
 class JobAggregator(Aggregator):
@@ -45,5 +42,7 @@ class JobAggregator(Aggregator):
 
             if upload:
                 self.stasis_cli.upload_job_result(job, directory)
+
+            return True
         except NoSamplesFoundException:
             return False

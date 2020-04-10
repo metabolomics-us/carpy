@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import simplejson as json
 import tqdm
+from pandas import DataFrame
 from stasis_client.client import StasisClient
 
 AVG_BR_ = 'AVG (br)'
@@ -75,7 +76,7 @@ class Aggregator:
             return 0
 
     @staticmethod
-    def add_metadata(samples, data):
+    def add_metadata(samples: DataFrame, data: List):
         """
         Creates the column headers with sample metadata
         Args:
@@ -89,6 +90,8 @@ class Aggregator:
             ['species', 'organ', 'batch', 'sample_type', 'time'], 'found %': None}
         for sample, idx in zip(samples, range(1, len(samples) + 1)):
             try:
+                filtered_sample = next(filter(lambda x: x['sample'] == sample, data))
+
                 for d in [t['metadata'] for t in data if t['sample'] == sample]:
                     species = d['metadata']['species']
                     organ = d['metadata']['organ']

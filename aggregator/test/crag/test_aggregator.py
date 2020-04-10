@@ -136,7 +136,7 @@ def _build_result(stasis, locsamples):
     for sample in locsamples:
         filename = os.path.splitext(sample)[0] + '.json'
 
-        data = stasis.sample_result(filename)
+        data = stasis.sample_result_as_json(filename)
         data['sample'] = sample
         if data.get('Error') is None:
             results.append(data)
