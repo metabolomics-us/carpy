@@ -1,3 +1,4 @@
+import json
 import os
 
 import pytest
@@ -13,6 +14,20 @@ def pytest_generate_tests(metafunc):
 def stasis():
     client = StasisClient(os.getenv('STASIS_URL'), os.getenv('STASIS_API_TOKEN'))
 
+    def mock_sample_as_json(sample_name):
+        """
+        mocking this method out to provide standardized access to the json data
+        in a versioned scope
+        """
+        print("mocking call by loading from file directly: {}".format(sample_name))
+        try:
+            with open("test/data/{}.mzml.json".format(sample_name), 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return None
+
+    client.sample_result_as_json = mock_sample_as_json
+    assert "https://test-api.metabolomics.us/stasis" == client.get_url()
     print(f"raw:  {client.get_raw_bucket()}")
     print(f"json: {client.get_processed_bucket()}")
     print(f"zip:  {client.get_aggregated_bucket()}")
