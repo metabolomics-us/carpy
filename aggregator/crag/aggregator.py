@@ -89,26 +89,23 @@ class Aggregator:
         dicdata = {'No': None, 'label': None, 'Target RI(s)': None, 'Target mz': None, 'InChIKey':
             ['species', 'organ', 'batch', 'sample_type', 'time'], 'found %': None}
         for sample, idx in zip(samples, range(1, len(samples) + 1)):
-            filtered_sample = list(filter(lambda x: x.get('sample',None) == sample, data))
+            filtered_sample = list(filter(lambda x: x.get('sample', None) == sample, data))
 
             if len(filtered_sample) > 0:
+                if '_qc' in sample.lower():
+                    sample_type = 'qc'
+                elif '_nist' in sample.lower():
+                    sample_type = 'nist'
+                else:
+                    sample_type = 'sample'
 
-                try:
-                    for d in [t['metadata'] for t in data if t['sample'] == sample]:
-                        species = d['metadata']['species']
-                    organ = d['metadata']['organ']
-                    if '_qc' in sample.lower():
-                        sample_type = 'qc'
-                    elif '_nist' in sample.lower():
-                        sample_type = 'nist'
-                    else:
-                        sample_type = 'sample'
-
+                # could be also done over [0] since we should never have duplicated samples anyway
+                for x in filtered_sample:
+                    species = x.get('metadata', {}).get('species', '')
+                    organ = x.get('metadata', {}).get('organ', '')
                     dicdata[sample] = [species, organ, '', sample_type, idx]
-                except KeyError as e:
-                    print('missing sample, {}, {}'.format(idx, sample))  # save sample name to file.
-                    dicdata[sample] = ['', '', '', '', idx]
             else:
+                # missing sample
                 dicdata[sample] = ['', '', '', '', idx]
         else:
             result = pd.DataFrame(dicdata)
