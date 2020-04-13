@@ -3,6 +3,8 @@ import math
 import random
 
 import pytest
+from jsonschema import ValidationError
+from pytest import fail
 
 from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
 from stasis.jobs.states import States
@@ -10,6 +12,125 @@ from stasis.schedule.backend import Backend
 from stasis.schedule.schedule import monitor_queue, MESSAGE_BUFFER
 from stasis.tables import load_job_samples, get_tracked_state, get_job_state, get_job_config
 from stasis.tracking import create
+
+
+def test_store_job_fail_empty_id(requireMocking):
+    """
+    tests storing a job in the database
+    :param requireMocking:
+    :return:
+    """
+
+    job = {
+        "id": "",
+        "method": "test",
+        "samples": [
+            "abc_12345.mzml",
+        ],
+        "profile": "dada",
+        "env": "test"
+    }
+
+    try:
+        result = store_job({'body': json.dumps(job)}, {})
+        fail()
+    except ValidationError:
+        pass
+
+
+def test_store_job_fail_empty_method(requireMocking):
+    """
+    tests storing a job in the database
+    :param requireMocking:
+    :return:
+    """
+
+    job = {
+        "id": "stored_test_job",
+        "method": "",
+        "samples": [
+            "abc_12345.mzml",
+        ],
+        "profile": "dadsad",
+        "env": "test"
+    }
+
+    try:
+        result = store_job({'body': json.dumps(job)}, {})
+        fail()
+    except ValidationError:
+        pass
+
+
+def test_store_job_fail_empty_env(requireMocking):
+    """
+    tests storing a job in the database
+    :param requireMocking:
+    :return:
+    """
+
+    job = {
+        "id": "stored_test_job",
+        "method": "test",
+        "samples": [
+            "abc_12345.mzml",
+        ],
+        "profile": "test",
+        "env": ""
+    }
+
+    try:
+        result = store_job({'body': json.dumps(job)}, {})
+        fail()
+    except ValidationError:
+        pass
+
+
+def test_store_job_fail_empty_profile(requireMocking):
+    """
+    tests storing a job in the database
+    :param requireMocking:
+    :return:
+    """
+
+    job = {
+        "id": "stored_test_job",
+        "method": "test",
+        "samples": [
+            "abc_12345.mzml",
+        ],
+        "profile": "",
+        "env": "test"
+    }
+
+    try:
+        result = store_job({'body': json.dumps(job)}, {})
+        fail()
+    except ValidationError:
+        pass
+
+
+def test_store_job_fails_no_samples(requireMocking):
+    """
+    tests storing a job in the database
+    :param requireMocking:
+    :return:
+    """
+
+    job = {
+        "id": "stored_test_job",
+        "method": "test",
+        "samples": [
+        ],
+        "profile": "lcms",
+        "env": "test"
+    }
+
+    try:
+        result = store_job({'body': json.dumps(job)}, {})
+        fail()
+    except ValidationError:
+        pass
 
 
 def test_store_job(requireMocking):
@@ -197,6 +318,7 @@ def test_schedule_job(requireMocking, backend):
     # simulate the receiving of an aggregation event
 
     validate_backened(backend)
+
 
 def validate_backened(backend):
     job_config = get_job_config("test_job")

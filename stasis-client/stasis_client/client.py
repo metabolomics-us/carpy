@@ -6,8 +6,6 @@ import boto3
 import boto3.s3
 import requests
 import simplejson as json
-from botocore.exceptions import ClientError
-from simplejson import JSONDecodeError
 
 
 class StasisClient:
@@ -166,6 +164,13 @@ class StasisClient:
         return result
 
     def sample_result_as_json(self, sample_name) -> dict:
+        """
+        download a sample result as json
+
+        #TODO refactor to use buckets instead, due to potentially very large files
+        :param sample_name:
+        :return:
+        """
         result = requests.get(f"{self._url}/result/{sample_name}", headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
@@ -255,6 +260,8 @@ class StasisClient:
     def download_job_result(self, job: str) -> Optional[str]:
         """
         downloads the result of a job as base64 encoded string
+
+        #TODO refactor to use buckets instead, due to very large file sizes
         :return:
         """
         result = requests.get(f"{self._url}/job/result/{job}", headers=self._header)
