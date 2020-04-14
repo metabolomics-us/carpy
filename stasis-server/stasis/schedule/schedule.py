@@ -8,7 +8,7 @@ from jsonschema import validate
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schema import __SCHEDULE__
-from stasis.service.Status import AGGREGATING_SCHEDULING
+from stasis.service.Status import AGGREGATING, FAILED
 from stasis.tables import update_job_state
 from stasis.tracking.create import create
 
@@ -197,26 +197,9 @@ def schedule_aggregation_to_fargate(param, param1):
         print(overrides)
         print("")
 
-        # fire AWS fargate instance now
-        client = boto3.client('ecs')
-        response = client.run_task(
-            cluster='carrot',  # name of the cluster
-            launchType='FARGATE',
-            taskDefinition=task_name,
-            count=1,
-            platformVersion='LATEST',
-            networkConfiguration={
-                'awsvpcConfiguration': {
-                    'subnets': [
-                        # we need at least 2, to insure network stability
-                        os.environ.get('SUBNET', 'subnet-064fbf05a666c6557')],
-                    'assignPublicIp': 'ENABLED'
-                }
-            },
-            overrides=overrides,
-        )
+        response = send_to_fargate(overrides, task_name)
 
-        update_job_state(job=job, state=AGGREGATING_SCHEDULING)
+        update_job_state(job=job, state=AGGREGATING)
         print(f'Response: {response}')
         return {
             'statusCode': 200,
@@ -224,7 +207,31 @@ def schedule_aggregation_to_fargate(param, param1):
             'headers': __HTTP_HEADERS__
         }
     except Exception as e:
+        update_job_state(job=body['job'], state=FAILED)
         raise e
+
+
+def send_to_fargate(overrides, task_name):
+    # fire AWS fargate instance now
+    import boto3
+    client = boto3.client('ecs')
+    response = client.run_task(
+        cluster='carrot',  # name of the cluster
+        launchType='FARGATE',
+        taskDefinition=task_name,
+        count=1,
+        platformVersion='LATEST',
+        networkConfiguration={
+            'awsvpcConfiguration': {
+                'subnets': [
+                    # we need at least 2, to insure network stability
+                    os.environ.get('SUBNET', 'subnet-064fbf05a666c6557')],
+                'assignPublicIp': 'ENABLED'
+            }
+        },
+        overrides=overrides,
+    )
+    return response
 
 
 def monitor_queue(event, context):
@@ -374,30 +381,10 @@ def schedule_processing_to_fargate(event, context):
                 "value": body['key']
             })
 
-        # fire AWS fargate instance now
-        client = boto3.client('ecs')
-        response = client.run_task(
-            cluster='carrot',  # name of the cluster
-            launchType='FARGATE',
-            taskDefinition=task_name,
-            count=1,
-            platformVersion='LATEST',
-            networkConfiguration={
-                'awsvpcConfiguration': {
-                    'subnets': [
-                        # we need at least 2, to insure network stability
-                        os.environ.get('SUBNET', 'subnet-064fbf05a666c6557')],
-                    'assignPublicIp': 'ENABLED'
-                }
-            },
-            overrides=overrides,
-        )
+        send_to_fargate(overrides=overrides, task_name=task_name)
 
         create({"body": json.dumps({'sample': body['sample'], 'status': 'scheduled'})}, {})
 
-        # fire status update to track sample is in scheduling
-
-        print(f'Response: {response}')
         return {
             'statusCode': 200,
             'isBase64Encoded': False,
