@@ -6,7 +6,7 @@ from jsonschema import validate
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __ACQUISITION_SCHEMA__
-from stasis.service.Status import Status
+from stasis.service.Status import States
 from stasis.tables import TableManager
 from stasis.util.minix_parser import parse_minix_xml
 
@@ -44,7 +44,7 @@ def triggerEvent(data):
             'status': [{
                 'time': data['time'],
                 'value': 'entered',
-                'priority': Status().priority('entered')
+                'priority': States().priority('entered')
             }]
         }
         tracked = trktable.put_item(Item=tracking)

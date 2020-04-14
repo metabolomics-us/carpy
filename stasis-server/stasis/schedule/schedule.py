@@ -6,9 +6,9 @@ import simplejson as json
 from jsonschema import validate
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.jobs.states import States
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schema import __SCHEDULE__
+from stasis.service.Status import AGGREGATING_SCHEDULING
 from stasis.tables import update_job_state
 from stasis.tracking.create import create
 
@@ -216,7 +216,7 @@ def schedule_aggregation_to_fargate(param, param1):
             overrides=overrides,
         )
 
-        update_job_state(job=job, state=States.AGGREGATION_SCHEDULED)
+        update_job_state(job=job, state=AGGREGATING_SCHEDULING)
         print(f'Response: {response}')
         return {
             'statusCode': 200,

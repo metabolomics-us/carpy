@@ -1,24 +1,24 @@
 import json
 
 from stasis.jobs import tracking
-from stasis.jobs.sync import sync
-from stasis.jobs.states import States
+from stasis.jobs.sync import sync, EXPORTED, FAILED
+from stasis.service.Status import SCHEDULED, REPLACED
 from stasis.tables import TableManager, load_job_samples
 
 
 def test_sync_processed(requireMocking):
     tm = TableManager()
 
-    for i in range(0, 100):
+    for i in range(0, 10):
         tracking.create({'body': json.dumps(
             {
                 "job": "12345",
-                "sample": "abc_{}.mzml".format(i),
+                "sample": "abc_{}".format(i),
                 "state": "scheduled"
             }
         )}, {})
 
-        assert load_job_samples("12345")['abc_{}.mzml'.format(i)] == "scheduled"
+        assert load_job_samples("12345")['abc_{}'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
         tm.get_tracking_table().put_item(Item=
         {
@@ -93,22 +93,22 @@ def test_sync_processed(requireMocking):
     sync(job="12345")
 
     samples = load_job_samples("12345")
-    assert all(value == str(States.PROCESSED) for value in samples.values())
+    assert all(value == str(EXPORTED) for value in samples.values())
 
 
 def test_sync_currently_processing(requireMocking):
     tm = TableManager()
 
-    for i in range(0, 100):
+    for i in range(0, 10):
         tracking.create({'body': json.dumps(
             {
                 "job": "12345",
-                "sample": "abc_{}.mzml".format(i),
-                "state": "scheduled"
+                "sample": "abc_{}".format(i),
+                "state": SCHEDULED
             }
         )}, {})
 
-        assert load_job_samples("12345")['abc_{}.mzml'.format(i)] == "scheduled"
+        assert load_job_samples("12345")['abc_{}'.format(i)] == "scheduled"
         # dummy stasis data which need to be in the system for this test to pass
         tm.get_tracking_table().put_item(Item=
         {
@@ -176,13 +176,13 @@ def test_sync_currently_processing(requireMocking):
 
     sync(job="12345")
 
-    assert all(value == str(States.PROCESSING) for value in load_job_samples("12345").values())
+    assert all(value == str(REPLACED) for value in load_job_samples("12345").values())
 
 
 def test_sync_failed(requireMocking):
     tm = TableManager()
 
-    for i in range(0, 100):
+    for i in range(0, 10):
         tracking.create({'body': json.dumps(
             {
                 "job": "12345",
@@ -259,4 +259,4 @@ def test_sync_failed(requireMocking):
 
     sync(job="12345")
 
-    assert all(value == str(States.FAILED) for value in load_job_samples("12345").values())
+    assert all(value == str(FAILED) for value in load_job_samples("12345").values())

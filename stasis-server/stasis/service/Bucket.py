@@ -56,6 +56,8 @@ class Bucket:
         try:
             self.s3.Object(self.bucket_name, name).load()
             return True
+        except ValueError as e:
+            raise
         except Exception as e:
             if e.response['Error']['Code'] == "404":
                 # The object does not exist.

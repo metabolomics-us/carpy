@@ -19,7 +19,7 @@ def bucket_zip(event, context):
             job = k.replace(".zip", "")
             print( "belongs to job {job}")
 
-            result = update_job_state(job=job, state=States.AGGREGATED, reason="client uploaded file")
+            result = update_job_state(job=job, state=AGGREGATED, reason="client uploaded file")
 
             if result is None:
                 print("we were not able to update the job")

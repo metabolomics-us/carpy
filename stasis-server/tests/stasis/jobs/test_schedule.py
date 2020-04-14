@@ -3,13 +3,12 @@ import math
 import random
 
 import pytest
-from jsonschema import ValidationError
-from pytest import fail
 
 from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
-from stasis.jobs.states import States
+from stasis.jobs.sync import sync
 from stasis.schedule.backend import Backend
 from stasis.schedule.schedule import monitor_queue, MESSAGE_BUFFER
+from stasis.service.Status import *
 from stasis.tables import load_job_samples, get_tracked_state, get_job_state, get_job_config
 from stasis.tracking import create
 
@@ -25,17 +24,14 @@ def test_store_job_fail_empty_id(requireMocking):
         "id": "",
         "method": "test",
         "samples": [
-            "abc_12345.mzml",
+            "abc_12345",
         ],
         "profile": "dada",
         "env": "test"
     }
 
-    try:
-        result = store_job({'body': json.dumps(job)}, {})
-        fail()
-    except ValidationError:
-        pass
+    result = store_job({'body': json.dumps(job)}, {})
+    assert result['statusCode'] == 503
 
 
 def test_store_job_fail_empty_method(requireMocking):
@@ -49,17 +45,14 @@ def test_store_job_fail_empty_method(requireMocking):
         "id": "stored_test_job",
         "method": "",
         "samples": [
-            "abc_12345.mzml",
+            "abc_12345",
         ],
         "profile": "dadsad",
         "env": "test"
     }
 
-    try:
-        result = store_job({'body': json.dumps(job)}, {})
-        fail()
-    except ValidationError:
-        pass
+    result = store_job({'body': json.dumps(job)}, {})
+    assert result['statusCode'] == 503
 
 
 def test_store_job_fail_empty_env(requireMocking):
@@ -73,17 +66,14 @@ def test_store_job_fail_empty_env(requireMocking):
         "id": "stored_test_job",
         "method": "test",
         "samples": [
-            "abc_12345.mzml",
+            "abc_12345",
         ],
         "profile": "test",
         "env": ""
     }
 
-    try:
-        result = store_job({'body': json.dumps(job)}, {})
-        fail()
-    except ValidationError:
-        pass
+    result = store_job({'body': json.dumps(job)}, {})
+    assert result['statusCode'] == 503
 
 
 def test_store_job_fail_empty_profile(requireMocking):
@@ -97,17 +87,14 @@ def test_store_job_fail_empty_profile(requireMocking):
         "id": "stored_test_job",
         "method": "test",
         "samples": [
-            "abc_12345.mzml",
+            "abc_12345",
         ],
         "profile": "",
         "env": "test"
     }
 
-    try:
-        result = store_job({'body': json.dumps(job)}, {})
-        fail()
-    except ValidationError:
-        pass
+    result = store_job({'body': json.dumps(job)}, {})
+    assert result['statusCode'] == 503
 
 
 def test_store_job_fails_no_samples(requireMocking):
@@ -126,11 +113,8 @@ def test_store_job_fails_no_samples(requireMocking):
         "env": "test"
     }
 
-    try:
-        result = store_job({'body': json.dumps(job)}, {})
-        fail()
-    except ValidationError:
-        pass
+    result = store_job({'body': json.dumps(job)}, {})
+    assert result['statusCode'] == 503
 
 
 def test_store_job(requireMocking):
@@ -144,28 +128,28 @@ def test_store_job(requireMocking):
         "id": "stored_test_job",
         "method": "test",
         "samples": [
-            "abc_12345.mzml",
-            "abd_12345.mzml",
-            "abe_12345.mzml",
-            "abf_1234.mzml",
-            "abg_12345.mzml",
-            "abh_12345.mzml",
-            "abi_12345.mzml",
-            "abj_12345.mzml",
-            "abk_12345.mzml",
-            "abl_12345.mzml",
-            "abm_12345.mzml",
-            "abn_12345.mzml",
-            "abo_12345.mzml",
-            "abp_12345.mzml",
-            "abq_12345.mzml",
-            "abr_12345.mzml",
-            "abs_12345.mzml",
-            "abt_12345.mzml",
-            "abu_12345.mzml",
-            "abx_12345.mzml",
-            "aby_12345.mzml",
-            "abz_12345.mzml"
+            "abc_12345",
+            "abd_12345",
+            "abe_12345",
+            "abf_12345",
+            "abg_12345",
+            "abh_12345",
+            "abi_12345",
+            "abj_12345",
+            "abk_12345",
+            "abl_12345",
+            "abm_12345",
+            "abn_12345",
+            "abo_12345",
+            "abp_12345",
+            "abq_12345",
+            "abr_12345",
+            "abs_12345",
+            "abt_12345",
+            "abu_12345",
+            "abx_12345",
+            "aby_12345",
+            "abz_12345"
         ],
         "profile": "lcms",
         "env": "test"
@@ -174,10 +158,10 @@ def test_store_job(requireMocking):
     result = store_job({'body': json.dumps(job)}, {})
 
     # check result state
-    assert json.loads(result['body'])['state'] == 'stored'
+    assert json.loads(result['body'])['state'] == 'entered'
 
     # query actual db and check internal state
-    assert get_job_state("stored_test_job") == States.STORED
+    assert get_job_state("stored_test_job") == ENTERED
 
 
 def test_schedule_job_fails_no_job_stored(requireMocking):
@@ -202,28 +186,28 @@ def test_schedule_job(requireMocking, backend):
         "id": "test_job",
         "method": "test",
         "samples": [
-            "abc_12345.mzml",
-            "abd_12345.mzml",
-            "abe_12345.mzml",
-            "abf_1234.mzml",
-            "abg_12345.mzml",
-            "abh_12345.mzml",
-            "abi_12345.mzml",
-            "abj_12345.mzml",
-            "abk_12345.mzml",
-            "abl_12345.mzml",
-            "abm_12345.mzml",
-            "abn_12345.mzml",
-            "abo_12345.mzml",
-            "abp_12345.mzml",
-            "abq_12345.mzml",
-            "abr_12345.mzml",
-            "abs_12345.mzml",
-            "abt_12345.mzml",
-            "abu_12345.mzml",
-            "abx_12345.mzml",
-            "aby_12345.mzml",
-            "abz_12345.mzml"
+            "abc_12345",
+            "abd_12345",
+            "abe_12345",
+            "abf_12345",
+            "abg_12345",
+            "abh_12345",
+            "abi_12345",
+            "abj_12345",
+            "abk_12345",
+            "abl_12345",
+            "abm_12345",
+            "abn_12345",
+            "abo_12345",
+            "abp_12345",
+            "abq_12345",
+            "abr_12345",
+            "abs_12345",
+            "abt_12345",
+            "abu_12345",
+            "abx_12345",
+            "aby_12345",
+            "abz_12345"
         ],
         "profile": "lcms",
         "env": "test",
@@ -242,7 +226,7 @@ def test_schedule_job(requireMocking, backend):
         "job": "test_job"
     }}, {})
 
-    assert json.loads(result['body'])['state'] == str(States.SCHEDULED)
+    assert json.loads(result['body'])['state'] == SCHEDULED
     job = load_job_samples(job="test_job")
     for k, v in job.items():
         assert v == 'scheduled'
@@ -260,7 +244,7 @@ def test_schedule_job(requireMocking, backend):
     monitor_jobs({}, {})
 
     validate_backened(backend)
-    assert get_job_state("test_job") == States.SCHEDULED
+    assert get_job_state("test_job") == SCHEDULED
 
     job = load_job_samples(job="test_job")
     assert len(job) == 22
@@ -280,7 +264,7 @@ def test_schedule_job(requireMocking, backend):
 
     validate_backened(backend)
     # the overal job state is currently processing
-    assert get_job_state("test_job") == States.PROCESSING
+    assert get_job_state("test_job") == PROCESSING
 
     # all job items should be in state processing
     for k, v in job.items():
@@ -288,7 +272,7 @@ def test_schedule_job(requireMocking, backend):
         assert v in ['scheduled', 'processing']
 
         # force stasis that all samples have been finished
-        response = create.create({'body': json.dumps({'sample': k, 'status': 'finished'})}, {})
+        response = create.create({'body': json.dumps({'sample': k, 'status': 'exported'})}, {})
 
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
@@ -297,8 +281,7 @@ def test_schedule_job(requireMocking, backend):
     # all job items should be in state finished on the stasis side and processed on the job side
     job = load_job_samples(job="test_job")
     for k, v in job.items():
-        assert get_tracked_state(k) == "finished"
-        assert v == 'processed'
+        assert get_tracked_state(k) == "exported"
 
     # since AWS only allows to process 10 messages at a time and we have more than that
     # this has to be called several times
@@ -313,7 +296,7 @@ def test_schedule_job(requireMocking, backend):
     # this means the jobs should be in the aggregator queue
     # but not processed by fargate yet
     state = get_job_state("test_job")
-    assert States.AGGREGATION_SCHEDULED == state
+    assert AGGREGATING_SCHEDULING == state
 
     # simulate the receiving of an aggregation event
 

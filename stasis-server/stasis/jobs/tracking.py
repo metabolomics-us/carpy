@@ -1,13 +1,9 @@
-import os
-
 import simplejson as json
 from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.jobs.states import States
-from stasis.jobs.sync import sync
-from stasis.service.Bucket import Bucket
-from stasis.tables import TableManager, _set_sample_job_state
+from stasis.jobs.sync import sync, EXPORTED, FAILED, AGGREGATED
+from stasis.tables import TableManager, _set_sample_job_state, load_job_samples
 
 
 def create(event, context):
@@ -70,16 +66,12 @@ def status(event, context):
                 sync(job)
 
             tm = TableManager()
-            table = tm.get_job_sample_state_table()
             table_overall_state = tm.get_job_state_table()
 
-            query_params = {
-                'IndexName': 'job-id-index',
-                'Select': 'ALL_ATTRIBUTES',
-                'KeyConditionExpression': Key('job').eq(job)
-            }
-            result = table.query(**query_params
-                                 )
+            sample_states = load_job_samples(job)
+
+            if sample_states is None:
+                sample_states = []
 
             job_state = table_overall_state.query(
                 **{
@@ -89,43 +81,40 @@ def status(event, context):
                 }
             )
 
-            if "Items" in result and len(result['Items']) > 0:
+            states = {}
+            for x in sample_states.values():
+                if x not in states:
+                    states[x] = 0
 
-                states = {}
-                for x in result['Items']:
-                    if x['state'] not in states:
-                        states[x['state']] = 0
+                states[x] = states[x] + 1
 
-                    states[x['state']] = states[x['state']] + 1
+            # this queries the state of all the samples
+            if "Items" in job_state:
+                job_state = job_state["Items"]
 
-                # this queries the state of all the samples
-                if "Items" in job_state:
-                    job_state = job_state["Items"]
-
-                    if len(job_state) > 0:
-                        job_state = job_state[0]
-                        return {
-                            "statusCode": 200,
-                            "headers": __HTTP_HEADERS__,
-                            "body": json.dumps({
-                                "count": len(result['Items'
-                                             ]),
-                                "sample_states": states,
-                                "job_state": job_state['state'],
-                                "job_info": job_state
-                            }
-                            )
+                if len(job_state) > 0:
+                    job_state = job_state[0]
+                    return {
+                        "statusCode": 200,
+                        "headers": __HTTP_HEADERS__,
+                        "body": json.dumps({
+                            "count": len(sample_states),
+                            "sample_states": states,
+                            "job_state": job_state['state'],
+                            "job_info": job_state
                         }
-                    else:
-                        return {
-                            "statusCode": 503,
-                            "headers": __HTTP_HEADERS__,
-                            "body": json.dumps({
-                                "sample_states": states,
-                                "job_state": "no associated state found!",
-                            }
-                            )
+                        )
+                    }
+                else:
+                    return {
+                        "statusCode": 503,
+                        "headers": __HTTP_HEADERS__,
+                        "body": json.dumps({
+                            "sample_states": states,
+                            "job_state": "no associated state found!",
                         }
+                        )
+                    }
 
             else:
                 return {
@@ -205,7 +194,7 @@ def job_can_aggregate(event, context):
             if "Items" in result and len(result['Items']) > 0:
 
                 for item in result['Items']:
-                    if item['state'] not in [str(States.PROCESSED), str(States.FAILED)]:
+                    if item['state'] not in [EXPORTED, FAILED]:
                         return {
                             "statusCode": 200,
                             "headers": __HTTP_HEADERS__,
@@ -257,7 +246,7 @@ def job_is_done(event, context):
             if "Items" in result and len(result['Items']) > 0:
 
                 for item in result['Items']:
-                    if item['state'] not in [str(States.AGGREGATED), str(States.FAILED)]:
+                    if item['state'] not in [AGGREGATED, FAILED]:
                         return {
                             "statusCode": 200,
                             "headers": __HTTP_HEADERS__,
@@ -284,4 +273,3 @@ def job_is_done(event, context):
     return {
         'statusCode': 503
     }
-

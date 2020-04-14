@@ -3,7 +3,7 @@ from time import time, sleep
 
 import requests
 
-from stasis.jobs.states import States
+from stasis.service.Status import SCHEDULED
 
 
 def test_store_job_integration(api_token):
@@ -24,12 +24,7 @@ def test_store_job_integration(api_token):
             "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
-        "task_version": "164",
         "env": "test",
-        "notify": [
-            "wohlgemuth@ucdavis.edu",
-            "berlinguyinca@gmail.com"
-        ]
     }
 
     # store it
@@ -88,8 +83,6 @@ def test_job_result_not_finished(api_token):
     assert response.status_code == 503
 
 
-
-
 def test_job_result_file_not_exist(api_token):
     """
     tests for a job which doesn't exist yet
@@ -101,9 +94,10 @@ def test_job_result_file_not_exist(api_token):
 
     print(test_id)
     response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
-                            headers=api_token)
+                             headers=api_token)
 
     assert response.status_code == 404
+
 
 def test_job_result_not_exist(api_token):
     """
@@ -133,9 +127,9 @@ def test_schedule_job_integration(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "task_version": "164",
@@ -145,6 +139,37 @@ def test_schedule_job_integration(api_token):
             "berlinguyinca@gmail.com"
         ]
     }
+
+    # register required tracking data for this item
+    for sample in job['samples']:
+        data = [
+            {
+                "value": "entered"
+            },
+            {
+                "fileHandle": "{}.d".format(sample),
+                "value": "acquired"
+            },
+            {
+                "fileHandle": "{}.mzml".format(sample),
+                "value": "converted"
+            },
+            {
+                "fileHandle": "{}.mzml".format(sample),
+                "value": "scheduled"
+            },
+        ]
+
+        for x in data:
+            send = {
+                "sample": sample,
+                "status": x['value'],
+
+            }
+            if 'fileHandle' in x:
+                send['fileHandle'] = x['fileHandle']
+            result = requests.post('https://test-api.metabolomics.us/stasis/tracking', json=send, headers=api_token)
+            assert result.status_code == 200
 
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
@@ -158,7 +183,7 @@ def test_schedule_job_integration(api_token):
     print(response)
     assert response.status_code == 200
     assert json.loads(response.content)['job'] == test_id
-    assert json.loads(response.content)['state'] == str(States.SCHEDULED)
+    assert json.loads(response.content)['state'] == SCHEDULED
 
     # check state of samples
 
@@ -222,6 +247,6 @@ def test_schedule_job_integration(api_token):
     print("downloading the result now for {}".format(test_id)
           )
     response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
-                            headers=api_token)
+                             headers=api_token)
 
     assert response.status_code == 200

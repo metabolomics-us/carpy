@@ -4,8 +4,8 @@ import os
 import traceback
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.jobs.states import States
 from stasis.service.Bucket import Bucket
+from stasis.service.Status import AGGREGATED
 from stasis.tables import get_job_state
 
 
@@ -78,7 +78,7 @@ def get(events, context):
 
             job = events['pathParameters']['job']
 
-            state: States = get_job_state(job)
+            state: str = get_job_state(job)
 
             if state is None:
                 return {
@@ -86,11 +86,11 @@ def get(events, context):
                     "headers": __HTTP_HEADERS__,
                     "body": json.dumps({"error": "job does not exist!", "job": job})
                 }
-            if state is not States.AGGREGATED:
+            if state is not AGGREGATED:
                 return {
                     "statusCode": 503,
                     "headers": __HTTP_HEADERS__,
-                    "body": json.dumps({"error": "job not ready yet!", "job": job, "state": state.value})
+                    "body": json.dumps({"error": "job not ready yet!", "job": job, "state": state})
                 }
             db = Bucket(os.environ["dataBucket"])
 

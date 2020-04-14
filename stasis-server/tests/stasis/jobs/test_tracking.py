@@ -3,7 +3,7 @@ import random
 
 from stasis.jobs import tracking
 from stasis.jobs.schedule import monitor_jobs
-from stasis.jobs.states import States
+from stasis.service.Status import SCHEDULED, AGGREGATING, EXPORTED, FAILED, AGGREGATED, PROCESSING
 from stasis.tables import set_job_state
 from stasis.tracking import create
 
@@ -50,7 +50,7 @@ def test_create_and_get(requireMocking):
     data = json.dumps({
         "job": "12345",
         "sample": "abc",
-        "state": "processed"
+        "state": "processing"
     })
 
     result = tracking.create({'body': data}, {})
@@ -68,7 +68,7 @@ def test_create_and_get(requireMocking):
     assert 'body' in result
     result = json.loads(result['body'])
 
-    assert result['state'] == 'processed'
+    assert result['state'] == 'processing'
     print(result)
     assert 'past_states' in result
     assert 'scheduled' in result['past_states']
@@ -103,7 +103,7 @@ def test_status(requireMocking):
         assert result['statusCode'] == 200
 
     set_job_state(job="123456", method="test", env="test", profile="test",
-                  state=States.SCHEDULED)
+                  state=SCHEDULED)
 
     result = tracking.status({
         "pathParameters": {
@@ -152,7 +152,7 @@ def test_status(requireMocking):
 
     monitor_jobs({}, {})
 
-    assert json.loads(result['body'])['job_state'] == 'processed'
+    assert json.loads(result['body'])['job_state'] == PROCESSING
 
 
 def test_description(requireMocking):
@@ -233,7 +233,7 @@ def test_job_can_aggregate_is_true_for_processed(requireMocking):
         data = json.dumps({
             "job": "1234567-aggregate",
             "sample": "abc_{}".format(x),
-            "state": str(States.PROCESSED)
+            "state": EXPORTED
         })
 
         result = tracking.create({'body': data}, {})
@@ -257,7 +257,7 @@ def test_job_can_aggregate_is_true_for_processed_and_failed(requireMocking):
         data = json.dumps({
             "job": "1234567-aggregate",
             "sample": "abc_{}".format(x),
-            "state": random.choice([str(States.PROCESSED), str(States.FAILED)])
+            "state": random.choice([str(EXPORTED), str(FAILED)])
         })
 
         result = tracking.create({'body': data}, {})
@@ -281,7 +281,7 @@ def test_job_is_done_is_false(requireMocking):
         data = json.dumps({
             "job": "1234567-done",
             "sample": "abc_{}".format(x),
-            "state": random.choice([str(States.SCHEDULED), str(States.AGGREGATING), str(States.PROCESSED)])
+            "state": random.choice([str(SCHEDULED), str(AGGREGATING), str(EXPORTED)])
         })
 
         result = tracking.create({'body': data}, {})
@@ -305,7 +305,7 @@ def test_job_is_done_is_true_for_processed_and_failed(requireMocking):
         data = json.dumps({
             "job": "1234567-done",
             "sample": "abc_{}".format(x),
-            "state": random.choice([str(States.AGGREGATED), str(States.FAILED)])
+            "state": random.choice([AGGREGATED, FAILED])
         })
 
         result = tracking.create({'body': data}, {})

@@ -1,7 +1,7 @@
 import simplejson as json
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.service.Status import Status
+from stasis.service.Status import States
 
 
 def get(event, context):
@@ -11,7 +11,7 @@ def get(event, context):
     """
 
     return {
-        'body': json.dumps(Status().states),
+        'body': json.dumps(States().states),
         'headers': __HTTP_HEADERS__,
         'statusCode': 200
     }

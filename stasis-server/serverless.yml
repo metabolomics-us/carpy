@@ -645,8 +645,8 @@ functions:
       aggregation_queue: ${self:custom.aggregationQueue}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
-
-
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
     #schedule data to for handling the processing and aggregation on the backend
   job_schedule:
     handler: stasis/jobs/schedule.schedule_job
@@ -676,7 +676,8 @@ functions:
       aggregation_queue: ${self:custom.aggregationQueue}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
-
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   job_result:
     handler: stasis/jobs/result.get
@@ -705,6 +706,8 @@ functions:
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
       dataBucket: ${self:custom.dataZipBucketName}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   zip_bucket:
     handler: stasis/bucket/bucket.bucket_zip

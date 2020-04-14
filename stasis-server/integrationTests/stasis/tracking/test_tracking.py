@@ -67,16 +67,16 @@ def test_create_with_file_handle(api_token):
 def test_create_not_merging_statuses(api_token):
     requests.delete(apiUrl + '/tracking/processed-sample', headers=api_token)
     data = [{'sample': 'processed-sample', 'status': 'entered'},
-            {'sample': 'processed-sample', 'status': 'acquired'},
-            {'sample': 'processed-sample', 'status': 'converted'},
-            {'sample': 'processed-sample', 'status': 'scheduled'},
-            {'sample': 'processed-sample', 'status': 'processing'},
-            {'sample': 'processed-sample', 'status': 'deconvoluted'},
-            {'sample': 'processed-sample', 'status': 'corrected'},
-            {'sample': 'processed-sample', 'status': 'annotated'},
-            {'sample': 'processed-sample', 'status': 'quantified'},
-            {'sample': 'processed-sample', 'status': 'replaced'},
-            {'sample': 'processed-sample', 'status': 'exported'}]
+            {'sample': 'processed-sample', 'status': 'acquired', 'fileHandle': 'processed-sample.d'},
+            {'sample': 'processed-sample', 'status': 'converted', 'fileHandle': 'processed-sample.mzml'},
+            {'sample': 'processed-sample', 'status': 'scheduled', 'fileHandle': 'processed-sample.mzml'},
+            {'sample': 'processed-sample', 'status': 'processing', 'fileHandle': 'processed-sample.mzml'},
+            {'sample': 'processed-sample', 'status': 'deconvoluted', 'fileHandle': 'processed-sample.mzml'},
+            {'sample': 'processed-sample', 'status': 'corrected', 'fileHandle': 'processed-sample.mzml'},
+            {'sample': 'processed-sample', 'status': 'annotated', 'fileHandle': 'processed-sample.mzml'},
+            {'sample': 'processed-sample', 'status': 'quantified', 'fileHandle': 'processed-sample.mzml'},
+            {'sample': 'processed-sample', 'status': 'replaced', 'fileHandle': 'processed-sample.mzml'},
+            {'sample': 'processed-sample', 'status': 'exported', 'fileHandle': 'processed-sample.mzml.json'}]
 
     result = None
     for d in data:
@@ -89,3 +89,29 @@ def test_create_not_merging_statuses(api_token):
     assert 200 == result.status_code
     assert 'processed-sample' == result.json()['sample']
     assert 11 == len(result.json()['status'])
+
+    result_data = result.json()
+
+    assert 'fileHandle' not in result_data[0]
+    assert 'fileHandle' in result_data[1]
+    assert 'fileHandle' in result_data[2]
+    assert 'fileHandle' in result_data[3]
+    assert 'fileHandle' in result_data[4]
+    assert 'fileHandle' in result_data[5]
+    assert 'fileHandle' in result_data[6]
+    assert 'fileHandle' in result_data[7]
+    assert 'fileHandle' in result_data[8]
+    assert 'fileHandle' in result_data[9]
+    assert 'fileHandle' in result_data[10]
+
+    assert result_data[1]['fileHandle'] == 'processed-sample.d'
+    assert result_data[2]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[3]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[4]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[5]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[6]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[7]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[8]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[9]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[10]['fileHandle'] == 'processed-sample.mzml'
+    assert result_data[11]['fileHandle'] == 'processed-sample.mzml.json'

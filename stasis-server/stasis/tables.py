@@ -1,6 +1,7 @@
 import os
+import re
 import time
-from typing import Optional, List
+from typing import Optional
 
 import boto3
 import simplejson as json
@@ -8,8 +9,8 @@ from boto.dynamodb2.exceptions import ResourceInUseException, ValidationExceptio
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ParamValidationError
 
-from stasis.jobs.states import States
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
+from stasis.service.Status import States
 
 
 class TableManager:
@@ -327,7 +328,7 @@ class TableManager:
         return new_result
 
 
-def update_job_state(job: str, state: States, reason: Optional[str] = None):
+def update_job_state(job: str, state: str, reason: Optional[str] = None):
     """
     updates the state of a job
     """
@@ -376,7 +377,7 @@ def _compute_state_change(item, old_state, state):
     return ts
 
 
-def set_job_state(job: str, env: str, method: str, profile: str, state: States,
+def set_job_state(job: str, env: str, method: str, profile: str, state: str,
                   reason: Optional[str] = None, resource: Optional[Backend] = None):
     """
     sets the state in the job table for the given sample and job
@@ -422,7 +423,7 @@ def get_job_config(job: str) -> Optional[dict]:
         raise e
 
 
-def get_job_state(job: str) -> Optional[States]:
+def get_job_state(job: str) -> Optional[str]:
     """
     returns the state of the job
     """
@@ -441,7 +442,7 @@ def get_job_state(job: str) -> Optional[States]:
 
         if "Items" in result and len(result['Items']) > 0:
             item = result['Items'][0]
-            return States[item['state'].upper()]
+            return item['state']
         else:
             return None
     except Exception as e:
@@ -471,7 +472,7 @@ def _set_job_state(body: dict):
     return saved
 
 
-def set_sample_job_state(sample: str, job: str, state: States, reason: Optional[str] = None):
+def set_sample_job_state(sample: str, job: str, state: str, reason: Optional[str] = None):
     """
     sets the state in the job table for the given sample and job
     """
@@ -481,40 +482,21 @@ def set_sample_job_state(sample: str, job: str, state: States, reason: Optional[
         return _set_sample_job_state(body={"job": job, "sample": sample, "state": str(state), "reason": str(reason)})
 
 
-def update_sample_state(sample: str, state: States, reason: Optional[str] = None) -> List[str]:
-    """
-    updates the state for this sample in the job tracking table to ensure it's up to date. Since it's called without a job id, it will updates all related jobs. So it's expensive and can take
-    quite a while
-    :param sample:
-    :param state:
-    :param reason:
-    :return: list of job id's affected by this change
-    """
-
-    # 1. query sample tracking table to get all job ids
-
-    # 2. updated the state accordingly
-
-    # 3. return affect sample id's
-
-    # 4. technically we should modify stasis states, but I don't think we want todo this....
-
-
 def _set_sample_job_state(body: dict):
     ts = None
     tm = TableManager()
     body['id'] = tm.generate_job_id(body['job'], body['sample'])
     trktable = tm.get_job_sample_state_table()
 
-    result = trktable.query(
-        KeyConditionExpression=Key('id').eq(body['id'])
-    )
+    #   result = trktable.query(
+    #       KeyConditionExpression=Key('id').eq(body['id'])
+    #   )
 
-    if body['state'] != States.SCHEDULED.value:
-        if "Items" in result and len(result['Items']) > 0:
-            item = result['Items'][0]
-            body['timestamp'] = item['timestamp']
-            ts = _compute_state_change(body, item['state'], body['state'])
+    #   if body['state'] != SCHEDULED:
+    #       if "Items" in result and len(result['Items']) > 0:
+    #           item = result['Items'][0]
+    #           body['timestamp'] = item['timestamp']
+    #           ts = _compute_state_change(body, item['state'], body['state'])
 
     if ts is None:
         ts = int(time.time() * 1000)
@@ -522,6 +504,7 @@ def _set_sample_job_state(body: dict):
     body = tm.sanitize_json_for_dynamo(body)
     saved = trktable.put_item(Item=body)  # save or update our item
 
+    save_sample_state(sample=body['sample'],state=body['state'])
     saved = saved['ResponseMetadata']
 
     saved['statusCode'] = saved['HTTPStatusCode']
@@ -548,7 +531,8 @@ def load_job_samples(job: str) -> Optional[dict]:
     if "Items" in result and len(result['Items']) > 0:
         results = {}
         for x in result['Items']:
-            results[x['sample']] = x['state']
+            # get stasis state here
+            results[x['sample']] = get_tracked_state(x['sample'])
         return results
 
     else:
@@ -594,5 +578,86 @@ def get_file_handle(sample: str, state: str = "exported") -> Optional[str]:
     """
     returns the file handle for the given sample and state
     """
+
     # TODO needs a real implemenations by looking it up from stasis tracking data. Just a dummy solution for now
-    return "{}.mzml.json".format(sample)
+    if state == 'converted':
+        return "{}.mzml".format(sample)
+    elif state == 'exported':
+        return "{}.mzml.json".format(sample)
+
+
+def save_sample_state(sample:str, state:str, fileHandle:Optional[str] = None):
+    status_service = States()
+    if not status_service.valid(state):
+        raise Exception("please provide the a valid 'state', you provided {}".format(state))
+    # if validation passes, persist the object in the dynamo db
+    tm = TableManager()
+    table = tm.get_tracking_table()
+    resp = table.query(
+        KeyConditionExpression=Key('id').eq(sample.split(".")[0])
+    )
+    timestamp = int(time.time() * 1000)
+    experiment = _fetch_experiment(sample)
+    new_status = {
+        'time': timestamp,
+        'value': state.lower(),
+        'priority': status_service.priority(state)
+    }
+    if resp['Items']:
+        # only keep elements with a lower priority
+        item = resp['Items'][0]
+        item['status'] = [x for x in item['status'] if int(x['priority']) < int(new_status['priority'])]
+        item['status'].append(new_status)
+    else:
+        item = {
+            'id': sample,
+            'sample': state,
+            'experiment': experiment,
+            'status': [new_status]
+        }
+    if "fileHandle" is not None:
+        if 'fileHandle' not in item['status'][-1]:
+            item['status'][-1]['fileHandle'] = fileHandle
+    item = tm.sanitize_json_for_dynamo(item)
+    # put item in table instead of queueing
+    saved = {}
+    try:
+        saved = table.put_item(Item=item)
+    except Exception as e:
+        print("ERROR: %s" % e)
+        item = {}
+        saved['ResponseMetadata']['HTTPStatusCode'] = 500
+    return item, saved
+
+
+def _fetch_experiment(sample: str) -> str:
+    """
+        loads the internal experiment id for the given sample
+    :param sample:
+    :return:
+    """
+    print("\tfetching experiment id for sample %s" % sample)
+    tm = TableManager()
+    acq_table = tm.get_acquisition_table()
+
+    result = acq_table.query(
+        KeyConditionExpression=Key('id').eq(_remove_reinjection(sample))
+    )
+
+    if result['Items']:
+        item = result['Items'][0]
+        if 'experiment' in item:
+            return item['experiment']
+        else:
+            print('no experiment in item -> unknown')
+    else:
+        print('no items -> unknown')
+
+    return 'unknown'
+
+
+def _remove_reinjection(sample: str) -> str:
+    # cleaned = re.split('[A-Za-z]+(\d{3,4}|_MSMS)_MX\d+_[A-Za-z]+_[A-Za-z0-9-]+(_\d+_\d+)?', sample, 1)
+    cleaned = re.split(r'_\d|_BU', sample)[0]
+
+    return cleaned

@@ -4,6 +4,7 @@ import pytest
 import simplejson as json
 
 from stasis.acquisition import create as acq_create
+from stasis.tables import _remove_reinjection
 from stasis.tracking import create
 
 
@@ -102,7 +103,7 @@ def test_create_with_experiment(requireMocking):
 def test_fetching_reinjection(requireMocking):
     data = ['reinjected_2', 'reinjected_BU', 'reinjected_3']
 
-    cleaned = [create._remove_reinjection(x) for x in data]
+    cleaned = [_remove_reinjection(x) for x in data]
 
     assert all([x == 'reinjected' for x in cleaned])
 
