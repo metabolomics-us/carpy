@@ -1,5 +1,5 @@
-from stasis.jobs.states import States
-from stasis.tables import update_job_state, update_sample_state
+from stasis.service.Status import AGGREGATED
+from stasis.tables import update_job_state
 
 
 def bucket_zip(event, context):
@@ -14,10 +14,9 @@ def bucket_zip(event, context):
         o = record['s3']['object']
         k = str(o['key'])
 
-        print(f"received a new file: {k}")
         if k.endswith(".zip"):
             job = k.replace(".zip", "")
-            print( "belongs to job {job}")
+            print("belongs to job {job}")
 
             result = update_job_state(job=job, state=AGGREGATED, reason="client uploaded file")
 
@@ -25,4 +24,3 @@ def bucket_zip(event, context):
                 print("we were not able to update the job")
             else:
                 print("job state was set to: {}".format(result))
-

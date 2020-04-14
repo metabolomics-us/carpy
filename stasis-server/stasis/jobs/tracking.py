@@ -71,7 +71,7 @@ def status(event, context):
             sample_states = load_job_samples(job)
 
             if sample_states is None:
-                sample_states = []
+                sample_states = {}
 
             job_state = table_overall_state.query(
                 **{
@@ -89,7 +89,7 @@ def status(event, context):
                 states[x] = states[x] + 1
 
             # this queries the state of all the samples
-            if "Items" in job_state:
+            if "Items" in job_state and len(job_state['Items']) > 0:
                 job_state = job_state["Items"]
 
                 if len(job_state) > 0:
