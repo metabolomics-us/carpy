@@ -157,7 +157,7 @@ def test_download_result(stasis_cli, api_token):
 
     stasis_cli.store_job(job)
 
-    assert stasis_cli.load_job_state(test_id)['job_state'] == "stored"
+    assert stasis_cli.load_job_state(test_id)['job_state'] == "entered"
 
     stasis_cli.schedule_job(test_id)
     origin = time()
