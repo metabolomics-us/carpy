@@ -243,13 +243,16 @@ def test_schedule_job_integration_no_metadata(api_token):
 
     job = {
         "id": test_id,
-        "method": "hilic-qtof | QToF | test | positive",
+        "method": "teddy | 6530 | test | positive",
         "samples": [
-            "MtdBlnk001_381807_posHILIC__preSana001"
-            "MtdBlnk002_381807_posHILIC__postSana010"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
+        "task_version": "164",
         "env": "test",
+
         "meta": {
             "tracking": [
                 {
@@ -268,6 +271,24 @@ def test_schedule_job_integration_no_metadata(api_token):
         }
 
     }
+    # reset metadata to state entered for the given samples
+    for sample in job['samples']:
+        send = {
+            "sample": sample,
+            "status": 'entered',
+
+        }
+        result = requests.post('https://test-api.metabolomics.us/stasis/tracking', json=send, headers=api_token)
+        assert result.status_code == 200
+
+        # ensure we only have state entered now for this sample
+        response = requests.get('https://test-api.metabolomics.us/stasis/tracking/{}'.format(sample), headers=api_token)
+        assert 200 == response.status_code
+        content = response.json()
+        assert len(content['status']) == 1
+        assert content['status'][0]['value'] == "entered"
+        assert 'fileHandle' not in content['status'][0]
+
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
