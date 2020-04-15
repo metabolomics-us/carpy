@@ -11,7 +11,7 @@ from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SE
 from stasis.schema import __JOB_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, load_job_samples, \
-    get_job_config, get_file_handle
+    get_job_config, get_file_handle, save_sample_state
 
 
 def store_job(event, context):
@@ -45,6 +45,8 @@ def store_job(event, context):
     env_ = body['env']
     profile = body['profile']
 
+    # in case we want to
+    tracking = body.get('meta', {}).get('tracking', [])
     if 'resource' in body:
         resource = Backend(body['resource'])
     else:
@@ -57,11 +59,22 @@ def store_job(event, context):
         # store actual job in the job table with state scheduled
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
                       state=ENTERED, resource=resource)
+
         for sample in samples:
+
+            # overwrite tracking states and extension if it's provided
+            for track in tracking:
+                if 'extension' in track:
+                    fileHandle = "{}.{}".format(sample, track['extension'])
+                else:
+                    fileHandle = None
+
+                save_sample_state(sample=sample, state=track['state'], fileHandle=fileHandle)
+
             set_sample_job_state(
                 job=job_id,
                 sample=sample,
-                state=ENTERED
+                state=SCHEDULING
             )
         return {
 

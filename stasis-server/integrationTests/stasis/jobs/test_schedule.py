@@ -230,3 +230,100 @@ def test_schedule_job_integration(api_token):
                              headers=api_token)
 
     assert response.status_code == 200
+
+
+def test_schedule_job_integration_no_metadata(api_token):
+    """
+    test the scheduling of a job, which forcefully override the existing metadata
+    :param api_token:
+    :return:
+    """
+
+    test_id = "test_job_no_meta_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "hilic-qtof | QToF | test | positive",
+        "samples": [
+            "MtdBlnk001_381807_posHILIC__preSana001"
+            "MtdBlnk002_381807_posHILIC__postSana010"
+        ],
+        "profile": "carrot.lcms",
+        "env": "test",
+        "meta": {
+            "tracking": [
+                {
+                    "state": "entered",
+                },
+                {
+                    "state": "acquired",
+                    "extension": "d"
+                },
+                {
+                    "state": "converted",
+                    "extension": "mzml"
+                },
+
+            ]
+        }
+
+    }
+    # store it
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+
+    assert response.status_code == 200
+
+    # schedule it
+    response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
+                            headers=api_token)
+
+    print(response)
+    assert response.status_code == 200
+    assert json.loads(response.content)['job'] == test_id
+    assert json.loads(response.content)['state'] == SCHEDULED
+
+    # check state of samples
+
+    response = requests.get("https://test-api.metabolomics.us/stasis/job/{}".format(test_id), headers=api_token)
+
+    assert response.status_code == 200
+    job = json.loads(response.content)
+
+    for x in job:
+        assert x['state'] == 'scheduled'
+        assert x['job'] == test_id
+
+    # just check the response code from the server
+    response = requests.get("https://test-api.metabolomics.us/stasis/schedule/cluster/tasks", headers=api_token)
+
+    assert response.status_code == 200
+    origin = time()
+    duration = 0
+    exspectation_met = False
+
+    # wait until the job is in state aggregated
+    # fargate should automatically start and process this task for us
+    # this should be called infrequently
+    while duration < 90000 and exspectation_met is False:
+        response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
+                                headers=api_token)
+        result = json.loads(response.content)
+
+        print(result)
+        if result['job_state'] == 'aggregated':
+            exspectation_met = True
+            assert result['sample_states']['exported'] == 2
+            assert result['sample_states']['failed'] == 1
+            break
+
+        sleep(10)
+        duration = time() - origin
+
+    assert exspectation_met is True
+
+    print("downloading the result now for {}".format(test_id)
+          )
+    response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
+                             headers=api_token)
+
+    assert response.status_code == 200

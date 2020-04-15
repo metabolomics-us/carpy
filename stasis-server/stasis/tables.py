@@ -504,7 +504,7 @@ def _set_sample_job_state(body: dict):
     body = tm.sanitize_json_for_dynamo(body)
     saved = trktable.put_item(Item=body)  # save or update our item
 
-    save_sample_state(sample=body['sample'],state=body['state'])
+    save_sample_state(sample=body['sample'], state=body['state'])
     saved = saved['ResponseMetadata']
 
     saved['statusCode'] = saved['HTTPStatusCode']
@@ -586,7 +586,7 @@ def get_file_handle(sample: str, state: str = "exported") -> Optional[str]:
         return "{}.mzml.json".format(sample)
 
 
-def save_sample_state(sample:str, state:str, fileHandle:Optional[str] = None):
+def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None):
     status_service = States()
     if not status_service.valid(state):
         raise Exception("please provide the a valid 'state', you provided {}".format(state))
@@ -594,7 +594,7 @@ def save_sample_state(sample:str, state:str, fileHandle:Optional[str] = None):
     tm = TableManager()
     table = tm.get_tracking_table()
     resp = table.query(
-        KeyConditionExpression=Key('id').eq(sample.split(".")[0])
+        KeyConditionExpression=Key('id').eq(sample)
     )
     timestamp = int(time.time() * 1000)
     experiment = _fetch_experiment(sample)
@@ -603,21 +603,38 @@ def save_sample_state(sample:str, state:str, fileHandle:Optional[str] = None):
         'value': state.lower(),
         'priority': status_service.priority(state)
     }
+
+    if fileHandle is not None:
+        new_status['fileHandle'] = fileHandle
+
     if resp['Items']:
         # only keep elements with a lower priority
         item = resp['Items'][0]
         item['status'] = [x for x in item['status'] if int(x['priority']) < int(new_status['priority'])]
-        item['status'].append(new_status)
     else:
         item = {
             'id': sample,
             'sample': state,
             'experiment': experiment,
-            'status': [new_status]
+            'status': []
         }
-    if "fileHandle" is not None:
-        if 'fileHandle' not in item['status'][-1]:
-            item['status'][-1]['fileHandle'] = fileHandle
+
+    if len(item['status']) > 0:
+        previous = item['status'][-1]
+        # update if no previous file handle is set
+        if fileHandle is not None:
+            if 'fileHandle' not in previous:
+                if previous['value'] != 'entered':
+                    previous['fileHandle'] = fileHandle
+
+        # update if previous file handle is set, but no new one was added
+        else:
+            if 'fileHandle' in previous:
+                new_status['fileHandle'] = previous['fileHandle']
+
+    # register the new state
+    item['status'].append(new_status)
+
     item = tm.sanitize_json_for_dynamo(item)
     # put item in table instead of queueing
     saved = {}

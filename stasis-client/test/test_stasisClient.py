@@ -162,7 +162,7 @@ def test_download_result(stasis_cli, api_token):
     stasis_cli.schedule_job(test_id)
     origin = time()
     duration = 0
-    while duration < 90000:
+    while duration < 900000:
         state = stasis_cli.load_job_state(test_id)['job_state']
         print(f"current state for job {test_id} is {state} and duration is {duration}")
         if state == 'aggregated':

@@ -128,6 +128,10 @@ __JOB_SCHEMA__ = {
             'type': 'string',
             'minLength': 1
         },
+        'resource': {
+            'type': 'string',
+            'minLength': 1
+        },
         'env': {
             'type': 'string',
             'minLength': 1
@@ -138,11 +142,37 @@ __JOB_SCHEMA__ = {
         },
         'notify': {
             'type': 'object',
-            'email': {
-                'type': 'array',
-                'items': {
-                    'type': 'string',
-                    'minLength': 1
+            'properties': {
+                'email': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'string',
+                        'minLength': 1
+                    }
+                }
+            }
+        },
+        'meta': {
+            'type': 'object',
+            'properties': {
+                'tracking': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'state': {
+                                'type': 'string',
+                                'minLength': 1
+                            },
+                            'extension': {
+                                'type': 'string',
+                                'minLength': 1
+                            }
+                        },
+                        'required': [
+                            'state'
+                        ]
+                    }
                 }
             }
         }
@@ -276,4 +306,3 @@ __SCHEDULE__ = {
         }
     }
 }
-
