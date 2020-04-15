@@ -14,10 +14,12 @@ def sync(job: str) -> Optional[str]:
     # to avoid expensive synchronization
     state = get_job_state(job=job)
 
-    print("current job state is {}".format(state))
+    print("current job state for {} is {}".format(job,state))
     if state is None:
+        print(f"no job state found -> forcing scheduled state for {job}")
         update_job_state(job=job, state=SCHEDULED)
     elif state in [AGGREGATED, FAILED]:
+        print(f"job was already in a finished state {job}, state {state} and so needs no further analysis")
         return state
 
     # 2. load job definition
@@ -52,5 +54,5 @@ def sync(job: str) -> Optional[str]:
             update_job_state(job=job, state=PROCESSING)
             return PROCESSING
     else:
-        print("we did not find a job definition for {}".format(job))
+        print("we did not find a job definition for {}, Please investigate".format(job))
         return None

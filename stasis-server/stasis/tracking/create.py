@@ -1,5 +1,5 @@
 import simplejson as json
-from jsonschema import validate
+from jsonschema import validate, ValidationError
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __TRACKING_SCHEMA__
@@ -13,7 +13,12 @@ def triggerEvent(data):
     :param data: requires sample and status in it, to be considered validd
     :return: a serialized version of the submitted message
     """
-    validate(data, __TRACKING_SCHEMA__)
+    try:
+        validate(data, __TRACKING_SCHEMA__)
+    except ValidationError as e:
+        print(e)
+        print(data)
+        raise
 
     item, saved = save_sample_state(
         sample=data['sample'],

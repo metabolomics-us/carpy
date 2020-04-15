@@ -165,7 +165,7 @@ functions:
       - schedule:
           rate: rate(1 minute)
           documentation:
-            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs.
+            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs. This has to be driven over cron right now
 
       - http:
           private: true
@@ -186,11 +186,6 @@ functions:
   fargate_job_monitor:
     handler: stasis/jobs/schedule.monitor_jobs
     events:
-      - schedule:
-          rate: rate(5 minutes)
-          documentation:
-            summary: monitors and synchronizes job states
-
       - http:
           private: true
           path: sync/jobs
@@ -207,7 +202,7 @@ functions:
       aggregation_queue: ${self:custom.aggregationQueue}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
-
+      dataBucket: ${self:custom.dataJSONBucketName}
   fargate_tasks:
     handler: stasis/schedule/schedule.current_tasks
     events:
@@ -759,6 +754,7 @@ functions:
           events:
             - s3:ObjectCreated:*
 
+          existing: true
           documentation:
             summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync
 
@@ -768,19 +764,25 @@ functions:
 
 
   json_bucket_triggers:
-    handler: stasis/bucket/triggers.bucket_json
     events:
       - existingS3:
           bucket: ${self:custom.dataJSONBucketName}
           events:
             - s3:ObjectCreated:*
-
           existing: true
           documentation:
-            summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync. Especially samples
+            summary: triggers the function, when an objectwas created to speed up synchronization
 
+    handler: stasis/jobs/schedule.monitor_jobs
+
+    timeout: 900
     environment:
-      dataBucket: ${self:custom.dataJSONBucketName}
+      current_stage: ${self:custom.stage}
+      schedule_queue: ${self:custom.scheduleQueue}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+      aggregation_queue: ${self:custom.aggregationQueue}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
+      dataBucket: ${self:custom.dataJSONBucketName}
 

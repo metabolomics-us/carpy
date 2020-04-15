@@ -1,4 +1,3 @@
-import os
 from time import time, sleep
 
 import requests
@@ -22,6 +21,7 @@ def test_acquisition_get_fail_not_found(stasis_cli):
         fail()
     except Exception as e:
         pass
+
 
 def test_file_handle_by_state(stasis_cli, sample, sample_tracking_data):
     result = stasis_cli.file_handle_by_state(sample['sample'], 'exported')
@@ -55,7 +55,7 @@ def test_get_states(stasis_cli):
 
     print(result)
     assert result is not None
-    assert len(result) == 13
+    assert len(result) == 17
     assert 'failed' in result
 
 
@@ -77,9 +77,9 @@ def test_load_job_state(stasis_cli, api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "env": "test"
@@ -102,9 +102,9 @@ def test_load_job(stasis_cli, api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "env": "test"

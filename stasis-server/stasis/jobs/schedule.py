@@ -193,6 +193,7 @@ def monitor_jobs(event, context):
     if they are ready for processing
     """
 
+    print("job monitor triggered from event {}".format(event))
     # 1. query JOB state table in state running
     tm = TableManager()
     table = tm.get_job_state_table()
@@ -216,9 +217,12 @@ def monitor_jobs(event, context):
             }
 
             result = table.scan(**query_params)
-        scanned = table.scan()
         for x in result['Items']:
             try:
+
+                if x['state'] == FAILED:
+                    continue
+
                 state = sync(x['id'])
 
                 if 'resource' in x:
@@ -227,11 +231,13 @@ def monitor_jobs(event, context):
                     resource = DEFAULT_PROCESSING_BACKEND
 
                 if state == EXPORTED:
-                    print("schedule aggregation for {}".format(x))
+                    print("schedule aggregation for job {}".format(x['id']))
                     schedule_to_queue({"job": x['id'], "env": x['env'], "profile": x['profile']},
                                       service=SECURE_CARROT_AGGREGATOR,
                                       resource=resource)
                     update_job_state(job=x['id'], state=AGGREGATING_SCHEDULING)
+                else:
+                    print(f"state {state} for job {x['id']} did not justify triggering an aggregation.")
             except Exception as e:
                 traceback.print_exc()
                 update_job_state(job=x['id'], state=FAILED, reason=str(e))

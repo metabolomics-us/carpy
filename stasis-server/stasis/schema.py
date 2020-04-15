@@ -262,7 +262,7 @@ __SCHEDULE__ = {
             'title': 'The Sample Schema ',
             'default': '',
             'examples': [
-                'abc.mzml'
+                'abc'
             ]
         },
         'method': {

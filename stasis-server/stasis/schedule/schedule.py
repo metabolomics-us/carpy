@@ -100,6 +100,9 @@ def schedule(event, context):
     else:
         resource = DEFAULT_PROCESSING_BACKEND
 
+    print(f"scheduling {body} to queue")
+    assert body['sample'] is not None
+
     return schedule_to_queue(body, service=SECURE_CARROT_RUNNER, resource=resource)
 
 
@@ -293,9 +296,9 @@ def monitor_queue(event, context):
         # print(messages)
         for message in messages:
             receipt_handle = message['ReceiptHandle']
-            # print("current message: {}".format(message))
+            print("current message: {}".format(message))
             body = json.loads(json.loads(message['Body'])['default'])
-            # print("schedule: {}".format(body))
+            print("schedule: {}".format(body))
             try:
 
                 slots = _free_task_count(service=body[SERVICE])
@@ -392,7 +395,7 @@ def schedule_processing_to_fargate(event, context):
         }
 
     except Exception as e:
-
+        print(body)
         traceback.print_exc()
         create({"body": json.dumps({'sample': body['sample'], 'status': 'failed'})}, {})
 
