@@ -6,7 +6,6 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
-  - serverless-plugin-existing-s3
 provider:
   name: aws
   runtime: python3.7
@@ -749,7 +748,7 @@ functions:
   zip_bucket_triggers:
     handler: stasis/bucket/triggers.bucket_zip
     events:
-      - existingS3:
+      - s3:
           bucket: ${self:custom.dataZipBucketName}
           events:
             - s3:ObjectCreated:*
@@ -765,7 +764,7 @@ functions:
 
   json_bucket_triggers:
     events:
-      - existingS3:
+      - s3:
           bucket: ${self:custom.dataJSONBucketName}
           events:
             - s3:ObjectCreated:*
