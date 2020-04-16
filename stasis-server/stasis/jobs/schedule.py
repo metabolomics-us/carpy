@@ -236,21 +236,23 @@ def monitor_jobs(event, context):
                 if x['state'] == FAILED:
                     continue
 
-                state = sync(x['id'])
-
-                if 'resource' in x:
-                    resource = Backend(x['resource'])
-                else:
-                    resource = DEFAULT_PROCESSING_BACKEND
-
-                if state == EXPORTED:
-                    print("schedule aggregation for job {}".format(x['id']))
-                    schedule_to_queue({"job": x['id'], "env": x['env'], "profile": x['profile']},
-                                      service=SECURE_CARROT_AGGREGATOR,
-                                      resource=resource)
-                    update_job_state(job=x['id'], state=AGGREGATING_SCHEDULING)
-                else:
-                    print(f"state {state} for job {x['id']} did not justify triggering an aggregation.")
+                sync_job(x)
             except Exception as e:
                 traceback.print_exc()
                 update_job_state(job=x['id'], state=FAILED, reason=str(e))
+
+
+def sync_job(job):
+    state = sync(job['id'])
+    if 'resource' in job:
+        resource = Backend(job['resource'])
+    else:
+        resource = DEFAULT_PROCESSING_BACKEND
+    if state == EXPORTED:
+        print("schedule aggregation for job {}".format(job['id']))
+        schedule_to_queue({"job": job['id'], "env": job['env'], "profile": job['profile']},
+                          service=SECURE_CARROT_AGGREGATOR,
+                          resource=resource)
+        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING)
+    else:
+        print(f"state {state} for job {job['id']} did not justify triggering an aggregation.")
