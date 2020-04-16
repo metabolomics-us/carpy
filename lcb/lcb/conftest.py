@@ -1,3 +1,5 @@
+from time import time
+
 import pytest
 import requests
 from stasis_client.client import StasisClient
@@ -24,6 +26,7 @@ def stasis_cli(stasis_token, stasis_url):
 @pytest.fixture
 def sample_evaluator(stasis_cli):
     return SampleEvaluator(stasis=stasis_cli)
+
 
 @pytest.fixture
 def job_evaluator(stasis_cli):
@@ -164,3 +167,39 @@ def test_sample_result(stasis_cli, test_sample, stasis_token, stasis_url):
                              headers={'x-api-key': stasis_token.strip()})
     assert 200 == response.status_code
     return data
+
+
+@pytest.fixture()
+def test_job(stasis_cli):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "test | 6530test | test | positive",
+        "samples": [
+            "lc-test-sample"
+        ],
+        "profile": "carrot.lcms",
+        "env": "test",
+
+        "meta": {
+            "tracking": [
+                {
+                    "state": "entered",
+                },
+                {
+                    "state": "acquired",
+                    "extension": "d"
+                },
+                {
+                    "state": "converted",
+                    "extension": "mzml"
+                },
+
+            ]
+        }
+
+    }
+
+    stasis_cli.store_job(job=job)
+    return job

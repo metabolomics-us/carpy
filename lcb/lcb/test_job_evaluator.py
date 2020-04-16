@@ -1,26 +1,31 @@
-def test_evaluate(job_evaluator):
-    assert False
+def test_evaluate_empty_args(job_evaluator):
+    result = job_evaluator.evaluate({})
+    assert len(result) == 0
 
 
-def test_process(job_evaluator):
-    assert False
+def test_evaluate_status(job_evaluator, test_job):
+    result = job_evaluator.evaluate({'id': test_job['id'], 'status': True})
+    assert len(result) == 1
 
 
-def test_state(job_evaluator):
-    assert False
+def test_evaluate_exist(job_evaluator, test_job):
+    result = job_evaluator.evaluate({'id': test_job['id'], 'exist': True})
+    assert len(result) == 1
+    assert result['exist'
+           ] == True
 
 
-def test_download(job_evaluator):
-    assert False
+def test_evaluate_not_exist(job_evaluator, test_job):
+    result = job_evaluator.evaluate({'id': "fake_{}".format(test_job['id']), 'exist': True})
+    assert len(result) == 1
+    assert result['exist'] == False
 
 
-def test_info(job_evaluator):
-    assert False
+def test_evaluate_process(job_evaluator, test_job):
+    result = job_evaluator.evaluate({'id': test_job['id'], 'process': True})
+    assert len(result) == 1
 
 
-def test_record(job_evaluator):
-    assert False
-
-
-def test_exists(job_evaluator):
-    assert False
+def test_evaluate_detail(job_evaluator, test_job, test_sample, test_sample_tracking_data):
+    result = job_evaluator.evaluate({'id': test_job['id'], 'detail': True})
+    assert len(result) == 1

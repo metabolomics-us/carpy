@@ -46,6 +46,12 @@ class Parser:
             raise KeyError("you need to make sure that a 'func' is registered when you create the parser!")
 
     @staticmethod
+    def configure_monitor(main_parser, sub_parser):
+        """
+        configures a monitor to track the state of calculations
+        """
+
+    @staticmethod
     def configure_jobs(main_parser, sub_parser):
         """
         configures all the options for handling of jobs
@@ -57,6 +63,7 @@ class Parser:
         parser.add_argument("-i", "--id", help="this is your job id", required=True)
         parser.add_argument("-s", "--status", help="specify this flag to return the current status",
                             action='store_true')
+
         parser.add_argument("-p", "--process",
                             help="this starts the processing of the specified job id in the remote system",
                             action='store_true')
