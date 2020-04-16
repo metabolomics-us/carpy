@@ -7,6 +7,8 @@ import pytest
 import simplejson as json
 from moto.ec2 import utils as ec2_utils
 
+from stasis.jobs.schedule import store_job
+
 if 'AWS_DEFAULT_REGION' not in os.environ:
     os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
 
@@ -38,7 +40,6 @@ def requireMocking():
 
     ec2 = moto.mock_ec2()
     ec2.start()
-
 
     session = boto3.session.Session()
     session.client('sns')
@@ -129,3 +130,38 @@ def create_cluster():
     )
 
     return cluster
+
+
+@pytest.fixture()
+def mocked_job():
+    job = {
+        "id": "test_job",
+        "method": "test",
+        "samples": [
+            "none_abc_12345",
+            "none_abd_12345",
+            "none_abe_12345",
+            "none_abz_12345"
+        ],
+        "profile": "lcms",
+        "env": "test",
+        "resource": 'FARGATE',
+        "meta": {
+            "tracking": [
+                {
+                    "state": "entered"
+                },
+                {
+                    "state": "acquired",
+                    "extension": "d"
+                },
+                {
+                    "state": "converted",
+                    "extension": "mzml"
+                }
+            ]
+        }
+    }
+
+    store_job({'body': json.dumps(job)}, {})
+    return job

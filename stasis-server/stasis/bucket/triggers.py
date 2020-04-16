@@ -28,6 +28,8 @@ def bucket_json(event, context):
             if jobs is not None:
                 for job in jobs:
                     sync(job=job['job'])
+            else:
+                print("we did not find a job for this sample!")
 
 
 def bucket_zip(event, context):

@@ -552,7 +552,7 @@ def load_jobs_for_sample(sample: str) -> Optional[List[dict]]:
                          )
 
     if "Items" in result and len(result['Items']) > 0:
-        return result['Item']
+        return result['Items']
     else:
         return None
 
@@ -629,6 +629,8 @@ def get_file_handle(sample: str, state: str = "exported") -> Optional[str]:
         return "{}.mzml".format(sample)
     elif state == 'exported':
         return "{}.mzml.json".format(sample)
+
+    raise Exception("not supported file handle!")
 
 
 def get_file_by_handle(fileHandle: str) -> Optional[str]:
