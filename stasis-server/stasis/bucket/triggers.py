@@ -1,5 +1,33 @@
-from stasis.service.Status import AGGREGATED
-from stasis.tables import update_job_state
+from stasis.jobs.sync import sync
+from stasis.service.Status import AGGREGATED, EXPORTED
+from stasis.tables import update_job_state, save_sample_state, get_file_by_handle, load_jobs_for_sample
+
+
+def bucket_json(event, context):
+    """
+    handles json trigger events
+    :param event:
+    :param context:
+    :return:
+    """
+
+    for record in event['Records']:
+        o = record['s3']['object']
+        k = str(o['key'])
+
+        print("received key {}".format(k))
+        sample = get_file_by_handle(k)
+        result = save_sample_state(sample=sample, state=EXPORTED, fileHandle=k)
+
+        if result is None:
+            print("we were not able to update the sample: {}".format(sample))
+        else:
+            print("sample state was set to: {}".format(result))
+            jobs = load_jobs_for_sample(sample)
+
+            if jobs is not None:
+                for job in jobs:
+                    sync(job=job['job'])
 
 
 def bucket_zip(event, context):

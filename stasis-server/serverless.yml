@@ -772,7 +772,7 @@ functions:
           documentation:
             summary: triggers the function, when an objectwas created to speed up synchronization
 
-    handler: stasis/jobs/schedule.monitor_jobs
+    handler: stasis/bucket/triggers.bucket_json
 
     timeout: 900
     environment:

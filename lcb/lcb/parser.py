@@ -13,6 +13,8 @@ class Parser:
 
     def __init__(self, stasisClient: StasisClient, mapping: dict = None):
         parser = argparse.ArgumentParser(prog="lcb")
+        parser.add_argument("--json", action="store_rue", help="try to print everything as JSON")
+
         sub = parser.add_subparsers(help="this contains all the different scopes, available to LCB")
 
         if mapping is None:

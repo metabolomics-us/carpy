@@ -1,7 +1,7 @@
 import os
 import re
 import time
-from typing import Optional
+from typing import Optional, List
 
 import boto3
 import simplejson as json
@@ -139,7 +139,10 @@ class TableManager:
                             'AttributeName': 'job',
                             'AttributeType': 'S'
                         },
-
+                        {
+                            'AttributeName': 'sample',
+                            'AttributeType': 'S'
+                        },
                     ],
                     BillingMode='PAY_PER_REQUEST',
                     GlobalSecondaryIndexes=[
@@ -148,6 +151,24 @@ class TableManager:
                             'KeySchema': [
                                 {
                                     'AttributeName': 'job',
+                                    'KeyType': 'HASH'
+                                },
+                                {
+                                    'AttributeName': 'id',
+                                    'KeyType': 'RANGE'
+                                }
+                            ],
+                            'Projection': {
+                                'ProjectionType': 'ALL'
+                            },
+
+                        },
+
+                        {
+                            'IndexName': 'sample-id-index',
+                            'KeySchema': [
+                                {
+                                    'AttributeName': 'sample',
                                     'KeyType': 'HASH'
                                 },
                                 {
@@ -512,6 +533,30 @@ def _set_sample_job_state(body: dict):
     return saved
 
 
+def load_jobs_for_sample(sample: str) -> Optional[List[dict]]:
+    """
+    loads all jobs for the specified sample
+    :param sample:
+    :return:
+    """
+
+    tm = TableManager()
+    table = tm.get_job_sample_state_table()
+
+    query_params = {
+        'IndexName': 'sample-id-index',
+        'Select': 'ALL_ATTRIBUTES',
+        'KeyConditionExpression': Key('sample').eq(sample)
+    }
+    result = table.query(**query_params
+                         )
+
+    if "Items" in result and len(result['Items']) > 0:
+        return result['Item']
+    else:
+        return None
+
+
 def load_job_samples(job: str) -> Optional[dict]:
     """
     loads the job from the job table for the given name
@@ -584,6 +629,18 @@ def get_file_handle(sample: str, state: str = "exported") -> Optional[str]:
         return "{}.mzml".format(sample)
     elif state == 'exported':
         return "{}.mzml.json".format(sample)
+
+
+def get_file_by_handle(fileHandle: str) -> Optional[str]:
+    """
+    returns the file name as specified by this handle
+    :param fileHandle:
+    :return:
+    """
+    if fileHandle.endswith(".mzml.json"):
+        return fileHandle.replace(".mzml.json", "")
+
+    raise Exception("not supported file handle!")
 
 
 def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None):
