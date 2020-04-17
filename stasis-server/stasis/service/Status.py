@@ -8,6 +8,8 @@ AGGREGATING = 'aggregating'
 
 AGGREGATING_SCHEDULING = 'aggregating_scheduling'
 
+AGGREGATING_SCHEDULED = 'aggregating_scheduled'
+
 EXPORTED = 'exported'
 
 REPLACED = 'replaced'
@@ -53,7 +55,8 @@ class States:
             QUANTIFIED: 440,
             REPLACED: 450,
             EXPORTED: 500,
-            AGGREGATING_SCHEDULING: 549,
+            AGGREGATING_SCHEDULING: 548,
+            AGGREGATING_SCHEDULED: 549,
             AGGREGATING: 550,
             AGGREGATED: 590,
             FINISHED: 600,

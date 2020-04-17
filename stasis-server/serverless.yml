@@ -159,7 +159,7 @@ functions:
       current_stage: ${self:custom.stage}
 
   fargate_processing_monitor:
-    handler: stasis/schedule/schedule.monitor_queue
+    handler: stasis/schedule/monitor.monitor_queue
     events:
       - schedule:
           rate: rate(1 minute)
@@ -284,7 +284,8 @@ functions:
     environment:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
-
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
   #fetches an existing tracking record from the system
   trackingGet:
     handler: stasis/tracking/get.get
@@ -550,7 +551,7 @@ functions:
     handler: stasis/jobs/tracking.status
     events:
       - http:
-          path: job/status/{job}/{sync}
+          path: job/status/{job}
           private: true
           method: get
           cors: true
@@ -558,15 +559,11 @@ functions:
             parameter:
               paths:
                 job: true
-                sync: false
           documentation:
             summary: returns the overal status of the given job
             queryParams:
               - name: job
                 description: the job id
-                required: true
-              - name: sync
-                description: do you want to force a synchronization, which is very expensive
                 required: true
       - http:
           path: job/status/{job}
@@ -657,7 +654,6 @@ functions:
             parameter:
               paths:
                 job: true
-                sync: false
     #defines to which topic we want to connect
     environment:
 

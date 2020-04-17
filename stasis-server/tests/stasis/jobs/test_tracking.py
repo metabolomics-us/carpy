@@ -3,6 +3,7 @@ import random
 
 from stasis.jobs import tracking
 from stasis.jobs.schedule import monitor_jobs
+from stasis.jobs.sync import calculate_job_state
 from stasis.service.Status import SCHEDULED, AGGREGATING, EXPORTED, FAILED, AGGREGATED, PROCESSING
 from stasis.tables import set_job_state
 from stasis.tracking import create
@@ -108,8 +109,6 @@ def test_status(requireMocking):
     result = tracking.status({
         "pathParameters": {
             "job": "123456",
-            "sync": True
-
         }
     }, {})
 
@@ -124,10 +123,10 @@ def test_status(requireMocking):
         # pretend stasis has now exported the data
         response = create.create({'body': json.dumps({'sample': 'abc_{}'.format(x), 'status': 'exported'})}, {})
 
+    calculate_job_state("123456")
     result = tracking.status({
         "pathParameters": {
             "job": "123456",
-            "sync": True
         }
     }, {})
 

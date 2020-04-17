@@ -5,9 +5,9 @@ from boto3.dynamodb.conditions import Key, Attr
 from jsonschema import validate, ValidationError
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.jobs.sync import sync
+from stasis.jobs.sync import sync_job
 from stasis.schedule.backend import DEFAULT_PROCESSING_BACKEND, Backend
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
 from stasis.schema import __JOB_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, load_job_samples, \
@@ -148,8 +148,10 @@ def schedule_job(event, context):
                       state=SCHEDULING, resource=resource)
         for sample in samples:
             try:
+                handle = get_file_handle(sample, CONVERTED)
+                print("looked up handle {} for sample {}".format(handle, sample))
                 schedule_to_queue({
-                    "sample": get_file_handle(sample, 'converted'),
+                    "sample": handle,
                     "env": env_,
                     "method": method,
                     "profile": profile,
@@ -240,19 +242,3 @@ def monitor_jobs(event, context):
             except Exception as e:
                 traceback.print_exc()
                 update_job_state(job=x['id'], state=FAILED, reason=str(e))
-
-
-def sync_job(job):
-    state = sync(job['id'])
-    if 'resource' in job:
-        resource = Backend(job['resource'])
-    else:
-        resource = DEFAULT_PROCESSING_BACKEND
-    if state == EXPORTED:
-        print("schedule aggregation for job {}".format(job['id']))
-        schedule_to_queue({"job": job['id'], "env": job['env'], "profile": job['profile']},
-                          service=SECURE_CARROT_AGGREGATOR,
-                          resource=resource)
-        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING)
-    else:
-        print(f"state {state} for job {job['id']} did not justify triggering an aggregation.")

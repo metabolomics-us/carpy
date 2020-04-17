@@ -1,7 +1,7 @@
 import json
 
 from stasis.jobs import tracking
-from stasis.jobs.sync import sync, EXPORTED, FAILED
+from stasis.jobs.sync import update_job_state, EXPORTED, FAILED, calculate_job_state
 from stasis.service.Status import SCHEDULED, REPLACED
 from stasis.tables import TableManager, load_job_samples
 
@@ -90,7 +90,7 @@ def test_sync_processed(requireMocking):
         }
         )
 
-    sync(job="12345")
+    calculate_job_state(job="12345")
 
     samples = load_job_samples("12345")
     assert all(value == str(EXPORTED) for value in samples.values())
@@ -174,7 +174,7 @@ def test_sync_currently_processing(requireMocking):
         }
         )
 
-    sync(job="12345")
+    calculate_job_state(job="12345")
 
     assert all(value == str(REPLACED) for value in load_job_samples("12345").values())
 
@@ -257,6 +257,6 @@ def test_sync_failed(requireMocking):
         }
         )
 
-    sync(job="12345")
+    calculate_job_state(job="12345")
 
     assert all(value == str(FAILED) for value in load_job_samples("12345").values())

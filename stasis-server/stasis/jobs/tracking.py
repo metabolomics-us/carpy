@@ -2,7 +2,7 @@ import simplejson as json
 from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.jobs.sync import sync, EXPORTED, FAILED, AGGREGATED
+from stasis.jobs.sync import update_job_state, EXPORTED, FAILED, AGGREGATED, calculate_job_state
 from stasis.tables import TableManager, _set_sample_job_state, load_job_samples
 
 
@@ -60,10 +60,6 @@ def status(event, context):
         parameters = event['pathParameters']
         if 'job' in parameters:
             job = parameters['job']
-
-            if 'sync' in parameters and bool(parameters['sync']) is True:
-                print("synchronization was forced!")
-                sync(job)
 
             tm = TableManager()
             table_overall_state = tm.get_job_state_table()

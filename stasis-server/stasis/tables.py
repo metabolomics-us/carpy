@@ -10,7 +10,7 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ParamValidationError
 
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
-from stasis.service.Status import States
+from stasis.service.Status import States, FAILED, SCHEDULED, EXPORTED
 
 
 class TableManager:
@@ -380,6 +380,7 @@ def update_job_state(job: str, state: str, reason: Optional[str] = None):
 
         return get_job_state(job)
     else:
+        print("no job update was required for {}".format(job))
         return None
 
 
@@ -552,7 +553,10 @@ def load_jobs_for_sample(sample: str) -> Optional[List[dict]]:
                          )
 
     if "Items" in result and len(result['Items']) > 0:
-        return result['Items']
+        data = []
+        for x in result['Items']:
+            job_id = x['job']
+            data.append(get_job_config(job=job_id))
     else:
         return None
 
@@ -699,6 +703,18 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None)
     saved = {}
     try:
         saved = table.put_item(Item=item)
+
+        # FAILED => sync
+        # SCHEDULED => sync
+        # EXPORTED => sync
+        # this should avoid potential dead lock issue
+        if state in [FAILED, EXPORTED]:
+            from stasis.jobs.sync import sync_sample
+            ##
+            # TODO push this to a queue to increase responsivness
+            sync_sample(sample)
+        else:
+            print("triggered state {} did not require job synchronization for sample {}".format(state, sample))
     except Exception as e:
         print("ERROR: %s" % e)
         item = {}
@@ -727,7 +743,8 @@ def _fetch_experiment(sample: str) -> str:
         else:
             print('no experiment in item -> unknown')
     else:
-        print('no items -> unknown')
+        #        print('no items -> unknown')
+        pass
 
     return 'unknown'
 

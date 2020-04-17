@@ -3,7 +3,7 @@ import traceback
 from typing import Optional
 
 import simplejson as json
-from jsonschema import validate
+from jsonschema import validate, ValidationError
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
@@ -100,9 +100,8 @@ def schedule(event, context):
     else:
         resource = DEFAULT_PROCESSING_BACKEND
 
+    validate(body, __SCHEDULE__)
     print(f"scheduling {body} to queue")
-    assert body['sample'] is not None
-
     return schedule_to_queue(body, service=SECURE_CARROT_RUNNER, resource=resource)
 
 
@@ -202,7 +201,7 @@ def schedule_aggregation_to_fargate(param, param1):
 
         response = send_to_fargate(overrides, task_name)
 
-        update_job_state(job=job, state=AGGREGATING)
+        update_job_state(job=job['id'], state=AGGREGATING)
         print(f'Response: {response}')
         return {
             'statusCode': 200,
@@ -215,6 +214,12 @@ def schedule_aggregation_to_fargate(param, param1):
 
 
 def send_to_fargate(overrides, task_name):
+    """
+    sends the computation to the actual fargate cluster
+    :param overrides:
+    :param task_name:
+    :return:
+    """
     # fire AWS fargate instance now
     import boto3
     client = boto3.client('ecs')
@@ -237,105 +242,6 @@ def send_to_fargate(overrides, task_name):
     return response
 
 
-def monitor_queue(event, context):
-    """
-    monitors the fargate queue and if task size is less than < x it will
-    try to schedule new tasks. This should be called from cron or another
-    scheduled interval
-    :param event:
-    :param context:
-    :return:
-    """
-
-    import boto3
-    # receive message from queue
-    client = boto3.client('sqs')
-
-    # if topic exists, we just reuse it
-    arn = _get_queue(client=client)
-
-    slots = _free_task_count(service=SECURE_CARROT_RUNNER) + _free_task_count(service=SECURE_CARROT_AGGREGATOR)
-
-    if slots == 0:
-        return {
-            'statusCode': 200,
-            'isBase64Encoded': False,
-            'headers': __HTTP_HEADERS__
-        }
-
-    print("we have: {} slots free for tasks".format(slots))
-
-    message_count = slots if 0 < slots <= MESSAGE_BUFFER else MESSAGE_BUFFER if slots > 0 else 1
-    message = client.receive_message(
-        QueueUrl=arn,
-        AttributeNames=[
-            'All'
-        ],
-        # MessageAttributeNames=[
-        #     'string',
-        # ],
-        MaxNumberOfMessages=message_count,
-        VisibilityTimeout=1,
-        WaitTimeSeconds=1
-        # ReceiveRequestAttemptId='string'
-    )
-
-    if 'Messages' not in message:
-        print("no messages received: {}".format(message))
-        return {
-            'statusCode': 200,
-            'isBase64Encoded': False,
-            'headers': __HTTP_HEADERS__
-        }
-
-    messages = message['Messages']
-
-    if len(messages) > 0:
-        # print("received {} messages".format(len(messages)))
-        result = []
-        # print(messages)
-        for message in messages:
-            receipt_handle = message['ReceiptHandle']
-            print("current message: {}".format(message))
-            body = json.loads(json.loads(message['Body'])['default'])
-            print("schedule: {}".format(body))
-            try:
-
-                slots = _free_task_count(service=body[SERVICE])
-
-                if slots > 0:
-                    if body[SERVICE] == SECURE_CARROT_RUNNER:
-                        result.append(schedule_processing_to_fargate({'body': json.dumps(body)}, {}))
-                    elif body[SERVICE] == SECURE_CARROT_AGGREGATOR:
-                        result.append(schedule_aggregation_to_fargate({'body': json.dumps(body)}, {}))
-                    else:
-                        raise Exception("unknown service specified: {}".format(body[SERVICE]))
-
-                    client.delete_message(
-                        QueueUrl=arn,
-                        ReceiptHandle=receipt_handle
-                    )
-                else:
-                    # nothing found
-                    pass
-            except Exception as e:
-                traceback.print_exc()
-        return {
-            'statusCode': 200,
-            'headers': __HTTP_HEADERS__,
-            'isBase64Encoded': False,
-            'body': json.dumps({'scheduled': len(result)})
-        }
-
-    else:
-        print("no messages received!")
-        return {
-            'statusCode': 200,
-            'isBase64Encoded': False,
-            'headers': __HTTP_HEADERS__
-        }
-
-
 def schedule_processing_to_fargate(event, context):
     """
     submits a new task to the cluster - a fargate task will run it
@@ -348,7 +254,6 @@ def schedule_processing_to_fargate(event, context):
     try:
 
         validate(body, __SCHEDULE__)
-
         import boto3
         overrides = {"containerOverrides": [{
             "name": "carrot-runner",
@@ -394,6 +299,18 @@ def schedule_processing_to_fargate(event, context):
             'headers': __HTTP_HEADERS__
         }
 
+    except ValidationError as e:
+        print("validation error")
+        print(body)
+        traceback.print_exc()
+
+        return {
+            'body': json.dumps(str(e)),
+            'statusCode': 503,
+            'isBase64Encoded': False,
+            'headers': __HTTP_HEADERS__
+        }
+        pass
     except Exception as e:
         print(body)
         traceback.print_exc()

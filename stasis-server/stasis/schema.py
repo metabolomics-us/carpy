@@ -267,8 +267,8 @@ __SCHEDULE__ = {
         'profile': {
             '$id': '/properties/profile',
             'type': 'string',
+            'minLength': 1,
             'title': 'The Profile Schema ',
-            'default': '',
             'examples': [
                 'lcms',
                 'gcms'
@@ -277,8 +277,8 @@ __SCHEDULE__ = {
         'env': {
             '$id': '/properties/env',
             'type': 'string',
+            'minLength': 1,
             'title': 'The Env Schema ',
-            'default': '',
             'examples': [
                 'prod',
                 'test',
@@ -289,8 +289,8 @@ __SCHEDULE__ = {
         'sample': {
             '$id': '/properties/sample',
             'type': 'string',
+            'minLength': 1,
             'title': 'The Sample Schema ',
-            'default': '',
             'examples': [
                 'abc'
             ]
@@ -298,8 +298,8 @@ __SCHEDULE__ = {
         'method': {
             '$id': '/properties/method',
             'type': 'string',
+            'minLength': 1,
             'title': 'The Method Schema ',
-            'default': '',
             'examples': [
                 'method name | instrument | column | ion mode'
             ]

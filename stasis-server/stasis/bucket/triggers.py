@@ -1,4 +1,3 @@
-from stasis.jobs.sync import sync
 from stasis.service.Status import AGGREGATED, EXPORTED
 from stasis.tables import update_job_state, save_sample_state, get_file_by_handle, load_jobs_for_sample
 
@@ -26,8 +25,10 @@ def bucket_json(event, context):
             jobs = load_jobs_for_sample(sample)
 
             if jobs is not None:
+                print("wound {} associated jobs for this sample".format(len(jobs)))
                 for job in jobs:
-                    sync(job=job['job'])
+                    from stasis.jobs.sync import sync_job
+                    sync_job(job=job)
             else:
                 print("we did not find a job for this sample!")
 

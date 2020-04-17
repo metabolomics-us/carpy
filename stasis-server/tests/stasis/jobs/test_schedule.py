@@ -6,7 +6,8 @@ import pytest
 
 from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
 from stasis.schedule.backend import Backend
-from stasis.schedule.schedule import monitor_queue, MESSAGE_BUFFER
+from stasis.schedule.schedule import MESSAGE_BUFFER
+from stasis.schedule.monitor import monitor_queue
 from stasis.service.Status import *
 from stasis.tables import load_job_samples, get_tracked_state, get_job_state, get_job_config, get_tracked_sample
 from stasis.tracking import create
