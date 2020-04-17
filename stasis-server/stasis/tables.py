@@ -557,6 +557,8 @@ def load_jobs_for_sample(sample: str) -> Optional[List[dict]]:
         for x in result['Items']:
             job_id = x['job']
             data.append(get_job_config(job=job_id))
+
+        return data
     else:
         return None
 
