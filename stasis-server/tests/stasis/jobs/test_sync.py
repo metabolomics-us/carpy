@@ -1,13 +1,16 @@
 import json
 
 from stasis.jobs import tracking
+from stasis.jobs.schedule import store_job
 from stasis.jobs.sync import update_job_state, EXPORTED, FAILED, calculate_job_state
+from stasis.schedule.backend import Backend
 from stasis.service.Status import SCHEDULED, REPLACED
 from stasis.tables import TableManager, load_job_samples
 
 
-def test_sync_processed(requireMocking):
+def test_sync_processed(requireMocking,mocked_10_sample_job):
     tm = TableManager()
+
 
     for i in range(0, 10):
         tracking.create({'body': json.dumps(
@@ -96,7 +99,7 @@ def test_sync_processed(requireMocking):
     assert all(value == str(EXPORTED) for value in samples.values())
 
 
-def test_sync_currently_processing(requireMocking):
+def test_sync_currently_processing(requireMocking,mocked_10_sample_job):
     tm = TableManager()
 
     for i in range(0, 10):
@@ -179,7 +182,7 @@ def test_sync_currently_processing(requireMocking):
     assert all(value == str(REPLACED) for value in load_job_samples("12345").values())
 
 
-def test_sync_failed(requireMocking):
+def test_sync_failed(requireMocking,mocked_10_sample_job):
     tm = TableManager()
 
     for i in range(0, 10):

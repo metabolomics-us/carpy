@@ -43,7 +43,8 @@ def calculate_job_state(job: str) -> Optional[str]:
     job_definition = load_job_samples(job=job)
     job_config = get_job_config(job=job)
 
-    if job_definition is not None:
+    if job_definition is not None and job_config is not None:
+
 
         # 3. go over all samples
 
