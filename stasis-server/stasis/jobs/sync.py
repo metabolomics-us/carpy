@@ -5,7 +5,7 @@ from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR
 from stasis.service.Status import *
 from stasis.tables import load_job_samples, update_job_state, \
-    get_job_state, load_jobs_for_sample
+    get_job_state, load_jobs_for_sample, get_job_config
 
 
 def sync_sample(sample: str):
@@ -41,6 +41,7 @@ def calculate_job_state(job: str) -> Optional[str]:
 
     # 2. load job definition
     job_definition = load_job_samples(job=job)
+    job_config = get_job_config(job=job)
 
     if job_definition is not None:
 
@@ -59,22 +60,22 @@ def calculate_job_state(job: str) -> Optional[str]:
 
         # ALL ARE EXPORTED OR FAILED
         elif states.count(EXPORTED) + states.count(FAILED) == len(states):
-            update_job_state(job=job_definition['id'], state=EXPORTED)
+            update_job_state(job=job_config['id'], state=EXPORTED)
             print("job should now be exported")
             return EXPORTED
         # ANY ARE SCHEDULED
         elif states.count(SCHEDULED) == len(states):
-            update_job_state(job=job_definition['id'], state=SCHEDULED)
+            update_job_state(job=job_config['id'], state=SCHEDULED)
             print("job still in state scheduled")
             return SCHEDULED
         # ALL ARE FAILED
         elif states.count(FAILED) == len(states):
-            update_job_state(job=job_definition['id'], state=FAILED)
+            update_job_state(job=job_config['id'], state=FAILED)
             print("job is failed, no sample was successful")
             return FAILED
         # otherwise we must be processing
         else:
-            update_job_state(job=job_definition['id'], state=PROCESSING)
+            update_job_state(job=job_config['id'], state=PROCESSING)
             print("job is in state processing right now")
             return PROCESSING
     else:
