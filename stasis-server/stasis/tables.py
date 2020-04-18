@@ -10,7 +10,7 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ParamValidationError
 
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
-from stasis.service.Status import States, FAILED, SCHEDULED, EXPORTED
+from stasis.service.Status import States, FAILED, EXPORTED
 
 
 class TableManager:
@@ -365,18 +365,19 @@ def update_job_state(job: str, state: str, reason: Optional[str] = None):
         item = result['Items'][0]
         old_state = item['state']
 
-        item['state'] = str(state)
-        ts = _compute_state_change(item, old_state, state)
+        if old_state != state:
+            item['state'] = str(state)
+            ts = _compute_state_change(item, old_state, state)
 
-        item['timestamp'] = ts
-        item["reason"] = reason
+            item['timestamp'] = ts
+            item["reason"] = reason
 
-        body = tm.sanitize_json_for_dynamo(item)
-        saved = trktable.put_item(Item=body)  # save or update our item
+            body = tm.sanitize_json_for_dynamo(item)
+            saved = trktable.put_item(Item=body)  # save or update our item
 
-        saved = saved['ResponseMetadata']
+            saved = saved['ResponseMetadata']
 
-        saved['statusCode'] = saved['HTTPStatusCode']
+            saved['statusCode'] = saved['HTTPStatusCode']
 
         return get_job_state(job)
     else:
@@ -390,6 +391,12 @@ def _compute_state_change(item, old_state, state):
         item['durations'] = {}
     if 'past_states' not in item:
         item['past_states'] = []
+
+    if old_state in item['past_states']:
+        # already got this state no need to refresh it
+        # todo correct would be to replace it and update
+        # the timestamp accordingly
+        return ts
     item['past_states'].append(old_state)
     item['durations']["{}->{}".format(old_state, item['state'])] = {
         "seconds": (float(ts) - float(item['timestamp'])) / 1000,
@@ -679,7 +686,7 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None)
     else:
         item = {
             'id': sample,
-            'sample': state,
+            'sample': sample,
             'experiment': experiment,
             'status': []
         }
