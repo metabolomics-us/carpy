@@ -313,7 +313,7 @@ def schedule_processing_to_fargate(event, context):
     except Exception as e:
         print(body)
         traceback.print_exc()
-        create({"body": json.dumps({'sample': body['sample'], 'status': 'failed'})}, {})
+        create({"body": json.dumps({'sample': body['sample'], 'status': FAILED, 'reason' : str(e)})}, {})
 
         return {
             'body': json.dumps(str(e)),

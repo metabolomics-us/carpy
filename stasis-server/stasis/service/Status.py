@@ -1,3 +1,5 @@
+from typing import Optional
+
 FAILED = 'failed'
 
 FINISHED = 'finished'
@@ -66,7 +68,7 @@ class States:
             FAILED: 900
         }
 
-    def priority(self, state):
+    def priority(self, state) -> Optional[int]:
         """
         associated priority
         :param state:
@@ -77,7 +79,7 @@ class States:
         else:
             return None
 
-    def valid(self, state):
+    def valid(self, state) -> bool:
         """
             is the state valid
             :param state:

@@ -94,7 +94,12 @@ __TRACKING_SCHEMA__ = {
         'fileHandle': {
             'type': 'string',
             'minLength': 1
-        }},
+        },
+        "reason": {
+            'type': 'string',
+            'minLength': 1
+        }
+    },
     'required': ['sample', 'status']
 }
 

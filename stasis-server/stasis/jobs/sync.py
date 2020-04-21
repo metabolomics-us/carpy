@@ -1,6 +1,3 @@
-import json
-from typing import Optional
-
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR
 from stasis.service.Status import *
@@ -31,13 +28,17 @@ def calculate_job_state(job: str) -> Optional[str]:
     # to avoid expensive synchronization
     state = get_job_state(job=job)
 
+    s = States()
     print("current job state for {} is {}".format(job, state))
     if state is None:
         print(f"no job state found -> forcing scheduled state for {job}")
-        update_job_state(job=job, state=SCHEDULED, reason="job was forced to state scheduled due to no state being available!")
-    elif state in [AGGREGATED, FAILED]:
+        update_job_state(job=job, state=SCHEDULED,
+                         reason="job was forced to state scheduled due to no state being available!")
+    elif s.priority(state) >= s.priority(AGGREGATING_SCHEDULING):
         print(f"job was already in a finished state {job}, state {state} and so needs no further analysis")
         return state
+    else:
+        print(f"job {job} was in state {state}, which requires it to get it's final state analyzed")
 
     # 2. load job definition
     job_definition = load_job_samples(job=job)
@@ -51,8 +52,7 @@ def calculate_job_state(job: str) -> Optional[str]:
         for sample, tracking_state in job_definition.items():
             states.append(tracking_state)
 
-        print("received sample states for job are:")
-        print(json.dumps(states, indent=4))
+        print("received sample states for job are: {}".format(states))
         if len(states) == 0:
             # bigger issue nothing found to synchronize
             print("no states found!")
@@ -60,17 +60,20 @@ def calculate_job_state(job: str) -> Optional[str]:
 
         # ALL ARE EXPORTED OR FAILED
         elif states.count(EXPORTED) + states.count(FAILED) == len(states):
-            update_job_state(job=job_config['id'], state=EXPORTED, reason="job state was set to exported due to all samples having been exported or failed")
+            update_job_state(job=job_config['id'], state=EXPORTED,
+                             reason="job state was set to exported due to all samples having been exported or failed")
             print("job should now be exported")
             return EXPORTED
         # ANY ARE SCHEDULED
         elif states.count(SCHEDULED) == len(states):
-            update_job_state(job=job_config['id'], state=SCHEDULED, reason="job is in state scheduled, due to all samples being in state scheduled")
+            update_job_state(job=job_config['id'], state=SCHEDULED,
+                             reason="job is in state scheduled, due to all samples being in state scheduled")
             print("job still in state scheduled")
             return SCHEDULED
         # ALL ARE FAILED
         elif states.count(FAILED) == len(states):
-            update_job_state(job=job_config['id'], state=FAILED, reason="job is in state failed, due to all samples being in state failed")
+            update_job_state(job=job_config['id'], state=FAILED,
+                             reason="job is in state failed, due to all samples being in state failed")
             print("job is failed, no sample was successful")
             return FAILED
         # otherwise we must be processing
@@ -89,7 +92,7 @@ def sync_job(job):
     else:
         resource = DEFAULT_PROCESSING_BACKEND
     if state == EXPORTED:
-        print("schedule aggregation for job {}".format(job['id']))
+        print("schedule aggregation for job {}, due to state being {}".format(job['id'], state))
         update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING, reason="synchronization triggered")
         schedule_to_queue({"job": job['id'], "env": job['env'], "profile": job['profile']},
                           service=SECURE_CARROT_AGGREGATOR,

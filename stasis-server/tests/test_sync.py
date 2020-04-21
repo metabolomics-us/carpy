@@ -1,7 +1,8 @@
 from stasis.bucket.triggers import bucket_zip
 from stasis.jobs.schedule import schedule_job
-from stasis.service.Status import EXPORTED, PROCESSING, FAILED, AGGREGATING_SCHEDULING, SCHEDULED, AGGREGATED
-from stasis.tables import save_sample_state, get_job_state, load_job_samples
+from stasis.service.Status import EXPORTED, PROCESSING, FAILED, AGGREGATING_SCHEDULING, SCHEDULED, AGGREGATED, \
+    AGGREGATING_SCHEDULED, AGGREGATED_AND_UPLOADED
+from stasis.tables import save_sample_state, get_job_state
 
 
 def test_calculate_job_state_with_zip_upload(requireMocking, mocked_10_sample_job):
@@ -28,7 +29,7 @@ def test_calculate_job_state_with_zip_upload(requireMocking, mocked_10_sample_jo
     save_sample_state(sample="abc_9", state=EXPORTED)
     # this should set the job state to aggregation scheduling now
     state = get_job_state("12345")
-    assert state == AGGREGATING_SCHEDULING
+    assert state == AGGREGATING_SCHEDULED
 
     # trigger an upload to the zip bucket
     bucket_zip(
@@ -47,7 +48,7 @@ def test_calculate_job_state_with_zip_upload(requireMocking, mocked_10_sample_jo
 
     # job should now be aggregated
     state = get_job_state("12345")
-    assert state == AGGREGATED
+    assert state == AGGREGATED_AND_UPLOADED
 
 
 def test_calculate_job_state(requireMocking, mocked_10_sample_job):
@@ -74,7 +75,7 @@ def test_calculate_job_state(requireMocking, mocked_10_sample_job):
     save_sample_state(sample="abc_9", state=EXPORTED)
     # this should set the job state to aggregation scheduling now
     state = get_job_state("12345")
-    assert state == AGGREGATING_SCHEDULING
+    assert state == AGGREGATING_SCHEDULED
 
 
 def test_calculate_job_state_2(requireMocking, mocked_10_sample_job):
@@ -108,4 +109,4 @@ def test_calculate_job_state_2(requireMocking, mocked_10_sample_job):
     save_sample_state(sample="abc_9", state=EXPORTED)
     # this should set the job state to aggregation scheduling now
     state = get_job_state("12345")
-    assert state == AGGREGATING_SCHEDULING
+    assert state == AGGREGATING_SCHEDULED

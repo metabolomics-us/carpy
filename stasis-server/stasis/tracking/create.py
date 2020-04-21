@@ -23,7 +23,9 @@ def triggerEvent(data):
     item, saved = save_sample_state(
         sample=data['sample'],
         state=data['status'],
-        fileHandle=data.get('fileHandle', None)
+        fileHandle=data.get('fileHandle', None),
+        reason=data.get('failed', None)
+
     )
 
     return {

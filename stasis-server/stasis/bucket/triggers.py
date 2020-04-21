@@ -16,7 +16,8 @@ def bucket_json(event, context):
 
         print("received key {}".format(k))
         sample = get_file_by_handle(k)
-        result = save_sample_state(sample=sample, state=EXPORTED, fileHandle=k)
+        result = save_sample_state(sample=sample, state=EXPORTED, fileHandle=k,
+                                   reason="processed file was uploaded to the bucket")
 
         if result is None:
             print("we were not able to update the sample: {}".format(sample))
@@ -25,7 +26,7 @@ def bucket_json(event, context):
             jobs = load_jobs_for_sample(sample)
 
             if jobs is not None:
-                print("wound {} associated jobs for this sample".format(len(jobs)))
+                print("found {} associated jobs for this sample".format(len(jobs)))
                 for job in jobs:
                     from stasis.jobs.sync import sync_job
                     sync_job(job=job)

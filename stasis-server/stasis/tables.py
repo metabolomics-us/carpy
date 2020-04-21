@@ -356,6 +356,7 @@ def update_job_state(job: str, state: str, reason: Optional[str] = None):
 
     tm = TableManager()
     trktable = tm.get_job_state_table()
+    states = States()
 
     result = trktable.query(
         KeyConditionExpression=Key('id').eq(job)
@@ -365,6 +366,9 @@ def update_job_state(job: str, state: str, reason: Optional[str] = None):
         item = result['Items'][0]
         old_state = item['state']
 
+        if states.priority(old_state) > states.priority(state):
+            print(f"race condition, something already updated this job {job} to newer state!")
+            return get_job_state(job)
         if old_state != state:
             item['state'] = str(state)
             ts = _compute_state_change(item, old_state, state)
@@ -533,7 +537,8 @@ def _set_sample_job_state(body: dict):
     body = tm.sanitize_json_for_dynamo(body)
     saved = trktable.put_item(Item=body)  # save or update our item
 
-    save_sample_state(sample=body['sample'], state=body['state'])
+    save_sample_state(sample=body['sample'], state=body['state'], reason=body.get('reason'),
+                      fileHandle=body.get('fileHandle'))
     saved = saved['ResponseMetadata']
 
     saved['statusCode'] = saved['HTTPStatusCode']
@@ -658,7 +663,7 @@ def get_file_by_handle(fileHandle: str) -> Optional[str]:
     raise Exception("not supported file handle!")
 
 
-def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None):
+def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None, reason: Optional[str] = None):
     status_service = States()
     if not status_service.valid(state):
         raise Exception("please provide the a valid 'state', you provided {}".format(state))
@@ -673,11 +678,13 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None)
     new_status = {
         'time': timestamp,
         'value': state.lower(),
-        'priority': status_service.priority(state)
+        'priority': status_service.priority(state),
     }
 
     if fileHandle is not None:
         new_status['fileHandle'] = fileHandle
+    if reason is not None:
+        new_status['reason'] = reason
 
     if resp['Items']:
         # only keep elements with a lower priority

@@ -299,7 +299,7 @@ def test_schedule_job(requireMocking, backend):
     validate_backened(backend)
 
     state = get_job_state("test_job")
-    assert state in [AGGREGATING,AGGREGATING_SCHEDULING] # kinda buggy
+    assert state in [AGGREGATING,AGGREGATING_SCHEDULED] # kinda buggy
     # simulate the receiving of an aggregation event
 
 
@@ -438,7 +438,7 @@ def test_schedule_job_override_tracking_data(requireMocking, backend):
     validate_backened(backend)
 
     state = get_job_state("test_job")
-    assert state in [AGGREGATING,AGGREGATING_SCHEDULING] # kinda buggy
+    assert state in [AGGREGATING,AGGREGATING_SCHEDULED] # kinda buggy
 
     # simulate the receiving of an aggregation event
 
