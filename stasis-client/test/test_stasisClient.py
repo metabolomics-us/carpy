@@ -55,7 +55,7 @@ def test_get_states(stasis_cli):
 
     print(result)
     assert result is not None
-    assert len(result) == 18
+    assert len(result) == 19
     assert 'failed' in result
 
 
@@ -162,14 +162,17 @@ def test_download_result(stasis_cli, api_token):
     stasis_cli.schedule_job(test_id)
     origin = time()
     duration = 0
-    while duration < 900000:
-        state = stasis_cli.load_job_state(test_id)['job_state']
-        print(f"current state for job {test_id} is {state} and duration is {duration}")
-        if state == 'aggregated_and_uploaded':
-            break
+    while duration < 1200000:
+        try:
+            state = stasis_cli.load_job_state(test_id)['job_state']
+            print(f"current state for job {test_id} is {state} and duration is {duration}")
+            if state == 'aggregated_and_uploaded':
+                break
 
-        sleep(10)
-        duration = time() - origin
+            sleep(30)
+            duration = time() - origin
+        except:
+            pass
 
     # side test to ensure results are generated and can be downloaded
     stasis_cli.sample_result_as_json('B10A_SA8922_TeddyLipids_Pos_122WP')

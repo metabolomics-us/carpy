@@ -13,7 +13,7 @@ class Parser:
 
     def __init__(self, stasisClient: StasisClient, mapping: dict = None):
         parser = argparse.ArgumentParser(prog="lcb")
-        parser.add_argument("--json", action="store_rue", help="try to print everything as JSON")
+        parser.add_argument("--json", action="store_true", help="try to print everything as JSON")
 
         sub = parser.add_subparsers(help="this contains all the different scopes, available to LCB")
 
@@ -40,7 +40,7 @@ class Parser:
 
         result = vars(self.parser.parse_args(args))
 
-        if len(result) == 0:
+        if len(result) == 1:
             self.parser.print_usage()
         elif 'func' in result:
             result['func'](result)
