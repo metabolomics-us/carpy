@@ -275,7 +275,6 @@ class StasisClient:
         :return:
         """
         result = self.http.get(f"{self._url}/job/result/{job}", headers=self._header)
-        print(result)
         if result.status_code == 503:
             return None
         elif result.status_code != 200:

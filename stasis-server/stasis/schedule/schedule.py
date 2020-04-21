@@ -8,8 +8,8 @@ from jsonschema import validate, ValidationError
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schema import __SCHEDULE__
-from stasis.service.Status import AGGREGATING, FAILED
-from stasis.tables import update_job_state, get_job_config
+from stasis.service.Status import FAILED
+from stasis.tables import update_job_state
 from stasis.tracking.create import create
 
 SERVICE = "stasis-service"
@@ -201,7 +201,6 @@ def schedule_aggregation_to_fargate(param, param1):
 
         response = send_to_fargate(overrides, task_name)
 
-        update_job_state(job=job, state=AGGREGATING)
         print(f'Response: {response}')
         return {
             'statusCode': 200,
@@ -209,7 +208,7 @@ def schedule_aggregation_to_fargate(param, param1):
             'headers': __HTTP_HEADERS__
         }
     except Exception as e:
-        update_job_state(job=body['job'], state=FAILED)
+        update_job_state(job=body['job'], state=FAILED, reason="job failed to aggregate due to %".format(str(e)))
         raise e
 
 

@@ -34,7 +34,7 @@ def calculate_job_state(job: str) -> Optional[str]:
     print("current job state for {} is {}".format(job, state))
     if state is None:
         print(f"no job state found -> forcing scheduled state for {job}")
-        update_job_state(job=job, state=SCHEDULED)
+        update_job_state(job=job, state=SCHEDULED, reason="job was forced to state scheduled due to no state being available!")
     elif state in [AGGREGATED, FAILED]:
         print(f"job was already in a finished state {job}, state {state} and so needs no further analysis")
         return state
@@ -44,7 +44,6 @@ def calculate_job_state(job: str) -> Optional[str]:
     job_config = get_job_config(job=job)
 
     if job_definition is not None and job_config is not None:
-
 
         # 3. go over all samples
 
@@ -61,22 +60,22 @@ def calculate_job_state(job: str) -> Optional[str]:
 
         # ALL ARE EXPORTED OR FAILED
         elif states.count(EXPORTED) + states.count(FAILED) == len(states):
-            update_job_state(job=job_config['id'], state=EXPORTED)
+            update_job_state(job=job_config['id'], state=EXPORTED, reason="job state was set to exported due to all samples having been exported or failed")
             print("job should now be exported")
             return EXPORTED
         # ANY ARE SCHEDULED
         elif states.count(SCHEDULED) == len(states):
-            update_job_state(job=job_config['id'], state=SCHEDULED)
+            update_job_state(job=job_config['id'], state=SCHEDULED, reason="job is in state scheduled, due to all samples being in state scheduled")
             print("job still in state scheduled")
             return SCHEDULED
         # ALL ARE FAILED
         elif states.count(FAILED) == len(states):
-            update_job_state(job=job_config['id'], state=FAILED)
+            update_job_state(job=job_config['id'], state=FAILED, reason="job is in state failed, due to all samples being in state failed")
             print("job is failed, no sample was successful")
             return FAILED
         # otherwise we must be processing
         else:
-            update_job_state(job=job_config['id'], state=PROCESSING)
+            update_job_state(job=job_config['id'], state=PROCESSING, reason="job is in state processing")
             print("job is in state processing right now")
             return PROCESSING
     else:
@@ -91,10 +90,11 @@ def sync_job(job):
         resource = DEFAULT_PROCESSING_BACKEND
     if state == EXPORTED:
         print("schedule aggregation for job {}".format(job['id']))
-        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING)
+        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING, reason="synchronization triggered")
         schedule_to_queue({"job": job['id'], "env": job['env'], "profile": job['profile']},
                           service=SECURE_CARROT_AGGREGATOR,
                           resource=resource)
-        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING)
+        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULED,
+                         reason="synchronization was triggered and completed")
     else:
         print(f"state {state} for job {job['id']} did not justify triggering an aggregation.")
