@@ -6,6 +6,8 @@ import boto3
 import boto3.s3
 import requests
 import simplejson as json
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 
 class StasisClient:
@@ -44,14 +46,22 @@ class StasisClient:
             'x-api-key': f'{self._token}'
         }
 
+        retry_strategy = Retry(
+            total=100,
+            status_forcelist=[429, 500, 502, 503, 504],
+            method_whitelist=["HEAD", "GET", "OPTIONS"]
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.http = requests.Session()
+
     def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
                                         resource: str = "FARGATE"):
         """
         schedules a sample for dataprocessing
         """
-        result = requests.post(f"{self._url}/schedule",
-                               json={'sample': sample_name, 'env': env, 'method': method, 'profile': profile,
-                                     'resource': resource, 'secured': True}, headers=self._header)
+        result = self.http.post(f"{self._url}/schedule",
+                                json={'sample': sample_name, 'env': env, 'method': method, 'profile': profile,
+                                      'resource': resource, 'secured': True}, headers=self._header)
 
         if result.status_code != 200:
             raise Exception("scheduling failed!")
@@ -62,7 +72,7 @@ class StasisClient:
         """
         checks if the raw data exist
         """
-        result = requests.head(f"{self._url}/sample/{sample_name}")
+        result = self.http.head(f"{self._url}/sample/{sample_name}")
 
         if result.status_code == 200:
             return True
@@ -78,7 +88,7 @@ class StasisClient:
              data: the data object containing the aquisiton description
         Returns:
         """
-        result = requests.post(f'{self._url}/acquisition', json=data, headers=self._header)
+        result = self.http.post(f'{self._url}/acquisition', json=data, headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result
@@ -92,7 +102,7 @@ class StasisClient:
 
         Returns:
         """
-        result = requests.get(f'{self._url}/acquisition/{sample_name}', headers=self._header)
+        result = self.http.get(f'{self._url}/acquisition/{sample_name}', headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
@@ -114,7 +124,7 @@ class StasisClient:
                     }
                 ]
         """
-        result = requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
+        result = self.http.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
 
@@ -128,7 +138,7 @@ class StasisClient:
         returns the correct file handle for the given sample name in the system
         """
 
-        result = requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
+        result = self.http.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
 
@@ -158,7 +168,7 @@ class StasisClient:
         if file_handle is not None:
             data['fileHandle'] = file_handle
 
-        result = requests.post(f'{self._url}/tracking', json=data, headers=self._header)
+        result = self.http.post(f'{self._url}/tracking', json=data, headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result
@@ -171,7 +181,7 @@ class StasisClient:
         :param sample_name:
         :return:
         """
-        result = requests.get(f"{self._url}/result/{sample_name}", headers=self._header)
+        result = self.http.get(f"{self._url}/result/{sample_name}", headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
@@ -180,7 +190,7 @@ class StasisClient:
         return self._url
 
     def get_states(self):
-        result = requests.get(f"{self._url}/status", headers=self._header)
+        result = self.http.get(f"{self._url}/status", headers=self._header)
 
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
@@ -192,7 +202,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/job/{job_id}", headers=self._header)
+        result = self.http.get(f"{self._url}/job/{job_id}", headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
@@ -203,7 +213,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/job/status/{job_id}", headers=self._header)
+        result = self.http.get(f"{self._url}/job/status/{job_id}", headers=self._header)
         if result.status_code != 200:
             raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
@@ -213,7 +223,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/data/raw", headers=self._header)
+        result = self.http.get(f"{self._url}/data/raw", headers=self._header)
         if result.status_code != 200:
             raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
@@ -223,7 +233,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/data/zip", headers=self._header)
+        result = self.http.get(f"{self._url}/data/zip", headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
@@ -233,7 +243,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/data/json", headers=self._header)
+        result = self.http.get(f"{self._url}/data/json", headers=self._header)
         if result.status_code != 200:
             raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
@@ -264,7 +274,7 @@ class StasisClient:
         #TODO refactor to use buckets instead, due to very large file sizes
         :return:
         """
-        result = requests.get(f"{self._url}/job/result/{job}", headers=self._header)
+        result = self.http.get(f"{self._url}/job/result/{job}", headers=self._header)
         print(result)
         if result.status_code == 503:
             return None
@@ -278,7 +288,7 @@ class StasisClient:
         :param job:
         :return:
         """
-        response = requests.post(f"{self._url}/job/store", json=job, headers=self._header)
+        response = self.http.post(f"{self._url}/job/store", json=job, headers=self._header)
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
@@ -289,7 +299,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        response = requests.put(f"{self._url}/job/schedule/{job_id}", headers=self._header)
+        response = self.http.put(f"{self._url}/job/schedule/{job_id}", headers=self._header)
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason}")

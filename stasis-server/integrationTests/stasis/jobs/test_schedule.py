@@ -214,7 +214,7 @@ def test_schedule_job_integration(api_token):
 
         print("current job state for {}".format(test_id))
         print(json.dumps(result, indent=4))
-        if result['job_state'] == 'aggregated':
+        if result['job_state'] == 'aggregated_and_uploaded':
             exspectation_met = True
 #           assert result['sample_states'].get('exported', 0) == 2
 #           assert result['sample_states'].get('failed', 0) == 1
@@ -288,7 +288,7 @@ def test_schedule_job_integration_no_metadata_single_sample(api_token):
         result = json.loads(response.content)
 
         print(result)
-        if result['job_state'] == 'aggregated':
+        if result['job_state'] == 'aggregated_and_uploaded':
             exspectation_met = True
             assert result['sample_states']['exported'] == 2
             assert result['sample_states']['failed'] == 1
@@ -406,7 +406,7 @@ def test_schedule_job_integration_no_metadata(api_token):
         result = json.loads(response.content)
 
         print(result)
-        if result['job_state'] == 'aggregated':
+        if result['job_state'] == 'aggregated_and_uploaded':
             exspectation_met = True
             assert result['sample_states']['exported'] == 2
             assert result['sample_states']['failed'] == 1

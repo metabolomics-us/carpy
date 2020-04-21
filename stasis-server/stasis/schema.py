@@ -115,11 +115,6 @@ __JOB_SCHEMA__ = {
                 'minLength': 1
             }
         },
-        'status': {
-            'type': 'string',
-            'minLength': 1
-
-        },
         'method': {
             'type': 'string',
             'minLength': 1

@@ -1,4 +1,4 @@
-from stasis.service.Status import AGGREGATED, EXPORTED
+from stasis.service.Status import AGGREGATED_AND_UPLOADED, EXPORTED
 from stasis.tables import update_job_state, save_sample_state, get_file_by_handle, load_jobs_for_sample
 
 
@@ -51,7 +51,7 @@ def bucket_zip(event, context):
             job = k.replace(".zip", "")
             print(f"belongs to job {job}")
 
-            result = update_job_state(job=job, state=AGGREGATED, reason=f"client uploaded file {k}")
+            result = update_job_state(job=job, state=AGGREGATED_AND_UPLOADED, reason=f"client uploaded file {k}")
 
             if result is None:
                 print("we were not able to update the job")

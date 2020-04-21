@@ -55,7 +55,7 @@ def test_get_states(stasis_cli):
 
     print(result)
     assert result is not None
-    assert len(result) == 17
+    assert len(result) == 18
     assert 'failed' in result
 
 
@@ -165,7 +165,7 @@ def test_download_result(stasis_cli, api_token):
     while duration < 900000:
         state = stasis_cli.load_job_state(test_id)['job_state']
         print(f"current state for job {test_id} is {state} and duration is {duration}")
-        if state == 'aggregated':
+        if state == 'aggregated_and_uploaded':
             break
 
         sleep(10)
