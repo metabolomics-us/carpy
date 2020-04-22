@@ -17,6 +17,8 @@ def sync_sample(sample: str):
         print("found {} associated jobs for this sample".format(len(jobs)))
         for job in jobs:
             sync_job(job=job)
+    else:
+        print("no associated job found for sample {}".format(sample))
 
 
 def calculate_job_state(job: str) -> Optional[str]:
@@ -85,7 +87,12 @@ def calculate_job_state(job: str) -> Optional[str]:
         raise Exception("we did not find a job definition for {}, Please investigate".format(job))
 
 
-def sync_job(job):
+def sync_job(job: dict):
+    print("synchronizing job: {}".format(job))
+    if job is None:
+        print("warning a none job was provided, we ignore this one!")
+        return
+
     state = calculate_job_state(job['id'])
     if 'resource' in job:
         resource = Backend(job['resource'])

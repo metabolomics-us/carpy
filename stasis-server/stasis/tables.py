@@ -732,6 +732,7 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
             from stasis.jobs.sync import sync_sample
             ##
             # TODO push this to a queue to increase responsivness
+            # or utilize dynamo db triggers instead
             sync_sample(sample)
         else:
             print("triggered state {} did not require job synchronization for sample {}".format(state, sample))
