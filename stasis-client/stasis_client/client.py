@@ -47,10 +47,10 @@ class StasisClient:
         }
 
         retry_strategy = Retry(
-            total=100,
+            total=500,
             status_forcelist=[429, 500, 502, 503, 504],
             method_whitelist=["HEAD", "GET", "OPTIONS"],
-            backoff_factor=0.1
+            backoff_factor=0.3
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.http = requests.Session()

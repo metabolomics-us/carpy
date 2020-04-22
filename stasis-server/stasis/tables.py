@@ -567,8 +567,12 @@ def load_jobs_for_sample(sample: str) -> Optional[List[dict]]:
     if "Items" in result and len(result['Items']) > 0:
         data = []
         for x in result['Items']:
-            job_id = x['job']
-            data.append(get_job_config(job=job_id))
+            try:
+                job_id = x['job']
+                data.append(get_job_config(job=job_id))
+            except Exception as e:
+                print("might be related to a job [{}] not found {}".format(x, str(e)))
+                pass
 
         return data
     else:

@@ -98,8 +98,11 @@ def test_sample_tracking_data(stasis_cli, test_sample):
     ]
 
     for x in data:
+        print(x)
         stasis_cli.sample_state_update(state=x['value'], sample_name=test_sample['sample'], file_handle=x['fileHandle'])
+        print("done")
 
+    print("sample stored {}".format(test_sample))
     return data
 
 
@@ -170,7 +173,7 @@ def test_sample_result(stasis_cli, test_sample, stasis_token, stasis_url):
 
 
 @pytest.fixture()
-def test_job(stasis_cli):
+def test_job(stasis_cli, test_sample, ):
     test_id = "test_job_{}".format(time())
 
     job = {
