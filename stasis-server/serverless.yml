@@ -53,6 +53,18 @@ provider:
   deploymentBucket:
     name: "lambdas-stasis"
 
+  ##
+  # defines all generat environment variables for lambdas
+  environment:
+    current_stage: ${self:custom.stage}
+    schedule_queue: ${self:custom.scheduleQueue}
+    trackingTable: ${self:custom.trackingTable}
+    acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+    aggregation_queue: ${self:custom.aggregationQueue}
+    jobStateTable: ${self:custom.jobStateTable}
+    jobTrackingTable: ${self:custom.jobTrackingTable}
+    resultTable: ${self:custom.resultTable}
+    dataBucket: ${self:custom.dataJSONBucketName}
 ############################################################################################
 #custom configuration settings
 ############################################################################################
@@ -174,13 +186,6 @@ functions:
           documentation:
             summary: synchronizes the samples with the job state table
 
-    environment:
-      current_stage: ${self:custom.stage}
-      schedule_queue: ${self:custom.scheduleQueue}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
 
   fargate_job_monitor:
     handler: stasis/jobs/schedule.monitor_jobs
@@ -193,15 +198,7 @@ functions:
           documentation:
             summary: synchronizes the job state
 
-    environment:
-      current_stage: ${self:custom.stage}
-      schedule_queue: ${self:custom.scheduleQueue}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
-      aggregation_queue: ${self:custom.aggregationQueue}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
-      dataBucket: ${self:custom.dataJSONBucketName}
+
   fargate_tasks:
     handler: stasis/schedule/schedule.current_tasks
     events:
@@ -247,9 +244,6 @@ functions:
             parameter:
               paths:
                 sample: true
-    #defines to which topic we want to connect
-    environment:
-      resultTable: ${self:custom.resultTable}
 
   #fetches an result record
   resultCreate:
@@ -280,12 +274,6 @@ functions:
           documentation:
             summary: creates a new tracking record in the database for the given sample
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
   #fetches an existing tracking record from the system
   trackingGet:
     handler: stasis/tracking/get.get
@@ -302,10 +290,6 @@ functions:
               paths:
                 sample: true
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches an existing tracking record from the system
   trackingDelete:
@@ -322,11 +306,6 @@ functions:
             parameter:
               paths:
                 sample: true
-
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches a list of samples in an experiment
   trackingExperiment:
@@ -368,10 +347,7 @@ functions:
                 experiment: true
                 psize: true
                 lastSample: true
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
+
 
   #fetches an acquisition record
   acquisitionGet:
@@ -388,10 +364,6 @@ functions:
                 sample: true
           documentation:
             summary: fetches the acquisition information for the given sample
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches an acquisition record
   acquisitionCreate:
@@ -405,10 +377,6 @@ functions:
           documentation:
             summary: creates a new record with the given acquisition information
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #imports data from MiniX
   acquisitionCreateFromMinix:
@@ -422,11 +390,6 @@ functions:
           documentation:
             summary: this generates an acquisition table based on past minix study data and should be avoided!
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
-
   #schedule data to stasis, for handling the processing on the backend
   schedule:
     handler: stasis/schedule/schedule.schedule
@@ -439,11 +402,6 @@ functions:
           documentation:
             summary: schedules a new processing tasks to the queue
 
-    #defines to which topic we want to connect
-    environment:
-      schedule_queue: ${self:custom.scheduleQueue}
-
-      #returns the count of scheduled tasks in the fargate cluster
 
   # fetches the list of tracking statuses
   statusGet:
@@ -456,11 +414,6 @@ functions:
           cors: true
           documentation:
             summary: returns all possible status names and their priority
-
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #checks existence of a raw data file
   fileExists:
@@ -511,11 +464,6 @@ functions:
           documentation:
             summary: updates the tracking status of a sample with the associated job
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
   #fetches an existing tracking record from the system
   job_tracking_get:
     handler: stasis/jobs/tracking.get
@@ -543,9 +491,7 @@ functions:
 
     #defines to which topic we want to connect
     environment:
-      trackingTable: ${self:custom.trackingTable}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
+
   # computes the current state of the given job
   job_tracking_status:
     handler: stasis/jobs/tracking.status
@@ -755,7 +701,6 @@ functions:
 
     environment:
       dataBucket: ${self:custom.dataZipBucketName}
-      jobStateTable: ${self:custom.jobStateTable}
 
 
   json_bucket_triggers:
@@ -772,12 +717,5 @@ functions:
 
     timeout: 900
     environment:
-      current_stage: ${self:custom.stage}
-      schedule_queue: ${self:custom.scheduleQueue}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
-      aggregation_queue: ${self:custom.aggregationQueue}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
       dataBucket: ${self:custom.dataJSONBucketName}
 

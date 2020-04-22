@@ -21,6 +21,7 @@ def test_get_status_map(requireMocking):
               AGGREGATING_SCHEDULED: 549,
               AGGREGATING: 550,
               AGGREGATED: 590,
+              AGGREGATED_AND_UPLOADED: 591,
               FINISHED: 600,
               FAILED: 900
               }

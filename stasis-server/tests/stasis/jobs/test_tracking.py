@@ -142,7 +142,6 @@ def test_status(requireMocking):
     result = tracking.status({
         "pathParameters": {
             "job": "123456",
-            "sync": True
         }
     }, {})
 
