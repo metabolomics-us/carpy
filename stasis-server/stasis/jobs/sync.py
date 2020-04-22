@@ -1,5 +1,7 @@
+import json
+
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR, _get_queue
 from stasis.service.Status import *
 from stasis.tables import load_job_samples, update_job_state, \
     get_job_state, load_jobs_for_sample, get_job_config
@@ -11,13 +13,27 @@ def sync_sample(sample: str):
     :param sample:
     :return:
     """
+    # get topic refrence
+    import boto3
+    client = boto3.client('sqs')
+    # if topic exists, we just reuse it
+    arn = _get_queue(client, resource=Backend.FARGATE, queue_name="sample_sync_queue")
+    serialized = json.dumps({'sample' : sample }, use_decimal=True)
+    # submit item to queue for routing to the correct persistence
+    result = client.send_message(
+        QueueUrl=arn,
+        MessageBody=json.dumps({'default': serialized}),
+    )
+
+def do_sync():
+
+
     jobs = load_jobs_for_sample(sample)
 
     if jobs is not None:
         print("found {} associated jobs for this sample".format(len(jobs)))
         for job in jobs:
             sync_job(job=job)
-
 
 def calculate_job_state(job: str) -> Optional[str]:
     """

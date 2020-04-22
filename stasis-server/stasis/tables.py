@@ -730,8 +730,6 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
         # this should avoid potential dead lock issue
         if state in [FAILED, EXPORTED]:
             from stasis.jobs.sync import sync_sample
-            ##
-            # TODO push this to a queue to increase responsivness
             sync_sample(sample)
         else:
             print("triggered state {} did not require job synchronization for sample {}".format(state, sample))
