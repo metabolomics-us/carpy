@@ -58,7 +58,7 @@ provider:
   environment:
     current_stage: ${self:custom.stage}
     schedule_queue: ${self:custom.scheduleQueue}
-    sample_sync_queue: ${self:custom.sampleSyncQueue}
+    sample_sync_queue: ${self:custom.syncQueue}
     trackingTable: ${self:custom.trackingTable}
     acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
     aggregation_queue: ${self:custom.aggregationQueue}
@@ -292,7 +292,8 @@ functions:
                 - sqs
                 - Ref: AWS::Region
                 - Ref: AWS::AccountId
-                - "${self:custom.syncQueue}"
+                - ${self:custom.syncQueue}
+    timeout: 30
 
   #fetches an existing tracking record from the system
   trackingGet:
@@ -508,9 +509,6 @@ functions:
               paths:
                 job: true
                 sample: true
-
-    #defines to which topic we want to connect
-    environment:
 
   # computes the current state of the given job
   job_tracking_status:
@@ -739,3 +737,10 @@ functions:
     environment:
       dataBucket: ${self:custom.dataJSONBucketName}
 
+
+resources:
+  Resources:
+    MyQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "StasisSyncQueue-${self:custom.stage}"

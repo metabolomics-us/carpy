@@ -16,9 +16,12 @@ def triggerEvent(data):
     try:
         validate(data, __TRACKING_SCHEMA__)
     except ValidationError as e:
-        print(e)
-        print(data)
-        raise
+        return {
+            'body': json.dumps({'error': str(e), 'content': data}),
+            'statusCode': 500,
+            'isBase64Encoded': False,
+            'headers': __HTTP_HEADERS__
+        }
 
     item, saved = save_sample_state(
         sample=data['sample'],

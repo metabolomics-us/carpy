@@ -1,4 +1,4 @@
-import json
+import simplejson as json
 
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR, _get_queue
