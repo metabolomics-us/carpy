@@ -58,6 +58,7 @@ provider:
   environment:
     current_stage: ${self:custom.stage}
     schedule_queue: ${self:custom.scheduleQueue}
+    sample_sync_queue: ${self:custom.sampleSyncQueue}
     trackingTable: ${self:custom.trackingTable}
     acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
     aggregation_queue: ${self:custom.aggregationQueue}
@@ -105,6 +106,10 @@ custom:
   # Queues
   ###
   scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
+
+  ###
+  # used for synchronization
+  syncQueue: "StasisSyncQueue-${self:custom.stage}"
 
   ###
   # this queue will take care of holding all pending aggregation tasks
@@ -157,7 +162,6 @@ package:
 # this section defines all lambda function and triggers
 ############################################################################################
 functions:
-  #no to be confused with the actual queue
   fargate_count:
     handler: stasis/schedule/schedule.scheduled_task_size
     events:
@@ -273,6 +277,22 @@ functions:
           cors: true
           documentation:
             summary: creates a new tracking record in the database for the given sample
+
+  # creates a tracking update
+  # whenever a sample status got pushed
+  tracking_status_update:
+    handler: stasis/jobs/sync.do_sync
+    events:
+      - sqs:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn
+                - aws
+                - sqs
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - "${self:custom.syncQueue}"
 
   #fetches an existing tracking record from the system
   trackingGet:

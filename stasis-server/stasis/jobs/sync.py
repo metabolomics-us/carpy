@@ -18,24 +18,28 @@ def sync_sample(sample: str):
     client = boto3.client('sqs')
     # if topic exists, we just reuse it
     arn = _get_queue(client, resource=Backend.FARGATE, queue_name="sample_sync_queue")
-    serialized = json.dumps({'sample' : sample }, use_decimal=True)
-    # submit item to queue for routing to the correct persistence
-    result = client.send_message(
-        QueueUrl=arn,
-        MessageBody=json.dumps({'default': serialized}),
-    )
-
-def do_sync():
-
+    serialized = json.dumps({'sample': sample}, use_decimal=True)
 
     jobs = load_jobs_for_sample(sample)
 
     if jobs is not None:
         print("found {} associated jobs for this sample".format(len(jobs)))
         for job in jobs:
-            sync_job(job=job)
+            # submit item to queue for routing to the correct persistence
+            result = client.send_message(
+                QueueUrl=arn,
+                MessageBody=json.dumps({'default': serialized}),
+            )
     else:
         print("no associated job found for sample {}".format(sample))
+
+
+def do_sync():
+    """
+    synchronizes the actual job
+    """
+    sync_job(job=job)
+
 
 def calculate_job_state(job: str) -> Optional[str]:
     """
