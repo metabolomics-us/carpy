@@ -1,4 +1,4 @@
-import json
+import simplejson as json
 import os
 
 from stasis.headers import __HTTP_HEADERS__
