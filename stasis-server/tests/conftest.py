@@ -48,6 +48,7 @@ def requireMocking():
 
     os.environ["aggregation_queue"] = "test_aggregation"
     os.environ["schedule_queue"] = "test_schedule"
+    os.environ["sample_sync_queue"] = "test_sync_schedule"
     os.environ["topic"] = "UnitTestTopic"
     os.environ["trackingTable"] = "UnitTrackingTable"
     os.environ["acquisitionTable"] = "UnitAcquisitionTable"
