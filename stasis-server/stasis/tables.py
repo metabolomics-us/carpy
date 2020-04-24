@@ -546,7 +546,7 @@ def _set_sample_job_state(body: dict):
     return saved
 
 
-def load_jobs_for_sample(sample: str) -> Optional[List[dict]]:
+def load_jobs_for_sample(sample: str, id_only=False) -> Optional[List[dict]]:
     """
     loads all jobs for the specified sample
     :param sample:
@@ -569,7 +569,11 @@ def load_jobs_for_sample(sample: str) -> Optional[List[dict]]:
         for x in result['Items']:
             try:
                 job_id = x['job']
-                data.append(get_job_config(job=job_id))
+
+                if id_only is False:
+                    data.append(get_job_config(job=job_id))
+                else:
+                    data.append(job_id)
             except Exception as e:
                 print("might be related to a job [{}] not found {}".format(x, str(e)))
                 pass

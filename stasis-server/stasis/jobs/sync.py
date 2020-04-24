@@ -19,7 +19,7 @@ def sync_sample(sample: str):
     # if topic exists, we just reuse it
     arn = _get_queue(client, resource=Backend.NO_BACKEND_REQUIRED, queue_name="sample_sync_queue")
 
-    jobs = load_jobs_for_sample(sample)
+    jobs = load_jobs_for_sample(sample,id_only=True)
 
     if jobs is not None:
         print("found {} associated jobs for this sample".format(len(jobs)))
@@ -39,14 +39,15 @@ def do_sync(event, context):
     """
     synchronizes the actual job
     """
-
     for message in event['Records']:
-        body = json.loads(json.loads(message['Body'])['default'])
+        print(message)
+        body = json.loads(json.loads(message['body'])['default'])
 
         if 'job' in body:
             job = body['job']
-            print("received job to synchronize: {}".format(job))
-            sync_job(job)
+            config = get_job_config(job)
+            print("received job to synchronize: {}".format(config))
+            sync_job(config)
 
 
 def calculate_job_state(job: str) -> Optional[str]:

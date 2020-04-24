@@ -98,11 +98,10 @@ def test_sample_tracking_data(stasis_cli, test_sample):
     ]
 
     for x in data:
-        print(x)
         stasis_cli.sample_state_update(state=x['value'], sample_name=test_sample['sample'], file_handle=x['fileHandle'])
-        print("done")
 
-    print("sample stored {}".format(test_sample))
+    print("sample stored {} sleeping a bit now for the queue to catch up".format(test_sample))
+    sleep(30)
     return data
 
 

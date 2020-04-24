@@ -65,7 +65,7 @@ class StasisClient:
                                       'resource': resource, 'secured': True}, headers=self._header)
 
         if result.status_code != 200:
-            raise Exception("scheduling failed!")
+            raise Exception(f"scheduling failed for {sample_name} in env {env}, profile {profile}, resource {resource} and method {method}")
         else:
             return result.json()
 
@@ -80,7 +80,7 @@ class StasisClient:
         elif result.status_code == 404:
             return False
         else:
-            raise Exception("error checkign state, status code was {}".format(result.status_code))
+            raise Exception("error checkign state, status code was {} for sample {}".format(result.status_code,sample_name))
 
     def sample_acquisition_create(self, data: dict):
         """
@@ -91,7 +91,7 @@ class StasisClient:
         """
         result = self.http.post(f'{self._url}/acquisition', json=data, headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for data {}".format(data))
         return result
 
     def sample_acquisition_get(self, sample_name):
@@ -105,7 +105,7 @@ class StasisClient:
         """
         result = self.http.get(f'{self._url}/acquisition/{sample_name}', headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for sample {sample_name}")
         return result.json()
 
     def sample_state(self, sample_name: str, full_response: bool = False):
@@ -127,7 +127,7 @@ class StasisClient:
         """
         result = self.http.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for {sample_name}")
 
         if full_response is True:
             return result.json()
@@ -141,7 +141,7 @@ class StasisClient:
 
         result = self.http.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for {sample_name} and {state}")
 
         states = result.json()['status']
 
@@ -149,7 +149,7 @@ class StasisClient:
             if x['value'] == state and 'fileHandle' in x:
                 return x['fileHandle']
 
-        raise Exception("state not found or has no file handle")
+        raise Exception("state not found or has no file handle for {} and state".format(sample_name,state))
 
     def sample_state_update(self, sample_name: str, state, file_handle: Optional[str] = None):
         """
@@ -171,7 +171,7 @@ class StasisClient:
 
         result = self.http.post(f'{self._url}/tracking', json=data, headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} and {sample_name} in {state} with {file_handle}")
         return result
 
     def sample_result_as_json(self, sample_name) -> dict:
@@ -184,7 +184,7 @@ class StasisClient:
         """
         result = self.http.get(f"{self._url}/result/{sample_name}", headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for {sample_name}")
         return result.json()
 
     def get_url(self):
@@ -205,7 +205,7 @@ class StasisClient:
         """
         result = self.http.get(f"{self._url}/job/{job_id}", headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
         return result.json()
 
     def load_job_state(self, job_id):
@@ -216,7 +216,7 @@ class StasisClient:
         """
         result = self.http.get(f"{self._url}/job/status/{job_id}", headers=self._header)
         if result.status_code != 200:
-            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
         return result.json()
 
     def get_raw_bucket(self):
@@ -279,7 +279,7 @@ class StasisClient:
         if result.status_code == 503:
             return None
         elif result.status_code != 200:
-            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job}")
         return result.json()['content']
 
     def store_job(self, job: dict):
@@ -291,7 +291,7 @@ class StasisClient:
         response = self.http.post(f"{self._url}/job/store", json=job, headers=self._header)
         if response.status_code != 200:
             raise Exception(
-                f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
 
     def schedule_job(self, job_id: str):
         """
@@ -302,6 +302,6 @@ class StasisClient:
         response = self.http.put(f"{self._url}/job/schedule/{job_id}", headers=self._header)
         if response.status_code != 200:
             raise Exception(
-                f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job_id}")
         else:
             return json.loads(response.content)
