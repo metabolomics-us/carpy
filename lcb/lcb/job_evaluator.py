@@ -61,13 +61,16 @@ class JobEvaluator(Evaluator):
 
         samples = []
         for sample in job:
-            samples.append(self.client.sample_state(sample, full_response=True))
+            samples.append(self.client.sample_state(sample['sample'], full_response=True))
         result = {
             'job': job_state,
-            'samples': {
+            'samples':
                 samples
-            }
+
         }
+
+        print("details are")
+        print(json.dumps(result, indent=4))
         return result
 
     def upload(self, id, args):
