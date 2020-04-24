@@ -39,7 +39,6 @@ class Parser:
         """
 
         result = vars(self.parser.parse_args(args))
-
         if len(result) == 1:
             self.parser.print_usage()
         elif 'func' in result:

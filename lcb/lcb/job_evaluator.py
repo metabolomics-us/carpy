@@ -25,7 +25,7 @@ class JobEvaluator(Evaluator):
         results = {}
         for x in mapping.keys():
             if x in args:
-                if args[x] is True:
+                if args[x] is not False:
                     results[x] = mapping[x](args['id'], args)
         return results
 
@@ -74,8 +74,22 @@ class JobEvaluator(Evaluator):
         return result
 
     def upload(self, id, args):
-        pass
-        assert False
+        """
+        uploads a new job to the server for storage and future processing
+        """
+        with open(args['upload'], 'r') as infile:
+            job = json.load(infile)
+            job['id'] = id
+
+            print("INPUT")
+            print(json.dumps(job, indent=4))
+
+            result = self.client.store_job(job)
+
+            print("STORED JOB DETAILS")
+            print(self.detail(id, {}))
+
+        return None
 
     def aggregate(self, id, args):
         pass
