@@ -313,7 +313,7 @@ def schedule_processing_to_fargate(event, context):
     except Exception as e:
         print(body)
         traceback.print_exc()
-        create({"body": json.dumps({'sample': body['sample'], 'status': FAILED, 'reason' : str(e)})}, {})
+        create({"body": json.dumps({'sample': body['sample'], 'status': FAILED, 'reason': str(e)})}, {})
 
         return {
             'body': json.dumps(str(e)),
@@ -330,7 +330,11 @@ def _get_queue(client, queue_name: str = "schedule_queue", resource: Backend = N
     if resource is None:
         resource = DEFAULT_PROCESSING_BACKEND
 
-    name = "{}_{}".format(os.environ[queue_name], resource.value)
+    if resource is Backend.NO_BACKEND_REQUIRED:
+        name = "{}".format(os.environ[queue_name])
+    else:
+        name = "{}_{}".format(os.environ[queue_name], resource.value)
+
     try:
         return client.create_queue(QueueName=name)['QueueUrl']
     except KeyError as ex:
