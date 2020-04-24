@@ -91,7 +91,7 @@ class StasisClient:
         """
         result = self.http.post(f'{self._url}/acquisition', json=data, headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for data {}".format(data))
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for data {data}")
         return result
 
     def sample_acquisition_get(self, sample_name):
