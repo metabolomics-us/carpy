@@ -1,0 +1,17 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template is utilized to provision the whole AWS enviroment for LC-BinBase including the cluster and database",
+  "Parameters": {
+    "KeyNane": {
+      "Description": "this is the ssh key allowed to login. Please specify only the name",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "lc-binbase"
+    },
+    "VPC": {
+    },
+    "Subnet": {
+    }
+  },
+  "Resources": {
+  }
+}

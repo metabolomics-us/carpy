@@ -1,7 +1,7 @@
-import os
 from time import time, sleep
 
 import requests
+from pytest import fail
 
 
 def test_sample_acquisition_create(stasis_cli, sample):
@@ -15,13 +15,19 @@ def test_sample_acquisition_create(stasis_cli, sample):
     assert data['sample'] == result['sample']
 
 
-def test_acquisition_get(stasis_cli):
-    result = stasis_cli.sample_acquisition_get(f'test_1')
-    metadata = {'class': '123456',
-                'organ': 'tissue',
-                'species': 'rat'}
-    print(result)
-    assert metadata == result.get('metadata')
+def test_acquisition_get_fail_not_found(stasis_cli):
+    try:
+        result = stasis_cli.sample_acquisition_get(f'test_1-{time()}')
+        fail()
+    except Exception as e:
+        pass
+
+
+def test_file_handle_by_state(stasis_cli, sample, sample_tracking_data):
+    result = stasis_cli.file_handle_by_state(sample['sample'], 'exported')
+    assert result == "{}.mzml.json".format(sample['sample'])
+    result = stasis_cli.file_handle_by_state(sample['sample'], 'deconvoluted')
+    assert result == "{}.mzml".format(sample['sample'])
 
 
 def test_sample_state(stasis_cli, sample):
@@ -32,29 +38,12 @@ def test_sample_state(stasis_cli, sample):
     assert 'entered' == stasis_cli.sample_state(sample['sample'])[0]['value']
 
 
-def test_sample_result(stasis_cli):
-    result = stasis_cli.sample_result('B2a_TEDDYLipids_Neg_NIST001')
-
-    print(result)
-    assert result is not None
-    assert 'B2a_TEDDYLipids_Neg_NIST001' == result['sample']
-
-
 def test_inexistent_result(stasis_cli):
-    result = stasis_cli.sample_result('blah.blah')
-    print(result)
-    assert 'Error' in result
-    assert 'blah.blah' == result.get('filename')
-
-
-def test_persist_inexistent_file(stasis_cli):
-    if os.path.exists('stfu/blah.blah'):
-        os.remove('stfu/blah.blah')
-
-    result = stasis_cli.sample_result('blah.blah', 'stfu')
-    print(result)
-    assert result['Error'] is not None
-    assert os.path.exists('stfu/blah.blah') is False
+    try:
+        result = stasis_cli.sample_result_as_json('blah.blah')
+        fail()
+    except Exception as e:
+        pass
 
 
 def test_get_url(stasis_cli):
@@ -66,7 +55,7 @@ def test_get_states(stasis_cli):
 
     print(result)
     assert result is not None
-    assert len(result) == 13
+    assert len(result) == 19
     assert 'failed' in result
 
 
@@ -88,9 +77,9 @@ def test_load_job_state(stasis_cli, api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "env": "test"
@@ -113,9 +102,9 @@ def test_load_job(stasis_cli, api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001.mzml",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ.mzml",
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "env": "test"
@@ -132,7 +121,7 @@ def test_load_job(stasis_cli, api_token):
 def test_get_raw_bucket(stasis_cli, api_token):
     data = stasis_cli.get_raw_bucket()
     print(data)
-    assert data == 'data-carrot'
+    assert data == 'wcmc-data-stasis-raw-test'
 
 
 def test_get_aggregated_bucket(stasis_cli, api_token):
@@ -160,7 +149,7 @@ def test_download_result(stasis_cli, api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "samples": [
-            "B10A_SA8922_TeddyLipids_Pos_122WP.mzml"
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
         "env": "test"
@@ -168,19 +157,25 @@ def test_download_result(stasis_cli, api_token):
 
     stasis_cli.store_job(job)
 
-    assert stasis_cli.load_job_state(test_id)['job_state'] == "stored"
+    assert stasis_cli.load_job_state(test_id)['job_state'] == "entered"
 
     stasis_cli.schedule_job(test_id)
     origin = time()
     duration = 0
-    while duration < 90000:
-        state = stasis_cli.load_job_state(test_id)['job_state']
-        print(f"current state for job {test_id} is {state} and duration is {duration}")
-        if state == 'aggregated':
-            break
+    while duration < 1200000:
+        try:
+            state = stasis_cli.load_job_state(test_id)['job_state']
+            print(f"current state for job {test_id} is {state} and duration is {duration}")
+            if state == 'aggregated_and_uploaded':
+                break
 
-        sleep(10)
-        duration = time() - origin
+            sleep(30)
+            duration = time() - origin
+        except:
+            pass
+
+    # side test to ensure results are generated and can be downloaded
+    stasis_cli.sample_result_as_json('B10A_SA8922_TeddyLipids_Pos_122WP')
 
     content = stasis_cli.download_job_result(test_id)
 

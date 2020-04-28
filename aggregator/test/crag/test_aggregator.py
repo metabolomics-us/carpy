@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from pytest import fail
 
+from bin import crag_local
 from crag.aggregator import Aggregator
 
 pd.set_option('display.max_rows', 100)
@@ -12,7 +13,7 @@ pd.set_option('display.width', 1000)
 
 logger = logging.getLogger('DEBUG')
 
-# parser = launcher.create_parser()
+parser = crag_local.create_parser()
 samples = ['B13A_TeddyLipids_Pos_QC002',
            'B13A_SA11890_TeddyLipids_Pos_24G4N',
            'B13A_SA11891_TeddyLipids_Pos_16LNW',
@@ -26,7 +27,6 @@ samples2 = ['B7B_TeddyLipids_Neg_QC015',
 
 def test_get_target_list_negative_mode(stasis):
     aggregator = Aggregator({'infile': 'filename'}, stasis)
-    assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
 
     results = _build_result(stasis, samples2)
     assert len(results) > 0
@@ -39,7 +39,6 @@ def test_get_target_list_negative_mode(stasis):
 
 def test_get_target_list_positive_mode(stasis):
     aggregator = Aggregator({'infile': 'filename'}, stasis)
-    assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     results = _build_result(stasis, samples)
 
     targets = aggregator.get_target_list(results)
@@ -50,7 +49,6 @@ def test_get_target_list_positive_mode(stasis):
 def test_find_intensity(stasis):
     # test find_intensity on non replaced data
     aggregator = Aggregator({'infile': 'filename'}, stasis)
-    assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     value = {'intensity': 1, 'replaced': False}
     assert 1 == aggregator.find_intensity(value)
 
@@ -60,7 +58,6 @@ def test_find_intensity(stasis):
 
     # test find_intensity on zero replaced data requesting replaced data
     aggregator = Aggregator({'infile': 'filename', 'zero_replacement': True}, stasis)
-    assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     value = {'intensity': 2, 'replaced': True}
     assert 2 == aggregator.find_intensity(value)
 
@@ -74,7 +71,6 @@ def test_add_metadata(stasis):
     # Test correct indexing of samples in header
 
     aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': 'samples'}, stasis)
-    assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     results = _build_result(stasis, samples)
 
     md = aggregator.add_metadata(samples, results)
@@ -84,7 +80,6 @@ def test_add_metadata(stasis):
 
 def test_build_worksheet(stasis):
     aggregator = Aggregator({'infile': './'}, stasis)
-    assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
 
     results = _build_result(stasis, samples)
     targets = aggregator.get_target_list(results)
@@ -106,24 +101,14 @@ def test_process_sample_list(stasis):
                'lgvty_cells_pilot_2_NEG_50K_BR_05']
 
     aggregator = Aggregator({'infile': 'samples/test.txt', 'dir': 'samples'}, stasis)
-    assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
     aggregator.process_sample_list(samples, 'samples/test.txt')
-
-    for f in excel_list:
-        try:
-            assert os.path.exists(f'samples/{f}')
-        except AssertionError as ae:
-            print(f'{f} does not exist')
-            raise AssertionError(ae)
-        # os.remove(f'samples/{f}')
 
 
 def test_format_sample(stasis):
     sample = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
-    samplefile = 'lgvty_cells_pilot_2_NEG_50K_BR_01.json'
+    samplefile = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
     aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': 'samples'}, stasis)
-    assert "https://test-api.metabolomics.us/stasis" == aggregator.stasis_cli.get_url()
-    result = stasis.sample_result(samplefile, 'samples')
+    result = stasis.sample_result_as_json(samplefile)
 
     formatted = aggregator.format_sample(result)
 
@@ -134,11 +119,11 @@ def _build_result(stasis, locsamples):
     results = []
 
     for sample in locsamples:
-        filename = os.path.splitext(sample)[0] + '.json'
+        filename = os.path.splitext(sample)[0]
 
-        data = stasis.sample_result(filename)
-        data['sample'] = sample
-        if data.get('Error') is None:
+        data = stasis.sample_result_as_json(filename)
+        if data is not None:
+            data['sample'] = sample
             results.append(data)
         else:
             results.append({sample: {}})

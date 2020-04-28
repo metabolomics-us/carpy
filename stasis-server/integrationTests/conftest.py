@@ -5,7 +5,7 @@ import pytest
 
 @pytest.fixture()
 def api_token():
-    api_token = os.getenv('STASIS_API_TOKEN', '')
+    api_token ='9MjbJRbAtj8spCJJVTPbP3YWc4wjlW0c7AP47Pmi'
     assert api_token is not '', "please ensure you are setting the stasis api token in your env under STASIS_API_TOKEN!"
 
     print(api_token)

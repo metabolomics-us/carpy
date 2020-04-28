@@ -7,7 +7,7 @@ from jsonschema import validate
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schema import __RESULT_SCHEMA__
 from stasis.service.Bucket import Bucket
-from stasis.tables import TableManager
+from stasis.tables import TableManager, get_file_handle
 
 
 def triggerEvent(data):
@@ -18,8 +18,6 @@ def triggerEvent(data):
     :return: a serialized version of the submitted message
     """
 
-    print("trigger event: %s" % data)
-
     validate(data, __RESULT_SCHEMA__)
 
     timestamp = int(time.time() * 1000)
@@ -29,14 +27,17 @@ def triggerEvent(data):
     if 'sample' in data:
         table = Bucket(os.environ['resultTable'])
 
-        existing = table.exists(data['id'])
+        # lookup from the stasis tables the correct file handle
+        # TODO right now we are faking it
+        name = get_file_handle(data['id'])
+        existing = table.exists(name)
 
         if existing:
-            existing = json.loads(table.load(data['id']))
+            existing = json.loads(table.load(name))
             # need to append and/or update result to injections
             data['injections'] = {**existing['injections'], **data['injections']}
 
-        result = table.save(data['id'], json.dumps(TableManager().sanitize_json_for_dynamo(data)))
+        result = table.save(name, json.dumps(TableManager().sanitize_json_for_dynamo(data)))
 
         return {
             'body': json.dumps(data),
@@ -62,11 +63,10 @@ def create(event, context):
         :return:
     """
 
-    print(event)
-
     if 'body' not in event:
         raise Exception("please ensure you provide a valid body")
 
     data = json.loads(event['body'])
 
+    print("loaded data was: {}".format(data))
     return triggerEvent(data)

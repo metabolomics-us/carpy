@@ -3,11 +3,12 @@ import traceback
 from typing import Optional
 
 import simplejson as json
-from jsonschema import validate
+from jsonschema import validate, ValidationError
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.jobs.states import States
+from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schema import __SCHEDULE__
+from stasis.service.Status import FAILED
 from stasis.tables import update_job_state
 from stasis.tracking.create import create
 
@@ -93,10 +94,18 @@ def schedule(event, context):
     :return:
     """
     body = json.loads(event['body'])
-    return schedule_to_queue(body, service=SECURE_CARROT_RUNNER)
+
+    if 'resource' in body:
+        resource = Backend(body['resource'])
+    else:
+        resource = DEFAULT_PROCESSING_BACKEND
+
+    validate(body, __SCHEDULE__)
+    print(f"scheduling {body} to queue")
+    return schedule_to_queue(body, service=SECURE_CARROT_RUNNER, resource=resource)
 
 
-def schedule_to_queue(body, service: str):
+def schedule_to_queue(body, service: str, resource: Backend):
     body['secured'] = True
     body[SERVICE] = service
 
@@ -104,7 +113,7 @@ def schedule_to_queue(body, service: str):
     import boto3
     client = boto3.client('sqs')
     # if topic exists, we just reuse it
-    arn = _get_queue(client)
+    arn = _get_queue(client, resource=resource, queue_name="schedule_queue")
     serialized = json.dumps(body, use_decimal=True)
     # submit item to queue for routing to the correct persistence
     result = client.send_message(
@@ -129,7 +138,7 @@ def _free_task_count(service: Optional[str] = None) -> int:
     tasks = _current_tasks()
 
     def new_taskname(x):
-        x['name'] = x['name'].replace("{}-".format(os.getenv("current_stage")),'')
+        x['name'] = x['name'].replace("{}-".format(os.getenv("current_stage")), '')
         return x
 
     tasks = list(map(lambda x: new_taskname(x), tasks))
@@ -190,26 +199,8 @@ def schedule_aggregation_to_fargate(param, param1):
         print(overrides)
         print("")
 
-        # fire AWS fargate instance now
-        client = boto3.client('ecs')
-        response = client.run_task(
-            cluster='carrot',  # name of the cluster
-            launchType='FARGATE',
-            taskDefinition=task_name,
-            count=1,
-            platformVersion='LATEST',
-            networkConfiguration={
-                'awsvpcConfiguration': {
-                    'subnets': [
-                        # we need at least 2, to insure network stability
-                        os.environ.get('SUBNET', 'subnet-064fbf05a666c6557')],
-                    'assignPublicIp': 'ENABLED'
-                }
-            },
-            overrides=overrides,
-        )
+        response = send_to_fargate(overrides, task_name)
 
-        update_job_state(job=job, state=States.AGGREGATION_SCHEDULED)
         print(f'Response: {response}')
         return {
             'statusCode': 200,
@@ -217,108 +208,42 @@ def schedule_aggregation_to_fargate(param, param1):
             'headers': __HTTP_HEADERS__
         }
     except Exception as e:
+        update_job_state(job=body['job'], state=FAILED, reason="job failed to aggregate due to %".format(str(e)))
         raise e
 
 
-def monitor_queue(event, context):
+def send_to_fargate(overrides, task_name):
     """
-    monitors the fargate queue and if task size is less than < x it will
-    try to schedule new tasks. This should be called from cron or another
-    scheduled interval
-    :param event:
-    :param context:
+    sends the computation to the actual fargate cluster
+    :param overrides:
+    :param task_name:
     :return:
     """
-
+    # fire AWS fargate instance now
     import boto3
-    # receive message from queue
-    client = boto3.client('sqs')
-
-    # if topic exists, we just reuse it
-    arn = _get_queue(client=client)
-
-    slots = _free_task_count()
-
-    if slots == 0:
-        return {
-            'statusCode': 200,
-            'isBase64Encoded': False,
-            'headers': __HTTP_HEADERS__
-        }
-
-    print("we have: {} slots free for tasks".format(slots))
-
-    message_count = slots if 0 < slots <= MESSAGE_BUFFER else MESSAGE_BUFFER if slots > 0 else 1
-    message = client.receive_message(
-        QueueUrl=arn,
-        AttributeNames=[
-            'All'
-        ],
-        # MessageAttributeNames=[
-        #     'string',
-        # ],
-        MaxNumberOfMessages=message_count,
-        VisibilityTimeout=1,
-        WaitTimeSeconds=1
-        # ReceiveRequestAttemptId='string'
+    client = boto3.client('ecs')
+    response = client.run_task(
+        cluster='carrot',  # name of the cluster
+        launchType='FARGATE',
+        taskDefinition=task_name,
+        count=1,
+        platformVersion='LATEST',
+        networkConfiguration={
+            'awsvpcConfiguration': {
+                'subnets': [
+                    # we need at least 2, to insure network stability
+                    # these have been manually created and need to be shared with the db server
+                    'subnet-e382339a',
+                    'subnet-04c0515e',
+                    'subnet-b779a9fc',
+                    'subnet-39f3df11'
+                ],
+                'assignPublicIp': 'ENABLED'
+            }
+        },
+        overrides=overrides,
     )
-
-    if 'Messages' not in message:
-        print("no messages received: {}".format(message))
-        return {
-            'statusCode': 200,
-            'isBase64Encoded': False,
-            'headers': __HTTP_HEADERS__
-        }
-
-    messages = message['Messages']
-
-    if len(messages) > 0:
-        # print("received {} messages".format(len(messages)))
-        result = []
-        # print(messages)
-        for message in messages:
-            receipt_handle = message['ReceiptHandle']
-            # print("current message: {}".format(message))
-            body = json.loads(json.loads(message['Body'])['default'])
-            # print("schedule: {}".format(body))
-            try:
-
-                slots = _free_task_count(service=body[SERVICE])
-
-                print(body)
-
-                if slots > 0:
-                    if body[SERVICE] == SECURE_CARROT_RUNNER:
-                        result.append(schedule_processing_to_fargate({'body': json.dumps(body)}, {}))
-                    elif body[SERVICE] == SECURE_CARROT_AGGREGATOR:
-                        result.append(schedule_aggregation_to_fargate({'body': json.dumps(body)}, {}))
-                    else:
-                        raise Exception("unknown service specified: {}".format(body[SERVICE]))
-
-                    client.delete_message(
-                        QueueUrl=arn,
-                        ReceiptHandle=receipt_handle
-                    )
-                else:
-                    # nothing found
-                    pass
-            except Exception as e:
-                traceback.print_exc()
-        return {
-            'statusCode': 200,
-            'headers': __HTTP_HEADERS__,
-            'isBase64Encoded': False,
-            'body': json.dumps({'scheduled': len(result)})
-        }
-
-    else:
-        print("no messages received!")
-        return {
-            'statusCode': 200,
-            'isBase64Encoded': False,
-            'headers': __HTTP_HEADERS__
-        }
+    return response
 
 
 def schedule_processing_to_fargate(event, context):
@@ -333,14 +258,14 @@ def schedule_processing_to_fargate(event, context):
     try:
 
         validate(body, __SCHEDULE__)
-
         import boto3
         overrides = {"containerOverrides": [{
             "name": "carrot-runner",
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{},{}".format(body['env'], body['profile'])
+                    "value": "{},{},{}".format(body['env'], body['profile'], 'aws')
+                    # AWS profile needs to be active for this system to connect to the AWS database
                 },
                 {
                     "name": "CARROT_SAMPLE",
@@ -353,6 +278,10 @@ def schedule_processing_to_fargate(event, context):
                 {
                     "name": "CARROT_MODE",
                     "value": "{}".format(body['profile'])
+                },
+                {
+                    "name": "CARROT_ENV",
+                    "value": body['env']
                 }
             ]
         }]}
@@ -365,44 +294,32 @@ def schedule_processing_to_fargate(event, context):
                 "value": body['key']
             })
 
-        print('utilizing taskDefinition: {}'.format(task_name))
-        print(overrides)
-        print("")
-
-        # fire AWS fargate instance now
-        client = boto3.client('ecs')
-        response = client.run_task(
-            cluster='carrot',  # name of the cluster
-            launchType='FARGATE',
-            taskDefinition=task_name,
-            count=1,
-            platformVersion='LATEST',
-            networkConfiguration={
-                'awsvpcConfiguration': {
-                    'subnets': [
-                        # we need at least 2, to insure network stability
-                        os.environ.get('SUBNET', 'subnet-064fbf05a666c6557')],
-                    'assignPublicIp': 'ENABLED'
-                }
-            },
-            overrides=overrides,
-        )
+        send_to_fargate(overrides=overrides, task_name=task_name)
 
         create({"body": json.dumps({'sample': body['sample'], 'status': 'scheduled'})}, {})
 
-        # fire status update to track sample is in scheduling
-
-        print(f'Response: {response}')
         return {
             'statusCode': 200,
             'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
 
-    except Exception as e:
-
+    except ValidationError as e:
+        print("validation error")
+        print(body)
         traceback.print_exc()
-        create({"body": json.dumps({'sample': body['sample'], 'status': 'failed'})}, {})
+
+        return {
+            'body': json.dumps(str(e)),
+            'statusCode': 503,
+            'isBase64Encoded': False,
+            'headers': __HTTP_HEADERS__
+        }
+        pass
+    except Exception as e:
+        print(body)
+        traceback.print_exc()
+        create({"body": json.dumps({'sample': body['sample'], 'status': FAILED, 'reason': str(e)})}, {})
 
         return {
             'body': json.dumps(str(e)),
@@ -412,15 +329,23 @@ def schedule_processing_to_fargate(event, context):
         }
 
 
-def _get_queue(client, queue_name: str = "schedule_queue"):
+def _get_queue(client, queue_name: str = "schedule_queue", resource: Backend = None):
     """
     generates queues for us on demand as required
     """
+    if resource is None:
+        resource = DEFAULT_PROCESSING_BACKEND
+
+    if resource is Backend.NO_BACKEND_REQUIRED:
+        name = "{}".format(os.environ[queue_name])
+    else:
+        name = "{}_{}".format(os.environ[queue_name], resource.value)
+
     try:
-        return client.create_queue(QueueName=os.environ[queue_name])['QueueUrl']
+        return client.create_queue(QueueName=name)['QueueUrl']
     except KeyError as ex:
         raise Exception(
             "you forgot to specify your env variable {} to define the queue which you want to create/monitor".format(
                 queue_name))
     except Exception as ex:
-        return client.get_queue_url(QueueName=os.environ[queue_name])['QueueUrl']
+        return client.get_queue_url(QueueName=os.environ[name])['QueueUrl']

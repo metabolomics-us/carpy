@@ -1,11 +1,56 @@
-from typing import Optional
+import simplejson as json
 
-from stasis.jobs.states import States
-from stasis.tables import load_job_samples, set_sample_job_state, get_tracked_state, set_job_state, update_job_state, \
-    get_job_state
+from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR, _get_queue
+from stasis.service.Status import *
+from stasis.tables import load_job_samples, update_job_state, \
+    get_job_state, load_jobs_for_sample, get_job_config
 
 
-def sync(job: str) -> Optional[States]:
+def sync_sample(sample: str):
+    """
+    synchronizes all related jobs for this sample
+    :param sample:
+    :return:
+    """
+    # get topic refrence
+    import boto3
+    client = boto3.client('sqs')
+    # if topic exists, we just reuse it
+    arn = _get_queue(client, resource=Backend.NO_BACKEND_REQUIRED, queue_name="sample_sync_queue")
+
+    jobs = load_jobs_for_sample(sample,id_only=True)
+
+    if jobs is not None:
+        print("found {} associated jobs for this sample".format(len(jobs)))
+        for job in jobs:
+            # submit item to queue for routing to the correct persistence
+            print("sending sync request for job {} to queue {}".format(job, arn))
+            serialized = json.dumps({'job': job}, use_decimal=True)
+            result = client.send_message(
+                QueueUrl=arn,
+                MessageBody=json.dumps({'default': serialized}),
+            )
+    else:
+        print("no associated job found for sample {}".format(sample))
+
+
+def do_sync(event, context):
+    """
+    synchronizes the actual job
+    """
+    for message in event['Records']:
+        print(message)
+        body = json.loads(json.loads(message['body'])['default'])
+
+        if 'job' in body:
+            job = body['job']
+            config = get_job_config(job)
+            print("received job to synchronize: {}".format(config))
+            sync_job(config)
+
+
+def calculate_job_state(job: str) -> Optional[str]:
     """
     this method keeps the stasis tracking table and the job tracking in sync.
     """
@@ -14,69 +59,82 @@ def sync(job: str) -> Optional[States]:
     # to avoid expensive synchronization
     state = get_job_state(job=job)
 
-    print("current job state is {}".format(state))
+    s = States()
+    print("current job state for {} is {}".format(job, state))
     if state is None:
-        update_job_state(job=job, state=States.SCHEDULED)
-    elif state in [States.AGGREGATED, States.FAILED]:
+        print(f"no job state found -> forcing scheduled state for {job}")
+        update_job_state(job=job, state=SCHEDULED,
+                         reason="job was forced to state scheduled due to no state being available!")
+    elif s.priority(state) >= s.priority(AGGREGATING_SCHEDULING):
+        print(f"job was already in a finished state {job}, state {state} and so needs no further analysis")
         return state
+    else:
+        print(f"job {job} was in state {state}, which requires it to get it's final state analyzed")
 
     # 2. load job definition
     job_definition = load_job_samples(job=job)
+    job_config = get_job_config(job=job)
 
-    if job_definition is not None:
+    if job_definition is not None and job_config is not None:
 
         # 3. go over all samples
 
         states = []
         for sample, tracking_state in job_definition.items():
+            states.append(tracking_state)
 
-            #  get state
-            stasis_state = get_tracked_state(sample=sample)
-            # if state is None -> ignore it doesn't exist
-            if stasis_state is None:
-                print("sample for job {} not found in stasis: {}".format(job, sample))
-                pass
-            # if state is exported -> set state to processed
-            elif stasis_state == "exported" or stasis_state == "finished":
-                set_sample_job_state(job=job, sample=sample, state=States.PROCESSED)
-                states.append(States.PROCESSED)
-            # if state is failed -> set state to failed
-            elif stasis_state == "failed":
-                set_sample_job_state(job=job, sample=sample, state=States.FAILED)
-                states.append(States.FAILED)
-            # else set state to processing
-            elif stasis_state == "scheduled":
-                set_sample_job_state(job=job, sample=sample, state=States.SCHEDULED)
-                states.append(States.SCHEDULED)
-            else:
-                print(
-                    "unexplained stasis state.... State was: {}. We are assuming {} is processing".format(stasis_state,sample))
-                set_sample_job_state(job=job, sample=sample, state=States.PROCESSING)
-                states.append(States.PROCESSING)
-
+        print("received sample states for job are: {}".format(states))
         if len(states) == 0:
             # bigger issue nothing found to synchronize
+            print("no states found!")
             return None
-        # 4. sync general job state
-        # if any in state processing => set job state to processing
-        elif States.PROCESSED in states and len(states) == (
-                states.count(States.PROCESSED) + states.count(States.FAILED)):
-            update_job_state(job=job, state=States.PROCESSED)
-            return States.PROCESSED
-        elif States.PROCESSING in states or States.PROCESSED in states:
-            update_job_state(job=job, state=States.PROCESSING)
-            return States.PROCESSING
-        elif States.SCHEDULED in states:
-            update_job_state(job=job, state=States.SCHEDULED)
-            return States.SCHEDULED
-        # if all samples are failed
-        elif len(states) == states.count(States.FAILED):
-            update_job_state(job=job, state=States.FAILED)
-            return States.FAILED
-        elif States.FAILED in states:
-            update_job_state(job=job, state=States.PROCESSING)
-            return States.PROCESSING
-        raise Exception("unexspected combination of states received for {}. States were {}".format(job, states))
+
+        # ALL ARE FAILED
+        elif states.count(FAILED) == len(states):
+            update_job_state(job=job_config['id'], state=FAILED,
+                             reason="job is in state failed, due to all samples being in state failed")
+            print("job is failed, no sample was successful")
+            return FAILED
+        # ALL ARE EXPORTED OR FAILED
+        elif states.count(EXPORTED) + states.count(FAILED) == len(states):
+            update_job_state(job=job_config['id'], state=EXPORTED,
+                             reason="job state was set to exported due to all samples having been exported or failed")
+            print("job should now be exported")
+            return EXPORTED
+        # ANY ARE SCHEDULED
+        elif states.count(SCHEDULED) == len(states):
+            update_job_state(job=job_config['id'], state=SCHEDULED,
+                             reason="job is in state scheduled, due to all samples being in state scheduled")
+            print("job still in state scheduled")
+            return SCHEDULED
+
+        # otherwise we must be processing
+        else:
+            update_job_state(job=job_config['id'], state=PROCESSING, reason="job is in state processing")
+            print("job is in state processing right now")
+            return PROCESSING
     else:
-        print("we did not find a job definition for {}".format(job))
-        return None
+        raise Exception("we did not find a job definition for {}, Please investigate".format(job))
+
+
+def sync_job(job: dict):
+    print("synchronizing job: {}".format(job))
+    if job is None:
+        print("warning a none job was provided, we ignore this one!")
+        return
+
+    state = calculate_job_state(job['id'])
+    if 'resource' in job:
+        resource = Backend(job['resource'])
+    else:
+        resource = DEFAULT_PROCESSING_BACKEND
+    if state == EXPORTED:
+        print("schedule aggregation for job {}, due to state being {}".format(job['id'], state))
+        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING, reason="synchronization triggered")
+        schedule_to_queue({"job": job['id'], "env": job['env'], "profile": job['profile']},
+                          service=SECURE_CARROT_AGGREGATOR,
+                          resource=resource)
+        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULED,
+                         reason="synchronization was triggered and completed")
+    else:
+        print(f"state {state} for job {job['id']} did not justify triggering an aggregation.")

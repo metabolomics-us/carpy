@@ -1,13 +1,14 @@
 import os
-import pprint
 import re
+import time
 from argparse import Namespace
 from typing import Optional, List
-import time
+
 import numpy as np
 import pandas as pd
 import simplejson as json
 import tqdm
+from pandas import DataFrame
 from stasis_client.client import StasisClient
 
 AVG_BR_ = 'AVG (br)'
@@ -75,7 +76,7 @@ class Aggregator:
             return 0
 
     @staticmethod
-    def add_metadata(samples, data):
+    def add_metadata(samples: DataFrame, data: List):
         """
         Creates the column headers with sample metadata
         Args:
@@ -88,23 +89,27 @@ class Aggregator:
         dicdata = {'No': None, 'label': None, 'Target RI(s)': None, 'Target mz': None, 'InChIKey':
             ['species', 'organ', 'batch', 'sample_type', 'time'], 'found %': None}
         for sample, idx in zip(samples, range(1, len(samples) + 1)):
-            try:
-                for d in [t['metadata'] for t in data if t['sample'] == sample]:
-                    species = d['metadata']['species']
-                    organ = d['metadata']['organ']
-                    if '_qc' in sample.lower():
-                        sample_type = 'qc'
-                    elif '_nist' in sample.lower():
-                        sample_type = 'nist'
-                    else:
-                        sample_type = 'sample'
+            filtered_sample = list(filter(lambda x: x.get('sample', None) == sample, data))
 
+            if len(filtered_sample) > 0:
+                if '_qc' in sample.lower():
+                    sample_type = 'qc'
+                elif '_nist' in sample.lower():
+                    sample_type = 'nist'
+                else:
+                    sample_type = 'sample'
+
+                # could be also done over [0] since we should never have duplicated samples anyway
+                for x in filtered_sample:
+                    species = x.get('metadata', {}).get('species', '')
+                    organ = x.get('metadata', {}).get('organ', '')
                     dicdata[sample] = [species, organ, '', sample_type, idx]
-            except KeyError as e:
-                print('missing sample, {}, {}'.format(idx, sample))  # save sample name to file.
+            else:
+                # missing sample
                 dicdata[sample] = ['', '', '', '', idx]
-
-        return pd.DataFrame(dicdata)
+        else:
+            result = pd.DataFrame(dicdata)
+        return result
 
     def export_excel(self, data, type, infile, sort_index=False):
         """
@@ -299,29 +304,31 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
-            sample_name = "{}.json".format(os.path.splitext(sample)[0])
             dir = self.args.get("dir", "/tmp")
+            result_file = f'{sample}'
+            saved_result = f'{dir}/{result_file}'
 
-            print("looking for {}".format(sample_name))
-
-            saved_result = f'{self.args.get("dir")}/{result_file}'
-
+            sbar.write("looking for {}".format(result_file))
             if self.args.get('save') or not os.path.exists(saved_result):
-                print("downloading result data from stasis")
-                resdata = self.stasis_cli.sample_result(result_file, self.args.get('dir'))
+                sbar.write("downloading result data from stasis for {}".format(sample))
+                try:
+                    resdata = self.stasis_cli.sample_result_as_json(result_file)
+                except Exception as e:
+                    resdata = None
             else:
-                print("loading existing result data")
+                sbar.write("loading existing result data")
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
-            print("retrieved result data are: '{}'".format(resdata))
-            if resdata == '':
+            if resdata is None:
                 sbar.write(
-                    f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {sample_name} located at {dir}')
+                    f'Failed getting {sample}. We looked in bucket {self.bucket_used}')
+            elif resdata == '':
+                sbar.write(
+                    f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {result_file} located at {dir}')
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
-                sbar.write(
-                    f'Failed getting {sample}; {resdata.get("Error")}. We looked in bucket {self.bucket_used}')
+                raise Exception("this should not have happened!")
 
         if len(results) == 0:
             raise NoSamplesFoundException("sorry none of your samples were found!")

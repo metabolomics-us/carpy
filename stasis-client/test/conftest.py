@@ -1,21 +1,23 @@
 import os
+import uuid
 from datetime import time
 
 import pytest
 
 from stasis_client.client import StasisClient
 
-sample_time = time()
+SAMPLE_UUID = uuid.uuid1()
 
 
 def pytest_generate_tests(metafunc):
     os.environ['STASIS_URL'] = 'https://test-api.metabolomics.us/stasis'
     os.environ['STASIS_API_TOKEN'] = '9MjbJRbAtj8spCJJVTPbP3YWc4wjlW0c7AP47Pmi'
 
+
 @pytest.fixture
 def sample(name: str = 'test'):
     data = {
-        'sample': '123-{}-{}'.format(name, sample_time),
+        'sample': '123-{}-{}'.format(name, SAMPLE_UUID),
         'experiment': f'mySecretExp_{123}',
         'acquisition': {
             'instrument': 'test inst',
@@ -39,6 +41,44 @@ def sample(name: str = 'test'):
     return data
 
 
+@pytest.fixture()
+def sample_tracking_data(stasis_cli, sample):
+    data = [
+        {
+            "fileHandle": "{}.mzml".format(sample['sample']),
+            "value": "scheduled"
+        },
+        {
+            "fileHandle": "{}.mzml".format(sample['sample']),
+            "value": "deconvoluted"
+        },
+        {
+            "fileHandle": "{}.mzml".format(sample['sample']),
+            "value": "corrected"
+        },
+        {
+            "fileHandle": "{}.mzml".format(sample['sample']),
+            "value": "annotated"
+        },
+        {
+            "fileHandle": "{}.mzml".format(sample['sample']),
+            "value": "quantified"
+        },
+        {
+            "fileHandle": "{}.mzml".format(sample['sample']),
+            "value": "replaced"
+        },
+        {
+            "fileHandle": "{}.mzml.json".format(sample['sample']),
+            "value": "exported"
+        }
+    ]
+
+    for x in data:
+        stasis_cli.sample_state_update(state=x['value'], sample_name=sample['sample'], file_handle=x['fileHandle'])
+
+    return data
+
 
 @pytest.fixture()
 def api_token():
@@ -47,6 +87,8 @@ def api_token():
 
     print(api_token)
     return {'x-api-key': api_token.strip()}
+
+
 @pytest.fixture
 def stasis_cli():
     return StasisClient(os.getenv('STASIS_URL'), os.getenv('STASIS_API_TOKEN'))

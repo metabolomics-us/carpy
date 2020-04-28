@@ -6,7 +6,6 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
-  - serverless-plugin-existing-s3
 provider:
   name: aws
   runtime: python3.7
@@ -54,6 +53,19 @@ provider:
   deploymentBucket:
     name: "lambdas-stasis"
 
+  ##
+  # defines all generat environment variables for lambdas
+  environment:
+    current_stage: ${self:custom.stage}
+    schedule_queue: ${self:custom.scheduleQueue}
+    sample_sync_queue: ${self:custom.syncQueue}
+    trackingTable: ${self:custom.trackingTable}
+    acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+    aggregation_queue: ${self:custom.aggregationQueue}
+    jobStateTable: ${self:custom.jobStateTable}
+    jobTrackingTable: ${self:custom.jobTrackingTable}
+    resultTable: ${self:custom.resultTable}
+    dataBucket: ${self:custom.dataJSONBucketName}
 ############################################################################################
 #custom configuration settings
 ############################################################################################
@@ -79,7 +91,7 @@ custom:
   ###
   # Carrot bucket definition. This contains all the rawdata in carrot
   ###
-  dataRawBucketName: "data-carrot"
+  dataRawBucketName: "wcmc-data-stasis-raw-${self:custom.stage}"
 
   ###
   # Carrot bucket to store aggregated results
@@ -94,6 +106,10 @@ custom:
   # Queues
   ###
   scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
+
+  ###
+  # used for synchronization
+  syncQueue: "StasisSyncQueue-${self:custom.stage}"
 
   ###
   # this queue will take care of holding all pending aggregation tasks
@@ -146,7 +162,6 @@ package:
 # this section defines all lambda function and triggers
 ############################################################################################
 functions:
-  #no to be confused with the actual queue
   fargate_count:
     handler: stasis/schedule/schedule.scheduled_task_size
     events:
@@ -160,12 +175,12 @@ functions:
       current_stage: ${self:custom.stage}
 
   fargate_processing_monitor:
-    handler: stasis/schedule/schedule.monitor_queue
+    handler: stasis/schedule/monitor.monitor_queue
     events:
       - schedule:
           rate: rate(1 minute)
           documentation:
-            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs.
+            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs. This has to be driven over cron right now
 
       - http:
           private: true
@@ -175,22 +190,10 @@ functions:
           documentation:
             summary: synchronizes the samples with the job state table
 
-    environment:
-      current_stage: ${self:custom.stage}
-      schedule_queue: ${self:custom.scheduleQueue}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
 
   fargate_job_monitor:
     handler: stasis/jobs/schedule.monitor_jobs
     events:
-      - schedule:
-          rate: rate(5 minutes)
-          documentation:
-            summary: monitors and synchronizes job states
-
       - http:
           private: true
           path: sync/jobs
@@ -199,14 +202,6 @@ functions:
           documentation:
             summary: synchronizes the job state
 
-    environment:
-      current_stage: ${self:custom.stage}
-      schedule_queue: ${self:custom.scheduleQueue}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
-      aggregation_queue: ${self:custom.aggregationQueue}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
 
   fargate_tasks:
     handler: stasis/schedule/schedule.current_tasks
@@ -239,6 +234,20 @@ functions:
     #defines to which topic we want to connect
     environment:
       resultTable: ${self:custom.resultTable}
+  processingResultExits:
+    handler: stasis/results/exists.exist
+    events:
+      - http:
+          private: true
+          path: result/{sample}
+          method: head
+          cors: true
+          documentation:
+            summary: check if a data processing result exists already
+          request:
+            parameter:
+              paths:
+                sample: true
 
   #fetches an result record
   resultCreate:
@@ -269,10 +278,22 @@ functions:
           documentation:
             summary: creates a new tracking record in the database for the given sample
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
+  # creates a tracking update
+  # whenever a sample status got pushed
+  tracking_status_update:
+    handler: stasis/jobs/sync.do_sync
+    events:
+      - sqs:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn
+                - aws
+                - sqs
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - ${self:custom.syncQueue}
+    timeout: 30
 
   #fetches an existing tracking record from the system
   trackingGet:
@@ -290,10 +311,6 @@ functions:
               paths:
                 sample: true
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches an existing tracking record from the system
   trackingDelete:
@@ -310,11 +327,6 @@ functions:
             parameter:
               paths:
                 sample: true
-
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches a list of samples in an experiment
   trackingExperiment:
@@ -356,10 +368,7 @@ functions:
                 experiment: true
                 psize: true
                 lastSample: true
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
+
 
   #fetches an acquisition record
   acquisitionGet:
@@ -376,10 +385,6 @@ functions:
                 sample: true
           documentation:
             summary: fetches the acquisition information for the given sample
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #fetches an acquisition record
   acquisitionCreate:
@@ -393,10 +398,6 @@ functions:
           documentation:
             summary: creates a new record with the given acquisition information
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
 
   #imports data from MiniX
   acquisitionCreateFromMinix:
@@ -410,11 +411,6 @@ functions:
           documentation:
             summary: this generates an acquisition table based on past minix study data and should be avoided!
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
-
   #schedule data to stasis, for handling the processing on the backend
   schedule:
     handler: stasis/schedule/schedule.schedule
@@ -427,11 +423,6 @@ functions:
           documentation:
             summary: schedules a new processing tasks to the queue
 
-    #defines to which topic we want to connect
-    environment:
-      schedule_queue: ${self:custom.scheduleQueue}
-
-      #returns the count of scheduled tasks in the fargate cluster
 
   # fetches the list of tracking statuses
   statusGet:
@@ -445,19 +436,14 @@ functions:
           documentation:
             summary: returns all possible status names and their priority
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
-
   #checks existence of a raw data file
   fileExists:
     handler: stasis/file/exists.exists
     events:
       - http:
           private: true
-          path: file/exists/{sample}
-          method: get
+          path: file/{sample}
+          method: head
           cors: true
           request:
             parameter:
@@ -469,6 +455,23 @@ functions:
     environment:
       dataBucket: ${self:custom.dataRawBucketName}
 
+  jobResultExits:
+    handler: stasis/jobs/result.exist
+    events:
+      - http:
+          private: true
+          path: job/result/{job}
+          method: head
+          cors: true
+          documentation:
+            summary: check if a job result exists
+          request:
+            parameter:
+              paths:
+                job: true
+    #defines to which topic we want to connect
+    environment:
+      dataBucket: ${self:custom.dataZipBucketName}
 
   #creates a new tracking record in the system
   job_tracking_create:
@@ -482,11 +485,6 @@ functions:
           documentation:
             summary: updates the tracking status of a sample with the associated job
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
   #fetches an existing tracking record from the system
   job_tracking_get:
     handler: stasis/jobs/tracking.get
@@ -512,17 +510,12 @@ functions:
                 job: true
                 sample: true
 
-    #defines to which topic we want to connect
-    environment:
-      trackingTable: ${self:custom.trackingTable}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
   # computes the current state of the given job
   job_tracking_status:
     handler: stasis/jobs/tracking.status
     events:
       - http:
-          path: job/status/{job}/{sync}
+          path: job/status/{job}
           private: true
           method: get
           cors: true
@@ -530,15 +523,11 @@ functions:
             parameter:
               paths:
                 job: true
-                sync: false
           documentation:
             summary: returns the overal status of the given job
             queryParams:
               - name: job
                 description: the job id
-                required: true
-              - name: sync
-                description: do you want to force a synchronization, which is very expensive
                 required: true
       - http:
           path: job/status/{job}
@@ -611,8 +600,8 @@ functions:
       aggregation_queue: ${self:custom.aggregationQueue}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
-
-
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
     #schedule data to for handling the processing and aggregation on the backend
   job_schedule:
     handler: stasis/jobs/schedule.schedule_job
@@ -629,7 +618,6 @@ functions:
             parameter:
               paths:
                 job: true
-                sync: false
     #defines to which topic we want to connect
     environment:
 
@@ -642,7 +630,8 @@ functions:
       aggregation_queue: ${self:custom.aggregationQueue}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
-
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   job_result:
     handler: stasis/jobs/result.get
@@ -671,6 +660,8 @@ functions:
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
       dataBucket: ${self:custom.dataZipBucketName}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   zip_bucket:
     handler: stasis/bucket/bucket.bucket_zip
@@ -717,33 +708,39 @@ functions:
   zip_bucket_triggers:
     handler: stasis/bucket/triggers.bucket_zip
     events:
-      - existingS3:
+      - s3:
           bucket: ${self:custom.dataZipBucketName}
-          events:
-            - s3:ObjectCreated:*
-
-          documentation:
-            summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync
-
-    environment:
-      dataBucket: ${self:custom.dataZipBucketName}
-      jobStateTable: ${self:custom.jobStateTable}
-
-
-  json_bucket_triggers:
-    handler: stasis/bucket/triggers.bucket_json
-    events:
-      - existingS3:
-          bucket: ${self:custom.dataJSONBucketName}
           events:
             - s3:ObjectCreated:*
 
           existing: true
           documentation:
-            summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync. Especially samples
+            summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync
 
     environment:
-      dataBucket: ${self:custom.dataJSONBucketName}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
+      dataBucket: ${self:custom.dataZipBucketName}
 
+
+  json_bucket_triggers:
+    events:
+      - s3:
+          bucket: ${self:custom.dataJSONBucketName}
+          events:
+            - s3:ObjectCreated:*
+          existing: true
+          documentation:
+            summary: triggers the function, when an objectwas created to speed up synchronization
+
+    handler: stasis/bucket/triggers.bucket_json
+
+    timeout: 900
+    environment:
+      dataBucket: ${self:custom.dataJSONBucketName}
+
+
+resources:
+  Resources:
+    MyQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "StasisSyncQueue-${self:custom.stage}"

@@ -3,47 +3,58 @@
 # defines the schema of the incoming data object
 __ACQUISITION_SCHEMA__ = {
     'sample': {
-        'type': 'string'
+        'type': 'string',
+        'minLength': 1
     },
     'experiment': {
-        'type': 'string'
+        'type': 'string',
+        'minLength': 1
     },
     'acquisition': {
         'instrument': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         },
         'ionisation': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         },
         'method': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         },
         'required': ['instrument', 'method']
     },
     'processing': {
         'method': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         },
         'required': ['method']
     },
     'metadata': {
         'class': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         },
         'species': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         },
         'organ': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         },
         'required': ['class', 'species', 'organ']
     },
     'userdata': {
         'label': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         },
         'comment': {
-            'type': 'string'
+            'type': 'string',
+            'minLength': 1
         }
     },
     'references': {
@@ -51,10 +62,12 @@ __ACQUISITION_SCHEMA__ = {
         'items': {
             'type': 'object',
             'name': {
-                'type': 'string'
+                'type': 'string',
+                'minLength': 1
             },
             'value': {
-                'type': 'string'
+                'type': 'string',
+                'minLength': 1
             },
             'required': ['name', 'value']
         }
@@ -65,50 +78,106 @@ __ACQUISITION_SCHEMA__ = {
 
 # defines the incomming tracking schema
 __TRACKING_SCHEMA__ = {
-    'sample': {
-        'type': 'string'
-    },
-    'status': {
-        'type': 'string'
-    },
-    'fileHandle': {
-        'type': 'string'
+    '$id': 'http://example.com/example.json',
+    'type': 'object',
+    'definitions': {},
+    '$schema': 'http://json-schema.org/draft-07/schema#',
+    'properties': {
+        'sample': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'status': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'fileHandle': {
+            'type': 'string',
+            'minLength': 1
+        },
+        "reason": {
+            'type': 'string',
+            'minLength': 1
+        }
     },
     'required': ['sample', 'status']
 }
 
 # defines the incomming tracking schema
 __JOB_SCHEMA__ = {
-    'samples': {
-        'type': 'array',
-        'items': {
-            'type': 'string'
-        }
-    },
-    'status': {
-        'type': 'string'
-    },
-    'method': {
-        'type': 'string'
-    },
-    'profile': {
-        'type': 'string'
-    },
-    'env': {
-        'type': 'string'
-    },
-    'id': {
-        'type': 'string'
-    },
-    'notify': {
-        'type': 'object',
-        'email': {
+
+    '$id': 'http://example.com/example.json',
+    'type': 'object',
+    'definitions': {},
+    '$schema': 'http://json-schema.org/draft-07/schema#',
+    'properties': {
+        'samples': {
             'type': 'array',
+            'minItems': 1,
+            'uniqueItems': True,
             'items': {
-                'type': 'string'
+                'type': 'string',
+                'minLength': 1
+            }
+        },
+        'method': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'profile': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'resource': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'env': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'id': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'notify': {
+            'type': 'object',
+            'properties': {
+                'email': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'string',
+                        'minLength': 1
+                    }
+                }
+            }
+        },
+        'meta': {
+            'type': 'object',
+            'properties': {
+                'tracking': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'state': {
+                                'type': 'string',
+                                'minLength': 1
+                            },
+                            'extension': {
+                                'type': 'string',
+                                'minLength': 1
+                            }
+                        },
+                        'required': [
+                            'state'
+                        ]
+                    }
+                }
             }
         }
-    },
+    }
+    ,
     'required': [
         'samples',
         'profile',
@@ -190,82 +259,50 @@ __RESULT_SCHEMA__ = {
 }
 
 __SCHEDULE__ = {
+    '$id': 'http://example.com/example.json',
+    'type': 'object',
+    'definitions': {},
+    '$schema': 'http://json-schema.org/draft-07/schema#',
+    'properties': {
+        'profile': {
+            '$id': '/properties/profile',
+            'type': 'string',
+            'minLength': 1,
+            'title': 'The Profile Schema ',
+            'examples': [
+                'lcms',
+                'gcms'
+            ]
+        },
+        'env': {
+            '$id': '/properties/env',
+            'type': 'string',
+            'minLength': 1,
+            'title': 'The Env Schema ',
+            'examples': [
+                'prod',
+                'test',
+                'dev'
 
-    "$id": "http://example.com/example.json",
-    "type": "object",
-    "definitions": {},
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "properties": {
-        "profile": {
-            "$id": "/properties/profile",
-            "type": "string",
-            "title": "The Profile Schema ",
-            "default": "",
-            "examples": [
-                "lcms",
-                "gcms"
             ]
         },
-        "env": {
-            "$id": "/properties/env",
-            "type": "string",
-            "title": "The Env Schema ",
-            "default": "",
-            "examples": [
-                "prod",
-                "test",
-                "dev"
-
+        'sample': {
+            '$id': '/properties/sample',
+            'type': 'string',
+            'minLength': 1,
+            'title': 'The Sample Schema ',
+            'examples': [
+                'abc'
             ]
         },
-        "sample": {
-            "$id": "/properties/sample",
-            "type": "string",
-            "title": "The Sample Schema ",
-            "default": "",
-            "examples": [
-                "abc.mzml"
-            ]
-        },
-        "method": {
-            "$id": "/properties/method",
-            "type": "string",
-            "title": "The Method Schema ",
-            "default": "",
-            "examples": [
-                "method name | instrument | column | ion mode"
+        'method': {
+            '$id': '/properties/method',
+            'type': 'string',
+            'minLength': 1,
+            'title': 'The Method Schema ',
+            'examples': [
+                'method name | instrument | column | ion mode'
             ]
         }
     }
-}
-
-# defines the input schema for a target
-__TARGET_SCHEMA__ = {
-    'properties': {
-        'method': {
-            'type': 'string'
-        },
-        'mz_rt': {
-            'type': 'string'
-        },
-        'sample': {
-            'type': 'string'
-        },
-        'name': {
-            'type': 'string'
-        },
-        'mz': {
-            'type': 'number'
-        },
-        'rt': {
-            'type': 'number'
-        },
-        'rtUnit': {
-            'type': 'string'
-        },
-        'riMarker': {
-            'type': 'boolean'
-        }
-    },
-    'required': ['method', 'mz', 'rt', 'sample']
 }

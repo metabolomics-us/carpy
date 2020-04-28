@@ -1,16 +1,17 @@
-import json
+import simplejson as json
 import traceback
 
-from boto3.dynamodb.conditions import Key
-from jsonschema import validate
+from boto3.dynamodb.conditions import Key, Attr
+from jsonschema import validate, ValidationError
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.jobs.states import States
-from stasis.jobs.sync import sync
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR
+from stasis.jobs.sync import sync_job
+from stasis.schedule.backend import DEFAULT_PROCESSING_BACKEND, Backend
+from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
 from stasis.schema import __JOB_SCHEMA__
+from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, load_job_samples, \
-    get_job_config
+    get_job_config, get_file_handle, save_sample_state
 
 
 def store_job(event, context):
@@ -22,7 +23,21 @@ def store_job(event, context):
     """
 
     body = json.loads(event['body'])
-    validate(body, __JOB_SCHEMA__)
+    try:
+        validate(body, __JOB_SCHEMA__)
+    except ValidationError as e:
+
+        return {
+
+            'body': json.dumps({'state': str(FAILED), 'reason': str(e)}),
+
+            'statusCode': 503,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
 
     job_id = body['id']
     samples = body['samples']
@@ -30,22 +45,40 @@ def store_job(event, context):
     env_ = body['env']
     profile = body['profile']
 
+    # in case we want to
+    tracking = body.get('meta', {}).get('tracking', [])
+    if 'resource' in body:
+        resource = Backend(body['resource'])
+    else:
+        resource = DEFAULT_PROCESSING_BACKEND
+
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
     try:
 
         # store actual job in the job table with state scheduled
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=States.STORED)
+                      state=ENTERED, resource=resource)
+
         for sample in samples:
+
+            # overwrite tracking states and extension if it's provided
+            for track in tracking:
+                if 'extension' in track:
+                    fileHandle = "{}.{}".format(sample, track['extension'])
+                else:
+                    fileHandle = None
+
+                save_sample_state(sample=sample, state=track['state'], fileHandle=fileHandle)
+
             set_sample_job_state(
                 job=job_id,
                 sample=sample,
-                state=States.STORED
+                state=SCHEDULING
             )
         return {
 
-            'body': json.dumps({'state': str(States.STORED), 'job': job_id}),
+            'body': json.dumps({'state': str(ENTERED), 'job': job_id}),
 
             'statusCode': 200,
 
@@ -57,12 +90,12 @@ def store_job(event, context):
     except Exception as e:
         # update job state in the system to failed with the related reason
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=States.FAILED, reason=str(e))
+                      state=FAILED, reason=str(e))
 
         traceback.print_exc()
         return {
 
-            'body': json.dumps({'state': str(States.FAILED), 'job': job_id, 'reason': str(e)}),
+            'body': json.dumps({'state': str(FAILED), 'job': job_id, 'reason': str(e)}),
 
             'statusCode': 500,
 
@@ -104,6 +137,7 @@ def schedule_job(event, context):
     method = details['method']
     env_ = details['env']
     profile = details['profile']
+    resource = details['resource']
 
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
@@ -111,34 +145,36 @@ def schedule_job(event, context):
 
         # store actual job in the job table with state scheduled
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=States.SCHEDULING)
+                      state=SCHEDULING, resource=resource)
         for sample in samples:
             try:
+                handle = get_file_handle(sample, CONVERTED)
+                print("looked up handle {} for sample {}".format(handle, sample))
                 schedule_to_queue({
-                    "sample": sample,
+                    "sample": handle,
                     "env": env_,
                     "method": method,
                     "profile": profile,
                     "key": stasis_key
-                }, service=SECURE_CARROT_RUNNER)
+                }, service=SECURE_CARROT_RUNNER, resource=resource)
                 set_sample_job_state(
                     job=job_id,
                     sample=sample,
-                    state=States.SCHEDULED
+                    state=SCHEDULED
                 )
             except Exception as e:
                 set_sample_job_state(
                     job=job_id,
                     sample=sample,
-                    state=States.FAILED,
+                    state=FAILED,
                     reason=str(e)
                 )
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=States.SCHEDULED)
+                      state=SCHEDULED, resource=resource)
 
         return {
 
-            'body': json.dumps({'state': str(States.SCHEDULED), 'job': job_id}),
+            'body': json.dumps({'state': str(SCHEDULED), 'job': job_id}),
 
             'statusCode': 200,
 
@@ -150,12 +186,12 @@ def schedule_job(event, context):
     except Exception as e:
         # update job state in the system to failed with the related reason
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=States.FAILED, reason=str(e))
+                      state=FAILED, reason=str(e))
 
         traceback.print_exc()
         return {
 
-            'body': json.dumps({'state': str(States.FAILED), 'job': job_id, 'reason': str(e)}),
+            'body': json.dumps({'state': str(FAILED), 'job': job_id, 'reason': str(e)}),
 
             'statusCode': 500,
 
@@ -172,6 +208,7 @@ def monitor_jobs(event, context):
     if they are ready for processing
     """
 
+    print("job monitor triggered from event {}".format(event))
     # 1. query JOB state table in state running
     tm = TableManager()
     table = tm.get_job_state_table()
@@ -179,7 +216,7 @@ def monitor_jobs(event, context):
     query_params = {
         'IndexName': 'state-index',
         'Select': 'ALL_ATTRIBUTES',
-        'KeyConditionExpression': Key('state').eq(str(States.SCHEDULED))
+        'KeyConditionExpression': Key('state').eq(SCHEDULED)
     }
 
     result = table.query(**query_params)
@@ -191,20 +228,17 @@ def monitor_jobs(event, context):
             query_params = {
                 'IndexName': 'state-index',
                 'Select': 'ALL_ATTRIBUTES',
-                'KeyConditionExpression': Key('state').eq(str(States.PROCESSING))
+                'FilterExpression': Attr('state').ne(SCHEDULED)
             }
 
-            result = table.query(**query_params)
-
+            result = table.scan(**query_params)
         for x in result['Items']:
             try:
-                state = sync(x['id'])
 
-                if state == States.PROCESSED:
-                    print("schedule aggregation for {}".format(x))
-                    schedule_to_queue({"job": x['id'], "env": x['env'], "profile": x['profile']},
-                                      service=SECURE_CARROT_AGGREGATOR)
-                    update_job_state(job=x['id'], state=States.AGGREGATION_SCHEDULED)
+                if x['state'] == FAILED:
+                    continue
+
+                sync_job(x)
             except Exception as e:
                 traceback.print_exc()
-                update_job_state(job=x['id'], state=States.FAILED, reason=str(e))
+                update_job_state(job=x['id'], state=FAILED, reason=str(e))

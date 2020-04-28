@@ -17,9 +17,7 @@ def test_get(requireMocking):
 
     print(json.dumps(result, indent=2))
 
-    assert 200 == result['statusCode']
-    assert False == json.loads(result['body'])['exist']
-    assert 'test' == json.loads(result['body'])['file']
+    assert 404 == result['statusCode']
 
     # test existing file
     data_carrot = Bucket(os.environ['dataBucket'])
@@ -30,5 +28,3 @@ def test_get(requireMocking):
     print(json.dumps(result, indent=2))
 
     assert 200 == result['statusCode']
-    assert True == json.loads(result['body'])['exist']
-    assert 'test' == json.loads(result['body'])['file']

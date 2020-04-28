@@ -13,15 +13,6 @@ def test_get_experiment_paged_default(api_token):
     data = json.loads(result.content)
     assert 25 == len(data['items'])
 
-
-def test_get_experiment_paged_custom_page_size(api_token):
-    result = requests.get(apiUrl + '/experiment/unknown/15', headers=api_token)
-    data = json.loads(result.content)
-
-    assert 15 == len(data['items'])
-    assert data['last_item']['id'] == 'B5_P20Lipid_Pos_NIST001'
-
-
 def test_get_experiment_paged_second_page(api_token):
     result = requests.get(apiUrl + '/experiment/unknown/15/B5_P20Lipid_Pos_NIST001', headers=api_token)
     if result.status_code != 200:

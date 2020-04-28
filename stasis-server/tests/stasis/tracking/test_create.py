@@ -4,19 +4,26 @@ import pytest
 import simplejson as json
 
 from stasis.acquisition import create as acq_create
+from stasis.service.Status import ENTERED, ACQUIRED, CONVERTED, SCHEDULING, PROCESSING, DECONVOLUTED, CORRECTED, \
+    ANNOTATED, QUANTIFIED, REPLACED, EXPORTED, SCHEDULED
+from stasis.tables import _remove_reinjection
 from stasis.tracking import create
 
 
-def test_create_success(requireMocking):
+@pytest.mark.parametrize('state',
+                         [ENTERED, ACQUIRED, CONVERTED, SCHEDULING, SCHEDULED, PROCESSING, DECONVOLUTED, CORRECTED,
+                          ANNOTATED,
+                          QUANTIFIED, REPLACED, EXPORTED])
+def test_create_success(requireMocking, state):
     timestamp = int(time.time() * 1000)
 
-    jsonString = json.dumps({'sample': 'myTest', 'status': 'entered'})
+    jsonString = json.dumps({'sample': 'myTest', 'status': state})
 
     response = create.create({'body': jsonString}, {})
     assert 'isBase64Encoded' in response
     assert response['statusCode'] == 200
 
-    assert 'entered' == json.loads(response['body'])['status'][0]['value']
+    assert state == json.loads(response['body'])['status'][0]['value']
     assert timestamp <= json.loads(response['body'])['status'][0]['time']
 
 
@@ -102,7 +109,7 @@ def test_create_with_experiment(requireMocking):
 def test_fetching_reinjection(requireMocking):
     data = ['reinjected_2', 'reinjected_BU', 'reinjected_3']
 
-    cleaned = [create._remove_reinjection(x) for x in data]
+    cleaned = [_remove_reinjection(x) for x in data]
 
     assert all([x == 'reinjected' for x in cleaned])
 

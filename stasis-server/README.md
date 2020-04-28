@@ -9,7 +9,6 @@ first you need to install all required serverless plugins
 sls plugin install -n serverless-domain-manager
 sls plugin install -n serverless-python-requirements
 sls plugin install -n serverless-aws-documentation
-sls plugin install -n serverless-plugin-existing-s3
 
 ```
 
@@ -29,7 +28,3 @@ this only needs to be done once and might take 45m until the service is register
 sls deploy --stage <NAME>
 
 deploys the stage, assuming you setup the domain
-
-sls s3deploy --stage <NAME>
-
-this initializes all the bucket event bindings. Rather hacky

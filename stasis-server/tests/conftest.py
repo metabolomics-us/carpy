@@ -7,6 +7,9 @@ import pytest
 import simplejson as json
 from moto.ec2 import utils as ec2_utils
 
+from stasis.jobs.schedule import store_job
+from stasis.schedule.backend import Backend
+
 if 'AWS_DEFAULT_REGION' not in os.environ:
     os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
 
@@ -39,13 +42,13 @@ def requireMocking():
     ec2 = moto.mock_ec2()
     ec2.start()
 
-
     session = boto3.session.Session()
     session.client('sns')
     session.client('s3')
 
     os.environ["aggregation_queue"] = "test_aggregation"
     os.environ["schedule_queue"] = "test_schedule"
+    os.environ["sample_sync_queue"] = "test_sync_schedule"
     os.environ["topic"] = "UnitTestTopic"
     os.environ["trackingTable"] = "UnitTrackingTable"
     os.environ["acquisitionTable"] = "UnitAcquisitionTable"
@@ -129,3 +132,65 @@ def create_cluster():
     )
 
     return cluster
+
+
+@pytest.fixture()
+def mocked_job():
+    job = {
+        "id": "test_job",
+        "method": "test",
+        "samples": [
+            "none_abc_12345",
+            "none_abd_12345",
+            "none_abe_12345",
+            "none_abz_12345"
+        ],
+        "profile": "lcms",
+        "env": "test",
+        "resource": 'FARGATE',
+        "meta": {
+            "tracking": [
+                {
+                    "state": "entered"
+                },
+                {
+                    "state": "acquired",
+                    "extension": "d"
+                },
+                {
+                    "state": "converted",
+                    "extension": "mzml"
+                }
+            ]
+        }
+    }
+
+    store_job({'body': json.dumps(job)}, {})
+    return job
+
+
+@pytest.fixture()
+def mocked_10_sample_job():
+    job = {
+        "id": "12345",
+        "method": "test",
+        "samples": [
+            "abc_0",
+            "abc_1",
+            "abc_2",
+            "abc_3",
+            "abc_4",
+            "abc_5",
+            "abc_6",
+            "abc_7",
+            "abc_8",
+            "abc_9",
+        ],
+        "profile": "lcms",
+        "env": "test",
+        "resource": Backend.FARGATE.value
+    }
+
+    store_job({'body': json.dumps(job)}, {})
+
+    return job

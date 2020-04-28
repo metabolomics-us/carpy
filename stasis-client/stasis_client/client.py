@@ -1,12 +1,13 @@
 import os
+import shutil
 from typing import Optional
 
 import boto3
 import boto3.s3
 import requests
 import simplejson as json
-from botocore.exceptions import ClientError
-from simplejson import JSONDecodeError
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 
 class StasisClient:
@@ -45,25 +46,41 @@ class StasisClient:
             'x-api-key': f'{self._token}'
         }
 
-        print(f"using url: {self._url}")
-        self._processed_bucket = self.get_processed_bucket()
-
-        print(f"using bucket: {self._processed_bucket}")
-        self.json_data_bucket = boto3.resource('s3').Bucket(self._processed_bucket)
+        retry_strategy = Retry(
+            total=500,
+            status_forcelist=[429, 500, 502, 503, 504],
+            method_whitelist=["HEAD", "GET", "OPTIONS"],
+            backoff_factor=0.3
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.http = requests.Session()
 
     def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
-                                        version: str = "164"):
+                                        resource: str = "FARGATE"):
         """
         schedules a sample for dataprocessing
         """
-        result = requests.post(f"{self._url}/schedule",
-                               json={'sample': sample_name, 'env': env, 'method': method, 'profile': profile,
-                                     'task_version': version, 'secured': True}, headers=self._header)
+        result = self.http.post(f"{self._url}/schedule",
+                                json={'sample': sample_name, 'env': env, 'method': method, 'profile': profile,
+                                      'resource': resource, 'secured': True}, headers=self._header)
 
         if result.status_code != 200:
-            raise Exception("scheduling failed!")
+            raise Exception(f"scheduling failed for {sample_name} in env {env}, profile {profile}, resource {resource} and method {method}")
         else:
-            return result
+            return result.json()
+
+    def sample_raw_data_exists(self, sample_name) -> bool:
+        """
+        checks if the raw data exist
+        """
+        result = self.http.head(f"{self._url}/sample/{sample_name}")
+
+        if result.status_code == 200:
+            return True
+        elif result.status_code == 404:
+            return False
+        else:
+            raise Exception("error checkign state, status code was {} for sample {}".format(result.status_code,sample_name))
 
     def sample_acquisition_create(self, data: dict):
         """
@@ -72,9 +89,9 @@ class StasisClient:
              data: the data object containing the aquisiton description
         Returns:
         """
-        result = requests.post(f'{self._url}/acquisition', json=data, headers=self._header)
+        result = self.http.post(f'{self._url}/acquisition', json=data, headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for data {data}")
         return result
 
     def sample_acquisition_get(self, sample_name):
@@ -86,12 +103,12 @@ class StasisClient:
 
         Returns:
         """
-        result = requests.get(f'{self._url}/acquisition/{sample_name}', headers=self._header)
+        result = self.http.get(f'{self._url}/acquisition/{sample_name}', headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for sample {sample_name}")
         return result.json()
 
-    def sample_state(self, sample_name: str):
+    def sample_state(self, sample_name: str, full_response: bool = False):
         """Returns the state of the given sample by calling Stasis' tracking API
         Args:
             sample_name: name of the sample
@@ -108,13 +125,33 @@ class StasisClient:
                     }
                 ]
         """
-        result = requests.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
+        result = self.http.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for {sample_name}")
 
-        return result.json()['status']
+        if full_response is True:
+            return result.json()
+        else:
+            return result.json()['status']
 
-    def sample_state_update(self, sample_name: str, state):
+    def file_handle_by_state(self, sample_name: str, state: str):
+        """
+        returns the correct file handle for the given sample name in the system
+        """
+
+        result = self.http.get(f'{self._url}/tracking/{sample_name}', headers=self._header)
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for {sample_name} and {state}")
+
+        states = result.json()['status']
+
+        for x in states:
+            if x['value'] == state and 'fileHandle' in x:
+                return x['fileHandle']
+
+        raise Exception("state not found or has no file handle for {} and state".format(sample_name,state))
+
+    def sample_state_update(self, sample_name: str, state, file_handle: Optional[str] = None):
         """
         updates a sample state in the remote system+
 
@@ -126,67 +163,35 @@ class StasisClient:
         """
         data = {
             "sample": sample_name,
-            "status": state
+            "status": state,
         }
-        result = requests.post(f'{self._url}/tracking', json=data, headers=self._header)
+
+        if file_handle is not None:
+            data['fileHandle'] = file_handle
+
+        result = self.http.post(f'{self._url}/tracking', json=data, headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} and {sample_name} in {state} with {file_handle}")
         return result
 
-    def sample_result(self, sample_name: str, dest: Optional[str] = 'tmp') -> dict:
+    def sample_result_as_json(self, sample_name) -> dict:
         """
-        Downloads a sample's result
+        download a sample result as json
 
-        Args:
-            sample_name: filename to download
-            dest: Optional folder to store the file
-
-        Returns:
-            a json object with the result data or error information
+        #TODO refactor to use buckets instead, due to potentially very large files
+        :param sample_name:
+        :return:
         """
-
-        jstr = ""
-        if not os.path.exists(dest):
-            os.makedirs(dest)
-
-        filename = f'{dest}/{sample_name}'
-
-        if not filename.endswith(".json"):
-            filename = "{}.json".format(filename)
-
-        try:
-            with open(filename, 'wb') as data:
-                self.json_data_bucket.download_fileobj(sample_name, data)
-
-            with open(filename, 'rb') as data:
-                jstr = json.load(data)
-
-        except JSONDecodeError as jde:
-            jstr = {'Error': jde.msg, 'filename': sample_name}
-        except ClientError as ce:
-            jstr = {'Error': ce.response['Error'], 'filename': sample_name}
-        finally:
-            try:
-                # only remove downloads in ./tmp
-                if os.path.exists(f'tmp/{sample_name}'):
-                    os.remove(f'tmp/{sample_name}')
-
-                # or empty files
-                if os.path.getsize(filename) <= 0:
-                    os.remove(filename)
-            except FileNotFoundError:
-                pass
-
-            return jstr
+        result = self.http.get(f"{self._url}/result/{sample_name}", headers=self._header)
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for {sample_name}")
+        return result.json()
 
     def get_url(self):
         return self._url
 
-    def get_bucket(self):
-        return self._processed_bucket
-
     def get_states(self):
-        result = requests.get(f"{self._url}/status", headers=self._header)
+        result = self.http.get(f"{self._url}/status", headers=self._header)
 
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
@@ -198,9 +203,9 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/job/{job_id}", headers=self._header)
+        result = self.http.get(f"{self._url}/job/{job_id}", headers=self._header)
         if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
         return result.json()
 
     def load_job_state(self, job_id):
@@ -209,9 +214,9 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/job/status/{job_id}", headers=self._header)
+        result = self.http.get(f"{self._url}/job/status/{job_id}", headers=self._header)
         if result.status_code != 200:
-            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
         return result.json()
 
     def get_raw_bucket(self):
@@ -219,7 +224,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/data/raw", headers=self._header)
+        result = self.http.get(f"{self._url}/data/raw", headers=self._header)
         if result.status_code != 200:
             raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
@@ -229,7 +234,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/data/zip", headers=self._header)
+        result = self.http.get(f"{self._url}/data/zip", headers=self._header)
         if result.status_code != 200: raise Exception(
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
@@ -239,21 +244,42 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = requests.get(f"{self._url}/data/json", headers=self._header)
+        result = self.http.get(f"{self._url}/data/json", headers=self._header)
         if result.status_code != 200:
             raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
 
+    def upload_job_result(self, job: str, directory: str):
+        """
+        uploads the content of the given directory to the remote storage facility.
+        """
+
+        bucket_name = self.get_aggregated_bucket()
+        print("zipping data and uploading it to the result bucket: {}. File name will be {}.{}".format(
+            bucket_name, job, "zip"))
+        shutil.make_archive(f"result/{job}", 'zip', directory)
+
+        try:
+            boto3.client('s3').create_bucket(Bucket=bucket_name,
+                                             CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
+        except Exception as e:
+            pass
+
+        # upload new file
+        return boto3.client('s3').upload_file(Filename=f"result/{job}.zip", Bucket=bucket_name, Key=f"{job}.zip")
+
     def download_job_result(self, job: str) -> Optional[str]:
         """
         downloads the result of a job as base64 encoded string
+
+        #TODO refactor to use buckets instead, due to very large file sizes
         :return:
         """
-        result = requests.get(f"{self._url}/job/result/{job}", headers=self._header)
+        result = self.http.get(f"{self._url}/job/result/{job}", headers=self._header)
         if result.status_code == 503:
             return None
         elif result.status_code != 200:
-            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
+            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job}")
         return result.json()['content']
 
     def store_job(self, job: dict):
@@ -262,10 +288,10 @@ class StasisClient:
         :param job:
         :return:
         """
-        response = requests.post(f"{self._url}/job/store", json=job, headers=self._header)
+        response = self.http.post(f"{self._url}/job/store", json=job, headers=self._header)
         if response.status_code != 200:
             raise Exception(
-                f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
 
     def schedule_job(self, job_id: str):
         """
@@ -273,7 +299,9 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        response = requests.put(f"{self._url}/job/schedule/{job_id}", headers=self._header)
+        response = self.http.put(f"{self._url}/job/schedule/{job_id}", headers=self._header)
         if response.status_code != 200:
             raise Exception(
-                f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job_id}")
+        else:
+            return json.loads(response.content)
