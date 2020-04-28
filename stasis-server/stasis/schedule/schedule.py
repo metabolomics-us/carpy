@@ -1,8 +1,9 @@
 import os
-import simplejson as json
 import traceback
-from jsonschema import validate, ValidationError
 from typing import Optional
+
+import simplejson as json
+from jsonschema import validate, ValidationError
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
@@ -263,7 +264,7 @@ def schedule_processing_to_fargate(event, context):
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{},{}".format(body['env'], body['profile'], 'aws')
+                    "value": "{},{},{}".format(body['env'], body['profile'], 'aws')
                     # AWS profile needs to be active for this system to connect to the AWS database
                 },
                 {
