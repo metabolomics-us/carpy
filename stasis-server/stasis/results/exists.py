@@ -4,6 +4,7 @@ import simplejson as json
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.service.Bucket import Bucket
+from stasis.tables import get_file_handle
 
 
 def exist(events, context):
@@ -14,10 +15,11 @@ def exist(events, context):
     if 'pathParameters' in events:
         if 'sample' in events['pathParameters']:
 
-            sample = f"{events['pathParameters']['sample']}.json"
+            sample = f"{events['pathParameters']['sample']}"
             db = Bucket(os.environ["resultTable"])
+            sample = get_file_handle(sample=sample, state="exported")
+            print("looking in bucket {} for sample {}".format(os.environ["resultTable"], sample))
 
-            print("looking for file: {}".format(sample))
             if db.exists(sample):
                 # create a response
                 return {

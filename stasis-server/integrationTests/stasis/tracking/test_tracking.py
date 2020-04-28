@@ -90,7 +90,7 @@ def test_create_not_merging_statuses(api_token):
     assert 'processed-sample' == result.json()['sample']
     assert 11 == len(result.json()['status'])
 
-    result_data = result.json()
+    result_data = result.json()['status']
 
     assert 'fileHandle' not in result_data[0]
     assert 'fileHandle' in result_data[1]
@@ -113,5 +113,4 @@ def test_create_not_merging_statuses(api_token):
     assert result_data[7]['fileHandle'] == 'processed-sample.mzml'
     assert result_data[8]['fileHandle'] == 'processed-sample.mzml'
     assert result_data[9]['fileHandle'] == 'processed-sample.mzml'
-    assert result_data[10]['fileHandle'] == 'processed-sample.mzml'
-    assert result_data[11]['fileHandle'] == 'processed-sample.mzml.json'
+    assert result_data[10]['fileHandle'] == 'processed-sample.mzml.json'
