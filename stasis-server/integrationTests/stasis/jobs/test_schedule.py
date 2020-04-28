@@ -2,6 +2,7 @@ import json
 from time import time, sleep
 
 import requests
+from pytest import fail
 
 from stasis.service.Status import SCHEDULED
 
@@ -219,7 +220,8 @@ def test_schedule_job_integration(api_token):
 #           assert result['sample_states'].get('exported', 0) == 2
 #           assert result['sample_states'].get('failed', 0) == 1
             break
-
+        if result['job_state'] == 'failed':
+                fail("this job failed!")
         sleep(10)
         duration = time() - origin
 
@@ -293,6 +295,8 @@ def test_schedule_job_integration_no_metadata_single_sample(api_token):
             assert result['sample_states']['exported'] == 1
             break
 
+        if result['job_state'] == 'failed':
+            fail("this job failed!")
         sleep(10)
         duration = time() - origin
 
@@ -411,6 +415,8 @@ def test_schedule_job_integration_no_metadata(api_token):
             assert result['sample_states']['failed'] == 1
             break
 
+        if result['job_state'] == 'failed':
+            fail("this job failed!")
         sleep(10)
         duration = time() - origin
 
