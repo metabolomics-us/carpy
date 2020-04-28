@@ -1,9 +1,8 @@
 import os
-import traceback
-from typing import Optional
-
 import simplejson as json
+import traceback
 from jsonschema import validate, ValidationError
+from typing import Optional
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
@@ -232,7 +231,12 @@ def send_to_fargate(overrides, task_name):
             'awsvpcConfiguration': {
                 'subnets': [
                     # we need at least 2, to insure network stability
-                    os.environ.get('SUBNET', 'subnet-064fbf05a666c6557')],
+                    # these have been manually created and need to be shared with the db server
+                    'subnet-e382339a',
+                    'subnet-04c0515e',
+                    'subnet-b779a9fc',
+                    'subnet-39f3df11'
+                ],
                 'assignPublicIp': 'ENABLED'
             }
         },
@@ -259,7 +263,8 @@ def schedule_processing_to_fargate(event, context):
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{},{}".format(body['env'], body['profile'])
+                    "value": "{},{}".format(body['env'], body['profile'], 'aws')
+                    # AWS profile needs to be active for this system to connect to the AWS database
                 },
                 {
                     "name": "CARROT_SAMPLE",

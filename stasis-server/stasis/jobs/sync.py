@@ -89,6 +89,12 @@ def calculate_job_state(job: str) -> Optional[str]:
             print("no states found!")
             return None
 
+        # ALL ARE FAILED
+        elif states.count(FAILED) == len(states):
+            update_job_state(job=job_config['id'], state=FAILED,
+                             reason="job is in state failed, due to all samples being in state failed")
+            print("job is failed, no sample was successful")
+            return FAILED
         # ALL ARE EXPORTED OR FAILED
         elif states.count(EXPORTED) + states.count(FAILED) == len(states):
             update_job_state(job=job_config['id'], state=EXPORTED,
@@ -101,12 +107,7 @@ def calculate_job_state(job: str) -> Optional[str]:
                              reason="job is in state scheduled, due to all samples being in state scheduled")
             print("job still in state scheduled")
             return SCHEDULED
-        # ALL ARE FAILED
-        elif states.count(FAILED) == len(states):
-            update_job_state(job=job_config['id'], state=FAILED,
-                             reason="job is in state failed, due to all samples being in state failed")
-            print("job is failed, no sample was successful")
-            return FAILED
+
         # otherwise we must be processing
         else:
             update_job_state(job=job_config['id'], state=PROCESSING, reason="job is in state processing")

@@ -18,8 +18,8 @@ class JobEvaluator(Evaluator):
             'retrieve': self.retrieve,
             'detail': self.detail,
             'upload': self.upload,
-            'aggregate': self.aggregate
-
+            'aggregate': self.aggregate,
+            'monitor': self.monitor,
         }
 
         results = {}
@@ -81,16 +81,33 @@ class JobEvaluator(Evaluator):
             job = json.load(infile)
             job['id'] = id
 
-            print("INPUT")
-            print(json.dumps(job, indent=4))
-
-            result = self.client.store_job(job)
-
-            print("STORED JOB DETAILS")
-            print(self.detail(id, {}))
+            try:
+                result = self.client.store_job(job)
+                print("result was")
+                print(result)
+                print("complete job")
+                print(self.detail(id, {}))
+            except Exception as e:
+                print("input caused error:\n")
+                print(json.dumps(job, indent=4))
+                print(f"\nerror was: {str(e)}")
 
         return None
 
     def aggregate(self, id, args):
         pass
         assert False
+
+    def monitor(self, id, args):
+        """
+        monitors the state of a specified job
+        :param id:
+        :param args:
+        :return:
+        """
+
+        result = self.client.load_job_state(id)
+
+        print(result)
+
+        return result

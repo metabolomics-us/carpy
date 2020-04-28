@@ -181,7 +181,7 @@ def test_job(stasis_cli, test_sample, ):
         "samples": [
             "lc-test-sample"
         ],
-        "profile": "carrot.lcms",
+        "profile": "carrot.lcms, aws",
         "env": "test",
 
         "meta": {

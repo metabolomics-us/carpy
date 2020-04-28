@@ -24,14 +24,14 @@ class SampleEvaluator(Evaluator):
             'exist': self.exists,
             'retrieve': self.download,
             'detail': self.info,
-            'full': self.record
+            'full': self.record,
 
         }
 
         results = {}
         for x in mapping.keys():
             if x in args:
-                if args[x] is True:
+                if args[x] is not False:
                     results[x] = mapping[x](args['id'], args)
         return results
 
