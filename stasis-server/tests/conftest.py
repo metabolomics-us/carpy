@@ -135,15 +135,25 @@ def create_cluster():
     return cluster
 
 
+def pytest_generate_tests(metafunc):
+    if "backend" in metafunc.fixturenames:
+        metafunc.parametrize("backend", [Backend.FARGATE.value, Backend.LOCAL.value], indirect=True)
+
+
+@pytest.fixture
+def backend(request):
+    return Backend(request.param)
+
+
 @pytest.fixture()
-def mocked_10_sample_job():
+def mocked_10_sample_job(backend):
     job = {
         "id": "12345",
         "method": "test",
 
         "profile": "lcms",
         "env": "test",
-        "resource": Backend.FARGATE.value
+        "resource": backend.value
     }
 
     result = store_job({'body': json.dumps(job)}, {})
@@ -167,8 +177,25 @@ def mocked_10_sample_job():
         result = store_sample_for_job({
             'body': json.dumps({
                 'job': "12345",
-                'sample': sample
-            })
+                'sample': sample,
+                'meta': {
+                    "tracking": [
+                        {
+                            "state": "entered"
+                        },
+                        {
+                            "state": "acquired",
+                            "extension": "d"
+                        },
+                        {
+                            "state": "converted",
+                            "extension": "mzml"
+                        }
+                    ]
+
+                }
+            }
+            )
         }, {})
 
         assert result['statusCode'] == 200
