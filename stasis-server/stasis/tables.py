@@ -222,7 +222,7 @@ class TableManager:
                             'KeyType': 'HASH'
                         },
                         {
-                            'AttributeName': 'experiment',
+                            'AttributeName': 'sample',
                             'KeyType': 'RANGE'
                         }
                     ],
@@ -232,30 +232,11 @@ class TableManager:
                             'AttributeType': 'S'
                         },
                         {
-                            'AttributeName': 'experiment',
+                            'AttributeName': 'sample',
                             'AttributeType': 'S'
                         }
                     ],
                     BillingMode='PAY_PER_REQUEST',
-                    GlobalSecondaryIndexes=[
-                        {
-                            'IndexName': 'experiment-id-index',
-                            'KeySchema': [
-                                {
-                                    'AttributeName': 'experiment',
-                                    'KeyType': 'HASH'
-                                },
-                                {
-                                    'AttributeName': 'id',
-                                    'KeyType': 'RANGE'
-                                }
-                            ],
-                            'Projection': {
-                                'ProjectionType': 'ALL'
-                            },
-
-                        }
-                    ]
                 ))
             except ParamValidationError as e:
                 raise e
@@ -682,7 +663,6 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
         KeyConditionExpression=Key('id').eq(sample)
     )
     timestamp = int(time.time() * 1000)
-    experiment = _fetch_experiment(sample)
     new_status = {
         'time': timestamp,
         'value': state.lower(),
@@ -702,7 +682,6 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
         item = {
             'id': sample,
             'sample': sample,
-            'experiment': experiment,
             'status': []
         }
 
@@ -742,33 +721,6 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
         item = {}
         saved['ResponseMetadata']['HTTPStatusCode'] = 500
     return item, saved
-
-
-def _fetch_experiment(sample: str) -> str:
-    """
-        loads the internal experiment id for the given sample
-    :param sample:
-    :return:
-    """
-    print("\tfetching experiment id for sample %s" % sample)
-    tm = TableManager()
-    acq_table = tm.get_acquisition_table()
-
-    result = acq_table.query(
-        KeyConditionExpression=Key('id').eq(_remove_reinjection(sample))
-    )
-
-    if result['Items']:
-        item = result['Items'][0]
-        if 'experiment' in item:
-            return item['experiment']
-        else:
-            print('no experiment in item -> unknown')
-    else:
-        #        print('no items -> unknown')
-        pass
-
-    return 'unknown'
 
 
 def _remove_reinjection(sample: str) -> str:

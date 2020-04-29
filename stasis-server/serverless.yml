@@ -588,6 +588,8 @@ functions:
           documentation:
             summary: schedules a job to be computed to the backend queue
 
+    # requires more memory to get access to faster cpus
+    memorySize: 1024
     #defines to which topic we want to connect
     environment:
 

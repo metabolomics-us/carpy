@@ -5,14 +5,13 @@ import boto3
 import moto
 import pytest
 import simplejson as json
-from moto.ec2 import utils as ec2_utils
 
 from stasis.jobs.schedule import store_job
 from stasis.schedule.backend import Backend
 
-if 'AWS_DEFAULT_REGION' not in os.environ:
-    os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
+os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
 
+from moto.ec2 import utils as ec2_utils
 
 @pytest.fixture
 def requireMocking():
