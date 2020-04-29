@@ -1,10 +1,57 @@
 import json
 from time import time, sleep
 
+import pytest
 import requests
 from pytest import fail
 
 from stasis.service.Status import SCHEDULED
+
+
+@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 1000, 10000])
+def test_store_large_job_integration(api_token, sample_count):
+    """
+    test the storing of a job
+    :param api_token:
+    :return:
+    """
+
+    test_id = "test_job_{}".format(time())
+
+    samples = []
+
+    for x in range(0, sample_count):
+        samples.append(f"test_sample_{x}")
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+        "samples": samples,
+        "profile": "carrot.lcms",
+        "env": "test",
+
+        "meta": {
+            "tracking": [
+                {
+                    "state": "entered",
+                },
+                {
+                    "state": "acquired",
+                    "extension": "d"
+                },
+                {
+                    "state": "converted",
+                    "extension": "mzml"
+                },
+
+            ]
+        }
+    }
+
+    # store it
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+
+    assert response.status_code == 200
 
 
 def test_store_job_integration(api_token):
@@ -217,11 +264,11 @@ def test_schedule_job_integration(api_token):
         print(json.dumps(result, indent=4))
         if result['job_state'] == 'aggregated_and_uploaded':
             exspectation_met = True
-#           assert result['sample_states'].get('exported', 0) == 2
-#           assert result['sample_states'].get('failed', 0) == 1
+            #           assert result['sample_states'].get('exported', 0) == 2
+            #           assert result['sample_states'].get('failed', 0) == 1
             break
         if result['job_state'] == 'failed':
-                fail("this job failed!")
+            fail("this job failed!")
         sleep(10)
         duration = time() - origin
 

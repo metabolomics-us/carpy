@@ -6,12 +6,14 @@ import moto
 import pytest
 import simplejson as json
 
-from stasis.jobs.schedule import store_job
+from stasis.jobs.schedule import store_job, store_sample_for_job
 from stasis.schedule.backend import Backend
+from stasis.tables import get_job_config
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
 
 from moto.ec2 import utils as ec2_utils
+
 
 @pytest.fixture
 def requireMocking():
@@ -134,62 +136,41 @@ def create_cluster():
 
 
 @pytest.fixture()
-def mocked_job():
-    job = {
-        "id": "test_job",
-        "method": "test",
-        "samples": [
-            "none_abc_12345",
-            "none_abd_12345",
-            "none_abe_12345",
-            "none_abz_12345"
-        ],
-        "profile": "lcms",
-        "env": "test",
-        "resource": 'FARGATE',
-        "meta": {
-            "tracking": [
-                {
-                    "state": "entered"
-                },
-                {
-                    "state": "acquired",
-                    "extension": "d"
-                },
-                {
-                    "state": "converted",
-                    "extension": "mzml"
-                }
-            ]
-        }
-    }
-
-    store_job({'body': json.dumps(job)}, {})
-    return job
-
-
-@pytest.fixture()
 def mocked_10_sample_job():
     job = {
         "id": "12345",
         "method": "test",
-        "samples": [
-            "abc_0",
-            "abc_1",
-            "abc_2",
-            "abc_3",
-            "abc_4",
-            "abc_5",
-            "abc_6",
-            "abc_7",
-            "abc_8",
-            "abc_9",
-        ],
+
         "profile": "lcms",
         "env": "test",
         "resource": Backend.FARGATE.value
     }
 
-    store_job({'body': json.dumps(job)}, {})
+    result = store_job({'body': json.dumps(job)}, {})
 
-    return job
+    assert result['statusCode'] == 200
+
+    samples = [
+        "abc_0",
+        "abc_1",
+        "abc_2",
+        "abc_3",
+        "abc_4",
+        "abc_5",
+        "abc_6",
+        "abc_7",
+        "abc_8",
+        "abc_9",
+    ]
+
+    for sample in samples:
+        result = store_sample_for_job({
+            'body': json.dumps({
+                'job': "12345",
+                'sample': sample
+            })
+        }, {})
+
+        assert result['statusCode'] == 200
+
+    return get_job_config("12345")

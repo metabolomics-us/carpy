@@ -103,6 +103,55 @@ __TRACKING_SCHEMA__ = {
     'required': ['sample', 'status']
 }
 
+# defintion of a sample job schema
+__SAMPLE_JOB_SCHEMA__ = {
+    '$id': 'http://example.com/example.json',
+    'type': 'object',
+    'definitions': {},
+    '$schema': 'http://json-schema.org/draft-07/schema#',
+    'properties': {
+        'job': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'sample': {
+            'type': 'string',
+            'minLength': 1
+        },
+        'meta': {
+            'type': 'object',
+            'properties': {
+                'tracking': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'state': {
+                                'type': 'string',
+                                'minLength': 1
+                            },
+                            'extension': {
+                                'type': 'string',
+                                'minLength': 1
+                            }
+                        },
+                        'required': [
+                            'state'
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    ,
+    'required': [
+        'sample',
+        'job'
+    ],
+
+    "additionalProperties": True
+}
+
 # defines the incomming tracking schema
 __JOB_SCHEMA__ = {
 
@@ -111,15 +160,6 @@ __JOB_SCHEMA__ = {
     'definitions': {},
     '$schema': 'http://json-schema.org/draft-07/schema#',
     'properties': {
-        'samples': {
-            'type': 'array',
-            'minItems': 1,
-            'uniqueItems': True,
-            'items': {
-                'type': 'string',
-                'minLength': 1
-            }
-        },
         'method': {
             'type': 'string',
             'minLength': 1
@@ -179,12 +219,13 @@ __JOB_SCHEMA__ = {
     }
     ,
     'required': [
-        'samples',
         'profile',
         'method',
         'env',
         'id'
-    ]
+    ],
+
+    "additionalProperties": False
 }
 # defines the schema of the incoming data object
 __RESULT_SCHEMA__ = {

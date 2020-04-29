@@ -4,10 +4,10 @@ import random
 
 import pytest
 
-from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
+from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job, store_sample_for_job
 from stasis.schedule.backend import Backend
-from stasis.schedule.schedule import MESSAGE_BUFFER
 from stasis.schedule.monitor import monitor_queue
+from stasis.schedule.schedule import MESSAGE_BUFFER
 from stasis.service.Status import *
 from stasis.tables import load_job_samples, get_tracked_state, get_job_state, get_job_config, get_tracked_sample
 from stasis.tracking import create
@@ -117,51 +117,18 @@ def test_store_job_fails_no_samples(requireMocking):
     assert result['statusCode'] == 503
 
 
-def test_store_job(requireMocking):
+def test_store_job(requireMocking, mocked_10_sample_job):
     """
     tests storing a job in the database
     :param requireMocking:
     :return:
     """
 
-    job = {
-        "id": "stored_test_job",
-        "method": "test",
-        "samples": [
-            "abc_12345",
-            "abd_12345",
-            "abe_12345",
-            "abf_12345",
-            "abg_12345",
-            "abh_12345",
-            "abi_12345",
-            "abj_12345",
-            "abk_12345",
-            "abl_12345",
-            "abm_12345",
-            "abn_12345",
-            "abo_12345",
-            "abp_12345",
-            "abq_12345",
-            "abr_12345",
-            "abs_12345",
-            "abt_12345",
-            "abu_12345",
-            "abx_12345",
-            "aby_12345",
-            "abz_12345"
-        ],
-        "profile": "lcms",
-        "env": "test"
-    }
-
-    result = store_job({'body': json.dumps(job)}, {})
-
     # check result state
-    assert json.loads(result['body'])['state'] == 'entered'
+    assert mocked_10_sample_job['state'] == 'entered'
 
     # query actual db and check internal state
-    assert get_job_state("stored_test_job") == ENTERED
+    assert get_job_state(mocked_10_sample_job['id']) == ENTERED
 
 
 def test_schedule_job_fails_no_job_stored(requireMocking):
@@ -185,30 +152,7 @@ def test_schedule_job(requireMocking, backend):
     job = {
         "id": "test_job",
         "method": "test",
-        "samples": [
-            "abc_12345",
-            "abd_12345",
-            "abe_12345",
-            "abf_12345",
-            "abg_12345",
-            "abh_12345",
-            "abi_12345",
-            "abj_12345",
-            "abk_12345",
-            "abl_12345",
-            "abm_12345",
-            "abn_12345",
-            "abo_12345",
-            "abp_12345",
-            "abq_12345",
-            "abr_12345",
-            "abs_12345",
-            "abt_12345",
-            "abu_12345",
-            "abx_12345",
-            "aby_12345",
-            "abz_12345"
-        ],
+
         "profile": "lcms",
         "env": "test",
         "resource": backend.value
@@ -216,6 +160,38 @@ def test_schedule_job(requireMocking, backend):
 
     store_job({'body': json.dumps(job)}, {})
 
+    for x in [
+        "abc_12345",
+        "abd_12345",
+        "abe_12345",
+        "abf_12345",
+        "abg_12345",
+        "abh_12345",
+        "abi_12345",
+        "abj_12345",
+        "abk_12345",
+        "abl_12345",
+        "abm_12345",
+        "abn_12345",
+        "abo_12345",
+        "abp_12345",
+        "abq_12345",
+        "abr_12345",
+        "abs_12345",
+        "abt_12345",
+        "abu_12345",
+        "abx_12345",
+        "aby_12345",
+        "abz_12345"
+    ]:
+        result = store_sample_for_job({
+            'body': json.dumps({
+                'job': "test_job",
+                'sample': x
+            })
+        }, {})
+
+    assert result['statusCode'] == 200
     ##
     # check for the correct backend
     ##
@@ -299,7 +275,7 @@ def test_schedule_job(requireMocking, backend):
     validate_backened(backend)
 
     state = get_job_state("test_job")
-    assert state in [AGGREGATING,AGGREGATING_SCHEDULED] # kinda buggy
+    assert state in [AGGREGATING, AGGREGATING_SCHEDULED]  # kinda buggy
     # simulate the receiving of an aggregation event
 
 
@@ -438,7 +414,7 @@ def test_schedule_job_override_tracking_data(requireMocking, backend):
     validate_backened(backend)
 
     state = get_job_state("test_job")
-    assert state in [AGGREGATING,AGGREGATING_SCHEDULED] # kinda buggy
+    assert state in [AGGREGATING, AGGREGATING_SCHEDULED]  # kinda buggy
 
     # simulate the receiving of an aggregation event
 

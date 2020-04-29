@@ -1,6 +1,6 @@
-import simplejson as json
 import traceback
 
+import simplejson as json
 from boto3.dynamodb.conditions import Key, Attr
 from jsonschema import validate, ValidationError
 
@@ -8,10 +8,85 @@ from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.sync import sync_job
 from stasis.schedule.backend import DEFAULT_PROCESSING_BACKEND, Backend
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
-from stasis.schema import __JOB_SCHEMA__
+from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, load_job_samples, \
     get_job_config, get_file_handle, save_sample_state
+
+
+def store_sample_for_job(event, context):
+    """
+    stores an associated sample for an job
+    :param event:
+    :param context:
+    :return:
+    """
+
+    body = json.loads(event['body'])
+    try:
+        validate(body, __SAMPLE_JOB_SCHEMA__)
+    except ValidationError as e:
+
+        return {
+
+            'body': json.dumps({'state': str(FAILED), 'reason': str(e)}),
+
+            'statusCode': 503,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
+    tracking = body.get('meta', {}).get('tracking', [])
+    sample = body.get('sample')
+    job = body.get("job")
+
+    try:
+        # overwrite tracking states and extension if it's provided
+        for track in tracking:
+            if 'extension' in track:
+                fileHandle = "{}.{}".format(sample, track['extension'])
+            else:
+                fileHandle = None
+
+            save_sample_state(sample=sample, state=track['state'], fileHandle=fileHandle)
+
+        set_sample_job_state(
+            job=job,
+            sample=sample,
+            state=SCHEDULING
+        )
+
+        return {
+
+            'body': json.dumps(
+                {'state': str(SCHEDULING), 'job': job, 'sample': sample, 'reason': 'sample was submitted'}),
+
+            'statusCode': 200,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
+    except Exception as e:
+        # update job state in the system to failed with the related reason
+        set_sample_job_state(job=job, sample=sample,
+                             state=FAILED, reason=str(e))
+
+        traceback.print_exc()
+        return {
+
+            'body': json.dumps({'state': str(FAILED), 'job': job, 'sample': sample, 'reason': str(e)}),
+
+            'statusCode': 500,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
 
 
 def store_job(event, context):
@@ -40,7 +115,6 @@ def store_job(event, context):
         }
 
     job_id = body['id']
-    samples = body['samples']
     method = body['method']
     env_ = body['env']
     profile = body['profile']
@@ -60,22 +134,6 @@ def store_job(event, context):
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
                       state=ENTERED, resource=resource)
 
-        for sample in samples:
-
-            # overwrite tracking states and extension if it's provided
-            for track in tracking:
-                if 'extension' in track:
-                    fileHandle = "{}.{}".format(sample, track['extension'])
-                else:
-                    fileHandle = None
-
-                save_sample_state(sample=sample, state=track['state'], fileHandle=fileHandle)
-
-            set_sample_job_state(
-                job=job_id,
-                sample=sample,
-                state=SCHEDULING
-            )
         return {
 
             'body': json.dumps({'state': str(ENTERED), 'job': job_id}),
