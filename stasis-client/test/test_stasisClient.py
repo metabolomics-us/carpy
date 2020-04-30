@@ -1,5 +1,6 @@
 from time import time, sleep
 
+import pytest
 import requests
 from pytest import fail
 
@@ -83,16 +84,15 @@ def test_load_job_state(stasis_cli, api_token):
 
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
-    for x in  [
-            "B2a_TEDDYLipids_Neg_NIST001",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ]:
+    for x in [
+        "B2a_TEDDYLipids_Neg_NIST001",
+        "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+        "B10A_SA8922_TeddyLipids_Pos_122WP"
+    ]:
         requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json={
-            "sample" : x,
+            "sample": x,
             "job": test_id
         }, headers=api_token)
-
 
     data = stasis_cli.load_job_state(test_id)
     print(data)
@@ -114,14 +114,13 @@ def test_load_job(stasis_cli, api_token):
 
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
-
-    for x in  [
+    for x in [
         "B2a_TEDDYLipids_Neg_NIST001",
         "B10A_SA8931_TeddyLipids_Pos_14TCZ",
         "B10A_SA8922_TeddyLipids_Pos_122WP"
     ]:
         requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json={
-            "sample" : x,
+            "sample": x,
             "job": test_id
         }, headers=api_token)
     data = stasis_cli.load_job(test_id)
@@ -193,3 +192,28 @@ def test_download_result(stasis_cli, api_token):
 
     assert content is not None
     print(content)
+
+
+@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 500])
+def test_store_job_sizes(sample_count, stasis_cli):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+        "env": "test"
+    }
+
+    samples = []
+    for x in range(0, sample_count):
+        samples.append(f"test_sample_{x}")
+
+    job['samples'] = samples
+
+    stasis_cli.store_job(job)
+
+    result = stasis_cli.load_job(test_id)
+
+    assert len(result) == sample_count

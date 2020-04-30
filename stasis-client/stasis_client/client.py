@@ -1,5 +1,6 @@
 import os
 import shutil
+from time import sleep
 from typing import Optional
 
 import boto3
@@ -8,7 +9,8 @@ import requests
 import simplejson as json
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
-
+from urllib3.exceptions import NewConnectionError
+from requests.exceptions import ConnectionError as CE
 
 class StasisClient:
     """
@@ -49,8 +51,8 @@ class StasisClient:
         retry_strategy = Retry(
             total=500,
             status_forcelist=[429, 500, 502, 503, 504],
-            method_whitelist=["HEAD", "GET", "OPTIONS"],
-            backoff_factor=0.3
+            method_whitelist=["HEAD", "GET", "OPTIONS", "POST"],
+            backoff_factor=1
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.http = requests.Session()
@@ -304,15 +306,24 @@ class StasisClient:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
         for sample in samples:
-            res = requests.post(f"{self._url}/job/sample/store", json={
-                "sample": sample,
-                "job": job['id'],
-                "meta": meta
-            }, headers=self._header)
+            finished = 0
 
-            if res.status_code != 200:
-                raise Exception(
-                    f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
+            while finished < 100:
+                try:
+                    res = requests.post(f"{self._url}/job/sample/store", json={
+                        "sample": sample,
+                        "job": job['id'],
+                        "meta": meta
+                    }, headers=self._header)
+
+                    finished = 100
+                    if res.status_code != 200:
+                        raise Exception(
+                            f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
+                except CE as e:
+                    print(str(e))
+                    finished = finished + 1
+                    sleep(1000)
 
     def schedule_job(self, job_id: str):
         """
