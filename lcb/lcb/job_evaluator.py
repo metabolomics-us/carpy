@@ -87,12 +87,12 @@ class JobEvaluator(Evaluator):
                 print(result)
                 print("complete job")
                 print(self.detail(id, {}))
+                return True
             except Exception as e:
                 print("input caused error:\n")
                 print(json.dumps(job, indent=4))
                 print(f"\nerror was: {str(e)}")
-
-        return None
+                return False
 
     def aggregate(self, id, args):
         pass

@@ -294,7 +294,7 @@ class StasisClient:
         :param job:
         :return:
         """
-
+        job = job.copy()
         meta = job.pop('meta', {})
         samples = job.pop('samples')
 

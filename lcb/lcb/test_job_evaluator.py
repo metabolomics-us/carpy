@@ -18,13 +18,13 @@ def test_evaluate_exist(job_evaluator, test_job):
     result = job_evaluator.evaluate({'id': test_job['id'], 'exist': True})
     assert len(result) == 1
     assert result['exist'
-           ] == True
+           ] is True
 
 
 def test_evaluate_not_exist(job_evaluator, test_job):
     result = job_evaluator.evaluate({'id': "fake_{}".format(test_job['id']), 'exist': True})
     assert len(result) == 1
-    assert result['exist'] == False
+    assert result['exist'] is False
 
 
 def test_evaluate_process(job_evaluator, test_job):
@@ -45,7 +45,9 @@ def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job, te
     with open(out, 'w') as outfile:
         json.dump(test_job, outfile, indent=4)
 
-    job_evaluator.evaluate({'id': test_job['id'], 'upload': out})
+    result = job_evaluator.evaluate({'id': test_job['id'], 'upload': out})['upload']
+
+    assert result is True
 
     print("processing it now")
 
