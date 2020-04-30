@@ -6,6 +6,7 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
+  - serverless-plugin-split-stacks
 provider:
   name: aws
   runtime: python3.7
@@ -141,6 +142,15 @@ custom:
       - "botocore"
       - "moto"
       - "pytest"
+
+  ##
+  # this splits our serverless file into sub stacks
+  # to avoid certain limitations
+  splitStacks:
+    nestedStackCount: 20 # Controls the number of created nested stacks
+    perFunction: false
+    perType: false
+    perGroupFunction: true
 
 
 ############################################################################################
@@ -575,6 +585,34 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
+  #schedule data to for handling the processing and aggregation on the backend
+  job_store_sample:
+    memorySize: 1024
+    handler: stasis/jobs/schedule.store_sample_for_job
+    events:
+      - http:
+          path: job/sample/store
+          method: post
+          private: true
+          cors: true
+          documentation:
+            summary: stores a sample associated with a job. required for performance reasons
+
+    # requires more memory to get access to faster cpus
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
 
   #schedule data to for handling the processing and aggregation on the backend
   job_store:
@@ -589,7 +627,6 @@ functions:
             summary: schedules a job to be computed to the backend queue
 
     # requires more memory to get access to faster cpus
-    memorySize: 1024
     #defines to which topic we want to connect
     environment:
 
@@ -740,9 +777,3 @@ functions:
       dataBucket: ${self:custom.dataJSONBucketName}
 
 
-resources:
-  Resources:
-    MyQueue:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: "StasisSyncQueue-${self:custom.stage}"

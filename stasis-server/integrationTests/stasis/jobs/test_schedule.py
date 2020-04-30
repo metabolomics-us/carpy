@@ -8,7 +8,7 @@ from pytest import fail
 from stasis.service.Status import SCHEDULED
 
 
-@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 1000, 10000])
+@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 500])
 def test_store_large_job_integration(api_token, sample_count):
     """
     test the storing of a job
@@ -26,32 +26,40 @@ def test_store_large_job_integration(api_token, sample_count):
     job = {
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
-        "samples": samples,
         "profile": "carrot.lcms",
         "env": "test",
 
-        "meta": {
-            "tracking": [
-                {
-                    "state": "entered",
-                },
-                {
-                    "state": "acquired",
-                    "extension": "d"
-                },
-                {
-                    "state": "converted",
-                    "extension": "mzml"
-                },
-
-            ]
-        }
     }
 
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
     assert response.status_code == 200
+
+    for sample in samples:
+        sample_to_submit = {
+            "job": test_id,
+            "sample": sample,
+            "meta": {
+                "tracking": [
+                    {
+                        "state": "entered",
+                    },
+                    {
+                        "state": "acquired",
+                        "extension": "d"
+                    },
+                    {
+                        "state": "converted",
+                        "extension": "mzml"
+                    },
+
+                ]
+            }
+        }
+        response = requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json=sample_to_submit,
+                                 headers=api_token)
+        assert response.status_code == 200
 
 
 def test_store_job_integration(api_token):
@@ -66,11 +74,6 @@ def test_store_job_integration(api_token):
     job = {
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
-        "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ],
         "profile": "carrot.lcms",
         "env": "test",
     }
@@ -78,6 +81,33 @@ def test_store_job_integration(api_token):
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
+    for sample in  [
+            "B2a_TEDDYLipids_Neg_NIST001",
+            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
+        ]:
+        sample_to_submit = {
+            "job": test_id,
+            "sample": sample,
+            "meta": {
+                "tracking": [
+                    {
+                        "state": "entered",
+                    },
+                    {
+                        "state": "acquired",
+                        "extension": "d"
+                    },
+                    {
+                        "state": "converted",
+                        "extension": "mzml"
+                    },
+
+                ]
+            }
+        }
+        response = requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json=sample_to_submit,
+                                 headers=api_token)
     assert response.status_code == 200
 
 
@@ -170,26 +200,23 @@ def test_schedule_job_integration(api_token):
     """
 
     test_id = "test_job_{}".format(time())
-
+    samples= [
+        "B2a_TEDDYLipids_Neg_NIST001",
+        "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+        "B10A_SA8922_TeddyLipids_Pos_122WP"
+    ]
     job = {
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
-        "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ],
         "profile": "carrot.lcms",
-        "task_version": "164",
         "env": "test",
-        "notif": [
-            "wohlgemuth@ucdavis.edu",
-            "berlinguyinca@gmail.com"
-        ]
     }
 
+    # store it
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+    assert response.status_code == 200
     # register required tracking data for this item
-    for sample in job['samples']:
+    for sample in samples:
         data = [
             {
                 "value": "entered"
@@ -219,11 +246,15 @@ def test_schedule_job_integration(api_token):
             result = requests.post('https://test-api.metabolomics.us/stasis/tracking', json=send, headers=api_token)
             assert result.status_code == 200
 
-    # store it
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
-
-    assert response.status_code == 200
-
+    # store sample/job association
+    for sample in samples:
+        sample_to_submit = {
+            "job": test_id,
+            "sample": sample,
+        }
+        response = requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json=sample_to_submit,
+                                 headers=api_token)
+        assert response.status_code == 200
     # schedule it
     response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
                             headers=api_token)
@@ -294,9 +325,6 @@ def test_schedule_job_integration_no_metadata_single_sample(api_token):
     job = {
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
-        "samples": [
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ],
         "profile": "carrot.lcms",
         "env": "test",
 
@@ -320,6 +348,19 @@ def test_schedule_job_integration_no_metadata_single_sample(api_token):
     }
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+
+
+    # store sample/job association
+    for sample in [
+            "B10A_SA8922_TeddyLipids_Pos_122WP"
+        ]:
+        sample_to_submit = {
+            "job": test_id,
+            "sample": sample,
+        }
+        response = requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json=sample_to_submit,
+                                 headers=api_token)
+        assert response.status_code == 200
     response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
                             headers=api_token)
 
@@ -369,35 +410,18 @@ def test_schedule_job_integration_no_metadata(api_token):
     job = {
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
-        "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ],
         "profile": "carrot.lcms",
-        "task_version": "164",
         "env": "test",
 
-        "meta": {
-            "tracking": [
-                {
-                    "state": "entered",
-                },
-                {
-                    "state": "acquired",
-                    "extension": "d"
-                },
-                {
-                    "state": "converted",
-                    "extension": "mzml"
-                },
-
-            ]
-        }
-
     }
+
+    samples = [
+        "B2a_TEDDYLipids_Neg_NIST001",
+        "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+        "B10A_SA8922_TeddyLipids_Pos_122WP"
+    ]
     # reset metadata to state entered for the given samples
-    for sample in job['samples']:
+    for sample in samples:
         send = {
             "sample": sample,
             "status": 'entered',
@@ -419,6 +443,15 @@ def test_schedule_job_integration_no_metadata(api_token):
 
     assert response.status_code == 200
 
+    # store sample associations
+    for sample in samples:
+        sample_to_submit = {
+            "job": test_id,
+            "sample": sample,
+        }
+        response = requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json=sample_to_submit,
+                                 headers=api_token)
+        assert response.status_code == 200
     # schedule it
     response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
                             headers=api_token)

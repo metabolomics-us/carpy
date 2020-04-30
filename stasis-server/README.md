@@ -9,6 +9,7 @@ first you need to install all required serverless plugins
 sls plugin install -n serverless-domain-manager
 sls plugin install -n serverless-python-requirements
 sls plugin install -n serverless-aws-documentation
+sls plugin install -n serverless-plugin-split-stacks
 
 ```
 
