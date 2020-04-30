@@ -298,8 +298,6 @@ class StasisClient:
         meta = job.pop('meta', {})
         samples = job.pop('samples')
 
-        print(json.dumps(job, indent=4))
-
         response = self.http.post(f"{self._url}/job/store", json=job, headers=self._header)
 
         if response.status_code != 200:
@@ -321,7 +319,6 @@ class StasisClient:
                         raise Exception(
                             f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
                 except CE as e:
-                    print(str(e))
                     finished = finished + 1
                     sleep(1000)
 
