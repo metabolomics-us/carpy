@@ -172,7 +172,7 @@ def test_sample_result(stasis_cli, test_sample, stasis_token, stasis_url):
 
 
 @pytest.fixture()
-def test_job(stasis_cli, test_sample, ):
+def test_job_definition():
     test_id = "test_job_{}".format(time())
 
     job = {
@@ -181,7 +181,7 @@ def test_job(stasis_cli, test_sample, ):
         "samples": [
             "lc-test-sample"
         ],
-        "profile": "carrot.lcms, aws",
+        "profile": "carrot.lcms",
         "env": "test",
 
         "meta": {
@@ -203,5 +203,10 @@ def test_job(stasis_cli, test_sample, ):
 
     }
 
-    stasis_cli.store_job(job=job)
     return job
+
+
+@pytest.fixture()
+def test_job(stasis_cli, test_sample, test_job_definition):
+    stasis_cli.store_job(job=test_job_definition)
+    return test_job_definition

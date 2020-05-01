@@ -82,9 +82,10 @@ class JobEvaluator(Evaluator):
             job['id'] = id
 
             try:
+                print("uploading job")
+                print(json.dumps(job, indent=4))
                 result = self.client.store_job(job)
-                print("result was")
-                print(result)
+                print("done")
                 print("complete job")
                 print(self.detail(id, {}))
                 return True
