@@ -195,7 +195,7 @@ def test_download_result(stasis_cli, api_token):
 
 
 @pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 500])
-def test_store_job_sizes(sample_count, stasis_cli):
+def test_store_joba_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
 
     job = {
@@ -212,7 +212,7 @@ def test_store_job_sizes(sample_count, stasis_cli):
 
     job['samples'] = samples
 
-    stasis_cli.store_job(job)
+    stasis_cli.store_job(job,enable_progress_bar=True)
 
     result = stasis_cli.load_job(test_id)
 

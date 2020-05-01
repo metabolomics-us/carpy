@@ -288,7 +288,7 @@ class StasisClient:
                 f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job}")
         return result.json()['content']
 
-    def store_job(self, job: dict):
+    def store_job(self, job: dict, enable_progress_bar:bool = False):
         """
         stores a job in the system in preparation for scheduling
         :param job:
@@ -302,7 +302,11 @@ class StasisClient:
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
-        for sample in samples:
+
+
+        from tqdm import tqdm
+
+        for sample in tqdm(samples, desc="storing sample definitions", disable=enable_progress_bar is False):
             finished = 0
 
             while finished < 100:

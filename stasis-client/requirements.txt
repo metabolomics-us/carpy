@@ -4,3 +4,4 @@ requests
 jsonschema
 pytest
 simplejson
+tqdm
