@@ -6,7 +6,7 @@ from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
 from stasis.schedule.monitor import monitor_queue
 from stasis.schedule.schedule import MESSAGE_BUFFER
 from stasis.service.Status import *
-from stasis.tables import load_job_samples, get_tracked_state, get_job_state, get_job_config, get_tracked_sample
+from stasis.tables import load_job_samples_with_states, get_tracked_state, get_job_state, get_job_config, get_tracked_sample
 from stasis.tracking import create
 
 
@@ -155,7 +155,7 @@ def test_schedule_job(requireMocking, mocked_10_sample_job, backend):
     assert result['statusCode'] == 200
 
     assert json.loads(result['body'])['state'] == SCHEDULED
-    job = load_job_samples(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert v == 'scheduled'
 
@@ -174,7 +174,7 @@ def test_schedule_job(requireMocking, mocked_10_sample_job, backend):
     validate_backened(backend, mocked_10_sample_job)
     assert get_job_state(mocked_10_sample_job['id']) == SCHEDULED
 
-    job = load_job_samples(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     assert len(job) == 10
 
     # at this stage all jobs should be scheduled
@@ -207,7 +207,7 @@ def test_schedule_job(requireMocking, mocked_10_sample_job, backend):
 
     validate_backened(backend, mocked_10_sample_job)
     # all job items should be in state finished on the stasis side and processed on the job side
-    job = load_job_samples(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert get_tracked_state(k) == "exported"
 
@@ -247,7 +247,7 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
     }}, {})
 
     assert json.loads(result['body'])['state'] == SCHEDULED
-    job = load_job_samples(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert v == 'scheduled'
 
@@ -281,7 +281,7 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
     validate_backened(backend, mocked_10_sample_job)
     assert get_job_state(mocked_10_sample_job['id']) == SCHEDULED
 
-    job = load_job_samples(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     assert len(job) == 10
 
     # at this stage all jobs should be scheduled
@@ -314,7 +314,7 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
 
     validate_backened(backend, mocked_10_sample_job)
     # all job items should be in state finished on the stasis side and processed on the job side
-    job = load_job_samples(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert get_tracked_state(k) == "exported"
 

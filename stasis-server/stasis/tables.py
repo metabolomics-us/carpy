@@ -583,7 +583,32 @@ def load_jobs_for_sample(sample: str, id_only=False) -> Optional[List[dict]]:
         return None
 
 
-def load_job_samples(job: str) -> Optional[dict]:
+def load_job_samples(job: str) -> Optional[List]:
+    """
+    loads the job from the job table for the given name
+    """
+
+    tm = TableManager()
+    table = tm.get_job_sample_state_table()
+
+    query_params = {
+        'IndexName': 'job-id-index',
+        'Select': 'ALL_ATTRIBUTES',
+        'KeyConditionExpression': Key('job').eq(job)
+    }
+    result = table.query(**query_params
+                         )
+
+    if "Items" in result and len(result['Items']) > 0:
+        results = []
+        for x in result['Items']:
+            results.append(x['sample'])
+        return results
+    else:
+        return None
+
+
+def load_job_samples_with_states(job: str) -> Optional[dict]:
     """
     loads the job from the job table for the given name
     """

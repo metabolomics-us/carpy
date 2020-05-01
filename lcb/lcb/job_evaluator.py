@@ -86,8 +86,6 @@ class JobEvaluator(Evaluator):
                 print(json.dumps(job, indent=4))
                 result = self.client.store_job(job, enable_progress_bar=True)
                 print("done")
-                print("complete job")
-                print(self.detail(id, {}))
                 return True
             except Exception as e:
                 print("input caused error:\n")

@@ -675,6 +675,7 @@ functions:
       jobTrackingTable: ${self:custom.jobTrackingTable}
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
+      memorySize: 1024
 
   job_result:
     handler: stasis/jobs/result.get

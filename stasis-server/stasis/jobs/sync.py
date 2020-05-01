@@ -3,7 +3,7 @@ import simplejson as json
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR, _get_queue
 from stasis.service.Status import *
-from stasis.tables import load_job_samples, update_job_state, \
+from stasis.tables import load_job_samples_with_states, update_job_state, \
     get_job_state, load_jobs_for_sample, get_job_config
 
 
@@ -72,7 +72,7 @@ def calculate_job_state(job: str) -> Optional[str]:
         print(f"job {job} was in state {state}, which requires it to get it's final state analyzed")
 
     # 2. load job definition
-    job_definition = load_job_samples(job=job)
+    job_definition = load_job_samples_with_states(job=job)
     job_config = get_job_config(job=job)
 
     if job_definition is not None and job_config is not None:

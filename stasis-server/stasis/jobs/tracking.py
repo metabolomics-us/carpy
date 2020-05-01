@@ -3,7 +3,7 @@ from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.sync import update_job_state, EXPORTED, FAILED, AGGREGATED, calculate_job_state
-from stasis.tables import TableManager, _set_sample_job_state, load_job_samples
+from stasis.tables import TableManager, _set_sample_job_state, load_job_samples_with_states
 
 
 def create(event, context):
@@ -68,7 +68,7 @@ def status(event, context):
             tm = TableManager()
             table_overall_state = tm.get_job_state_table()
 
-            sample_states = load_job_samples(job)
+            sample_states = load_job_samples_with_states(job)
 
             if sample_states is None:
                 sample_states = {}

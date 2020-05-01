@@ -10,8 +10,9 @@ from stasis.schedule.backend import DEFAULT_PROCESSING_BACKEND, Backend
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
 from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__
 from stasis.service.Status import *
-from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, load_job_samples, \
-    get_job_config, get_file_handle, save_sample_state
+from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, \
+    load_job_samples_with_states, \
+    get_job_config, get_file_handle, save_sample_state, load_job_samples
 
 
 def store_sample_for_job(event, context):
@@ -191,7 +192,7 @@ def schedule_job(event, context):
 
         }
 
-    samples = list(load_job_samples(job_id).keys())
+    samples = load_job_samples(job_id)
     method = details['method']
     env_ = details['env']
     profile = details['profile']

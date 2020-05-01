@@ -55,7 +55,7 @@ def test_create_and_get(requireMocking):
     })
 
     result = tracking.create({'body': data}, {})
-
+    calculate_job_state("12345")
     result = tracking.get({
         "pathParameters": {
             "sample": "abc",
