@@ -84,7 +84,7 @@ class JobEvaluator(Evaluator):
             try:
                 print("uploading job")
                 print(json.dumps(job, indent=4))
-                result = self.client.store_job(job)
+                result = self.client.store_job(job, enable_progress_bar=True)
                 print("done")
                 print("complete job")
                 print(self.detail(id, {}))

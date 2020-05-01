@@ -54,6 +54,10 @@ def get(event, context):
 def status(event, context):
     """
     returns the status of the current job, as well as some meta information
+
+    TODO due to expense it might be better to store the whole calculation result
+    in an addiitonal table, since it can take a LONG time to execute and so not perfect
+    as solution for http requests
     """
 
     if 'pathParameters' in event:

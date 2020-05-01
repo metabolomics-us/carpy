@@ -194,7 +194,7 @@ def test_download_result(stasis_cli, api_token):
     print(content)
 
 
-@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 500])
+@pytest.mark.parametrize("sample_count", [5, 10, 50, 100,300, 500])
 def test_store_joba_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
 
@@ -217,3 +217,7 @@ def test_store_joba_sizes(sample_count, stasis_cli):
     result = stasis_cli.load_job(test_id)
 
     assert len(result) == sample_count
+
+    result = stasis_cli.load_job_state(test_id)
+
+    assert result['count'] == sample_count

@@ -289,11 +289,12 @@ def monitor_jobs(event, context):
                 'FilterExpression': Attr('state').ne(SCHEDULED)
             }
 
+            print("WARNING: never good todo a able scan!!! find a better solution")
             result = table.scan(**query_params)
         for x in result['Items']:
             try:
 
-                if x['state'] == FAILED:
+                if x['state'] in [FAILED, AGGREGATED_AND_UPLOADED, AGGREGATING_SCHEDULED, AGGREGATING_SCHEDULING]:
                     continue
 
                 sync_job(x)

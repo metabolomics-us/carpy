@@ -227,7 +227,7 @@ functions:
       current_stage: ${self:custom.stage}
 
   #fetches an result record
-  resultGet:
+  result_get:
     handler: stasis/results/get.get
     events:
       - http:
@@ -244,7 +244,7 @@ functions:
     #defines to which topic we want to connect
     environment:
       resultTable: ${self:custom.resultTable}
-  processingResultExits:
+  processing_result_exits:
     handler: stasis/results/exists.exist
     events:
       - http:
@@ -260,7 +260,7 @@ functions:
                 sample: true
 
   #fetches an result record
-  resultCreate:
+  result_create:
     handler: stasis/results/create.create
     events:
       - http:
@@ -277,7 +277,7 @@ functions:
 
 
   #creates a new tracking record in the system
-  trackingCreate:
+  tracking_create:
     handler: stasis/tracking/create.create
     events:
       - http:
@@ -304,9 +304,11 @@ functions:
                 - Ref: AWS::AccountId
                 - ${self:custom.syncQueue}
     timeout: 30
+    memorySize: 512
+
 
   #fetches an existing tracking record from the system
-  trackingGet:
+  tracking_get:
     handler: stasis/tracking/get.get
     events:
       - http:
@@ -323,7 +325,7 @@ functions:
 
 
   #fetches an existing tracking record from the system
-  trackingDelete:
+  tracking_delete:
     handler: stasis/tracking/delete.delete
     events:
       - http:
@@ -339,7 +341,7 @@ functions:
                 sample: true
 
   #fetches a list of samples in an experiment
-  trackingExperiment:
+  tracking_experiment:
     handler: stasis/experiment/experiment.get
     events:
       - http:
@@ -381,7 +383,7 @@ functions:
 
 
   #fetches an acquisition record
-  acquisitionGet:
+  acquisition_get:
     handler: stasis/acquisition/get.get
     events:
       - http:
@@ -397,7 +399,7 @@ functions:
             summary: fetches the acquisition information for the given sample
 
   #fetches an acquisition record
-  acquisitionCreate:
+  acquisition_create:
     handler: stasis/acquisition/create.create
     events:
       - http:
@@ -410,7 +412,7 @@ functions:
 
 
   #imports data from MiniX
-  acquisitionCreateFromMinix:
+  acquisition_create_from_minix:
     handler: stasis/acquisition/create.fromMinix
     events:
       - http:
@@ -435,7 +437,7 @@ functions:
 
 
   # fetches the list of tracking statuses
-  statusGet:
+  status_get:
     handler: stasis/status/get.get
     events:
       - http:
@@ -447,7 +449,7 @@ functions:
             summary: returns all possible status names and their priority
 
   #checks existence of a raw data file
-  fileExists:
+  file_exists:
     handler: stasis/file/exists.exists
     events:
       - http:
@@ -465,7 +467,7 @@ functions:
     environment:
       dataBucket: ${self:custom.dataRawBucketName}
 
-  jobResultExits:
+  job_result_exits:
     handler: stasis/jobs/result.exist
     events:
       - http:
@@ -555,6 +557,7 @@ functions:
                 description: the job id
                 required: true
 
+    memorySize: 2048
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -580,6 +583,7 @@ functions:
                 description: the job id
                 required: true
 
+    memorySize: 1024
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
