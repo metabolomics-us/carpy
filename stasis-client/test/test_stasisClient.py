@@ -221,3 +221,27 @@ def test_store_joba_sizes(sample_count, stasis_cli):
     result = stasis_cli.load_job_state(test_id)
 
     assert result['count'] == sample_count
+
+
+@pytest.mark.parametrize("sample_count", [50, 100,300, 500])
+def test_schedule_joba_sizes(sample_count, stasis_cli):
+
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+        "env": "test",
+        "resource" : "DUMP"            # <== we don't actually want to process it and just push it into the dump queue!!!
+    }
+
+    samples = []
+    for x in range(0, sample_count):
+        samples.append(f"test_sample_{x}")
+
+    job['samples'] = samples
+
+    stasis_cli.store_job(job,enable_progress_bar=True)
+    stasis_cli.schedule_job(job['id'])

@@ -216,11 +216,11 @@ def schedule_job(event, context):
                     "profile": profile,
                     "key": stasis_key
                 }, service=SECURE_CARROT_RUNNER, resource=resource)
-                set_sample_job_state(
-                    job=job_id,
-                    sample=sample,
-                    state=SCHEDULED
-                )
+#               set_sample_job_state(
+#                   job=job_id,
+#                   sample=sample,
+#                   state=SCHEDULED
+#               )
             except Exception as e:
                 set_sample_job_state(
                     job=job_id,

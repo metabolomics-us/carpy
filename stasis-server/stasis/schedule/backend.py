@@ -8,6 +8,7 @@ class Backend(Enum):
     FARGATE = "FARGATE"
     LOCAL = "LOCAL"
     NO_BACKEND_REQUIRED = "NO_BACKEND"
+    DUMP = "DUMP"
 
 
 DEFAULT_PROCESSING_BACKEND = Backend.FARGATE
