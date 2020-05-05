@@ -109,8 +109,13 @@ custom:
   scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
 
   ###
-  # used for synchronization
+  # used for synchronization of sample states
+  # and associated job states
   syncQueue: "StasisSyncQueue-${self:custom.stage}"
+
+  ###
+  # used for processing of scheduled jobs in the system
+  jobQueue: "StasisJobQueue-${self:custom.stage}"
 
   ###
   # this queue will take care of holding all pending aggregation tasks
@@ -172,7 +177,7 @@ package:
 # this section defines all lambda function and triggers
 ############################################################################################
 functions:
-  fargate_count:
+  fargatecount:
     handler: stasis/schedule/schedule.scheduled_task_size
     events:
       - http:
@@ -184,7 +189,7 @@ functions:
     environment:
       current_stage: ${self:custom.stage}
 
-  fargate_processing_monitor:
+  fargateprocessingmonitor:
     handler: stasis/schedule/monitor.monitor_queue
     events:
       - schedule:
@@ -201,7 +206,7 @@ functions:
             summary: synchronizes the samples with the job state table
 
 
-  fargate_job_monitor:
+  fargatejobmonitor:
     handler: stasis/jobs/schedule.monitor_jobs
     events:
       - http:
@@ -213,7 +218,7 @@ functions:
             summary: synchronizes the job state
 
 
-  fargate_tasks:
+  fargatetasks:
     handler: stasis/schedule/schedule.current_tasks
     events:
       - http:
@@ -227,7 +232,7 @@ functions:
       current_stage: ${self:custom.stage}
 
   #fetches an result record
-  result_get:
+  resultget:
     handler: stasis/results/get.get
     events:
       - http:
@@ -244,7 +249,7 @@ functions:
     #defines to which topic we want to connect
     environment:
       resultTable: ${self:custom.resultTable}
-  processing_result_exits:
+  processingresultexits:
     handler: stasis/results/exists.exist
     events:
       - http:
@@ -260,7 +265,7 @@ functions:
                 sample: true
 
   #fetches an result record
-  result_create:
+  resultcreate:
     handler: stasis/results/create.create
     events:
       - http:
@@ -277,7 +282,7 @@ functions:
 
 
   #creates a new tracking record in the system
-  tracking_create:
+  trackingcreate:
     handler: stasis/tracking/create.create
     events:
       - http:
@@ -290,7 +295,7 @@ functions:
 
   # creates a tracking update
   # whenever a sample status got pushed
-  tracking_status_update:
+  trackingstatusupdate:
     handler: stasis/jobs/sync.do_sync
     events:
       - sqs:
@@ -304,11 +309,11 @@ functions:
                 - Ref: AWS::AccountId
                 - ${self:custom.syncQueue}
     timeout: 30
-    memorySize: 512
+    memorysize: 512
 
 
   #fetches an existing tracking record from the system
-  tracking_get:
+  trackingget:
     handler: stasis/tracking/get.get
     events:
       - http:
@@ -325,7 +330,7 @@ functions:
 
 
   #fetches an existing tracking record from the system
-  tracking_delete:
+  trackingdelete:
     handler: stasis/tracking/delete.delete
     events:
       - http:
@@ -341,7 +346,7 @@ functions:
                 sample: true
 
   #fetches a list of samples in an experiment
-  tracking_experiment:
+  trackingexperiment:
     handler: stasis/experiment/experiment.get
     events:
       - http:
@@ -383,7 +388,7 @@ functions:
 
 
   #fetches an acquisition record
-  acquisition_get:
+  acquisitionget:
     handler: stasis/acquisition/get.get
     events:
       - http:
@@ -399,7 +404,7 @@ functions:
             summary: fetches the acquisition information for the given sample
 
   #fetches an acquisition record
-  acquisition_create:
+  acquisitioncreate:
     handler: stasis/acquisition/create.create
     events:
       - http:
@@ -409,19 +414,6 @@ functions:
           cors: true
           documentation:
             summary: creates a new record with the given acquisition information
-
-
-  #imports data from MiniX
-  acquisition_create_from_minix:
-    handler: stasis/acquisition/create.fromMinix
-    events:
-      - http:
-          path: acquisition/import/minix
-          private: true
-          method: post
-          cors: true
-          documentation:
-            summary: this generates an acquisition table based on past minix study data and should be avoided!
 
   #schedule data to stasis, for handling the processing on the backend
   schedule:
@@ -437,7 +429,7 @@ functions:
 
 
   # fetches the list of tracking statuses
-  status_get:
+  statusget:
     handler: stasis/status/get.get
     events:
       - http:
@@ -449,7 +441,7 @@ functions:
             summary: returns all possible status names and their priority
 
   #checks existence of a raw data file
-  file_exists:
+  fileexists:
     handler: stasis/file/exists.exists
     events:
       - http:
@@ -467,7 +459,7 @@ functions:
     environment:
       dataBucket: ${self:custom.dataRawBucketName}
 
-  job_result_exits:
+  jobresultexits:
     handler: stasis/jobs/result.exist
     events:
       - http:
@@ -486,7 +478,7 @@ functions:
       dataBucket: ${self:custom.dataZipBucketName}
 
   #creates a new tracking record in the system
-  job_tracking_create:
+  jobtrackingcreate:
     handler: stasis/jobs/tracking.create
     events:
       - http:
@@ -498,7 +490,7 @@ functions:
             summary: updates the tracking status of a sample with the associated job
 
   #fetches an existing tracking record from the system
-  job_tracking_get:
+  jobtrackingget:
     handler: stasis/jobs/tracking.get
     events:
       - http:
@@ -523,7 +515,7 @@ functions:
                 sample: true
 
   # computes the current state of the given job
-  job_tracking_status:
+  jobtrackingstatus:
     handler: stasis/jobs/tracking.status
     events:
       - http:
@@ -564,7 +556,7 @@ functions:
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
   # computes the complete job
-  job_description:
+  jobdescription:
     handler: stasis/jobs/tracking.description
     events:
       - http:
@@ -590,7 +582,7 @@ functions:
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
   #schedule data to for handling the processing and aggregation on the backend
-  job_store_sample:
+  jobstoresample:
     memorySize: 1024
     handler: stasis/jobs/schedule.store_sample_for_job
     events:
@@ -619,7 +611,7 @@ functions:
       acquisitionTable: ${self:custom.acquisitionTable}
 
   #schedule data to for handling the processing and aggregation on the backend
-  job_store:
+  jobstore:
     handler: stasis/jobs/schedule.store_job
     events:
       - http:
@@ -646,7 +638,7 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
     #schedule data to for handling the processing and aggregation on the backend
-  job_schedule:
+  jobschedule:
     handler: stasis/jobs/schedule.schedule_job
     events:
       - http:
@@ -677,7 +669,26 @@ functions:
       acquisitionTable: ${self:custom.acquisitionTable}
       memorySize: 1024
 
-  job_result:
+  ##
+  # handles requests in the job queue and executes them in background
+  # required to support longter job calulcato
+  jobschedulehandler:
+      handler: stasis/jobs/sync.do_sync
+      events:
+        - sqs:
+            arn:
+              Fn::Join:
+                - ':'
+                - - arn
+                  - aws
+                  - sqs
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - ${self:custom.jobQueue}
+      timeout: 20
+      memorySize: 1000
+
+  jobresult:
     handler: stasis/jobs/result.get
     events:
       - http:
@@ -707,7 +718,7 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
 
-  zip_bucket:
+  zipbucket:
     handler: stasis/bucket/bucket.bucket_zip
     events:
       - http:
@@ -721,7 +732,7 @@ functions:
     environment:
       dataBucket: ${self:custom.dataZipBucketName}
 
-  json_bucket:
+  jsonbucket:
     handler: stasis/bucket/bucket.bucket_json
     events:
       - http:
@@ -735,7 +746,7 @@ functions:
     environment:
       dataBucket: ${self:custom.dataJSONBucketName}
 
-  raw_bucket:
+  rawbucket:
     handler: stasis/bucket/bucket.bucket_raw
     events:
       - http:
@@ -749,7 +760,7 @@ functions:
     environment:
       dataBucket: ${self:custom.dataRawBucketName}
 
-  zip_bucket_triggers:
+  zipbuckettriggers:
     handler: stasis/bucket/triggers.bucket_zip
     events:
       - s3:
@@ -765,7 +776,7 @@ functions:
       dataBucket: ${self:custom.dataZipBucketName}
 
 
-  json_bucket_triggers:
+  jsonbuckettriggers:
     events:
       - s3:
           bucket: ${self:custom.dataJSONBucketName}
@@ -780,5 +791,4 @@ functions:
     timeout: 900
     environment:
       dataBucket: ${self:custom.dataJSONBucketName}
-
 

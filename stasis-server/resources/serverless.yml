@@ -1,0 +1,57 @@
+service: stasis-resources
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.7
+  region: us-west-2
+  deploymentBucket:
+    name: "resources-stasis"
+  #required permissions
+  iamRoleStatements:
+
+    - Effect: Allow
+      Action:
+        - sqs:*
+      Resource: { "Fn::Join": [":", ["arn:aws:sqs:${self:custom.region}",  "*:*" ] ]  }
+
+############################################################################################
+#custom configuration settings
+############################################################################################
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+  scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
+  syncQueue: "StasisSyncQueue-${self:custom.stage}"
+  jobQueue: "StasisJobQueue-${self:custom.stage}"
+  aggregationQueue: "JobsAggregationQueue-${self:custom.stage}"
+
+############################################################################################
+# this section defines what to include and exclud when packaging artifacts
+############################################################################################
+package:
+  exclude:
+    - .git/**
+    - .venv/**
+    - .idea/**
+    - .pytest_cache/**
+    - venv/**
+    - test/**
+    - tests/**
+    - node_modules/**
+    - integrationTests/**
+
+
+
+resources:
+  Resources:
+    samplesyncqeue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "StasisSyncQueue-${self:custom.stage}"
+    jobscheduleqeue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "StasisJobQueue-${self:custom.stage}"
