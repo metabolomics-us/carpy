@@ -59,6 +59,7 @@ def requireMocking():
     os.environ["jobTrackingTable"] = "UnitJobTrackingTable"
     os.environ["jobStateTable"] = "UnitJobStateTable"
     os.environ["current_stage"] = "test"
+    os.environ["jobQueue"] = "test_job_queue"
 
     dynamodb = boto3.resource('dynamodb')
 

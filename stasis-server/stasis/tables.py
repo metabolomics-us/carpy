@@ -744,7 +744,7 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
 
     # register the new state
     item['status'].append(new_status)
-    item['experiment'] = "unknown"  # TODO uggly left over needs to be dealt with
+    item['experiment'] = _fetch_experiment(sample)
 
     item = tm.sanitize_json_for_dynamo(item)
     # put item in table instead of queueing

@@ -67,6 +67,8 @@ provider:
     jobTrackingTable: ${self:custom.jobTrackingTable}
     resultTable: ${self:custom.resultTable}
     dataBucket: ${self:custom.dataJSONBucketName}
+    jobQueue: ${self:custom.jobQueue}
+
 ############################################################################################
 #custom configuration settings
 ############################################################################################
@@ -673,20 +675,20 @@ functions:
   # handles requests in the job queue and executes them in background
   # required to support longter job calulcato
   jobschedulehandler:
-      handler: stasis/jobs/sync.do_sync
-      events:
-        - sqs:
-            arn:
-              Fn::Join:
-                - ':'
-                - - arn
-                  - aws
-                  - sqs
-                  - Ref: AWS::Region
-                  - Ref: AWS::AccountId
-                  - ${self:custom.jobQueue}
-      timeout: 20
-      memorySize: 1000
+    handler: stasis/jobs/schedule.schedule_job_from_queue
+    events:
+      - sqs:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn
+                - aws
+                - sqs
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - ${self:custom.jobQueue}
+    timeout: 20
+    memorySize: 1000
 
   jobresult:
     handler: stasis/jobs/result.get

@@ -11,7 +11,6 @@ from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
 from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, \
-    load_job_samples_with_states, \
     get_job_config, get_file_handle, save_sample_state, load_job_samples
 
 
@@ -165,15 +164,66 @@ def store_job(event, context):
         }
 
 
+def schedule_job_from_queue(event, context):
+    """
+    listens to the job queue and executes the scheduling for us.
+    :param event:
+    :param context:
+    :return:
+    """
+
+    for message in event['Records']:
+        print(message)
+        body = json.loads(json.loads(message['body'])['default'])
+
+        if 'job' in body:
+            job_id = body['job']
+            key = body['key']
+
+            details = get_job_config(job_id)
+            method = details['method']
+            env_ = details['env']
+            profile = details['profile']
+            resource = details['resource']
+            ##
+            # this should all be in its own lambda
+            samples = load_job_samples(job_id)
+            for sample in samples:
+                try:
+                    handle = get_file_handle(sample, CONVERTED)
+                    print("looked up handle {} for sample {}".format(handle, sample))
+                    schedule_to_queue({
+                        "sample": handle,
+                        "env": env_,
+                        "method": method,
+                        "profile": profile,
+                        "key": key
+                    }, service=SECURE_CARROT_RUNNER, resource=resource)
+                    set_sample_job_state(
+                        job=job_id,
+                        sample=sample,
+                        state=SCHEDULED
+                    )
+                except Exception as e:
+                    set_sample_job_state(
+                        job=job_id,
+                        sample=sample,
+                        state=FAILED,
+                        reason=str(e)
+                    )
+            set_job_state(job=job_id, method=method, env=env_, profile=profile,
+                          state=SCHEDULED, resource=resource)
+
+
 def schedule_job(event, context):
     """
     schedules the job for our processing
     """
 
     if 'headers' in event and 'x-api-key' in event['headers']:
-        stasis_key = event['headers']['x-api-key']
+        key = event['headers']['x-api-key']
     else:
-        stasis_key = None
+        key = None
 
     job_id = event['pathParameters']['job']
 
@@ -192,48 +242,21 @@ def schedule_job(event, context):
 
         }
 
-    samples = load_job_samples(job_id)
     method = details['method']
     env_ = details['env']
     profile = details['profile']
     resource = details['resource']
-
-    # send to processing queue, might timeout web session for very large jobs
-    # refactor later accordingly to let it get processed in a lambda itself to avoid this
     try:
-
-        # store actual job in the job table with state scheduled
+        # update job state
         set_job_state(job=job_id, method=method, env=env_, profile=profile,
                       state=SCHEDULING, resource=resource)
-        for sample in samples:
-            try:
-                handle = get_file_handle(sample, CONVERTED)
-                print("looked up handle {} for sample {}".format(handle, sample))
-                schedule_to_queue({
-                    "sample": handle,
-                    "env": env_,
-                    "method": method,
-                    "profile": profile,
-                    "key": stasis_key
-                }, service=SECURE_CARROT_RUNNER, resource=resource)
-#               set_sample_job_state(
-#                   job=job_id,
-#                   sample=sample,
-#                   state=SCHEDULED
-#               )
-            except Exception as e:
-                set_sample_job_state(
-                    job=job_id,
-                    sample=sample,
-                    state=FAILED,
-                    reason=str(e)
-                )
-        set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                      state=SCHEDULED, resource=resource)
 
+        # now send to job sync queue
+        schedule_to_queue(body={"job": job_id, "key": key}, resource=Backend.NO_BACKEND_REQUIRED, service=None,
+                          queue_name="jobQueue")
         return {
 
-            'body': json.dumps({'state': str(SCHEDULED), 'job': job_id}),
+            'body': json.dumps({'state': str(SCHEDULING), 'job': job_id}),
 
             'statusCode': 200,
 

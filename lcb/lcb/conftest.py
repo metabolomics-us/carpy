@@ -53,7 +53,7 @@ def test_sample(stasis_cli):
             "species": "test-species"
         },
         "processing": {
-            "method": "test | 6530test | test | positive"
+            "method": "teddy | 6530test | test | positive"
         },
         "sample": "lc-test-sample",
         "time": 1563299315754

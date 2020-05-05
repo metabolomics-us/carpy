@@ -2,11 +2,15 @@ import json
 import math
 import random
 
-from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
+import pytest
+
+from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job, store_sample_for_job, schedule_job_from_queue
+from stasis.schedule.backend import Backend
 from stasis.schedule.monitor import monitor_queue
-from stasis.schedule.schedule import MESSAGE_BUFFER
+from stasis.schedule.schedule import MESSAGE_BUFFER, _get_queue
 from stasis.service.Status import *
-from stasis.tables import load_job_samples_with_states, get_tracked_state, get_job_state, get_job_config, get_tracked_sample
+from stasis.tables import load_job_samples_with_states, get_tracked_state, get_job_state, get_job_config, \
+    get_tracked_sample
 from stasis.tracking import create
 
 
@@ -20,9 +24,6 @@ def test_store_job_fail_empty_id(requireMocking):
     job = {
         "id": "",
         "method": "test",
-        "samples": [
-            "abc_12345",
-        ],
         "profile": "dada",
         "env": "test"
     }
@@ -41,9 +42,6 @@ def test_store_job_fail_empty_method(requireMocking):
     job = {
         "id": "stored_test_job",
         "method": "",
-        "samples": [
-            "abc_12345",
-        ],
         "profile": "dadsad",
         "env": "test"
     }
@@ -62,9 +60,6 @@ def test_store_job_fail_empty_env(requireMocking):
     job = {
         "id": "stored_test_job",
         "method": "test",
-        "samples": [
-            "abc_12345",
-        ],
         "profile": "test",
         "env": ""
     }
@@ -83,9 +78,6 @@ def test_store_job_fail_empty_profile(requireMocking):
     job = {
         "id": "stored_test_job",
         "method": "test",
-        "samples": [
-            "abc_12345",
-        ],
         "profile": "",
         "env": "test"
     }
@@ -94,7 +86,8 @@ def test_store_job_fail_empty_profile(requireMocking):
     assert result['statusCode'] == 503
 
 
-def test_store_job_fails_no_samples(requireMocking):
+@pytest.mark.parametrize("samples", [50, 500, 1000, 5000])
+def test_store_job_many_samples(requireMocking, samples):
     """
     tests storing a job in the database
     :param requireMocking:
@@ -104,14 +97,19 @@ def test_store_job_fails_no_samples(requireMocking):
     job = {
         "id": "stored_test_job",
         "method": "test",
-        "samples": [
-        ],
         "profile": "lcms",
         "env": "test"
     }
 
     result = store_job({'body': json.dumps(job)}, {})
-    assert result['statusCode'] == 503
+
+    for x in range(1, samples):
+        store_sample_for_job({'body': json.dumps({
+            "job": job['id'],
+            "sample": f"sample_{x}"}
+        )}, {})
+
+    assert result['statusCode'] == 200
 
 
 def test_store_job(requireMocking, mocked_10_sample_job):
@@ -342,3 +340,60 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
 def validate_backened(backend, mocked_10_sample_job):
     job_config = get_job_config(mocked_10_sample_job['id'])
     assert job_config['resource'] == backend
+
+
+@pytest.mark.parametrize("samples", [50, 500, 1000, 5000])
+def test_schedule_job_many_samples(requireMocking, samples):
+    """
+    tests scheduling very large jobs
+    :param requireMocking:
+    :return:
+    """
+
+    job = {
+        "id": "stored_test_job",
+        "method": "test",
+        "profile": "lcms",
+        "env": "test"
+    }
+
+    result = store_job({'body': json.dumps(job)}, {})
+
+    for x in range(1, samples):
+        store_sample_for_job({'body': json.dumps({
+            "job": job['id'],
+            "sample": f"sample_{x}"}
+        )}, {})
+
+    assert result['statusCode'] == 200
+
+    result = schedule_job({'pathParameters': {
+        "job": job['id']
+    }}, {})
+    assert result['statusCode'] == 200
+
+    import boto3
+    # receive message from queue
+    client = boto3.client('sqs')
+
+    # if topic exists, we just reuse it
+    arn = _get_queue(client=client, queue_name="job_queue", resource=Backend.NO_BACKEND_REQUIRED)
+
+    message = client.receive_message(
+        QueueUrl=arn,
+        AttributeNames=[
+            'All'
+        ],
+        MaxNumberOfMessages=1,
+        VisibilityTimeout=1,
+        WaitTimeSeconds=1
+    )
+
+    assert 'Messages' in message
+
+    print(message)
+    schedule_job_from_queue({'Records': [
+        {
+            'body': message['Messages'][0]['Body']
+        }
+    ]}, {})

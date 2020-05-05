@@ -5,61 +5,7 @@ import pytest
 import requests
 from pytest import fail
 
-from stasis.service.Status import SCHEDULED
-
-
-@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 500])
-def test_store_large_job_integration(api_token, sample_count):
-    """
-    test the storing of a job
-    :param api_token:
-    :return:
-    """
-
-    test_id = "test_job_{}".format(time())
-
-    samples = []
-
-    for x in range(0, sample_count):
-        samples.append(f"test_sample_{x}")
-
-    job = {
-        "id": test_id,
-        "method": "teddy | 6530 | test | positive",
-        "profile": "carrot.lcms",
-        "env": "test",
-
-    }
-
-    # store it
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
-
-    assert response.status_code == 200
-
-    for sample in samples:
-        sample_to_submit = {
-            "job": test_id,
-            "sample": sample,
-            "meta": {
-                "tracking": [
-                    {
-                        "state": "entered",
-                    },
-                    {
-                        "state": "acquired",
-                        "extension": "d"
-                    },
-                    {
-                        "state": "converted",
-                        "extension": "mzml"
-                    },
-
-                ]
-            }
-        }
-        response = requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json=sample_to_submit,
-                                 headers=api_token)
-        assert response.status_code == 200
+from stasis.service.Status import SCHEDULED, SCHEDULING
 
 
 def test_store_job_integration(api_token):
@@ -259,25 +205,6 @@ def test_schedule_job_integration(api_token):
     response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
                             headers=api_token)
 
-    print(response)
-    assert response.status_code == 200
-    assert json.loads(response.content)['job'] == test_id
-    assert json.loads(response.content)['state'] == SCHEDULED
-
-    # check state of samples
-
-    response = requests.get("https://test-api.metabolomics.us/stasis/job/{}".format(test_id), headers=api_token)
-
-    assert response.status_code == 200
-    job = json.loads(response.content)
-
-    for x in job:
-        assert x['state'] == 'scheduled'
-        assert x['job'] == test_id
-
-    # just check the response code from the server
-    response = requests.get("https://test-api.metabolomics.us/stasis/schedule/cluster/tasks", headers=api_token)
-
     assert response.status_code == 200
     origin = time()
     duration = 0
@@ -460,17 +387,6 @@ def test_schedule_job_integration_no_metadata(api_token):
     assert response.status_code == 200
     assert json.loads(response.content)['job'] == test_id
     assert json.loads(response.content)['state'] == SCHEDULED
-
-    # check state of samples
-
-    response = requests.get("https://test-api.metabolomics.us/stasis/job/{}".format(test_id), headers=api_token)
-
-    assert response.status_code == 200
-    job = json.loads(response.content)
-
-    for x in job:
-        assert x['state'] == 'scheduled'
-        assert x['job'] == test_id
 
     # just check the response code from the server
     response = requests.get("https://test-api.metabolomics.us/stasis/schedule/cluster/tasks", headers=api_token)

@@ -39,7 +39,7 @@ def test_evaluate_detail(job_evaluator, test_job, test_sample, test_sample_track
 
 def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_definition, test_sample, tmp_path):
     test_job = test_job_definition
-    test_job["method"] = "test | 6530 | test | positive"
+    test_job["method"] = "teddy | 6530 | test | positive"
     out = "{}/{}.json".format(str(tmp_path), test_job['id'])
     with open(out, 'w') as outfile:
         json.dump(test_job, outfile, indent=4)
