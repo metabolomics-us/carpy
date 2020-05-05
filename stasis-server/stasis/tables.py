@@ -583,7 +583,7 @@ def load_jobs_for_sample(sample: str, id_only=False) -> Optional[List[dict]]:
         return None
 
 
-def load_job_samples_with_pagination(job: str, pagination_value: Optional[str] = None, pagination_size: int = 25) -> \
+def load_job_samples_with_pagination(job: str, pagination_value: Optional[dict] = None, pagination_size: int = 25) -> \
         Optional[Tuple[List[str], str]]:
     """
     loads the job from the job table for the given name
@@ -600,10 +600,8 @@ def load_job_samples_with_pagination(job: str, pagination_value: Optional[str] =
     }
 
     if pagination_value is not None:
-        query_params['ExclusiveStartKey'] = {
-            "job": job,
-            "id": pagination_value
-        }
+        query_params['ExclusiveStartKey'] = pagination_value
+
     result = table.query(**query_params
                          )
 
@@ -611,6 +609,7 @@ def load_job_samples_with_pagination(job: str, pagination_value: Optional[str] =
         results = []
         for x in result['Items']:
             results.append(x['sample'])
+
         return results, result.get('LastEvaluatedKey', None)
     else:
         return (None, None)

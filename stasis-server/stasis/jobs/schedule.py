@@ -186,7 +186,7 @@ def schedule_job_from_queue(event, context):
             profile = details['profile']
             resource = details['resource']
 
-            samples, pkey = load_job_samples_with_pagination(job=job_id, pagination_value=pkey, pagination_size=50)
+            samples, pkey = load_job_samples_with_pagination(job=job_id, pagination_value=pkey, pagination_size=25)
 
             schedule_samples_to_queue(env_, job_id, key, method, profile, resource, samples)
 

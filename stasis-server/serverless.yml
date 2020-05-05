@@ -538,7 +538,7 @@ functions:
                 description: the job id
                 required: true
 
-    memorySize: 2048
+#    memorySize: 2048
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -572,7 +572,7 @@ functions:
       jobTrackingTable: ${self:custom.jobTrackingTable}
   #schedule data to for handling the processing and aggregation on the backend
   jobstoresample:
-    memorySize: 1024
+#    memorySize: 1024
     handler: stasis/jobs/schedule.store_sample_for_job
     events:
       - http:
@@ -656,7 +656,6 @@ functions:
       jobTrackingTable: ${self:custom.jobTrackingTable}
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
-      memorySize: 1024
 
   ##
   # handles requests in the job queue and executes them in background
@@ -675,7 +674,6 @@ functions:
                 - Ref: AWS::AccountId
                 - ${self:custom.jobQueue}
     timeout: 900
-    memorySize: 1500
 
   jobresult:
     handler: stasis/jobs/result.get

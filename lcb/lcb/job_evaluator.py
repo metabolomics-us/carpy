@@ -23,8 +23,9 @@ class JobEvaluator(Evaluator):
         }
 
         results = {}
-        for x in mapping.keys():
-            if x in args:
+
+        for x in args.keys():
+            if x in mapping:
                 if args[x] is not False:
                     results[x] = mapping[x](args['id'], args)
         return results

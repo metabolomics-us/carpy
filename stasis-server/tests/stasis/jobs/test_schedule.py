@@ -151,8 +151,8 @@ def test_schedule_job(requireMocking, mocked_10_sample_job, backend):
     }}, {})
 
     assert result['statusCode'] == 200
+    watch_job_schedule_queue()
 
-    assert json.loads(result['body'])['state'] == SCHEDULED
     job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert v == 'scheduled'
@@ -244,7 +244,7 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
         "job": mocked_10_sample_job['id']
     }}, {})
 
-    assert json.loads(result['body'])['state'] == SCHEDULED
+    watch_job_schedule_queue()
     job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert v == 'scheduled'
@@ -342,7 +342,7 @@ def validate_backened(backend, mocked_10_sample_job):
     assert job_config['resource'] == backend
 
 
-@pytest.mark.parametrize("samples", [50, 500, 1000, 5000])
+@pytest.mark.parametrize("samples", [15,33,50,66, 500, 1000, 5000])
 def test_schedule_job_many_samples(requireMocking, samples):
     """
     tests scheduling very large jobs
@@ -372,28 +372,41 @@ def test_schedule_job_many_samples(requireMocking, samples):
     }}, {})
     assert result['statusCode'] == 200
 
+    watch_job_schedule_queue()
+
+
+def watch_job_schedule_queue():
+    """
+    little helper method, to watch a queue for us during testing
+    """
     import boto3
     # receive message from queue
     client = boto3.client('sqs')
-
     # if topic exists, we just reuse it
-    arn = _get_queue(client=client, queue_name="job_queue", resource=Backend.NO_BACKEND_REQUIRED)
+    arn = _get_queue(client=client, queue_name="jobQueue", resource=Backend.NO_BACKEND_REQUIRED)
+    more_messages = True
+    while more_messages:
+        message = client.receive_message(
+            QueueUrl=arn,
+            AttributeNames=[
+                'All'
+            ],
+            MaxNumberOfMessages=1,
+            VisibilityTimeout=1,
+            WaitTimeSeconds=1
+        )
 
-    message = client.receive_message(
-        QueueUrl=arn,
-        AttributeNames=[
-            'All'
-        ],
-        MaxNumberOfMessages=1,
-        VisibilityTimeout=1,
-        WaitTimeSeconds=1
-    )
+        if 'Messages' in message:
+            for m in message['Messages']:
+                client.delete_message(
+                    QueueUrl=arn,
+                    ReceiptHandle=m['ReceiptHandle']
+                )
+                schedule_job_from_queue({'Records': [
+                    {
+                        'body': m['Body']
+                    }
+                ]}, {})
 
-    assert 'Messages' in message
-
-    print(message)
-    schedule_job_from_queue({'Records': [
-        {
-            'body': message['Messages'][0]['Body']
-        }
-    ]}, {})
+        else:
+            more_messages = False

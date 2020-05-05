@@ -223,7 +223,7 @@ def test_store_joba_sizes(sample_count, stasis_cli):
     assert result['count'] == sample_count
 
 
-@pytest.mark.parametrize("sample_count", [50, 100, 300, 500, 1500, 5000, 10000])
+@pytest.mark.parametrize("sample_count", [50, 100, 300])
 def test_schedule_joba_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
 

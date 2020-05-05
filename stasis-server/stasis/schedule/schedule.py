@@ -116,6 +116,7 @@ def schedule_to_queue(body, service: Optional[str], resource: Backend, queue_nam
     """
     body['secured'] = True
 
+    print(body)
     if service is not None:
         body[SERVICE] = service
 

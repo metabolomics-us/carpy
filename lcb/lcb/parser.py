@@ -64,7 +64,9 @@ class Parser:
         parser.add_argument("-i", "--id", help="this is your job id", required=True)
         parser.add_argument("-s", "--status", help="specify this flag to return the current status",
                             action='store_true')
-
+        parser.add_argument("-u", "--upload",
+                            help="registers the specified job file in the system in preparation for processing. You steel need to start the processing",
+                            type=str)
         parser.add_argument("-p", "--process",
                             help="this starts the processing of the specified job id in the remote system",
                             action='store_true')
@@ -72,9 +74,6 @@ class Parser:
         parser.add_argument("-r", "--retrieve", help="this downloads the specified job, if available",
                             action='store_true')
         parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
-        parser.add_argument("-u", "--upload",
-                            help="registers the specified job file in the system in preparation for processing. You steel need to start the processing",
-                            type=str)
 
         return parser
 

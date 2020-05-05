@@ -6,6 +6,7 @@ from stasis.jobs.sync import do_sync, sync_job
 from stasis.service.Status import EXPORTED, PROCESSING, FAILED, AGGREGATING_SCHEDULING, SCHEDULED, AGGREGATED, \
     AGGREGATING_SCHEDULED, AGGREGATED_AND_UPLOADED
 from stasis.tables import save_sample_state, get_job_state, get_job_config
+from tests.stasis.jobs.test_schedule import watch_job_schedule_queue
 
 
 def test_calculate_job_state_with_zip_upload(requireMocking, mocked_10_sample_job):
@@ -90,6 +91,8 @@ def test_calculate_job_state_2(requireMocking, mocked_10_sample_job):
     result = schedule_job({'pathParameters': {
         "job": "12345"
     }}, {})
+
+    watch_job_schedule_queue()
     state = get_job_state("12345")
     assert state == SCHEDULED
 
