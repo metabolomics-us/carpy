@@ -11,7 +11,7 @@ from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
 from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, \
-    get_job_config, get_file_handle, save_sample_state, load_job_samples
+    get_job_config, get_file_handle, save_sample_state, load_job_samples, load_job_samples_with_pagination
 
 
 def store_sample_for_job(event, context):
@@ -173,46 +173,62 @@ def schedule_job_from_queue(event, context):
     """
 
     for message in event['Records']:
-        print(message)
         body = json.loads(json.loads(message['body'])['default'])
 
         if 'job' in body:
             job_id = body['job']
             key = body['key']
+            pkey = body.get('paginate', None)
 
             details = get_job_config(job_id)
             method = details['method']
             env_ = details['env']
             profile = details['profile']
             resource = details['resource']
-            ##
-            # this should all be in its own lambda
-            samples = load_job_samples(job_id)
-            for sample in samples:
-                try:
-                    handle = get_file_handle(sample, CONVERTED)
-                    print("looked up handle {} for sample {}".format(handle, sample))
-                    schedule_to_queue({
-                        "sample": handle,
-                        "env": env_,
-                        "method": method,
-                        "profile": profile,
-                        "key": key
-                    }, service=SECURE_CARROT_RUNNER, resource=resource)
-                    set_sample_job_state(
-                        job=job_id,
-                        sample=sample,
-                        state=SCHEDULED
-                    )
-                except Exception as e:
-                    set_sample_job_state(
-                        job=job_id,
-                        sample=sample,
-                        state=FAILED,
-                        reason=str(e)
-                    )
-            set_job_state(job=job_id, method=method, env=env_, profile=profile,
-                          state=SCHEDULED, resource=resource)
+
+            samples, pkey = load_job_samples_with_pagination(job=job_id, pagination_value=pkey, pagination_size=50)
+
+            schedule_samples_to_queue(env_, job_id, key, method, profile, resource, samples)
+
+            if pkey is None or len(samples) == 0:
+                print("job was compltely scheduled!")
+                set_job_state(job=job_id, method=method, env=env_, profile=profile,
+                              state=SCHEDULED, resource=resource)
+            else:
+                print('job was too large, requires resubmission to queue to spread the load out!')
+                # send job again to queue to
+                schedule_to_queue(body={"job": job_id, "key": key, "paginate": pkey},
+                                  resource=Backend.NO_BACKEND_REQUIRED, service=None,
+                                  queue_name="jobQueue")
+
+
+def schedule_samples_to_queue(env_, job_id, key, method, profile, resource, samples):
+    """
+    schedules a sample to the internal scheduling queue for fargate jobs
+    """
+    for sample in samples:
+        try:
+            handle = get_file_handle(sample, CONVERTED)
+            print("looked up handle {} for sample {}".format(handle, sample))
+            schedule_to_queue({
+                "sample": handle,
+                "env": env_,
+                "method": method,
+                "profile": profile,
+                "key": key
+            }, service=SECURE_CARROT_RUNNER, resource=resource)
+            set_sample_job_state(
+                job=job_id,
+                sample=sample,
+                state=SCHEDULED
+            )
+        except Exception as e:
+            set_sample_job_state(
+                job=job_id,
+                sample=sample,
+                state=FAILED,
+                reason=str(e)
+            )
 
 
 def schedule_job(event, context):

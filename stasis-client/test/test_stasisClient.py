@@ -194,7 +194,7 @@ def test_download_result(stasis_cli, api_token):
     print(content)
 
 
-@pytest.mark.parametrize("sample_count", [5, 10, 50, 100,300, 500])
+@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 300, 500])
 def test_store_joba_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
 
@@ -212,7 +212,7 @@ def test_store_joba_sizes(sample_count, stasis_cli):
 
     job['samples'] = samples
 
-    stasis_cli.store_job(job,enable_progress_bar=True)
+    stasis_cli.store_job(job, enable_progress_bar=True)
 
     result = stasis_cli.load_job(test_id)
 
@@ -223,9 +223,8 @@ def test_store_joba_sizes(sample_count, stasis_cli):
     assert result['count'] == sample_count
 
 
-@pytest.mark.parametrize("sample_count", [50, 100,300, 500,1500,5000,10000])
+@pytest.mark.parametrize("sample_count", [50, 100, 300, 500, 1500, 5000, 10000])
 def test_schedule_joba_sizes(sample_count, stasis_cli):
-
     test_id = "test_job_{}".format(time())
 
     job = {
@@ -234,7 +233,7 @@ def test_schedule_joba_sizes(sample_count, stasis_cli):
 
         "profile": "carrot.lcms",
         "env": "test",
-        "resource" : "DUMP"            # <== we don't actually want to process it and just push it into the dump queue!!!
+        "resource": "DUMP"  # <== we don't actually want to process it and just push it into the dump queue!!!
     }
 
     samples = []
@@ -243,5 +242,27 @@ def test_schedule_joba_sizes(sample_count, stasis_cli):
 
     job['samples'] = samples
 
-    stasis_cli.store_job(job,enable_progress_bar=True)
+    stasis_cli.store_job(job, enable_progress_bar=True)
     stasis_cli.schedule_job(job['id'])
+
+    print("requesting job to be scheduled")
+    stasis_cli.schedule_job(test_id)
+    origin = time()
+    duration = 0
+
+    print("waiting for status update, the job needs to be SCHEDULED or FAILED at some stage")
+    while duration < 1200000:
+        try:
+            state = stasis_cli.load_job_state(test_id)['job_state']
+            print(f"current state for job {test_id} is {state} and duration is {duration}")
+            if state == "scheduled":
+                break
+            if state == "failed":
+                fail()
+                break
+
+            sleep(10)
+            duration = time() - origin
+        except Exception as e:
+            print(str(e))
+            pass

@@ -6,7 +6,7 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
-  - serverless-plugin-split-stacks
+#  - serverless-plugin-split-stacks
 provider:
   name: aws
   runtime: python3.7
@@ -219,19 +219,6 @@ functions:
           documentation:
             summary: synchronizes the job state
 
-
-  fargatetasks:
-    handler: stasis/schedule/schedule.current_tasks
-    events:
-      - http:
-          private: true
-          path: schedule/cluster/tasks
-          method: get
-          cors: true
-          documentation:
-            summary: returns all currently pending tasks
-    environment:
-      current_stage: ${self:custom.stage}
 
   #fetches an result record
   resultget:
@@ -687,8 +674,8 @@ functions:
                 - Ref: AWS::Region
                 - Ref: AWS::AccountId
                 - ${self:custom.jobQueue}
-    timeout: 20
-    memorySize: 1000
+    timeout: 900
+    memorySize: 1500
 
   jobresult:
     handler: stasis/jobs/result.get
