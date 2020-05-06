@@ -54,15 +54,11 @@ def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_def
 
     print("monitoring")
 
-    success = False
-    for x in range(0, 100):
-        result = job_evaluator.evaluate({'id': test_job['id'], 'monitor': True})
-        if result['monitor']['job_state'] == 'failed':
-            success = True
-            break
-        sleep(10)
-
-    if success is False:
+    result = job_evaluator.evaluate(
+        {'id': test_job['id'], 'wait': True, 'wait_for': ['aggregation_scheduled', 'failed'], 'wait_attempts': 100,
+         'wait_time': 10})[
+        'wait']
+    if result is False:
         fail()
 
 
@@ -81,13 +77,9 @@ def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job_defin
 
     print("monitoring")
 
-    success = False
-    for x in range(0, 100):
-        result = job_evaluator.evaluate({'id': test_job['id'], 'monitor': True})
-        if result['monitor']['job_state'] == 'failed':
-            success = True
-            break
-        sleep(10)
-
-    if success is False:
+    result = job_evaluator.evaluate(
+        {'id': test_job['id'], 'wait': True, 'wait_for': ['aggregation_scheduled', 'failed'], 'wait_attempts': 100,
+         'wait_time': 10})[
+        'wait']
+    if result is False:
         fail()

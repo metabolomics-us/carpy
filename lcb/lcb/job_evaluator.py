@@ -1,4 +1,5 @@
 import json
+from time import sleep
 
 from stasis_client.client import StasisClient
 
@@ -20,6 +21,7 @@ class JobEvaluator(Evaluator):
             'upload': self.upload,
             'aggregate': self.aggregate,
             'monitor': self.monitor,
+            'wait': self.wait
         }
 
         results = {}
@@ -111,3 +113,19 @@ class JobEvaluator(Evaluator):
         print(result)
 
         return result
+
+    def wait(self, id, args):
+        """
+        waits for a specific time of attempts
+        """
+        print("waiting for job to be in state {}".format(args['wait_for']))
+        for x in range(0, args['wait_attempts']):
+            result = self.client.load_job_state(id)
+
+            print(result)
+            if result['job_state'] in args['wait_for']:
+                return True
+
+            sleep(args['wait_time'])
+
+        return False
