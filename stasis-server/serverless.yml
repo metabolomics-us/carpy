@@ -522,23 +522,7 @@ functions:
               - name: job
                 description: the job id
                 required: true
-      - http:
-          path: job/status/{job}
-          private: true
-          method: get
-          cors: true
-          request:
-            parameter:
-              paths:
-                job: true
-          documentation:
-            summary: returns the overal status of the given job
-            queryParams:
-              - name: job
-                description: the job id
-                required: true
 
-#    memorySize: 2048
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}

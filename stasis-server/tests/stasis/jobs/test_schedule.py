@@ -342,7 +342,7 @@ def validate_backened(backend, mocked_10_sample_job):
     assert job_config['resource'] == backend
 
 
-@pytest.mark.parametrize("samples", [15,33,50,66, 500, 1000, 5000])
+@pytest.mark.parametrize("samples", [15,33,50,66, 500, 1000])
 def test_schedule_job_many_samples(requireMocking, samples):
     """
     tests scheduling very large jobs
