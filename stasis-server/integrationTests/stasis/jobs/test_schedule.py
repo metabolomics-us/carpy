@@ -383,15 +383,6 @@ def test_schedule_job_integration_no_metadata(api_token):
     response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
                             headers=api_token)
 
-    print(response)
-    assert response.status_code == 200
-    assert json.loads(response.content)['job'] == test_id
-    assert json.loads(response.content)['state'] == SCHEDULED
-
-    # just check the response code from the server
-    response = requests.get("https://test-api.metabolomics.us/stasis/schedule/cluster/tasks", headers=api_token)
-
-    assert response.status_code == 200
     origin = time()
     duration = 0
     exspectation_met = False
