@@ -88,8 +88,16 @@ def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job_defin
     if result is False:
         fail()
 
+    result = job_evaluator.evaluate(
+        {'id': test_job['id'], 'retrieve': str(tmp_path.absolute())})[
+        'retrieve']
+    if result is False:
+        fail()
 
-def test_retrieve(job_evaluator, test_job_definition, test_sample,tmp_path):
+
+def test_retrieve(job_evaluator, test_job_definition, test_sample, tmp_path):
     test_job_definition["id"] = "my_test_job_for_lcb_success"
-    result = job_evaluator.evaluate({'id': test_job_definition['id'], 'retrieve': str(tmp_path.absolute())})
-    pass
+    result = job_evaluator.evaluate({'id': test_job_definition['id'], 'retrieve': str(tmp_path.absolute())})[
+        'retrieve']
+    if result is False:
+        fail()
