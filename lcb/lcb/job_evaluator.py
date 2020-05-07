@@ -1,4 +1,6 @@
+import base64
 import json
+import os
 from time import sleep
 
 from stasis_client.client import StasisClient
@@ -54,9 +56,24 @@ class JobEvaluator(Evaluator):
             print("job {} exist: False".format(id))
             return False
 
-    def retrieve(self, id, args):
-        pass
-        assert False
+    def retrieve(self, id: str, args):
+
+        content = self.client.download_job_result(job=id)
+
+        if content is None:
+            return False
+        else:
+
+            outdir = args['retrieve']
+
+            os.makedirs(outdir, exist_ok=True)
+            decoded = base64.b64decode(content)
+
+            outfile = "{}/{}.zip".format(outdir, id)
+            print("storing result at: {}".format(outfile))
+            with open(outfile, 'wb') as out:
+                out.write(decoded)
+            return True
 
     def detail(self, id, args):
         job_state = self.client.load_job_state(id)

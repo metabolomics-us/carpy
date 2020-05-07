@@ -40,6 +40,8 @@ def test_evaluate_detail(job_evaluator, test_job, test_sample, test_sample_track
 def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_definition, test_sample, tmp_path):
     test_job = test_job_definition
     test_job["method"] = "teddy | 6530 | test | positive"
+    test_job["id"] = "my_test_job_for_lcb_success"
+
     out = "{}/{}.json".format(str(tmp_path), test_job['id'])
     with open(out, 'w') as outfile:
         json.dump(test_job, outfile, indent=4)
@@ -55,7 +57,7 @@ def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_def
     print("monitoring")
 
     result = job_evaluator.evaluate(
-        {'id': test_job['id'], 'wait': True, 'wait_for': ['aggregation_scheduled', 'failed'], 'wait_attempts': 100,
+        {'id': test_job['id'], 'wait': True, 'wait_for': ['aggregated_and_uploaded'], 'wait_attempts': 100,
          'wait_time': 10})[
         'wait']
     if result is False:
@@ -64,6 +66,8 @@ def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_def
 
 def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job_definition, test_sample, tmp_path):
     test_job = test_job_definition
+    test_job["id"] = "my_test_job_for_lcb_failed"
+    test_job["method"] = "teddy | 6530noexist | test | positive"
 
     out = "{}/{}.json".format(str(tmp_path), test_job['id'])
     with open(out, 'w') as outfile:
@@ -78,8 +82,14 @@ def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job_defin
     print("monitoring")
 
     result = job_evaluator.evaluate(
-        {'id': test_job['id'], 'wait': True, 'wait_for': ['aggregation_scheduled', 'failed'], 'wait_attempts': 100,
+        {'id': test_job['id'], 'wait': True, 'wait_for': ['failed'], 'wait_attempts': 100,
          'wait_time': 10})[
         'wait']
     if result is False:
         fail()
+
+
+def test_retrieve(job_evaluator, test_job_definition, test_sample,tmp_path):
+    test_job_definition["id"] = "my_test_job_for_lcb_success"
+    result = job_evaluator.evaluate({'id': test_job_definition['id'], 'retrieve': str(tmp_path.absolute())})
+    pass

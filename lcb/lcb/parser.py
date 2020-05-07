@@ -74,7 +74,7 @@ class Parser:
                             default=['aggregated_and_uploaded', 'failed'])
         parser.add_argument("--wait-for", nargs='+',
                             help="which states we want to wait for.", dest='wait_for',
-                            type=list, default=['aggregated_and_uploaded', 'failed'])
+                            type=str, default=['aggregated_and_uploaded', 'failed'])
         parser.add_argument("--wait-attempts",
                             help="how many attempts we do until we are done waiting for a job",
                             type=int, default=100,dest='wait_attempts')
@@ -87,8 +87,8 @@ class Parser:
         parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
         parser.add_argument("-s", "--status", help="specify this flag to return the current status",
                             action='store_true')
-        parser.add_argument("-r", "--retrieve", help="this downloads the specified job, if available",
-                            action='store_true')
+        parser.add_argument("-r", "--retrieve", help="this downloads the specified job, if available to the specified directory..",
+                            type=str)
         return parser
 
     @staticmethod
