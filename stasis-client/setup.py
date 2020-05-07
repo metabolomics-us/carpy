@@ -23,7 +23,7 @@ setup(name='stasis_client',
       install_requires=[
           'requests',
           'jsonschema',
-          'pytest==3.7.1',
+          'pytest',
           'simplejson',
       ],
       include_package_data=True,

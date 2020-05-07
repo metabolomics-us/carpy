@@ -24,12 +24,12 @@ def test_bucket_json_fail_wrong_file_handle(requireMocking):
         pass
 
 
-def test_bucket_json(requireMocking, mocked_job):
+def test_bucket_json(requireMocking, mocked_10_sample_job):
     event = {
         'Records': [{
             's3': {
                 'object': {
-                    'key': 'none_abc_12345.mzml.json'
+                    'key': 'abc_5.mzml.json'
                 }
             }
         }

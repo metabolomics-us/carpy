@@ -55,7 +55,7 @@ def test_create_and_get(requireMocking):
     })
 
     result = tracking.create({'body': data}, {})
-
+    calculate_job_state("12345")
     result = tracking.get({
         "pathParameters": {
             "sample": "abc",
@@ -115,8 +115,6 @@ def test_status(requireMocking):
     assert result is not None
     assert result['statusCode'] == 200
 
-    assert len(json.loads(result['body'])['sample_states']) == 1
-
     assert json.loads(result['body'])['job_state'] == 'scheduled'
 
     for x in range(0, 10):
@@ -130,7 +128,6 @@ def test_status(requireMocking):
         }
     }, {})
 
-    assert len(json.loads(result['body'])['sample_states']) == 2
 
     # since not yet aggregated, the job should be in state processing
     assert json.loads(result['body'])['job_state'] == 'processing'
@@ -145,8 +142,6 @@ def test_status(requireMocking):
         }
     }, {})
 
-    # we should now only have one sample state
-    assert len(json.loads(result['body'])['sample_states']) == 1
 
     monitor_jobs({}, {})
 

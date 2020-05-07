@@ -4,12 +4,13 @@ import random
 
 import pytest
 
-from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job
+from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job, store_sample_for_job, schedule_job_from_queue
 from stasis.schedule.backend import Backend
-from stasis.schedule.schedule import MESSAGE_BUFFER
 from stasis.schedule.monitor import monitor_queue
+from stasis.schedule.schedule import MESSAGE_BUFFER, _get_queue
 from stasis.service.Status import *
-from stasis.tables import load_job_samples, get_tracked_state, get_job_state, get_job_config, get_tracked_sample
+from stasis.tables import load_job_samples_with_states, get_tracked_state, get_job_state, get_job_config, \
+    get_tracked_sample
 from stasis.tracking import create
 
 
@@ -23,9 +24,6 @@ def test_store_job_fail_empty_id(requireMocking):
     job = {
         "id": "",
         "method": "test",
-        "samples": [
-            "abc_12345",
-        ],
         "profile": "dada",
         "env": "test"
     }
@@ -44,9 +42,6 @@ def test_store_job_fail_empty_method(requireMocking):
     job = {
         "id": "stored_test_job",
         "method": "",
-        "samples": [
-            "abc_12345",
-        ],
         "profile": "dadsad",
         "env": "test"
     }
@@ -65,9 +60,6 @@ def test_store_job_fail_empty_env(requireMocking):
     job = {
         "id": "stored_test_job",
         "method": "test",
-        "samples": [
-            "abc_12345",
-        ],
         "profile": "test",
         "env": ""
     }
@@ -86,9 +78,6 @@ def test_store_job_fail_empty_profile(requireMocking):
     job = {
         "id": "stored_test_job",
         "method": "test",
-        "samples": [
-            "abc_12345",
-        ],
         "profile": "",
         "env": "test"
     }
@@ -97,7 +86,8 @@ def test_store_job_fail_empty_profile(requireMocking):
     assert result['statusCode'] == 503
 
 
-def test_store_job_fails_no_samples(requireMocking):
+@pytest.mark.parametrize("samples", [50, 500, 1000, 5000])
+def test_store_job_many_samples(requireMocking, samples):
     """
     tests storing a job in the database
     :param requireMocking:
@@ -107,61 +97,33 @@ def test_store_job_fails_no_samples(requireMocking):
     job = {
         "id": "stored_test_job",
         "method": "test",
-        "samples": [
-        ],
         "profile": "lcms",
         "env": "test"
     }
 
     result = store_job({'body': json.dumps(job)}, {})
-    assert result['statusCode'] == 503
+
+    for x in range(1, samples):
+        store_sample_for_job({'body': json.dumps({
+            "job": job['id'],
+            "sample": f"sample_{x}"}
+        )}, {})
+
+    assert result['statusCode'] == 200
 
 
-def test_store_job(requireMocking):
+def test_store_job(requireMocking, mocked_10_sample_job):
     """
     tests storing a job in the database
     :param requireMocking:
     :return:
     """
-
-    job = {
-        "id": "stored_test_job",
-        "method": "test",
-        "samples": [
-            "abc_12345",
-            "abd_12345",
-            "abe_12345",
-            "abf_12345",
-            "abg_12345",
-            "abh_12345",
-            "abi_12345",
-            "abj_12345",
-            "abk_12345",
-            "abl_12345",
-            "abm_12345",
-            "abn_12345",
-            "abo_12345",
-            "abp_12345",
-            "abq_12345",
-            "abr_12345",
-            "abs_12345",
-            "abt_12345",
-            "abu_12345",
-            "abx_12345",
-            "aby_12345",
-            "abz_12345"
-        ],
-        "profile": "lcms",
-        "env": "test"
-    }
-
-    result = store_job({'body': json.dumps(job)}, {})
 
     # check result state
-    assert json.loads(result['body'])['state'] == 'entered'
+    assert mocked_10_sample_job['state'] == 'entered'
 
     # query actual db and check internal state
-    assert get_job_state("stored_test_job") == ENTERED
+    assert get_job_state(mocked_10_sample_job['id']) == ENTERED
 
 
 def test_schedule_job_fails_no_job_stored(requireMocking):
@@ -176,58 +138,22 @@ def test_schedule_job_fails_no_job_stored(requireMocking):
     assert result['statusCode'] == 404
 
 
-@pytest.mark.parametrize("backend", [Backend.FARGATE, Backend.LOCAL])
-def test_schedule_job(requireMocking, backend):
+def test_schedule_job(requireMocking, mocked_10_sample_job, backend):
     """
     tests the scheduling of a job
     """
 
-    job = {
-        "id": "test_job",
-        "method": "test",
-        "samples": [
-            "abc_12345",
-            "abd_12345",
-            "abe_12345",
-            "abf_12345",
-            "abg_12345",
-            "abh_12345",
-            "abi_12345",
-            "abj_12345",
-            "abk_12345",
-            "abl_12345",
-            "abm_12345",
-            "abn_12345",
-            "abo_12345",
-            "abp_12345",
-            "abq_12345",
-            "abr_12345",
-            "abs_12345",
-            "abt_12345",
-            "abu_12345",
-            "abx_12345",
-            "aby_12345",
-            "abz_12345"
-        ],
-        "profile": "lcms",
-        "env": "test",
-        "resource": backend.value
-    }
-
-    store_job({'body': json.dumps(job)}, {})
-
-    ##
-    # check for the correct backend
-    ##
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
 
     # here we do the actual schedulign now
     result = schedule_job({'pathParameters': {
-        "job": "test_job"
+        "job": mocked_10_sample_job['id']
     }}, {})
 
-    assert json.loads(result['body'])['state'] == SCHEDULED
-    job = load_job_samples(job="test_job")
+    assert result['statusCode'] == 200
+    watch_job_schedule_queue()
+
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert v == 'scheduled'
 
@@ -243,11 +169,11 @@ def test_schedule_job(requireMocking, backend):
     # synchronize the job and sample tracking table
     monitor_jobs({}, {})
 
-    validate_backened(backend)
-    assert get_job_state("test_job") == SCHEDULED
+    validate_backened(backend, mocked_10_sample_job)
+    assert get_job_state(mocked_10_sample_job['id']) == SCHEDULED
 
-    job = load_job_samples(job="test_job")
-    assert len(job) == 22
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
+    assert len(job) == 10
 
     # at this stage all jobs should be scheduled
     for k, v in job.items():
@@ -262,9 +188,9 @@ def test_schedule_job(requireMocking, backend):
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
 
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
     # the overal job state is currently processing
-    assert get_job_state("test_job") == PROCESSING
+    assert get_job_state(mocked_10_sample_job['id']) == PROCESSING
 
     # all job items should be in state processing
     for k, v in job.items():
@@ -277,9 +203,9 @@ def test_schedule_job(requireMocking, backend):
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
 
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
     # all job items should be in state finished on the stasis side and processed on the job side
-    job = load_job_samples(job="test_job")
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert get_tracked_state(k) == "exported"
 
@@ -291,67 +217,35 @@ def test_schedule_job(requireMocking, backend):
     for x in range(0, math.ceil(len(job) / MESSAGE_BUFFER)):
         monitor_queue({}, {})
 
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
     # we should now have jobs in the state aggregation scheduled
     # this means the jobs should be in the aggregator queue
     # but not processed by fargate yet
 
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
 
-    state = get_job_state("test_job")
-    assert state in [AGGREGATING,AGGREGATING_SCHEDULED] # kinda buggy
+    state = get_job_state(mocked_10_sample_job['id'])
+    assert state in [AGGREGATING, AGGREGATING_SCHEDULED]  # kinda buggy
     # simulate the receiving of an aggregation event
 
 
-@pytest.mark.parametrize("backend", [Backend.FARGATE, Backend.LOCAL])
-def test_schedule_job_override_tracking_data(requireMocking, backend):
+def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_job, backend):
     """
     tests the scheduling of a job
     """
 
-    job = {
-        "id": "test_job",
-        "method": "test",
-        "samples": [
-            "none_abc_12345",
-            "none_abd_12345",
-            "none_abe_12345",
-            "none_abz_12345"
-        ],
-        "profile": "lcms",
-        "env": "test",
-        "resource": backend.value,
-        "meta": {
-            "tracking": [
-                {
-                    "state": "entered"
-                },
-                {
-                    "state": "acquired",
-                    "extension": "d"
-                },
-                {
-                    "state": "converted",
-                    "extension": "mzml"
-                }
-            ]
-        }
-    }
-
-    store_job({'body': json.dumps(job)}, {})
-
     ##
     # check for the correct backend
     ##
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
 
     # here we do the actual schedulign now
     result = schedule_job({'pathParameters': {
-        "job": "test_job"
+        "job": mocked_10_sample_job['id']
     }}, {})
 
-    assert json.loads(result['body'])['state'] == SCHEDULED
-    job = load_job_samples(job="test_job")
+    watch_job_schedule_queue()
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert v == 'scheduled'
 
@@ -382,11 +276,11 @@ def test_schedule_job_override_tracking_data(requireMocking, backend):
     # synchronize the job and sample tracking table
     monitor_jobs({}, {})
 
-    validate_backened(backend)
-    assert get_job_state("test_job") == SCHEDULED
+    validate_backened(backend, mocked_10_sample_job)
+    assert get_job_state(mocked_10_sample_job['id']) == SCHEDULED
 
-    job = load_job_samples(job="test_job")
-    assert len(job) == 4
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
+    assert len(job) == 10
 
     # at this stage all jobs should be scheduled
     for k, v in job.items():
@@ -401,9 +295,9 @@ def test_schedule_job_override_tracking_data(requireMocking, backend):
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
 
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
     # the overal job state is currently processing
-    assert get_job_state("test_job") == PROCESSING
+    assert get_job_state(mocked_10_sample_job['id']) == PROCESSING
 
     # all job items should be in state processing
     for k, v in job.items():
@@ -416,9 +310,9 @@ def test_schedule_job_override_tracking_data(requireMocking, backend):
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
 
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
     # all job items should be in state finished on the stasis side and processed on the job side
-    job = load_job_samples(job="test_job")
+    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
     for k, v in job.items():
         assert get_tracked_state(k) == "exported"
 
@@ -430,19 +324,89 @@ def test_schedule_job_override_tracking_data(requireMocking, backend):
     for x in range(0, math.ceil(len(job) / MESSAGE_BUFFER)):
         monitor_queue({}, {})
 
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
     # we should now have jobs in the state aggregation scheduled
     # this means the jobs should be in the aggregator queue
     # but not processed by fargate yet
 
-    validate_backened(backend)
+    validate_backened(backend, mocked_10_sample_job)
 
-    state = get_job_state("test_job")
-    assert state in [AGGREGATING,AGGREGATING_SCHEDULED] # kinda buggy
+    state = get_job_state(mocked_10_sample_job['id'])
+    assert state in [AGGREGATING, AGGREGATING_SCHEDULED]  # kinda buggy
 
     # simulate the receiving of an aggregation event
 
 
-def validate_backened(backend):
-    job_config = get_job_config("test_job")
+def validate_backened(backend, mocked_10_sample_job):
+    job_config = get_job_config(mocked_10_sample_job['id'])
     assert job_config['resource'] == backend
+
+
+@pytest.mark.parametrize("samples", [15,33,50,66, 500, 1000])
+def test_schedule_job_many_samples(requireMocking, samples):
+    """
+    tests scheduling very large jobs
+    :param requireMocking:
+    :return:
+    """
+
+    job = {
+        "id": "stored_test_job",
+        "method": "test",
+        "profile": "lcms",
+        "env": "test"
+    }
+
+    result = store_job({'body': json.dumps(job)}, {})
+
+    for x in range(1, samples):
+        store_sample_for_job({'body': json.dumps({
+            "job": job['id'],
+            "sample": f"sample_{x}"}
+        )}, {})
+
+    assert result['statusCode'] == 200
+
+    result = schedule_job({'pathParameters': {
+        "job": job['id']
+    }}, {})
+    assert result['statusCode'] == 200
+
+    watch_job_schedule_queue()
+
+
+def watch_job_schedule_queue():
+    """
+    little helper method, to watch a queue for us during testing
+    """
+    import boto3
+    # receive message from queue
+    client = boto3.client('sqs')
+    # if topic exists, we just reuse it
+    arn = _get_queue(client=client, queue_name="jobQueue", resource=Backend.NO_BACKEND_REQUIRED)
+    more_messages = True
+    while more_messages:
+        message = client.receive_message(
+            QueueUrl=arn,
+            AttributeNames=[
+                'All'
+            ],
+            MaxNumberOfMessages=1,
+            VisibilityTimeout=1,
+            WaitTimeSeconds=1
+        )
+
+        if 'Messages' in message:
+            for m in message['Messages']:
+                client.delete_message(
+                    QueueUrl=arn,
+                    ReceiptHandle=m['ReceiptHandle']
+                )
+                schedule_job_from_queue({'Records': [
+                    {
+                        'body': m['Body']
+                    }
+                ]}, {})
+
+        else:
+            more_messages = False

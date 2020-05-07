@@ -18,13 +18,13 @@ def test_evaluate_exist(job_evaluator, test_job):
     result = job_evaluator.evaluate({'id': test_job['id'], 'exist': True})
     assert len(result) == 1
     assert result['exist'
-           ] == True
+           ] is True
 
 
 def test_evaluate_not_exist(job_evaluator, test_job):
     result = job_evaluator.evaluate({'id': "fake_{}".format(test_job['id']), 'exist': True})
     assert len(result) == 1
-    assert result['exist'] == False
+    assert result['exist'] is False
 
 
 def test_evaluate_process(job_evaluator, test_job):
@@ -37,15 +37,18 @@ def test_evaluate_detail(job_evaluator, test_job, test_sample, test_sample_track
     assert len(result) == 1
 
 
-def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job, test_sample, tmp_path):
-    print(tmp_path)
+def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_definition, test_sample, tmp_path):
+    test_job = test_job_definition
+    test_job["method"] = "teddy | 6530 | test | positive"
+    test_job["id"] = "my_test_job_for_lcb_success"
 
-    test_job["method"] = "test | 6530 | test | positive",
     out = "{}/{}.json".format(str(tmp_path), test_job['id'])
     with open(out, 'w') as outfile:
         json.dump(test_job, outfile, indent=4)
 
-    job_evaluator.evaluate({'id': test_job['id'], 'upload': out})
+    result = job_evaluator.evaluate({'id': test_job['id'], 'upload': out})['upload']
+
+    assert result is True
 
     print("processing it now")
 
@@ -53,20 +56,18 @@ def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job, te
 
     print("monitoring")
 
-    success = False
-    for x in range(0, 100):
-        result = job_evaluator.evaluate({'id': test_job['id'], 'monitor': True})
-        if result['monitor']['job_state'] == 'failed':
-            success = True
-            break
-        sleep(10)
-
-    if success is False:
+    result = job_evaluator.evaluate(
+        {'id': test_job['id'], 'wait': True, 'wait_for': ['aggregated_and_uploaded'], 'wait_attempts': 100,
+         'wait_time': 10})[
+        'wait']
+    if result is False:
         fail()
 
 
-def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job, test_sample, tmp_path):
-    print(tmp_path)
+def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job_definition, test_sample, tmp_path):
+    test_job = test_job_definition
+    test_job["id"] = "my_test_job_for_lcb_failed"
+    test_job["method"] = "teddy | 6530noexist | test | positive"
 
     out = "{}/{}.json".format(str(tmp_path), test_job['id'])
     with open(out, 'w') as outfile:
@@ -80,13 +81,23 @@ def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job, test
 
     print("monitoring")
 
-    success = False
-    for x in range(0, 100):
-        result = job_evaluator.evaluate({'id': test_job['id'], 'monitor': True})
-        if result['monitor']['job_state'] == 'failed':
-            success = True
-            break
-        sleep(10)
+    result = job_evaluator.evaluate(
+        {'id': test_job['id'], 'wait': True, 'wait_for': ['failed'], 'wait_attempts': 100,
+         'wait_time': 10})[
+        'wait']
+    if result is False:
+        fail()
 
-    if success is False:
+    result = job_evaluator.evaluate(
+        {'id': test_job['id'], 'retrieve': str(tmp_path.absolute())})[
+        'retrieve']
+    if result is False:
+        fail()
+
+
+def test_retrieve(job_evaluator, test_job_definition, test_sample, tmp_path):
+    test_job_definition["id"] = "my_test_job_for_lcb_success"
+    result = job_evaluator.evaluate({'id': test_job_definition['id'], 'retrieve': str(tmp_path.absolute())})[
+        'retrieve']
+    if result is False:
         fail()

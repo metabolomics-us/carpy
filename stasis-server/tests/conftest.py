@@ -5,13 +5,14 @@ import boto3
 import moto
 import pytest
 import simplejson as json
-from moto.ec2 import utils as ec2_utils
 
-from stasis.jobs.schedule import store_job
+from stasis.jobs.schedule import store_job, store_sample_for_job
 from stasis.schedule.backend import Backend
+from stasis.tables import get_job_config
 
-if 'AWS_DEFAULT_REGION' not in os.environ:
-    os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
+os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
+
+from moto.ec2 import utils as ec2_utils
 
 
 @pytest.fixture
@@ -58,6 +59,7 @@ def requireMocking():
     os.environ["jobTrackingTable"] = "UnitJobTrackingTable"
     os.environ["jobStateTable"] = "UnitJobStateTable"
     os.environ["current_stage"] = "test"
+    os.environ["jobQueue"] = "test_job_queue"
 
     dynamodb = boto3.resource('dynamodb')
 
@@ -134,63 +136,69 @@ def create_cluster():
     return cluster
 
 
-@pytest.fixture()
-def mocked_job():
-    job = {
-        "id": "test_job",
-        "method": "test",
-        "samples": [
-            "none_abc_12345",
-            "none_abd_12345",
-            "none_abe_12345",
-            "none_abz_12345"
-        ],
-        "profile": "lcms",
-        "env": "test",
-        "resource": 'FARGATE',
-        "meta": {
-            "tracking": [
-                {
-                    "state": "entered"
-                },
-                {
-                    "state": "acquired",
-                    "extension": "d"
-                },
-                {
-                    "state": "converted",
-                    "extension": "mzml"
-                }
-            ]
-        }
-    }
+def pytest_generate_tests(metafunc):
+    if "backend" in metafunc.fixturenames:
+        metafunc.parametrize("backend", [Backend.FARGATE.value, Backend.LOCAL.value], indirect=True)
 
-    store_job({'body': json.dumps(job)}, {})
-    return job
+
+@pytest.fixture
+def backend(request):
+    return Backend(request.param)
 
 
 @pytest.fixture()
-def mocked_10_sample_job():
+def mocked_10_sample_job(backend):
     job = {
         "id": "12345",
         "method": "test",
-        "samples": [
-            "abc_0",
-            "abc_1",
-            "abc_2",
-            "abc_3",
-            "abc_4",
-            "abc_5",
-            "abc_6",
-            "abc_7",
-            "abc_8",
-            "abc_9",
-        ],
+
         "profile": "lcms",
         "env": "test",
-        "resource": Backend.FARGATE.value
+        "resource": backend.value
     }
 
-    store_job({'body': json.dumps(job)}, {})
+    result = store_job({'body': json.dumps(job)}, {})
 
-    return job
+    assert result['statusCode'] == 200
+
+    samples = [
+        "abc_0",
+        "abc_1",
+        "abc_2",
+        "abc_3",
+        "abc_4",
+        "abc_5",
+        "abc_6",
+        "abc_7",
+        "abc_8",
+        "abc_9",
+    ]
+
+    for sample in samples:
+        result = store_sample_for_job({
+            'body': json.dumps({
+                'job': "12345",
+                'sample': sample,
+                'meta': {
+                    "tracking": [
+                        {
+                            "state": "entered"
+                        },
+                        {
+                            "state": "acquired",
+                            "extension": "d"
+                        },
+                        {
+                            "state": "converted",
+                            "extension": "mzml"
+                        }
+                    ]
+
+                }
+            }
+            )
+        }, {})
+
+        assert result['statusCode'] == 200
+
+    return get_job_config("12345")

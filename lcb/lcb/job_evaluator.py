@@ -1,4 +1,7 @@
+import base64
 import json
+import os
+from time import sleep
 
 from stasis_client.client import StasisClient
 
@@ -20,11 +23,13 @@ class JobEvaluator(Evaluator):
             'upload': self.upload,
             'aggregate': self.aggregate,
             'monitor': self.monitor,
+            'wait': self.wait
         }
 
         results = {}
-        for x in mapping.keys():
-            if x in args:
+
+        for x in args.keys():
+            if x in mapping:
                 if args[x] is not False:
                     results[x] = mapping[x](args['id'], args)
         return results
@@ -51,9 +56,24 @@ class JobEvaluator(Evaluator):
             print("job {} exist: False".format(id))
             return False
 
-    def retrieve(self, id, args):
-        pass
-        assert False
+    def retrieve(self, id: str, args):
+
+        content = self.client.download_job_result(job=id)
+
+        if content is None:
+            return False
+        else:
+
+            outdir = args['retrieve']
+
+            os.makedirs(outdir, exist_ok=True)
+            decoded = base64.b64decode(content)
+
+            outfile = "{}/{}.zip".format(outdir, id)
+            print("storing result at: {}".format(outfile))
+            with open(outfile, 'wb') as out:
+                out.write(decoded)
+            return True
 
     def detail(self, id, args):
         job_state = self.client.load_job_state(id)
@@ -82,17 +102,16 @@ class JobEvaluator(Evaluator):
             job['id'] = id
 
             try:
-                result = self.client.store_job(job)
-                print("result was")
-                print(result)
-                print("complete job")
-                print(self.detail(id, {}))
+                print("uploading job")
+                print(json.dumps(job, indent=4))
+                result = self.client.store_job(job, enable_progress_bar=True)
+                print("done")
+                return True
             except Exception as e:
                 print("input caused error:\n")
                 print(json.dumps(job, indent=4))
                 print(f"\nerror was: {str(e)}")
-
-        return None
+                return False
 
     def aggregate(self, id, args):
         pass
@@ -111,3 +130,19 @@ class JobEvaluator(Evaluator):
         print(result)
 
         return result
+
+    def wait(self, id, args):
+        """
+        waits for a specific time of attempts
+        """
+        print("waiting for job to be in state {}".format(args['wait_for']))
+        for x in range(0, args['wait_attempts']):
+            result = self.client.load_job_state(id)
+
+            print(result)
+            if result['job_state'] in args['wait_for']:
+                return True
+
+            sleep(args['wait_time'])
+
+        return False

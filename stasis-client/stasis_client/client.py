@@ -1,5 +1,6 @@
 import os
 import shutil
+from time import sleep
 from typing import Optional
 
 import boto3
@@ -8,7 +9,8 @@ import requests
 import simplejson as json
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
-
+from urllib3.exceptions import NewConnectionError
+from requests.exceptions import ConnectionError as CE
 
 class StasisClient:
     """
@@ -49,8 +51,8 @@ class StasisClient:
         retry_strategy = Retry(
             total=500,
             status_forcelist=[429, 500, 502, 503, 504],
-            method_whitelist=["HEAD", "GET", "OPTIONS"],
-            backoff_factor=0.3
+            method_whitelist=["HEAD", "GET", "OPTIONS", "POST"],
+            backoff_factor=1
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.http = requests.Session()
@@ -65,7 +67,8 @@ class StasisClient:
                                       'resource': resource, 'secured': True}, headers=self._header)
 
         if result.status_code != 200:
-            raise Exception(f"scheduling failed for {sample_name} in env {env}, profile {profile}, resource {resource} and method {method}")
+            raise Exception(
+                f"scheduling failed for {sample_name} in env {env}, profile {profile}, resource {resource} and method {method}")
         else:
             return result.json()
 
@@ -80,7 +83,8 @@ class StasisClient:
         elif result.status_code == 404:
             return False
         else:
-            raise Exception("error checkign state, status code was {} for sample {}".format(result.status_code,sample_name))
+            raise Exception(
+                "error checkign state, status code was {} for sample {}".format(result.status_code, sample_name))
 
     def sample_acquisition_create(self, data: dict):
         """
@@ -149,7 +153,7 @@ class StasisClient:
             if x['value'] == state and 'fileHandle' in x:
                 return x['fileHandle']
 
-        raise Exception("state not found or has no file handle for {} and state".format(sample_name,state))
+        raise Exception("state not found or has no file handle for {} and state".format(sample_name, state))
 
     def sample_state_update(self, sample_name: str, state, file_handle: Optional[str] = None):
         """
@@ -216,7 +220,8 @@ class StasisClient:
         """
         result = self.http.get(f"{self._url}/job/status/{job_id}", headers=self._header)
         if result.status_code != 200:
-            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
+            raise Exception(
+                f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
         return result.json()
 
     def get_raw_bucket(self):
@@ -279,19 +284,46 @@ class StasisClient:
         if result.status_code == 503:
             return None
         elif result.status_code != 200:
-            raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job}")
+            raise Exception(
+                f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job}")
         return result.json()['content']
 
-    def store_job(self, job: dict):
+    def store_job(self, job: dict, enable_progress_bar:bool = False):
         """
         stores a job in the system in preparation for scheduling
         :param job:
         :return:
         """
+        meta = job.pop('meta', {})
+        samples = job.pop('samples')
+
         response = self.http.post(f"{self._url}/job/store", json=job, headers=self._header)
+
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
+
+
+        from tqdm import tqdm
+
+        for sample in tqdm(samples, desc="storing sample definitions", disable=enable_progress_bar is False):
+            finished = 0
+
+            while finished < 100:
+                try:
+                    res = requests.post(f"{self._url}/job/sample/store", json={
+                        "sample": sample,
+                        "job": job['id'],
+                        "meta": meta
+                    }, headers=self._header)
+
+                    finished = 100
+                    if res.status_code != 200:
+                        raise Exception(
+                            f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
+                except CE as e:
+                    finished = finished + 1
+                    sleep(1000)
 
     def schedule_job(self, job_id: str):
         """

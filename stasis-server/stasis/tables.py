@@ -1,7 +1,7 @@
 import os
 import re
 import time
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 import boto3
 import simplejson as json
@@ -583,7 +583,64 @@ def load_jobs_for_sample(sample: str, id_only=False) -> Optional[List[dict]]:
         return None
 
 
-def load_job_samples(job: str) -> Optional[dict]:
+def load_job_samples_with_pagination(job: str, pagination_value: Optional[dict] = None, pagination_size: int = 25) -> \
+        Optional[Tuple[List[str], str]]:
+    """
+    loads the job from the job table for the given name
+    """
+
+    tm = TableManager()
+    table = tm.get_job_sample_state_table()
+
+    query_params = {
+        'IndexName': 'job-id-index',
+        'Select': 'ALL_ATTRIBUTES',
+        'KeyConditionExpression': Key('job').eq(job),
+        'Limit': pagination_size
+    }
+
+    if pagination_value is not None:
+        query_params['ExclusiveStartKey'] = pagination_value
+
+    result = table.query(**query_params
+                         )
+
+    if "Items" in result and len(result['Items']) > 0:
+        results = []
+        for x in result['Items']:
+            results.append(x['sample'])
+
+        return results, result.get('LastEvaluatedKey', None)
+    else:
+        return (None, None)
+
+
+def load_job_samples(job: str) -> Optional[List]:
+    """
+    loads the job from the job table for the given name
+    """
+
+    tm = TableManager()
+    table = tm.get_job_sample_state_table()
+
+    query_params = {
+        'IndexName': 'job-id-index',
+        'Select': 'ALL_ATTRIBUTES',
+        'KeyConditionExpression': Key('job').eq(job)
+    }
+    result = table.query(**query_params
+                         )
+
+    if "Items" in result and len(result['Items']) > 0:
+        results = []
+        for x in result['Items']:
+            results.append(x['sample'])
+        return results
+    else:
+        return None
+
+
+def load_job_samples_with_states(job: str) -> Optional[dict]:
     """
     loads the job from the job table for the given name
     """
@@ -682,7 +739,6 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
         KeyConditionExpression=Key('id').eq(sample)
     )
     timestamp = int(time.time() * 1000)
-    experiment = _fetch_experiment(sample)
     new_status = {
         'time': timestamp,
         'value': state.lower(),
@@ -702,7 +758,6 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
         item = {
             'id': sample,
             'sample': sample,
-            'experiment': experiment,
             'status': []
         }
 
@@ -721,6 +776,7 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
 
     # register the new state
     item['status'].append(new_status)
+    item['experiment'] = _fetch_experiment(sample)
 
     item = tm.sanitize_json_for_dynamo(item)
     # put item in table instead of queueing

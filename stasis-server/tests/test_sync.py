@@ -2,20 +2,23 @@ from pytest import fail
 
 from stasis.bucket.triggers import bucket_zip
 from stasis.jobs.schedule import schedule_job
-from stasis.jobs.sync import do_sync
+from stasis.jobs.sync import do_sync, sync_job
 from stasis.service.Status import EXPORTED, PROCESSING, FAILED, AGGREGATING_SCHEDULING, SCHEDULED, AGGREGATED, \
     AGGREGATING_SCHEDULED, AGGREGATED_AND_UPLOADED
-from stasis.tables import save_sample_state, get_job_state
+from stasis.tables import save_sample_state, get_job_state, get_job_config
+from tests.stasis.jobs.test_schedule import watch_job_schedule_queue
 
 
 def test_calculate_job_state_with_zip_upload(requireMocking, mocked_10_sample_job):
     # set 1 sample state to exported
     save_sample_state(sample="abc_0", state=EXPORTED)
     # this should update the job state accordingly to processing
+    sync_job(get_job_config("12345"))
     state = get_job_state("12345")
     assert state == PROCESSING
     # set sample state to failed
     save_sample_state(sample="abc_1", state=FAILED)
+    sync_job(get_job_config("12345"))
     # this should keep the job state in state processing
     state = get_job_state("12345")
     assert state == PROCESSING
@@ -30,6 +33,7 @@ def test_calculate_job_state_with_zip_upload(requireMocking, mocked_10_sample_jo
     save_sample_state(sample="abc_7", state=EXPORTED)
     save_sample_state(sample="abc_8", state=EXPORTED)
     save_sample_state(sample="abc_9", state=EXPORTED)
+    sync_job(get_job_config("12345"))
     # this should set the job state to aggregation scheduling now
     state = get_job_state("12345")
     assert state == AGGREGATING_SCHEDULED
@@ -58,6 +62,7 @@ def test_calculate_job_state(requireMocking, mocked_10_sample_job):
     # set 1 sample state to exported
     save_sample_state(sample="abc_0", state=EXPORTED)
     # this should update the job state accordingly to processing
+    sync_job(get_job_config("12345"))
     state = get_job_state("12345")
     assert state == PROCESSING
     # set sample state to failed
@@ -76,6 +81,7 @@ def test_calculate_job_state(requireMocking, mocked_10_sample_job):
     save_sample_state(sample="abc_7", state=EXPORTED)
     save_sample_state(sample="abc_8", state=EXPORTED)
     save_sample_state(sample="abc_9", state=EXPORTED)
+    sync_job(get_job_config("12345"))
     # this should set the job state to aggregation scheduling now
     state = get_job_state("12345")
     assert state == AGGREGATING_SCHEDULED
@@ -85,11 +91,14 @@ def test_calculate_job_state_2(requireMocking, mocked_10_sample_job):
     result = schedule_job({'pathParameters': {
         "job": "12345"
     }}, {})
+
+    watch_job_schedule_queue()
     state = get_job_state("12345")
     assert state == SCHEDULED
 
     # set 1 sample state to failed
     save_sample_state(sample="abc_0", state=FAILED)
+    sync_job(get_job_config("12345"))
     # this should update the job state accordingly to processing
     state = get_job_state("12345")
 
@@ -97,6 +106,7 @@ def test_calculate_job_state_2(requireMocking, mocked_10_sample_job):
     # set sample state to failed
     save_sample_state(sample="abc_1", state=FAILED)
     # this should keep the job state in state processing
+    sync_job(get_job_config("12345"))
     state = get_job_state("12345")
     assert state == PROCESSING
 
@@ -110,6 +120,7 @@ def test_calculate_job_state_2(requireMocking, mocked_10_sample_job):
     save_sample_state(sample="abc_7", state=EXPORTED)
     save_sample_state(sample="abc_8", state=EXPORTED)
     save_sample_state(sample="abc_9", state=EXPORTED)
+    sync_job(get_job_config("12345"))
     # this should set the job state to aggregation scheduling now
     state = get_job_state("12345")
     assert state == AGGREGATING_SCHEDULED

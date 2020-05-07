@@ -105,15 +105,26 @@ def schedule(event, context):
     return schedule_to_queue(body, service=SECURE_CARROT_RUNNER, resource=resource)
 
 
-def schedule_to_queue(body, service: str, resource: Backend):
+def schedule_to_queue(body, service: Optional[str], resource: Backend, queue_name="schedule_queue"):
+    """
+    general way to schedule something to a queue
+    :param body:
+    :param service:
+    :param resource:
+    :param queue_name:
+    :return:
+    """
     body['secured'] = True
-    body[SERVICE] = service
+
+    print(body)
+    if service is not None:
+        body[SERVICE] = service
 
     # get topic refrence
     import boto3
     client = boto3.client('sqs')
     # if topic exists, we just reuse it
-    arn = _get_queue(client, resource=resource, queue_name="schedule_queue")
+    arn = _get_queue(client, resource=resource, queue_name=queue_name)
     serialized = json.dumps(body, use_decimal=True)
     # submit item to queue for routing to the correct persistence
     result = client.send_message(

@@ -62,9 +62,7 @@ def monitor_queue(event, context):
         # print(messages)
         for message in messages:
             receipt_handle = message['ReceiptHandle']
-            print("current message: {}".format(message))
             body = json.loads(json.loads(message['Body'])['default'])
-            print("schedule: {}".format(body))
             try:
 
                 slots = _free_task_count(service=body[SERVICE])

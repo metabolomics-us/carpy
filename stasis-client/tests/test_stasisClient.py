@@ -1,5 +1,6 @@
 from time import time, sleep
 
+import pytest
 import requests
 from pytest import fail
 
@@ -76,16 +77,22 @@ def test_load_job_state(stasis_cli, api_token):
     job = {
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
-        "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ],
+
         "profile": "carrot.lcms",
         "env": "test"
     }
 
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+
+    for x in [
+        "B2a_TEDDYLipids_Neg_NIST001",
+        "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+        "B10A_SA8922_TeddyLipids_Pos_122WP"
+    ]:
+        requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json={
+            "sample": x,
+            "job": test_id
+        }, headers=api_token)
 
     data = stasis_cli.load_job_state(test_id)
     print(data)
@@ -101,17 +108,21 @@ def test_load_job(stasis_cli, api_token):
     job = {
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
-        "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ],
         "profile": "carrot.lcms",
         "env": "test"
     }
 
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
+    for x in [
+        "B2a_TEDDYLipids_Neg_NIST001",
+        "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+        "B10A_SA8922_TeddyLipids_Pos_122WP"
+    ]:
+        requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json={
+            "sample": x,
+            "job": test_id
+        }, headers=api_token)
     data = stasis_cli.load_job(test_id)
     print(data)
 
@@ -181,3 +192,76 @@ def test_download_result(stasis_cli, api_token):
 
     assert content is not None
     print(content)
+
+
+@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 300, 500])
+def test_store_job_sizes(sample_count, stasis_cli):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+        "env": "test"
+    }
+
+    samples = []
+    for x in range(0, sample_count):
+        samples.append(f"test_sample_{x}")
+
+    job['samples'] = samples
+
+    stasis_cli.store_job(job, enable_progress_bar=True)
+
+    result = stasis_cli.load_job(test_id)
+
+    assert len(result) == sample_count
+
+    result = stasis_cli.load_job_state(test_id)
+
+    print(result)
+
+@pytest.mark.parametrize("sample_count", [50, 100, 300])
+def test_schedule_job_sizes(sample_count, stasis_cli):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+        "env": "test",
+        "resource": "DUMP"  # <== we don't actually want to process it and just push it into the dump queue!!!
+    }
+
+    samples = []
+    for x in range(0, sample_count):
+        samples.append(f"test_sample_{x}")
+
+    job['samples'] = samples
+
+    stasis_cli.store_job(job, enable_progress_bar=True)
+    stasis_cli.schedule_job(job['id'])
+
+    print("requesting job to be scheduled")
+    stasis_cli.schedule_job(test_id)
+    origin = time()
+    duration = 0
+
+    print("waiting for status update, the job needs to be SCHEDULED or FAILED at some stage")
+    while duration < 1200000:
+        try:
+            state = stasis_cli.load_job_state(test_id)['job_state']
+            print(f"current state for job {test_id} is {state} and duration is {duration}")
+            if state == "scheduled":
+                break
+            if state == "failed":
+                fail()
+                break
+
+            sleep(10)
+            duration = time() - origin
+        except Exception as e:
+            print(str(e))
+            pass

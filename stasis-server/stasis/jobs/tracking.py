@@ -3,7 +3,7 @@ from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.sync import update_job_state, EXPORTED, FAILED, AGGREGATED, calculate_job_state
-from stasis.tables import TableManager, _set_sample_job_state, load_job_samples
+from stasis.tables import TableManager, _set_sample_job_state, load_job_samples_with_states
 
 
 def create(event, context):
@@ -54,6 +54,10 @@ def get(event, context):
 def status(event, context):
     """
     returns the status of the current job, as well as some meta information
+
+    TODO due to expense it might be better to store the whole calculation result
+    in an addiitonal table, since it can take a LONG time to execute and so not perfect
+    as solution for http requests
     """
 
     if 'pathParameters' in event:
@@ -64,10 +68,6 @@ def status(event, context):
             tm = TableManager()
             table_overall_state = tm.get_job_state_table()
 
-            sample_states = load_job_samples(job)
-
-            if sample_states is None:
-                sample_states = {}
 
             job_state = table_overall_state.query(
                 **{
@@ -76,13 +76,6 @@ def status(event, context):
                     'KeyConditionExpression': Key('job').eq(job)
                 }
             )
-
-            states = {}
-            for x in sample_states.values():
-                if x not in states:
-                    states[x] = 0
-
-                states[x] = states[x] + 1
 
             # this queries the state of all the samples
             if "Items" in job_state and len(job_state['Items']) > 0:
@@ -94,8 +87,6 @@ def status(event, context):
                         "statusCode": 200,
                         "headers": __HTTP_HEADERS__,
                         "body": json.dumps({
-                            "count": len(sample_states),
-                            "sample_states": states,
                             "job_state": job_state['state'],
                             "job_info": job_state
                         }
