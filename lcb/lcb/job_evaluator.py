@@ -61,6 +61,10 @@ class JobEvaluator(Evaluator):
         content = self.client.download_job_result(job=id)
 
         if content is None:
+            print("did not find a result for '{}' on '{}'".format(id, self.client.get_aggregated_bucket()))
+            state = self.client.load_job_state(id)
+            print("jobs current state is")
+            print(json.dumps(state, indent=4))
             return False
         else:
 
