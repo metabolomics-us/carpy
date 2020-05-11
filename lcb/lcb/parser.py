@@ -77,7 +77,7 @@ class Parser:
                             type=str, default=['aggregated_and_uploaded', 'failed'])
         parser.add_argument("--wait-attempts",
                             help="how many attempts we do until we are done waiting for a job",
-                            type=int, default=100,dest='wait_attempts')
+                            type=int, default=100000,dest='wait_attempts')
         parser.add_argument("--wait-time",
                             help="how long do we wait in seconds between attempts for the wait module",
                             type=int, default=10,dest='wait_time')

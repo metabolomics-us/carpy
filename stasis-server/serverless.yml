@@ -533,6 +533,24 @@ functions:
     handler: stasis/jobs/tracking.description
     events:
       - http:
+          path: job/{job}/{last_key}
+          private: true
+          method: get
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+                last_key: false
+          documentation:
+            summary: return the complete job description with all associated samples and there states
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
+              - name: last_key
+                description: last key received and used for pagination
+      - http:
           path: job/{job}
           private: true
           method: get
@@ -547,8 +565,6 @@ functions:
               - name: job
                 description: the job id
                 required: true
-
-    memorySize: 1024
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}

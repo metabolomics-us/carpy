@@ -128,7 +128,6 @@ def test_status(requireMocking):
         }
     }, {})
 
-
     # since not yet aggregated, the job should be in state processing
     assert json.loads(result['body'])['job_state'] == 'processing'
 
@@ -142,14 +141,13 @@ def test_status(requireMocking):
         }
     }, {})
 
-
     monitor_jobs({}, {})
 
     assert json.loads(result['body'])['job_state'] == PROCESSING
 
 
 def test_description(requireMocking):
-    for x in range(0, 1000):
+    for x in range(0, 40):
         # upload data
         data = json.dumps({
             "job": "1234567",
@@ -161,155 +159,26 @@ def test_description(requireMocking):
 
     result = tracking.description({
         "pathParameters": {
-            "job": "1234567"
+            "job": "1234567",
+            "psize": 25,
         }
     }, {})
 
     assert result is not None
     assert result['statusCode'] == 200
 
-    assert len(json.loads(result['body'])) == 1000
+    samples = json.loads(result['body'])
 
+    assert len(samples) == 25
 
-def test_job_can_aggregate_is_false(requireMocking):
-    # schedule job
-    for x in range(0, 100):
-        # upload data
-        data = json.dumps({
-            "job": "1234567-aggregate",
-            "sample": "abc_{}".format(x),
-            "state": "scheduled"
-        })
-
-        result = tracking.create({'body': data}, {})
-
-    result = tracking.job_can_aggregate({
+    result = tracking.description({
         "pathParameters": {
-            "job": "1234567-aggregate"
+            "job": "1234567",
+            "psize": 25,
+            "last_key": samples[-1]['id']
         }
     }, {})
 
     assert result is not None
     assert result['statusCode'] == 200
-
-    assert json.loads(result['body'])['can_aggregate'] is False
-
-
-def test_job_can_aggregate_is_true_for_failed(requireMocking):
-    # schedule job
-    for x in range(0, 100):
-        # upload data
-        data = json.dumps({
-            "job": "1234567-aggregate",
-            "sample": "abc_{}".format(x),
-            "state": "failed"
-        })
-
-        result = tracking.create({'body': data}, {})
-
-    result = tracking.job_can_aggregate({
-        "pathParameters": {
-            "job": "1234567-aggregate"
-        }
-    }, {})
-
-    assert result is not None
-    assert result['statusCode'] == 200
-
-    assert json.loads(result['body'])['can_aggregate'] is True
-
-
-def test_job_can_aggregate_is_true_for_processed(requireMocking):
-    # schedule job
-    for x in range(0, 100):
-        # upload data
-        data = json.dumps({
-            "job": "1234567-aggregate",
-            "sample": "abc_{}".format(x),
-            "state": EXPORTED
-        })
-
-        result = tracking.create({'body': data}, {})
-
-    result = tracking.job_can_aggregate({
-        "pathParameters": {
-            "job": "1234567-aggregate"
-        }
-    }, {})
-
-    assert result is not None
-    assert result['statusCode'] == 200
-
-    assert json.loads(result['body'])['can_aggregate'] is True
-
-
-def test_job_can_aggregate_is_true_for_processed_and_failed(requireMocking):
-    # schedule job
-    for x in range(0, 100):
-        # upload data
-        data = json.dumps({
-            "job": "1234567-aggregate",
-            "sample": "abc_{}".format(x),
-            "state": random.choice([str(EXPORTED), str(FAILED)])
-        })
-
-        result = tracking.create({'body': data}, {})
-
-    result = tracking.job_can_aggregate({
-        "pathParameters": {
-            "job": "1234567-aggregate"
-        }
-    }, {})
-
-    assert result is not None
-    assert result['statusCode'] == 200
-
-    assert json.loads(result['body'])['can_aggregate'] is True
-
-
-def test_job_is_done_is_false(requireMocking):
-    # schedule job
-    for x in range(0, 100):
-        # upload data
-        data = json.dumps({
-            "job": "1234567-done",
-            "sample": "abc_{}".format(x),
-            "state": random.choice([str(SCHEDULED), str(AGGREGATING), str(EXPORTED)])
-        })
-
-        result = tracking.create({'body': data}, {})
-
-    result = tracking.job_is_done({
-        "pathParameters": {
-            "job": "1234567-done"
-        }
-    }, {})
-
-    assert result is not None
-    assert result['statusCode'] == 200
-
-    assert json.loads(result['body'])['is_done'] is False
-
-
-def test_job_is_done_is_true_for_processed_and_failed(requireMocking):
-    # schedule job
-    for x in range(0, 100):
-        # upload data
-        data = json.dumps({
-            "job": "1234567-done",
-            "sample": "abc_{}".format(x),
-            "state": random.choice([AGGREGATED, FAILED])
-        })
-
-        result = tracking.create({'body': data}, {})
-
-    result = tracking.job_is_done({
-        "pathParameters": {
-            "job": "1234567-done"
-        }
-    }, {})
-
-    assert result is not None
-    assert result['statusCode'] == 200
-
-    assert json.loads(result['body'])['is_done'] is True
+    assert len(json.loads(result['body'])) == 15
