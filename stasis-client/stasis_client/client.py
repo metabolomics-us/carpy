@@ -1,7 +1,7 @@
 import os
 import shutil
 from time import sleep
-from typing import Optional
+from typing import Optional, List
 
 import boto3
 import boto3.s3
@@ -11,6 +11,7 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from urllib3.exceptions import NewConnectionError
 from requests.exceptions import ConnectionError as CE
+
 
 class StasisClient:
     """
@@ -207,10 +208,32 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        result = self.http.get(f"{self._url}/job/{job_id}", headers=self._header)
-        if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
-        return result.json()
+
+        data = []
+
+        def fetch(job, last=None):
+            if last is None:
+                result = self.http.get(f"{self._url}/job/{job}", headers=self._header)
+            else:
+                result = self.http.get(f"{self._url}/job/{job}/{last}", headers=self._header)
+            if result.status_code != 200 and last is None:
+                raise Exception(
+                    f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
+            elif result.status_code == 200:
+                result = json.loads(result.content)
+                for x in result:
+                    data.append(x)
+
+                return result
+            else:
+                return []
+
+        result = fetch(job_id)
+
+        while len(result) == 10:
+            result = fetch(job=job_id, last=data[-1]['id'])
+
+        return data
 
     def load_job_state(self, job_id):
         """
@@ -288,7 +311,7 @@ class StasisClient:
                 f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job}")
         return result.json()['content']
 
-    def store_job(self, job: dict, enable_progress_bar:bool = False):
+    def store_job(self, job: dict, enable_progress_bar: bool = False):
         """
         stores a job in the system in preparation for scheduling
         :param job:
@@ -302,7 +325,6 @@ class StasisClient:
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
-
 
         from tqdm import tqdm
 

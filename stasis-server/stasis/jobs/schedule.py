@@ -191,7 +191,7 @@ def schedule_job_from_queue(event, context):
             schedule_samples_to_queue(env_, job_id, key, method, profile, resource, samples)
 
             if pkey is None or len(samples) == 0:
-                print("job was compltely scheduled!")
+                print("job was completely scheduled!")
                 set_job_state(job=job_id, method=method, env=env_, profile=profile,
                               state=SCHEDULED, resource=resource)
             else:
