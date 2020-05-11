@@ -77,18 +77,24 @@ class Parser:
                             type=str, default=['aggregated_and_uploaded', 'failed'])
         parser.add_argument("--wait-attempts",
                             help="how many attempts we do until we are done waiting for a job",
-                            type=int, default=100000,dest='wait_attempts')
+                            type=int, default=100000, dest='wait_attempts')
         parser.add_argument("--wait-time",
                             help="how long do we wait in seconds between attempts for the wait module",
-                            type=int, default=10,dest='wait_time')
+                            type=int, default=10, dest='wait_time')
 
         parser.add_argument("-a", "--aggregate", help="this aggregates the specified job locally", action='store_true')
 
         parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
         parser.add_argument("-s", "--status", help="specify this flag to return the current status",
                             action='store_true')
-        parser.add_argument("-r", "--retrieve", help="this downloads the specified job, if available to the specified directory..",
+        parser.add_argument("-r", "--retrieve",
+                            help="this downloads the specified job, if available to the specified directory..",
                             type=str)
+
+        parser.add_argument("--force-sync",
+                            help="forces a synchronization of the given job. In case stasis is hanging",
+                            action='store_true', dst='force_sync')
+
         return parser
 
     @staticmethod

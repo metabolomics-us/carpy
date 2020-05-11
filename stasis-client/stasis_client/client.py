@@ -1,16 +1,15 @@
 import os
 import shutil
 from time import sleep
-from typing import Optional, List
+from typing import Optional
 
 import boto3
 import boto3.s3
 import requests
 import simplejson as json
 from requests.adapters import HTTPAdapter
-from urllib3 import Retry
-from urllib3.exceptions import NewConnectionError
 from requests.exceptions import ConnectionError as CE
+from urllib3 import Retry
 
 
 class StasisClient:
@@ -354,6 +353,14 @@ class StasisClient:
         :return:
         """
         response = self.http.put(f"{self._url}/job/schedule/{job_id}", headers=self._header)
+        if response.status_code != 200:
+            raise Exception(
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job_id}")
+        else:
+            return json.loads(response.content)
+
+    def force_sync(self, job_id):
+        response = self.http.put(f"{self._url}/job/sync/{job_id}", headers=self._header)
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job_id}")

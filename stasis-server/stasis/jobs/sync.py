@@ -1,5 +1,6 @@
 import simplejson as json
 
+from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
 from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR, _get_queue
 from stasis.service.Status import *
@@ -19,7 +20,7 @@ def sync_sample(sample: str):
     # if topic exists, we just reuse it
     arn = _get_queue(client, resource=Backend.NO_BACKEND_REQUIRED, queue_name="sample_sync_queue")
 
-    jobs = load_jobs_for_sample(sample,id_only=True)
+    jobs = load_jobs_for_sample(sample, id_only=True)
 
     if jobs is not None:
         print("found {} associated jobs for this sample".format(len(jobs)))
@@ -39,15 +40,39 @@ def do_sync(event, context):
     """
     synchronizes the actual job
     """
-    for message in event['Records']:
-        print(message)
-        body = json.loads(json.loads(message['body'])['default'])
 
-        if 'job' in body:
-            job = body['job']
-            config = get_job_config(job)
-            print("received job to synchronize: {}".format(config))
-            sync_job(config)
+    ##
+    # sqs trigger
+    if 'Records' in event:
+        for message in event['Records']:
+            print(message)
+            body = json.loads(json.loads(message['body'])['default'])
+
+            if 'job' in body:
+                job = body['job']
+                config = get_job_config(job)
+                print("received job to synchronize: {}".format(config))
+                sync_job(config)
+
+    ##
+    # http trigger
+    if 'pathParameters' in event:
+        job = event['pathParameters']['job']
+        config = get_job_config(job)
+        print("received job to synchronize: {}".format(config))
+        result = sync_job(config)
+
+        return {
+
+            'body': json.dumps({'message': str(result), 'job': job}),
+
+            'statusCode': 200,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
 
 
 def calculate_job_state(job: str) -> Optional[str]:
@@ -120,21 +145,22 @@ def calculate_job_state(job: str) -> Optional[str]:
 def sync_job(job: dict):
     print("synchronizing job: {}".format(job))
     if job is None:
-        print("warning a none job was provided, we ignore this one!")
-        return
+        result = "warning a none job was provided, we ignore this one!"
+    else:
+        state = calculate_job_state(job['id'])
+        if 'resource' in job:
+            resource = Backend(job['resource'])
+        else:
+            resource = DEFAULT_PROCESSING_BACKEND
+        if state == EXPORTED:
+            result = "schedule aggregation for job {}, due to state being {}".format(job['id'], state)
+            update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING, reason="synchronization triggered")
+            schedule_to_queue({"job": job['id'], "env": job['env'], "profile": job['profile']},
+                              service=SECURE_CARROT_AGGREGATOR,
+                              resource=resource)
+            update_job_state(job=job['id'], state=AGGREGATING_SCHEDULED,
+                             reason="synchronization was triggered and completed")
+        else:
+            result = f"state {state} for job {job['id']} did not justify triggering an aggregation."
 
-    state = calculate_job_state(job['id'])
-    if 'resource' in job:
-        resource = Backend(job['resource'])
-    else:
-        resource = DEFAULT_PROCESSING_BACKEND
-    if state == EXPORTED:
-        print("schedule aggregation for job {}, due to state being {}".format(job['id'], state))
-        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING, reason="synchronization triggered")
-        schedule_to_queue({"job": job['id'], "env": job['env'], "profile": job['profile']},
-                          service=SECURE_CARROT_AGGREGATOR,
-                          resource=resource)
-        update_job_state(job=job['id'], state=AGGREGATING_SCHEDULED,
-                         reason="synchronization was triggered and completed")
-    else:
-        print(f"state {state} for job {job['id']} did not justify triggering an aggregation.")
+    return result

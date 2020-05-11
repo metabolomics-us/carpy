@@ -220,6 +220,7 @@ def test_store_job_sizes(sample_count, stasis_cli):
 
     print(result)
 
+
 @pytest.mark.parametrize("sample_count", [50, 100, 300])
 def test_schedule_job_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
@@ -250,6 +251,52 @@ def test_schedule_job_sizes(sample_count, stasis_cli):
     print("waiting for status update, the job needs to be SCHEDULED or FAILED at some stage")
     while duration < 1200000:
         try:
+            state = stasis_cli.load_job_state(test_id)['job_state']
+            print(f"current state for job {test_id} is {state} and duration is {duration}")
+            if state == "scheduled":
+                break
+            if state == "failed":
+                fail()
+                break
+
+            sleep(10)
+            duration = time() - origin
+        except Exception as e:
+            print(str(e))
+            pass
+
+
+@pytest.mark.parametrize("sample_count", [10])
+def test_schedule_force_sync(sample_count, stasis_cli):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+        "env": "test",
+        "resource": "DUMP"  # <== we don't actually want to process it and just push it into the dump queue!!!
+    }
+
+    samples = []
+    for x in range(0, sample_count):
+        samples.append(f"test_sample_{x}")
+
+    job['samples'] = samples
+
+    stasis_cli.store_job(job, enable_progress_bar=True)
+    stasis_cli.schedule_job(job['id'])
+
+    print("requesting job to be scheduled")
+    stasis_cli.schedule_job(test_id)
+    origin = time()
+    duration = 0
+
+    print("waiting for status update, the job needs to be SCHEDULED or FAILED at some stage")
+    while duration < 1200000:
+        try:
+            print(stasis_cli.force_sync(test_id))
             state = stasis_cli.load_job_state(test_id)['job_state']
             print(f"current state for job {test_id} is {state} and duration is {duration}")
             if state == "scheduled":

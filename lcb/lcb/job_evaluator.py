@@ -23,7 +23,8 @@ class JobEvaluator(Evaluator):
             'upload': self.upload,
             'aggregate': self.aggregate,
             'monitor': self.monitor,
-            'wait': self.wait
+            'wait': self.wait,
+            'force_sync': self.force_sync,
         }
 
         results = {}
@@ -150,3 +151,11 @@ class JobEvaluator(Evaluator):
             sleep(args['wait_time'])
 
         return False
+
+    def force_sync(self,id, args):
+        """
+        forces the synchronization of a job
+        :param id:
+        :param args:
+        :return:
+        """

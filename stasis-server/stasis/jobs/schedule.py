@@ -304,6 +304,8 @@ def monitor_jobs(event, context):
     """
     monitors the current jobs in the system. It asks the job table for all unfinished jobs
     if they are ready for processing
+
+    TODO looks like it's only used in tests and nowhere else
     """
 
     print("job monitor triggered from event {}".format(event))

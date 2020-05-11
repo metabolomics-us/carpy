@@ -197,47 +197,8 @@ functions:
       - schedule:
           rate: rate(1 minute)
           documentation:
-            summary: monitors the scheduling queue and ensures correct quantity of scheduled jobs. This has to be driven over cron right now
+            summary: monitors the scheduling queue and ensures correct quantity of scheduled tasks. This has to be driven over cron right now
 
-      - http:
-          private: true
-          path: sync/samples
-          method: get
-          cors: true
-          documentation:
-            summary: synchronizes the samples with the job state table
-
-
-  fargatejobmonitor:
-    handler: stasis/jobs/schedule.monitor_jobs
-    events:
-      - http:
-          private: true
-          path: sync/jobs
-          method: get
-          cors: true
-          documentation:
-            summary: synchronizes the job state
-
-
-  #fetches an result record
-  resultget:
-    handler: stasis/results/get.get
-    events:
-      - http:
-          private: true
-          path: result/{sample}
-          method: get
-          cors: true
-          documentation:
-            summary: downloads a data processing result
-          request:
-            parameter:
-              paths:
-                sample: true
-    #defines to which topic we want to connect
-    environment:
-      resultTable: ${self:custom.resultTable}
   processingresultexits:
     handler: stasis/results/exists.exist
     events:
@@ -297,6 +258,17 @@ functions:
                 - Ref: AWS::Region
                 - Ref: AWS::AccountId
                 - ${self:custom.syncQueue}
+      - http:
+          private: true
+          path: job/sync/{job}
+          method: put
+          cors: true
+          documentation:
+            summary: forces the synchronization of a job. For diagnostics reasons and in case the system is hanging.
+          request:
+            parameter:
+              paths:
+                job: true
     timeout: 30
     memorysize: 512
 
@@ -572,7 +544,6 @@ functions:
       jobTrackingTable: ${self:custom.jobTrackingTable}
   #schedule data to for handling the processing and aggregation on the backend
   jobstoresample:
-#    memorySize: 1024
     handler: stasis/jobs/schedule.store_sample_for_job
     events:
       - http:
