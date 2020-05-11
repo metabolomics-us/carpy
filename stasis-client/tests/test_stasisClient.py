@@ -96,7 +96,6 @@ def test_load_job_state(stasis_cli, api_token):
 
     data = stasis_cli.load_job_state(test_id)
     print(data)
-    assert 'count' in data
     assert 'sample_states' in data
     assert 'job_state' in data
     assert 'job_info' in data

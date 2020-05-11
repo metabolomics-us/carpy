@@ -219,14 +219,19 @@ class StasisClient:
             if result.status_code != 200 and last is None:
                 raise Exception(
                     f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
-            return json.loads(result.content)
+            elif result.status_code == 200:
+                result = json.loads(result.content)
+                for x in result:
+                    data.append(x)
+
+                return result
+            else:
+                return []
 
         result = fetch(job_id)
 
         while len(result) == 10:
-            for x in result:
-                data.append(x)
-            result = fetch(job=job_id,last=data[-1]['id'])
+            result = fetch(job=job_id, last=data[-1]['id'])
 
         return data
 
