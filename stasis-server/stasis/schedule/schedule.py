@@ -275,7 +275,7 @@ def schedule_processing_to_fargate(event, context):
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{}{},{}".format(body['current_stage'], 'aws', os.getenv("profile"))
+                    "value": "{}{},{}".format('aws',os.getenv('current_stage'), body["profile"])
                     # AWS profile needs to be active for this system to connect to the AWS database
                 },
                 {
