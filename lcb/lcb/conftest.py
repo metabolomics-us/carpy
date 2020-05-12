@@ -182,7 +182,6 @@ def test_job_definition():
             "lc-test-sample"
         ],
         "profile": "carrot.lcms",
-        "env": "test",
 
         "meta": {
             "tracking": [

@@ -52,7 +52,6 @@ class SampleEvaluator(Evaluator):
             sample_name=id,
             method=acquistion_data['processing']['method'],
             profile=args['profile'],
-            env=args['env']
         )
 
         print("sample was scheduled for processing")

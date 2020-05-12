@@ -23,7 +23,7 @@ class JobEvaluator(Evaluator):
             'upload': self.upload,
             'aggregate': self.aggregate,
             'monitor': self.monitor,
-            'wait': self.wait,
+            'wait_for': self.wait,
             'force_sync': self.force_sync,
         }
 

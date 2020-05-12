@@ -88,7 +88,7 @@ class Parser:
                             action='store_true')
         parser.add_argument("-r", "--retrieve",
                             help="this downloads the specified job, if available to the specified directory..",
-                            type=str)
+                            type=str, default=False)
 
         parser.add_argument("--force-sync",
                             help="forces a synchronization of the given job. In case stasis is hanging",
