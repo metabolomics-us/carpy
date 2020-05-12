@@ -57,18 +57,18 @@ class StasisClient:
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.http = requests.Session()
 
-    def schedule_sample_for_computation(self, sample_name: str, env: str, method: str, profile: str,
+    def schedule_sample_for_computation(self, sample_name: str, method: str, profile: str,
                                         resource: str = "FARGATE"):
         """
         schedules a sample for dataprocessing
         """
         result = self.http.post(f"{self._url}/schedule",
-                                json={'sample': sample_name, 'env': env, 'method': method, 'profile': profile,
+                                json={'sample': sample_name, 'method': method, 'profile': profile,
                                       'resource': resource, 'secured': True}, headers=self._header)
 
         if result.status_code != 200:
             raise Exception(
-                f"scheduling failed for {sample_name} in env {env}, profile {profile}, resource {resource} and method {method}")
+                f"scheduling failed for {sample_name} , profile {profile}, resource {resource} and method {method}")
         else:
             return result.json()
 

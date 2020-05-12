@@ -47,6 +47,7 @@ def requireMocking():
     session.client('sns')
     session.client('s3')
 
+    os.environ["runner_env"] = "test"
     os.environ["aggregation_queue"] = "test_aggregation"
     os.environ["schedule_queue"] = "test_schedule"
     os.environ["sample_sync_queue"] = "test_sync_schedule"

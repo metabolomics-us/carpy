@@ -275,8 +275,9 @@ def schedule_processing_to_fargate(event, context):
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{},{}".format(body['profile'], 'aws')
+                    "value": "{},{},{}".format(body['profile'], 'aws', os.getenv("current_stage"))
                     # AWS profile needs to be active for this system to connect to the AWS database
+                    # the runner env is due to spring having special config requirements
                 },
                 {
                     "name": "CARROT_SAMPLE",

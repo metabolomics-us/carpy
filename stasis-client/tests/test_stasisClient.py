@@ -63,7 +63,6 @@ def test_get_states(stasis_cli):
 def test_sample_schedule(stasis_cli):
     result = stasis_cli.schedule_sample_for_computation(
         sample_name='lgvty_cells_pilot_2_NEG_50K_BR_01.json',
-        env="test",
         method="test",
         profile="lcms")
 
@@ -79,7 +78,6 @@ def test_load_job_state(stasis_cli, api_token):
         "method": "teddy | 6530 | test | positive",
 
         "profile": "carrot.lcms",
-        "env": "test"
     }
 
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
@@ -107,7 +105,6 @@ def test_load_job(stasis_cli, api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "profile": "carrot.lcms",
-        "env": "test"
     }
 
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
@@ -161,7 +158,6 @@ def test_download_result(stasis_cli, api_token):
             "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
-        "env": "test"
     }
 
     stasis_cli.store_job(job)
@@ -201,7 +197,6 @@ def test_store_job_sizes(sample_count, stasis_cli):
         "method": "teddy | 6530 | test | positive",
 
         "profile": "carrot.lcms",
-        "env": "test"
     }
 
     samples = []
@@ -230,7 +225,6 @@ def test_schedule_job_sizes(sample_count, stasis_cli):
         "method": "teddy | 6530 | test | positive",
 
         "profile": "carrot.lcms",
-        "env": "test",
         "resource": "DUMP"  # <== we don't actually want to process it and just push it into the dump queue!!!
     }
 
@@ -275,7 +269,6 @@ def test_schedule_force_sync(sample_count, stasis_cli):
         "method": "teddy | 6530 | test | positive",
 
         "profile": "carrot.lcms",
-        "env": "test",
         "resource": "DUMP"  # <== we don't actually want to process it and just push it into the dump queue!!!
     }
 
