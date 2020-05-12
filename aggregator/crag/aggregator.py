@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import traceback
 from argparse import Namespace
 from typing import Optional, List
 
@@ -314,6 +315,7 @@ class Aggregator:
                 try:
                     resdata = self.stasis_cli.sample_result_as_json(result_file)
                 except Exception as e:
+                    print(e)
                     resdata = None
             else:
                 sbar.write("loading existing result data")

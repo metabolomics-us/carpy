@@ -180,16 +180,23 @@ class StasisClient:
 
     def sample_result_as_json(self, sample_name) -> dict:
         """
-        download a sample result as json
+        download a sample result as json from the result bucket we are using
 
-        #TODO refactor to use buckets instead, due to potentially very large files
         :param sample_name:
         :return:
         """
-        result = self.http.get(f"{self._url}/result/{sample_name}", headers=self._header)
-        if result.status_code != 200: raise Exception(
-            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for {sample_name}")
-        return result.json()
+
+        bucket_name = self.get_processed_bucket()
+        try:
+            boto3.client('s3').create_bucket(Bucket=bucket_name,
+                                             CreateBucketConfiguration={'LocationConstraint': 'us-west-2'})
+        except Exception as e:
+            pass
+
+        file = self.file_handle_by_state(sample_name, "exported")
+
+        content = boto3.client('s3').get_object(Bucket=bucket_name, Key="{}".format(file))['Body'].read().decode('utf-8')
+        return json.loads(content)
 
     def get_url(self):
         return self._url

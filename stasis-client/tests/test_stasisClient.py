@@ -146,7 +146,14 @@ def test_download_result_is_none(stasis_cli, api_token):
     data = stasis_cli.download_job_result("i_do_not_exist")
 
     assert data is None
+    
+def test_download_processed_sample_result_as_json(stasis_cli, api_token):
 
+    data = stasis_cli.sample_result_as_json("B10A_SA8922_TeddyLipids_Pos_122WP")
+
+    assert data is not None
+
+    print(data)
 
 def test_download_result(stasis_cli, api_token):
     test_id = "test_job_{}".format(time())
