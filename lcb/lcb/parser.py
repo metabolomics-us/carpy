@@ -39,6 +39,8 @@ class Parser:
         """
 
         result = vars(self.parser.parse_args(args))
+
+        print(f"parsed: {result}")
         if len(result) == 1:
             self.parser.print_usage()
         elif 'func' in result:
@@ -65,19 +67,16 @@ class Parser:
 
         parser.add_argument("-u", "--upload",
                             help="registers the specified job file in the system in preparation for processing. You steel need to start the processing",
-                            type=str)
+                            type=str, default=False)
         parser.add_argument("-p", "--process",
                             help="this starts the processing of the specified job id in the remote system",
                             action='store_true')
-        parser.add_argument("-w", "--wait", action='store_true',
-                            help="this waits until the given job is in the specified state.",
-                            default=['aggregated_and_uploaded', 'failed'])
         parser.add_argument("--wait-for", nargs='+',
                             help="which states we want to wait for.", dest='wait_for',
-                            type=str, default=['aggregated_and_uploaded', 'failed'])
+                            type=str, default=False)
         parser.add_argument("--wait-attempts",
                             help="how many attempts we do until we are done waiting for a job",
-                            type=int, default=100000, dest='wait_attempts')
+                            type=int, default=10000, dest='wait_attempts')
         parser.add_argument("--wait-time",
                             help="how long do we wait in seconds between attempts for the wait module",
                             type=int, default=10, dest='wait_time')
@@ -93,7 +92,7 @@ class Parser:
 
         parser.add_argument("--force-sync",
                             help="forces a synchronization of the given job. In case stasis is hanging",
-                            action='store_true', dst='force_sync')
+                            action='store_true', dest='force_sync')
 
         return parser
 

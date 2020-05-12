@@ -153,7 +153,6 @@ def mocked_10_sample_job(backend):
         "method": "test",
 
         "profile": "lcms",
-        "env": "test",
         "resource": backend.value
     }
 

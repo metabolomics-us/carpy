@@ -45,7 +45,7 @@ provider:
       Resource: "*"
 
   memorySize: 128
-  timeout: 90
+  timeout: 30
   versionFunctions: false
 
   logRetentionInDays: 3
@@ -245,7 +245,7 @@ functions:
 
   # creates a tracking update
   # whenever a sample status got pushed
-  trackingstatusupdate:
+  job_synchronization_status:
     handler: stasis/jobs/sync.do_sync
     events:
       - sqs:
@@ -258,6 +258,11 @@ functions:
                 - Ref: AWS::Region
                 - Ref: AWS::AccountId
                 - ${self:custom.syncQueue}
+    timeout: 900
+    memorysize: 512
+  job_synchronization_status_force:
+    handler: stasis/jobs/sync.do_sync
+    events:
       - http:
           private: true
           path: job/sync/{job}
@@ -269,9 +274,6 @@ functions:
             parameter:
               paths:
                 job: true
-    timeout: 30
-    memorysize: 512
-
 
   #fetches an existing tracking record from the system
   trackingget:

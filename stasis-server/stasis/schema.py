@@ -172,10 +172,6 @@ __JOB_SCHEMA__ = {
             'type': 'string',
             'minLength': 1
         },
-        'env': {
-            'type': 'string',
-            'minLength': 1
-        },
         'id': {
             'type': 'string',
             'minLength': 1
@@ -221,7 +217,6 @@ __JOB_SCHEMA__ = {
     'required': [
         'profile',
         'method',
-        'env',
         'id'
     ],
 
@@ -313,18 +308,6 @@ __SCHEDULE__ = {
             'examples': [
                 'lcms',
                 'gcms'
-            ]
-        },
-        'env': {
-            '$id': '/properties/env',
-            'type': 'string',
-            'minLength': 1,
-            'title': 'The Env Schema ',
-            'examples': [
-                'prod',
-                'test',
-                'dev'
-
             ]
         },
         'sample': {

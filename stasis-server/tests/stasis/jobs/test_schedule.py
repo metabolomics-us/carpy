@@ -25,7 +25,6 @@ def test_store_job_fail_empty_id(requireMocking):
         "id": "",
         "method": "test",
         "profile": "dada",
-        "env": "test"
     }
 
     result = store_job({'body': json.dumps(job)}, {})
@@ -50,22 +49,6 @@ def test_store_job_fail_empty_method(requireMocking):
     assert result['statusCode'] == 503
 
 
-def test_store_job_fail_empty_env(requireMocking):
-    """
-    tests storing a job in the database
-    :param requireMocking:
-    :return:
-    """
-
-    job = {
-        "id": "stored_test_job",
-        "method": "test",
-        "profile": "test",
-        "env": ""
-    }
-
-    result = store_job({'body': json.dumps(job)}, {})
-    assert result['statusCode'] == 503
 
 
 def test_store_job_fail_empty_profile(requireMocking):
@@ -79,7 +62,6 @@ def test_store_job_fail_empty_profile(requireMocking):
         "id": "stored_test_job",
         "method": "test",
         "profile": "",
-        "env": "test"
     }
 
     result = store_job({'body': json.dumps(job)}, {})
@@ -98,7 +80,6 @@ def test_store_job_many_samples(requireMocking, samples):
         "id": "stored_test_job",
         "method": "test",
         "profile": "lcms",
-        "env": "test"
     }
 
     result = store_job({'body': json.dumps(job)}, {})
@@ -354,7 +335,6 @@ def test_schedule_job_many_samples(requireMocking, samples):
         "id": "stored_test_job",
         "method": "test",
         "profile": "lcms",
-        "env": "test"
     }
 
     result = store_job({'body': json.dumps(job)}, {})

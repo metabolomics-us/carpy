@@ -116,7 +116,6 @@ def store_job(event, context):
 
     job_id = body['id']
     method = body['method']
-    env_ = body['env']
     profile = body['profile']
 
     # in case we want to
@@ -131,7 +130,7 @@ def store_job(event, context):
     try:
 
         # store actual job in the job table with state scheduled
-        set_job_state(job=job_id, method=method, env=env_, profile=profile,
+        set_job_state(job=job_id, method=method, profile=profile,
                       state=ENTERED, resource=resource)
 
         return {
@@ -147,7 +146,7 @@ def store_job(event, context):
         }
     except Exception as e:
         # update job state in the system to failed with the related reason
-        set_job_state(job=job_id, method=method, env=env_, profile=profile,
+        set_job_state(job=job_id, method=method,  profile=profile,
                       state=FAILED, reason=str(e))
 
         traceback.print_exc()
@@ -182,17 +181,16 @@ def schedule_job_from_queue(event, context):
 
             details = get_job_config(job_id)
             method = details['method']
-            env_ = details['env']
             profile = details['profile']
             resource = details['resource']
 
             samples, pkey = load_job_samples_with_pagination(job=job_id, pagination_value=pkey, pagination_size=25)
 
-            schedule_samples_to_queue(env_, job_id, key, method, profile, resource, samples)
+            schedule_samples_to_queue(job_id, key, method, profile, resource, samples)
 
             if pkey is None or len(samples) == 0:
                 print("job was completely scheduled!")
-                set_job_state(job=job_id, method=method, env=env_, profile=profile,
+                set_job_state(job=job_id, method=method, profile=profile,
                               state=SCHEDULED, resource=resource)
             else:
                 print('job was too large, requires resubmission to queue to spread the load out!')
@@ -202,7 +200,7 @@ def schedule_job_from_queue(event, context):
                                   queue_name="jobQueue")
 
 
-def schedule_samples_to_queue(env_, job_id, key, method, profile, resource, samples):
+def schedule_samples_to_queue( job_id, key, method, profile, resource, samples):
     """
     schedules a sample to the internal scheduling queue for fargate jobs
     """
@@ -212,7 +210,6 @@ def schedule_samples_to_queue(env_, job_id, key, method, profile, resource, samp
             print("looked up handle {} for sample {}".format(handle, sample))
             schedule_to_queue({
                 "sample": handle,
-                "env": env_,
                 "method": method,
                 "profile": profile,
                 "key": key
@@ -259,12 +256,11 @@ def schedule_job(event, context):
         }
 
     method = details['method']
-    env_ = details['env']
     profile = details['profile']
     resource = details['resource']
     try:
         # update job state
-        set_job_state(job=job_id, method=method, env=env_, profile=profile,
+        set_job_state(job=job_id, method=method,  profile=profile,
                       state=SCHEDULING, resource=resource)
 
         # now send to job sync queue
@@ -283,7 +279,7 @@ def schedule_job(event, context):
         }
     except Exception as e:
         # update job state in the system to failed with the related reason
-        set_job_state(job=job_id, method=method, env=env_, profile=profile,
+        set_job_state(job=job_id, method=method, profile=profile,
                       state=FAILED, reason=str(e))
 
         traceback.print_exc()

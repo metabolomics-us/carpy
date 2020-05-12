@@ -21,7 +21,6 @@ def test_store_job_integration(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "profile": "carrot.lcms",
-        "env": "test",
     }
 
     # store it
@@ -91,7 +90,6 @@ def test_job_result_not_finished(api_token):
         ],
         "profile": "carrot.lcms",
         "task_version": "164",
-        "env": "test",
         "notify": [
             "wohlgemuth@ucdavis.edu",
             "berlinguyinca@gmail.com"
@@ -155,7 +153,6 @@ def test_schedule_job_integration(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "profile": "carrot.lcms",
-        "env": "test",
     }
 
     # store it
@@ -253,7 +250,6 @@ def test_schedule_job_integration_no_metadata_single_sample(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "profile": "carrot.lcms",
-        "env": "test",
 
         "meta": {
             "tracking": [
@@ -337,7 +333,6 @@ def test_schedule_job_integration_no_metadata(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "profile": "carrot.lcms",
-        "env": "test",
 
     }
 

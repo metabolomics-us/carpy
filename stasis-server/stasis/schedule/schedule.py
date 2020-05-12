@@ -275,7 +275,7 @@ def schedule_processing_to_fargate(event, context):
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{},{},{}".format(body['env'], body['profile'], 'aws')
+                    "value": "{},{}".format(body['profile'], 'aws')
                     # AWS profile needs to be active for this system to connect to the AWS database
                 },
                 {
@@ -290,10 +290,7 @@ def schedule_processing_to_fargate(event, context):
                     "name": "CARROT_MODE",
                     "value": "{}".format(body['profile'])
                 },
-                {
-                    "name": "CARROT_ENV",
-                    "value": body['env']
-                }
+
             ]
         }]}
 

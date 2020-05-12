@@ -58,13 +58,19 @@ def do_sync(event, context):
     # http trigger
     if 'pathParameters' in event:
         job = event['pathParameters']['job']
-        config = get_job_config(job)
-        print("received job to synchronize: {}".format(config))
-        result = sync_job(config)
+        import boto3
+        client = boto3.client('sqs')
+        arn = _get_queue(client, resource=Backend.NO_BACKEND_REQUIRED, queue_name="sample_sync_queue")
 
+        print("sending sync request for job {} to queue {}".format(job, arn))
+        serialized = json.dumps({'job': job}, use_decimal=True)
+        result = client.send_message(
+            QueueUrl=arn,
+            MessageBody=json.dumps({'default': serialized}),
+        )
         return {
 
-            'body': json.dumps({'message': str(result), 'job': job}),
+            'body': json.dumps({'result': str(result), 'job': job}),
 
             'statusCode': 200,
 
@@ -97,6 +103,7 @@ def calculate_job_state(job: str) -> Optional[str]:
         print(f"job {job} was in state {state}, which requires it to get it's final state analyzed")
 
     # 2. load job definition
+    # loading all the samples here still causes timeouts or excessive CPU cost
     job_definition = load_job_samples_with_states(job=job)
     job_config = get_job_config(job=job)
 
@@ -155,7 +162,7 @@ def sync_job(job: dict):
         if state == EXPORTED:
             result = "schedule aggregation for job {}, due to state being {}".format(job['id'], state)
             update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING, reason="synchronization triggered")
-            schedule_to_queue({"job": job['id'], "env": job['env'], "profile": job['profile']},
+            schedule_to_queue({"job": job['id'],  "profile": job['profile']},
                               service=SECURE_CARROT_AGGREGATOR,
                               resource=resource)
             update_job_state(job=job['id'], state=AGGREGATING_SCHEDULED,

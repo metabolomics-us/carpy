@@ -31,7 +31,7 @@ class JobEvaluator(Evaluator):
 
         for x in args.keys():
             if x in mapping:
-                if args[x] is not False:
+                if args[x] is not False or str(args[x]) != 'False':
                     results[x] = mapping[x](args['id'], args)
         return results
 
@@ -152,10 +152,19 @@ class JobEvaluator(Evaluator):
 
         return False
 
-    def force_sync(self,id, args):
+    def force_sync(self, id, args):
         """
         forces the synchronization of a job
         :param id:
         :param args:
         :return:
         """
+
+        print(f"forcing synchronization of job {id}")
+        try:
+            result = self.client.force_sync(id)
+            print(result)
+            return True
+        except Exception as e:
+            print(e)
+            return False

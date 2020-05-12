@@ -410,7 +410,7 @@ def _compute_state_change(item, old_state, state):
     return ts
 
 
-def set_job_state(job: str, env: str, method: str, profile: str, state: str,
+def set_job_state(job: str,  method: str, profile: str, state: str,
                   reason: Optional[str] = None, resource: Optional[Backend] = None):
     """
     sets the state in the job table for the given sample and job
@@ -418,11 +418,11 @@ def set_job_state(job: str, env: str, method: str, profile: str, state: str,
     if reason is None:
         return _set_job_state(
             body={"job": job, "id": job, "state": str(state), "method": method,
-                  "profile": profile, "env": env, "resource": resource})
+                  "profile": profile,  "resource": resource})
     else:
         return _set_job_state(
             body={"job": job, "id": job, "state": str(state), "method": method,
-                  "profile": profile, "reason": str(reason), "env": env, "resource": resource})
+                  "profile": profile, "reason": str(reason), "resource": resource})
 
 
 def get_job_config(job: str) -> Optional[dict]:
