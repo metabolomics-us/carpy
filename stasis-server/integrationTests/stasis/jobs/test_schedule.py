@@ -155,7 +155,6 @@ def test_schedule_job_integration(api_token):
         "id": test_id,
         "method": "teddy | 6530 | test | positive",
         "profile": "carrot.lcms",
-        "env": "test",
     }
 
     # store it
