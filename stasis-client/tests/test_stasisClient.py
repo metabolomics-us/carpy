@@ -70,6 +70,33 @@ def test_sample_schedule(stasis_cli):
     assert result is not None
 
 
+def test_dist_sample_states_for_job(stasis_cli, api_token):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+    }
+
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+
+    for x in [
+        "B2a_TEDDYLipids_Neg_NIST001",
+        "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+        "B10A_SA8922_TeddyLipids_Pos_122WP"
+    ]:
+        requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json={
+            "sample": x,
+            "job": test_id
+        }, headers=api_token)
+
+    data = stasis_cli.load_job_state(test_id)
+    print(data)
+    assert 'job_state' in data
+    assert 'job_info' in data
+
 def test_load_job_state(stasis_cli, api_token):
     test_id = "test_job_{}".format(time())
 
