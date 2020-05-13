@@ -299,6 +299,7 @@ class Aggregator:
         # creating target list
         results = []
 
+        print("using bucket {} for remote downloads".format(self.stasis_cli.get_processed_bucket()))
         sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples', disable=self.disable_progress_bar)
         for sample in sbar:
             sbar.set_description(sample)
@@ -311,11 +312,11 @@ class Aggregator:
 
             sbar.write("looking for {}".format(result_file))
             if self.args.get('save') or not os.path.exists(saved_result):
-                sbar.write("downloading result data from stasis for {}".format(sample))
+                sbar.write("downloading result data from stasis for {}.".format(sample))
                 try:
                     resdata = self.stasis_cli.sample_result_as_json(result_file)
                 except Exception as e:
-                    print(e)
+                    print("we observed an error during downloading the data file: {}".format(str(e)))
                     resdata = None
             else:
                 sbar.write("loading existing result data")
@@ -333,6 +334,7 @@ class Aggregator:
                 raise Exception("this should not have happened!")
 
         if len(results) == 0:
+            print("we did not manage to discover any of the calculation data for this job!")
             raise NoSamplesFoundException("sorry none of your samples were found!")
         targets = self.get_target_list(results)
 

@@ -103,48 +103,54 @@ def calculate_job_state(job: str) -> Optional[str]:
         print(f"job {job} was in state {state}, which requires it to get it's final state analyzed")
 
     # 2. load job definition
-    # loading all the samples here still causes timeouts or excessive CPU cost
+    # loading all the samples here still causes timeouts or excessive CPU cost todo find a solution
     job_definition = load_job_samples_with_states(job=job)
     job_config = get_job_config(job=job)
 
     if job_definition is not None and job_config is not None:
-
-        # 3. go over all samples
-
         states = []
-        for sample, tracking_state in job_definition.items():
-            states.append(tracking_state)
+        try:
+            # 3. go over all samples
 
-        print("received sample states for job are: {}".format(states))
-        if len(states) == 0:
-            # bigger issue nothing found to synchronize
-            print("no states found!")
-            return None
+            for sample, tracking_state in job_definition.items():
+                states.append(tracking_state)
 
-        # ALL ARE FAILED
-        elif states.count(FAILED) == len(states):
-            update_job_state(job=job_config['id'], state=FAILED,
-                             reason="job is in state failed, due to all samples being in state failed")
-            print("job is failed, no sample was successful")
-            return FAILED
-        # ALL ARE EXPORTED OR FAILED
-        elif states.count(EXPORTED) + states.count(FAILED) == len(states):
-            update_job_state(job=job_config['id'], state=EXPORTED,
-                             reason="job state was set to exported due to all samples having been exported or failed")
-            print("job should now be exported")
-            return EXPORTED
-        # ANY ARE SCHEDULED
-        elif states.count(SCHEDULED) == len(states):
-            update_job_state(job=job_config['id'], state=SCHEDULED,
-                             reason="job is in state scheduled, due to all samples being in state scheduled")
-            print("job still in state scheduled")
-            return SCHEDULED
+            print("received sample states for job are: {}".format(states))
+            if len(states) == 0:
+                # bigger issue nothing found to synchronize
+                print("no states found!")
+                return None
 
-        # otherwise we must be processing
-        else:
-            update_job_state(job=job_config['id'], state=PROCESSING, reason="job is in state processing")
-            print("job is in state processing right now")
-            return PROCESSING
+            # ALL ARE FAILED
+            elif states.count(FAILED) == len(states):
+                update_job_state(job=job_config['id'], state=FAILED,
+                                 reason="job is in state failed, due to all samples being in state failed")
+                print("job is failed, no sample was successful")
+                return FAILED
+            # ALL ARE EXPORTED OR FAILED
+            elif states.count(EXPORTED) + states.count(FAILED) == len(states):
+                update_job_state(job=job_config['id'], state=EXPORTED,
+                                 reason="job state was set to exported due to all samples having been exported or failed")
+                print("job should now be exported")
+                return EXPORTED
+            # ANY ARE SCHEDULED
+            elif states.count(SCHEDULED) == len(states):
+                update_job_state(job=job_config['id'], state=SCHEDULED,
+                                 reason="job is in state scheduled, due to all samples being in state scheduled")
+                print("job still in state scheduled")
+                return SCHEDULED
+
+            # otherwise we must be processing
+            else:
+                update_job_state(job=job_config['id'], state=PROCESSING, reason="job is in state processing")
+                print("job is in state processing right now")
+                from collections import Counter
+                print(Counter(states))
+                return PROCESSING
+        finally:
+            from collections import Counter
+            print("state distribution for job '{}' with {} samples is: {}".format(job, len(states), Counter(states)))
+
     else:
         raise Exception("we did not find a job definition for {}, Please investigate".format(job))
 
@@ -162,7 +168,7 @@ def sync_job(job: dict):
         if state == EXPORTED:
             result = "schedule aggregation for job {}, due to state being {}".format(job['id'], state)
             update_job_state(job=job['id'], state=AGGREGATING_SCHEDULING, reason="synchronization triggered")
-            schedule_to_queue({"job": job['id'],  "profile": job['profile']},
+            schedule_to_queue({"job": job['id'], "profile": job['profile']},
                               service=SECURE_CARROT_AGGREGATOR,
                               resource=resource)
             update_job_state(job=job['id'], state=AGGREGATING_SCHEDULED,
