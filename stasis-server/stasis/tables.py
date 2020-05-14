@@ -410,7 +410,7 @@ def _compute_state_change(item, old_state, state):
     return ts
 
 
-def set_job_state(job: str,  method: str, profile: str, state: str,
+def set_job_state(job: str, method: str, profile: str, state: str,
                   reason: Optional[str] = None, resource: Optional[Backend] = None):
     """
     sets the state in the job table for the given sample and job
@@ -418,7 +418,7 @@ def set_job_state(job: str,  method: str, profile: str, state: str,
     if reason is None:
         return _set_job_state(
             body={"job": job, "id": job, "state": str(state), "method": method,
-                  "profile": profile,  "resource": resource})
+                  "profile": profile, "resource": resource})
     else:
         return _set_job_state(
             body={"job": job, "id": job, "state": str(state), "method": method,
@@ -615,31 +615,6 @@ def load_job_samples_with_pagination(job: str, pagination_value: Optional[dict] 
         return (None, None)
 
 
-def load_job_samples(job: str) -> Optional[List]:
-    """
-    loads the job from the job table for the given name
-    """
-
-    tm = TableManager()
-    table = tm.get_job_sample_state_table()
-
-    query_params = {
-        'IndexName': 'job-id-index',
-        'Select': 'ALL_ATTRIBUTES',
-        'KeyConditionExpression': Key('job').eq(job)
-    }
-    result = table.query(**query_params
-                         )
-
-    if "Items" in result and len(result['Items']) > 0:
-        results = []
-        for x in result['Items']:
-            results.append(x['sample'])
-        return results
-    else:
-        return None
-
-
 def load_job_samples_with_states(job: str) -> Optional[dict]:
     """
     loads the job from the job table for the given name
@@ -681,8 +656,16 @@ def get_tracked_sample(sample: str) -> Optional[dict]:
         KeyConditionExpression=Key('id').eq(key)
     )
 
+    # TODO this is such a bug to only return the first one. Really needs to be changed to not have this anymore
+
     if 'Items' in result and len(result['Items']) > 0:
-        return result['Items'][0]
+        data = result['Items'][0]
+        lenData = len(result['Items'])
+        if lenData > 1:
+            data['warning'] = "has {} associated samples. Might cause issues!".format(lenData)
+
+        return data
+
     else:
         return None
 

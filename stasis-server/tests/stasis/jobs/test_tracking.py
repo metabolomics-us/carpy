@@ -182,3 +182,28 @@ def test_description(requireMocking):
     assert result is not None
     assert result['statusCode'] == 200
     assert len(json.loads(result['body'])) == 15
+
+def test_description_updated_sample_must_be_exported(requireMocking):
+    for x in range(0, 10):
+        # upload data
+        data = json.dumps({
+            "job": "1234567",
+            "sample": "abc_{}".format(x),
+            "state": "scheduled"
+        })
+
+        result = tracking.create({'body': data}, {})
+
+    result = tracking.description({
+        "pathParameters": {
+            "job": "1234567",
+            "psize": 25,
+        }
+    }, {})
+
+    assert result is not None
+    assert result['statusCode'] == 200
+    assert len(json.loads(result['body'])) == 10
+
+    for x in json.loads(result['body']):
+        print(x)

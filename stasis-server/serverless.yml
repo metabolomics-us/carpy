@@ -61,7 +61,7 @@ provider:
     schedule_queue: ${self:custom.scheduleQueue}
     sample_sync_queue: ${self:custom.syncQueue}
     trackingTable: ${self:custom.trackingTable}
-    acquisitionTable: ${self:custom.acquisitionTable}  #returns all statuses
+    acquisitionTable: ${self:custom.acquisitionTable}
     aggregation_queue: ${self:custom.aggregationQueue}
     jobStateTable: ${self:custom.jobStateTable}
     jobTrackingTable: ${self:custom.jobTrackingTable}
