@@ -1,11 +1,8 @@
 import json
 from time import time, sleep
 
-import pytest
 import requests
 from pytest import fail
-
-from stasis.service.Status import SCHEDULED, SCHEDULING
 
 
 def test_store_job_integration(api_token):
@@ -26,11 +23,11 @@ def test_store_job_integration(api_token):
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
-    for sample in  [
-            "B2a_TEDDYLipids_Neg_NIST001",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ]:
+    for sample in [
+        "B2a_TEDDYLipids_Neg_NIST001",
+        "B10A_SA8931_TeddyLipids_Pos_14TCZ",
+        "B10A_SA8922_TeddyLipids_Pos_122WP"
+    ]:
         sample_to_submit = {
             "job": test_id,
             "sample": sample,
@@ -144,7 +141,7 @@ def test_schedule_job_integration(api_token):
     """
 
     test_id = "test_job_{}".format(time())
-    samples= [
+    samples = [
         "B2a_TEDDYLipids_Neg_NIST001",
         "B10A_SA8931_TeddyLipids_Pos_14TCZ",
         "B10A_SA8922_TeddyLipids_Pos_122WP"
@@ -236,6 +233,20 @@ def test_schedule_job_integration(api_token):
 
     assert response.status_code == 200
 
+    print("get all the sample states, which should be all 'exported' for this job")
+
+    response = requests.get("https://test-api.metabolomics.us/stasis/job/{}".format(test_id),
+                            headers=api_token)
+
+    assert response.status_code == 200
+
+    content = json.loads(response.content)
+
+    assert len(content) == 3
+
+    for x in content:
+        assert x['state'] in ('exported', 'failed')
+
 
 def test_schedule_job_integration_no_metadata_single_sample(api_token):
     """
@@ -272,11 +283,10 @@ def test_schedule_job_integration_no_metadata_single_sample(api_token):
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
-
     # store sample/job association
     for sample in [
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
-        ]:
+        "B10A_SA8922_TeddyLipids_Pos_122WP"
+    ]:
         sample_to_submit = {
             "job": test_id,
             "sample": sample,
@@ -392,8 +402,8 @@ def test_schedule_job_integration_no_metadata(api_token):
         print(result)
         if result['job_state'] == 'aggregated_and_uploaded':
             exspectation_met = True
-#            assert result['sample_states']['exported'] == 2
-#            assert result['sample_states']['failed'] == 1
+            #            assert result['sample_states']['exported'] == 2
+            #            assert result['sample_states']['failed'] == 1
             break
 
         if result['job_state'] == 'failed':
