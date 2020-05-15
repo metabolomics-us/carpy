@@ -240,7 +240,12 @@ def test_schedule_job_integration(api_token):
 
     assert response.status_code == 200
 
-    print(response.content['Body'])
+    content = json.loads(response.content)
+
+    assert len(content) == 3
+
+    for x in content:
+        assert x['state'] in ('exported', 'failed')
 
 
 def test_schedule_job_integration_no_metadata_single_sample(api_token):
