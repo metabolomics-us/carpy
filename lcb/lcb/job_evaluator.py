@@ -1,5 +1,6 @@
 import base64
 import json
+import yaml
 import os
 from time import sleep
 
@@ -102,8 +103,17 @@ class JobEvaluator(Evaluator):
         """
         uploads a new job to the server for storage and future processing
         """
-        with open(args['upload'], 'r') as infile:
-            job = json.load(infile)
+
+        filename: str = args['upload']
+
+        with open(filename, 'r') as infile:
+            if filename.endswith(".json"):
+                job = json.load(infile)
+            elif filename.endswith(".yml") or filename.endswith(".yaml"):
+                job = yaml.load(infile)
+            else:
+                raise Exception("none supported file extension provided. Extension was: {}".format(filename))
+
             job['id'] = id
 
             try:
