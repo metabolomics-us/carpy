@@ -2,8 +2,7 @@ import simplejson as json
 from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.jobs.sync import update_job_state, EXPORTED, FAILED, AGGREGATED, calculate_job_state
-from stasis.tables import TableManager, _set_sample_job_state, load_job_samples_with_states
+from stasis.tables import TableManager, _set_sample_job_state, get_tracked_sample
 
 
 def create(event, context):
@@ -150,12 +149,19 @@ def description(event, context):
 
             if "Items" in result and len(result['Items']) > 0:
 
+                # here we now need to reference the actual stasis tracking table
+                result = result['Items']
+
+                # kinda expensive and should be avoided
+                for x in result:
+                    x['history'] = get_tracked_sample(x['sample'])['status']
+                    x['state'] = max(x['history'], key=lambda y: y['priority'])['value']
+
                 return {
                     "statusCode": 200,
                     "headers": __HTTP_HEADERS__,
                     "body": json.dumps(
-                        result['Items']
-
+                        result
                     )
                 }
             else:

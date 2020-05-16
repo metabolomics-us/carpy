@@ -11,7 +11,7 @@ from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
 from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, \
-    get_job_config, get_file_handle, save_sample_state, load_job_samples, load_job_samples_with_pagination
+    get_job_config, get_file_handle, save_sample_state, load_job_samples_with_pagination
 
 
 def store_sample_for_job(event, context):
