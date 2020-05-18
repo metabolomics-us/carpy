@@ -87,7 +87,7 @@ package:
 
 functions:
   libraries:
-    handler: cis/libraries/get.get
+    handler: cis/libraries.get
     events:
       - http:
           path: libraries
@@ -95,5 +95,75 @@ functions:
           cors: true
           documentation:
             summary: returns all the libraries in the system
-    environment:
-      current_stage: ${self:custom.stage}
+
+  libraryExist:
+    handler: cis/libraries.exist
+    events:
+      - http:
+          path: libraries/{library}
+          method: head
+          cors: true
+          documentation:
+            summary: returns if the given library exist
+          request:
+            parameter:
+              paths:
+                library: true
+
+  librariesDelete:
+    handler: cis/libraries.delete
+    events:
+      - http:
+          path: libraries/{library}
+          method: delete
+          cors: true
+          documentation:
+            summary: delete the given library
+          request:
+            parameter:
+              paths:
+                library: true
+
+  compounds:
+    handler: cis/compounds.get
+    events:
+      - http:
+          path: compounds/{library}
+          method: get
+          cors: true
+          documentation:
+            summary: returns all the compounds of the given library
+          request:
+            parameter:
+              paths:
+                library: true
+
+  compoundExist:
+    handler: cis/compounds.exist
+    events:
+      - http:
+          path: compound/{library}/{splash}
+          method: head
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+
+  compoundDelete:
+    handler: cis/compounds.delete
+    events:
+      - http:
+          path: compound/{library}/{splash}
+          method: delete
+          cors: true
+          documentation:
+            summary: delete the given bin from the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
