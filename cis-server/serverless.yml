@@ -1,0 +1,99 @@
+service: cis
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+plugins:
+  - serverless-domain-manager
+  - serverless-python-requirements
+  - serverless-aws-documentation
+provider:
+  name: aws
+  runtime: python3.7
+  region: us-west-2
+
+  # simple security based on stages and api keys
+  # one fits all for production
+  apiKeys:
+    - "cis-${self:custom.stage}"
+
+  #required permissions
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - iam:PassRole
+      Resource: "*"
+
+  memorySize: 128
+  timeout: 30
+  versionFunctions: false
+
+  logRetentionInDays: 3
+
+  #where to store out data, needs to be manually created!
+  deploymentBucket:
+    name: "lambdas-stasis"
+
+  ##
+  # defines all generat environment variables for lambdas
+  environment:
+    current_stage: ${self:custom.stage}
+
+############################################################################################
+#custom configuration settings
+############################################################################################
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+  ###
+  # custom domain management
+  ###
+
+  domains:
+    prod: api.metabolomics.us
+    test: test-api.metabolomics.us
+    dev:  dev-api.metabolomics.us
+
+  customDomain:
+    basePath: "cis"
+    domainName: ${self:custom.domains.${self:custom.stage}}
+    stage: "${self:custom.stage}"
+    createRoute53Record: true
+
+  pythonRequirements:
+    dockerizePip: true
+    slim: false
+    noDeploy:
+      - "boto3"
+      - "botocore"
+      - "moto"
+      - "pytest"
+
+############################################################################################
+# this section defines what to include and exclud when packaging artifacts
+############################################################################################
+package:
+  exclude:
+    - .git/**
+    - .venv/**
+    - .idea/**
+    - .pytest_cache/**
+    - venv/**
+    - test/**
+    - tests/**
+    - node_modules/**
+    - integrationTests/**
+
+
+functions:
+  libraries:
+    handler: cis/libraries/get.get
+    events:
+      - http:
+          path: libraries
+          method: get
+          cors: true
+          documentation:
+            summary: returns all the libraries in the system
+    environment:
+      current_stage: ${self:custom.stage}

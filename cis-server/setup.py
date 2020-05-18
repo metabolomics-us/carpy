@@ -24,11 +24,8 @@ setup(name='cis',
           'pytest-mock',
           'pytest-cov',
           'moto'
-          # 'moto==1.3.3'
       ],
       install_requires=[
-          # 'boto3==1.7.22',
-          # 'botocore==1.10.22',
           'boto3',
           'botocore',
           'untangle',
