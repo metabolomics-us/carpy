@@ -1,7 +1,7 @@
 import os
 import shutil
 from time import sleep
-from typing import Optional
+from typing import Optional, List
 
 import boto3
 import boto3.s3
@@ -58,7 +58,7 @@ class StasisClient:
         self.http = requests.Session()
 
     def schedule_sample_for_computation(self, sample_name: str, method: str, profile: str,
-                                        resource: str = "FARGATE"):
+                                        resource: str = "FARGATE") -> dict:
         """
         schedules a sample for dataprocessing
         """
@@ -98,7 +98,7 @@ class StasisClient:
             f"we observed an error. Status code was {result.status_code} and error was {result.reason} for data {data}")
         return result
 
-    def sample_acquisition_get(self, sample_name):
+    def sample_acquisition_get(self, sample_name) -> dict:
         """
         returns the acquistion data of this sample
 
@@ -138,7 +138,7 @@ class StasisClient:
         else:
             return result.json()['status']
 
-    def file_handle_by_state(self, sample_name: str, state: str):
+    def file_handle_by_state(self, sample_name: str, state: str) -> str:
         """
         returns the correct file handle for the given sample name in the system
         """
@@ -208,7 +208,7 @@ class StasisClient:
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
 
-    def load_job(self, job_id):
+    def load_job(self, job_id) -> List[dict]:
         """
         loads a job from stasis
         :param job_id:
@@ -241,7 +241,7 @@ class StasisClient:
 
         return data
 
-    def load_job_state(self, job_id):
+    def load_job_state(self, job_id) -> dict:
         """
         loads state details of a job
         :param job_id:
@@ -253,7 +253,7 @@ class StasisClient:
                 f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
         return result.json()
 
-    def get_raw_bucket(self):
+    def get_raw_bucket(self) -> str:
         """
         :param job_id:
         :return:
@@ -263,7 +263,7 @@ class StasisClient:
             raise Exception(f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
 
-    def get_aggregated_bucket(self):
+    def get_aggregated_bucket(self) -> str:
         """
         :param job_id:
         :return:
@@ -273,7 +273,7 @@ class StasisClient:
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()['name']
 
-    def get_processed_bucket(self):
+    def get_processed_bucket(self) -> str:
         """
         :param job_id:
         :return:
@@ -353,7 +353,7 @@ class StasisClient:
                     finished = finished + 1
                     sleep(1000)
 
-    def schedule_job(self, job_id: str):
+    def schedule_job(self, job_id: str) -> dict:
         """
         scheduels a job for calculation
         :param job_id:
@@ -366,7 +366,7 @@ class StasisClient:
         else:
             return json.loads(response.content)
 
-    def force_sync(self, job_id):
+    def force_sync(self, job_id) -> dict:
         response = self.http.put(f"{self._url}/job/sync/{job_id}", headers=self._header)
         if response.status_code != 200:
             raise Exception(

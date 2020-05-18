@@ -11,6 +11,9 @@ provider:
   name: aws
   runtime: python3.7
   region: us-west-2
+  tags:
+    service: binbase
+    scope: ${self:custom.stage}
 
   # simple security based on stages and api keys
   # one fits all for production
