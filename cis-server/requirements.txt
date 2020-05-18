@@ -1,0 +1,12 @@
+requests
+boto
+boto3
+botocore
+untangle
+jsonschema
+watchdog
+boltons
+simplejson
+importlib_metadata
+git+https://github.com/spulec/moto.git
+pytest
