@@ -10,3 +10,4 @@ simplejson
 importlib_metadata
 git+https://github.com/spulec/moto.git
 pytest
+psycopg2-binary

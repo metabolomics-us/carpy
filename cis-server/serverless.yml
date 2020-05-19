@@ -40,7 +40,7 @@ provider:
     carrot_database: carrot-${self:custom.stage}
     carrot_username: postgres
     carrot_password: Fiehnlab2020
-    carrot_url: lc-binbase-dev.czbqhgrlaqbf.us-west-2.rds.amazonaws.com
+    carrot_host: lc-binbase-dev.czbqhgrlaqbf.us-west-2.rds.amazonaws.com
     carrot_port: 5432
 
 
@@ -93,7 +93,7 @@ package:
 
 functions:
   libraries:
-    handler: cis/libraries.get
+    handler: cis/libraries.libraries
     events:
       - http:
           path: libraries
