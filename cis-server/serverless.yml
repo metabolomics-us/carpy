@@ -37,6 +37,12 @@ provider:
   # defines all generat environment variables for lambdas
   environment:
     current_stage: ${self:custom.stage}
+    carrot_database: carrot-${self:custom.stage}
+    carrot_username: postgres
+    carrot_password: Fiehnlab2020
+    carrot_url: lc-binbase-dev.czbqhgrlaqbf.us-west-2.rds.amazonaws.com
+    carrot_port: 5432
+
 
 ############################################################################################
 #custom configuration settings
