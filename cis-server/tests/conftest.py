@@ -28,3 +28,8 @@ def requireMocking():
     lamb.stop()
 
     pass
+
+
+@pytest.fixture()
+def library_test_name():
+    return "soqtof[M-H] | 6530a | c18 | negative"

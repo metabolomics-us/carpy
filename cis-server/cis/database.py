@@ -26,10 +26,20 @@ def connect():
         logger.error(e)
 
 
-def query(sql: str, connection) -> Optional[List]:
+def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]:
+    """
+
+    :param sql: your query string
+    :param connection: your database connection
+    :param params: optional positional parameters
+    :return:
+    """
     try:
         cur = connection.cursor()
-        cur.execute(sql)
+        if params is None:
+            cur.execute(sql)
+        else:
+            cur.execute(sql, params)
         rows = cur.fetchall()
         result = []
         for row in rows:
