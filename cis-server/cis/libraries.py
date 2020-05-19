@@ -7,25 +7,11 @@ conn = database.connect()
 
 
 def libraries(event, context):
-    try:
-        result = database.query("SELECT \"method\" FROM public.pg_target group by \"method\"", conn)
 
-        result = list(map(lambda x: x[0], result))
-        # create a response
-        return {
-            "statusCode": 200,
-            "body": json.dumps(
-                result
-            )
-        }
-    except Exception as e:
-        traceback.print_exc()
-        return {
-            "statusCode": 500,
-            "body": json.dumps({
-                "error": str(e),
-            })
-        }
+    transform= lambda x: x[0]
+
+    sql = "SELECT \"method\" FROM public.pg_target group by \"method\""
+    return database.html_response_query(sql=sql, connection=conn, transform=transform)
 
 
 def delete(event, context):

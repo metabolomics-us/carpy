@@ -1,5 +1,7 @@
+import json
 import logging
 import os
+import traceback
 from typing import Optional, List
 
 import psycopg2
@@ -49,3 +51,35 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
     except (Exception, psycopg2.DatabaseError) as error:
         logger.error("observed exception: {}".format(error))
         raise error
+
+
+def html_response_query(sql: str, connection, params: Optional[List] = None, transform: Optional = None) -> Optional[
+    List]:
+    """
+    executes a query and converts the response to
+    :param sql:
+    :param connection:
+    :param params:
+    :return:
+    """
+
+    try:
+        result = query(sql, connection, params)
+
+        if transform is not None:
+            result = list(map(transform, result))
+        # create a response
+        return {
+            "statusCode": 200,
+            "body": json.dumps(
+                result
+            )
+        }
+    except Exception as e:
+        traceback.print_exc()
+        return {
+            "statusCode": 500,
+            "body": json.dumps({
+                "error": str(e),
+            })
+        }

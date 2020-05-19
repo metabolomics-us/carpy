@@ -131,7 +131,7 @@ functions:
                 library: true
 
   compounds:
-    handler: cis/compounds.get
+    handler: cis/compounds.all
     events:
       - http:
           path: compounds/{library}
@@ -144,6 +144,20 @@ functions:
               paths:
                 library: true
 
+  compoundGet:
+    handler: cis/compounds.get
+    events:
+      - http:
+          path: compound/{library}/{splash}
+          method: get
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
   compoundExist:
     handler: cis/compounds.exist
     events:
