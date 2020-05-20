@@ -33,3 +33,8 @@ def requireMocking():
 @pytest.fixture()
 def library_test_name():
     return "soqtof[M-H] | 6530a | c18 | negative"
+
+
+@pytest.fixture()
+def splash_test_name():
+    return ("splash10-0002-0309000000-2369135f42cccebdb7f0","soqe[M+H][M+NH4] | QExactive | test | positive")
