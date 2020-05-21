@@ -51,16 +51,42 @@ class CISClient:
         self.http = requests.Session()
 
     def get_libraries(self) -> List[str]:
-        pass
+        result: requests.Response = self.http.get(f"{self._url}/libraries", headers=self._header)
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
 
     def exists_library(self, library: str) -> bool:
-        pass
+        result = self.http.head(f"{self._url}/libraries/{library}", headers=self._header)
+
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
 
     def get_compounds(self, library: str) -> List[dict]:
-        pass
+        limit = 10
+        offset = 0
+        result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}", headers=self._header)
+
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
 
     def exists_compound(self, library: str, splash: str) -> bool:
-        pass
+        result = self.http.head(f"{self._url}/compound/{library}/{splash}", headers=self._header)
+
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
 
     def get_compound(self, library: str, splash: str) -> dict:
-        pass
+        result = self.http.get(f"{self._url}/compound/{library}/{splash}", headers=self._header)
+
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)

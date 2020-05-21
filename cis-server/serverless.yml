@@ -44,12 +44,28 @@ provider:
     carrot_port: 5432
 
 
+  ##
+  # vpc settings
+  vpc:
+    securityGroupIds: ${self:custom.security}
+    subnetIds: ${self:custom.subnets}
+
+
 ############################################################################################
 #custom configuration settings
 ############################################################################################
 custom:
   stage: ${opt:stage, self:provider.stage}
   region: ${opt:region, self:provider.region}
+
+  security:
+    - 'sg-7d409b03'
+  subnets:
+    - 'subnet-e382339a'
+    - 'subnet-04c0515e'
+    - 'subnet-b779a9fc'
+    - 'subnet-39f3df11'
+
 
   ###
   # custom domain management
@@ -134,7 +150,7 @@ functions:
     handler: cis/compounds.all
     events:
       - http:
-          path: compounds/{library}
+          path: compounds/{library}/{limit}/{offset}
           method: get
           cors: true
           documentation:
@@ -143,6 +159,8 @@ functions:
             parameter:
               paths:
                 library: true
+                limit: true
+                offset: true
 
   compoundGet:
     handler: cis/compounds.get
