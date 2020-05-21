@@ -119,7 +119,7 @@ functions:
             summary: returns all the libraries in the system
 
   libraryExist:
-    handler: cis/libraries.exist
+    handler: cis/libraries.exists
     events:
       - http:
           path: libraries/{library}
@@ -177,7 +177,7 @@ functions:
                 library: true
                 splash: true
   compoundExist:
-    handler: cis/compounds.exist
+    handler: cis/compounds.exists
     events:
       - http:
           path: compound/{library}/{splash}
