@@ -61,7 +61,9 @@ class CISClient:
         result = self.http.head(f"{self._url}/libraries/{library}", headers=self._header)
 
         if result.status_code == 200:
-            return result.json()
+            return True
+        elif result.status_code == 404:
+            return False
         else:
             raise Exception(result)
 
@@ -79,7 +81,9 @@ class CISClient:
         result = self.http.head(f"{self._url}/compound/{library}/{splash}", headers=self._header)
 
         if result.status_code == 200:
-            return result.json()
+            return True
+        elif result.status_code == 404:
+            return False
         else:
             raise Exception(result)
 
@@ -87,6 +91,6 @@ class CISClient:
         result = self.http.get(f"{self._url}/compound/{library}/{splash}", headers=self._header)
 
         if result.status_code == 200:
-            return result.json()
+            return result.json()[0]
         else:
             raise Exception(result)

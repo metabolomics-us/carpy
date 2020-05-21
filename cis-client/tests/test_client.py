@@ -21,4 +21,4 @@ def test_exists_compound(cis_cli, splash_test_name):
 
 def test_get_compound(cis_cli, splash_test_name):
     result = cis_cli.get_compound(library=splash_test_name[1], splash=splash_test_name[0])
-    assert result is True
+    assert len(result) > 0
