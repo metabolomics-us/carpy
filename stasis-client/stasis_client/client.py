@@ -195,7 +195,8 @@ class StasisClient:
 
         file = self.file_handle_by_state(sample_name, "exported")
 
-        content = boto3.client('s3').get_object(Bucket=bucket_name, Key="{}".format(file))['Body'].read().decode('utf-8')
+        content = boto3.client('s3').get_object(Bucket=bucket_name, Key="{}".format(file))['Body'].read().decode(
+            'utf-8')
         return json.loads(content)
 
     def get_url(self):
@@ -373,5 +374,3 @@ class StasisClient:
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job_id}")
         else:
             return json.loads(response.content)
-
-
