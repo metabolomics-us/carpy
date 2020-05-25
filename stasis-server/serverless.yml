@@ -182,6 +182,20 @@ package:
 # this section defines all lambda function and triggers
 ############################################################################################
 functions:
+
+  # logs fargate events for us
+  fargatestatechange:
+    handler: stasis/schedule/tracking.ecs
+    events:
+      - cloudwatchEvent:
+          event:
+            source:
+              - aws.ecs
+            detail-type:
+              - ECS Task State Change
+            detail:
+              lastStatus:
+                - STOPPED
   fargatecount:
     handler: stasis/schedule/schedule.scheduled_task_size
     events:
