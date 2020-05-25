@@ -651,36 +651,6 @@ functions:
                 - ${self:custom.jobQueue}
     timeout: 900
 
-  jobresult:
-    handler: stasis/jobs/result.get
-    events:
-      - http:
-          path: job/result/{job}
-          method: get
-          private: true
-          cors: true
-          documentation:
-            summary: downloads a finsihed job from the system
-
-          request:
-            parameter:
-              paths:
-                job: true
-    #defines to which topic we want to connect
-    environment:
-      ##
-      # contains scheduling events
-      schedule_queue: ${self:custom.scheduleQueue}
-
-      ##
-      # contains aggregation events
-      aggregation_queue: ${self:custom.aggregationQueue}
-      jobStateTable: ${self:custom.jobStateTable}
-      jobTrackingTable: ${self:custom.jobTrackingTable}
-      dataBucket: ${self:custom.dataZipBucketName}
-      trackingTable: ${self:custom.trackingTable}
-      acquisitionTable: ${self:custom.acquisitionTable}
-
   zipbucket:
     handler: stasis/bucket/bucket.bucket_zip
     events:
