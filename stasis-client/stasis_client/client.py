@@ -310,11 +310,14 @@ class StasisClient:
         """
         bucket_name = self.get_aggregated_bucket()
         try:
-            content = boto3.client('s3').get_object(Bucket=bucket_name, Key="{}.zip".format(job))['Body'].read().decode(
+            key = "{}.zip".format(job)
+            print(f"downloading key {key} from bucket {bucket_name}")
+            content = boto3.client('s3').get_object(Bucket=bucket_name, Key=key)['Body'].read().decode(
                 'utf-8')
 
             return content
-        except Exception:
+        except Exception as e:
+            print("failed for some reason: {}".format(str(e)))
             return None
 
     def store_job(self, job: dict, enable_progress_bar: bool = False):
