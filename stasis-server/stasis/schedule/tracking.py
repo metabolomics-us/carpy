@@ -14,21 +14,20 @@ def ecs(event, context):
 
             m = pattern.search(group)
 
-            if m.group(0) == os.getenv("current_stage"):
+            if m.group(1) == os.getenv("current_stage"):
                 print("task belong to our environment")
 
+                overrides = detail['overrides']
                 print("content:")
-                print(f"task: {m.group(1)}")
-                print(group)
+                print(f"task: {m.group(2)}")
                 print(detail)
-                print(event)
+                print(overrides)
                 print("")
             else:
-                print("rejected => wrong env!")
+                print(f"rejected => wrong env!. event belongs to {m.group(1)}, but we require it to be {os.getenv('current_stage')}")
         else:
             print(f"invalid group specified, which doesn't match the pattern. Group was {group} and patter was {pattern}")
 
-        print(event)
     except Exception as e:
         print(f"something failed: {e}")
         print(event)
