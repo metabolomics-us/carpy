@@ -35,7 +35,7 @@ def get(events, context):
                 }
 
             tm = TableManager()
-            table = tm.get_tracking_table()
+            table = tm.get_acquisition_table()
 
             try:
                 result = table.query(**query_params)
