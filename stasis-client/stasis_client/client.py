@@ -306,17 +306,19 @@ class StasisClient:
     def download_job_result(self, job: str) -> Optional[str]:
         """
         downloads the result of a job as base64 encoded string
-
-        #TODO refactor to use buckets instead, due to very large file sizes
         :return:
         """
-        result = self.http.get(f"{self._url}/job/result/{job}", headers=self._header)
-        if result.status_code == 503:
+        bucket_name = self.get_aggregated_bucket()
+        try:
+            key = "{}.zip".format(job)
+            print(f"downloading key {key} from bucket {bucket_name}")
+            content = boto3.client('s3').get_object(Bucket=bucket_name, Key=key)['Body'].read().decode(
+                'utf-8')
+
+            return content
+        except Exception as e:
+            print("failed for some reason: {}".format(str(e)))
             return None
-        elif result.status_code != 200:
-            raise Exception(
-                f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job}")
-        return result.json()['content']
 
     def store_job(self, job: dict, enable_progress_bar: bool = False):
         """
