@@ -335,7 +335,7 @@ functions:
           private: true
           cors: true
           documentation:
-            summary: loads the complete experiment definition and this can time out for large experiments. we recommend to use the paginated approaches
+            summary: 'loads the first page of the experiment (default page size: 25 items)'
           request:
             parameter:
               path:

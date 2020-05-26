@@ -1,4 +1,5 @@
 import time
+from pprint import pprint
 
 import requests
 import simplejson as json
@@ -9,9 +10,9 @@ delay = 1
 
 
 def test_get_experiment_paged_default(api_token):
-    result = requests.get(apiUrl + '/experiment/unknown', headers=api_token)
+    result = requests.get(apiUrl + '/experiment/none', headers=api_token)
     data = json.loads(result.content)
-    assert 25 == len(data['items'])
+    assert 18 == len(data['items'])
 
 def test_get_experiment_paged_second_page(api_token):
     result = requests.get(apiUrl + '/experiment/unknown/15/B5_P20Lipid_Pos_NIST001', headers=api_token)
@@ -20,5 +21,6 @@ def test_get_experiment_paged_second_page(api_token):
         data = {'items': []}
     else:
         data = json.loads(result.content)
+        pprint(data, indent=2)
 
     assert 7 <= len(data['items'])
