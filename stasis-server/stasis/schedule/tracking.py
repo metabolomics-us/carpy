@@ -7,7 +7,7 @@ def ecs(event, context):
         detail = event['detail']
         group = detail['group']
 
-        pattern = re.compile("^family:([a-zA-Z])-(.*)")
+        pattern = re.compile("^family:([a-zA-Z]+)-(.*)")
 
         if pattern.match(group):
             print("stage: {}".format(os.getenv("current_stage")))
@@ -26,7 +26,7 @@ def ecs(event, context):
             else:
                 print("rejected => wrong env!")
         else:
-            print("invalid group specified, which doesn't match the pattern")
+            print(f"invalid group specified, which doesn't match the pattern. Group was {group} and patter was {pattern}")
 
         print(event)
     except Exception as e:
