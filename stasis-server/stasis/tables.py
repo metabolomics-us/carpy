@@ -268,6 +268,53 @@ class TableManager:
 
         return self.db.Table(table_name)
 
+    def get_ecs_table(self):
+        """
+            provides access to the table and if it doesn't exists
+            creates it for us
+        :return:
+        """
+        table_name = os.environ['ecsTable']
+        existing_tables = boto3.client('dynamodb').list_tables()['TableNames']
+        if table_name not in existing_tables:
+            try:
+                print(self.db.create_table(
+                    TableName=os.environ["ecsTable"],
+                    KeySchema=[
+                        {
+                            'AttributeName': 'id',
+                            'KeyType': 'HASH'
+                        },
+                        {
+                            'AttributeName': 'task',
+                            'KeyType': 'RANGE'
+                        }
+                    ],
+                    AttributeDefinitions=[
+                        {
+                            'AttributeName': 'id',
+                            'AttributeType': 'S'
+                        },
+                        {
+                            'AttributeName': 'task',
+                            'AttributeType': 'S'
+                        },
+
+                    ],
+                    BillingMode='PAY_PER_REQUEST',
+                )
+                )
+            except ParamValidationError as e:
+                raise e
+            except ResourceInUseException as e:
+                print("table {} exist, ignoring error {}".format(table_name, e))
+                pass
+            except Exception as ex:
+                print("table already exist, ignoring error {}".format(ex))
+                pass
+
+        return self.db.Table(table_name)
+
     def get_acquisition_table(self):
         """
             provides access to the table and if it doesn't exists
@@ -347,6 +394,12 @@ class TableManager:
         new_result = json.loads(data_str, use_decimal=True)
 
         return new_result
+
+
+def insert_ecs_event(event):
+    tm = TableManager()
+    t = tm.get_ecs_table()
+    t.put_item(Item=event)
 
 
 def update_job_state(job: str, state: str, reason: Optional[str] = None):

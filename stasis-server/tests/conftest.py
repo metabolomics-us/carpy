@@ -56,6 +56,7 @@ def requireMocking():
     os.environ["acquisitionTable"] = "UnitAcquisitionTable"
     os.environ["resultTable"] = "ResultBucket"
     os.environ["targetTable"] = "CarrotTargetTable"
+    os.environ["ecsTable"] = "CarrotECSTable"
     os.environ["dataBucket"] = "data-carrot"
     os.environ["jobTrackingTable"] = "UnitJobTrackingTable"
     os.environ["jobStateTable"] = "UnitJobStateTable"

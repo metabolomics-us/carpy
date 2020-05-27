@@ -64,6 +64,7 @@ provider:
     schedule_queue: ${self:custom.scheduleQueue}
     sample_sync_queue: ${self:custom.syncQueue}
     trackingTable: ${self:custom.trackingTable}
+    ecsTable: ${self:custom.ecsTable}
     acquisitionTable: ${self:custom.acquisitionTable}
     aggregation_queue: ${self:custom.aggregationQueue}
     jobStateTable: ${self:custom.jobStateTable}
@@ -87,6 +88,7 @@ custom:
   jobStateTable: "StasisJobStateTable-${self:custom.stage}"
   jobTrackingTable: "StasisJobTrackingTable-${self:custom.stage}"
   resultTable: "wcmc-data-stasis-result-${self:custom.stage}"
+  ecsTable: "wcmc-data-stasis-ecs-${self:custom.stage}"
 
   ###
   # Carrot resources definition
@@ -134,9 +136,6 @@ custom:
     prod: api.metabolomics.us
     test: test-api.metabolomics.us
     dev:  dev-api.metabolomics.us
-    prod2: prod2.metabolomics.us
-    test2: test2.metabolomics.us
-    dev2:  dev2.metabolomics.us
 
   customDomain:
     basePath: "stasis"
@@ -335,7 +334,7 @@ functions:
           private: true
           cors: true
           documentation:
-            summary: loads the complete experiment definition and this can time out for large experiments. we recommend to use the paginated approaches
+            summary: 'loads the first page of the experiment (default page size: 25 items)'
           request:
             parameter:
               path:
