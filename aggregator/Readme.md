@@ -32,4 +32,4 @@ docker push 702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest
 
 or
 
-`aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 702514165722.dkr.ecr.us-west-2.amazonaws.com`
+aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 702514165722.dkr.ecr.us-west-2.amazonaws.com
