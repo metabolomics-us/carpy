@@ -2,7 +2,7 @@ import json
 import traceback
 import urllib.parse
 
-from cis import database
+from cis import database, headers
 
 conn = database.connect()
 
@@ -32,6 +32,7 @@ def exists(events, context):
                 return {
                     "statusCode": 200,
                     "body": json.dumps({
+                        "headers": headers.__HTTP_HEADERS__,
                         "exists": result[0][0],
                         "library": method_name
                     })
@@ -41,6 +42,7 @@ def exists(events, context):
                 return {
                     "statusCode": 500,
                     "body": json.dumps({
+                        "headers": headers.__HTTP_HEADERS__,
                         "error": str(e),
                         "library": method_name
                     })
@@ -49,15 +51,15 @@ def exists(events, context):
             return {
                 "statusCode": 500,
                 "body": json.dumps({
-                    "error": "you need to provide a 'library' name",
-
+                    "headers": headers.__HTTP_HEADERS__,
+                    "error": "you need to provide a 'library' name"
                 })
             }
     else:
         return {
             "statusCode": 500,
             "body": json.dumps({
-                "error": "missing path parameters",
-
+                "headers": headers.__HTTP_HEADERS__,
+                "error": "missing path parameters"
             })
         }

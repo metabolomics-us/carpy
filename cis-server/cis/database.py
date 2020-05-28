@@ -6,6 +6,8 @@ from typing import Optional, List
 
 import psycopg2
 
+from cis import headers
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -72,6 +74,7 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
         # create a response
         return {
             "statusCode": 200,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps(
                 result
             )
@@ -80,6 +83,7 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
         traceback.print_exc()
         return {
             "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": str(e),
             })
