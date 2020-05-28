@@ -48,6 +48,69 @@ def send_to_fargate(overrides, task_name):
     return response
 
 
+def schedule_steac_to_fargate(event, context):
+    """
+    submits a new task to the cluster - a fargate task will run it
+    :param event:
+    :param context:
+    :return:
+    """
+    body = json.loads(event['body'])
+
+    try:
+
+        validate(body, __SCHEDULE__)
+        import boto3
+        overrides = {"containerOverrides": [{
+            "name": "carrot-steac",
+            "environment": [
+                {
+                    "name": "CARROT_METHOD",
+                    "value": "{}".format(body['method'])
+                },
+
+            ]
+        }]}
+
+        task_name = "{}-{}".format(os.getenv("current_stage"), SECURE_CARROT_RUNNER)
+
+        if 'key' in body and body['key'] is not None:
+            overrides['containerOverrides'][0]['environment'].append({
+                "name": "STASIS_KEY",
+                "value": body['key']
+            })
+
+        send_to_fargate(overrides=overrides, task_name=task_name)
+
+        return {
+            'statusCode': 200,
+            'isBase64Encoded': False,
+            'headers': __HTTP_HEADERS__
+        }
+
+    except ValidationError as e:
+        print("validation error")
+        print(body)
+        traceback.print_exc()
+
+        return {
+            'body': json.dumps(str(e)),
+            'statusCode': 503,
+            'isBase64Encoded': False,
+            'headers': __HTTP_HEADERS__
+        }
+        pass
+    except Exception as e:
+        print(body)
+        traceback.print_exc()
+        create({"body": json.dumps({'sample': body['sample'], 'status': FAILED, 'reason': str(e)})}, {})
+
+        return {
+            'body': json.dumps(str(e)),
+            'statusCode': 503,
+            'isBase64Encoded': False,
+            'headers': __HTTP_HEADERS__
+        }
 def schedule_processing_to_fargate(event, context):
     """
     submits a new task to the cluster - a fargate task will run it
