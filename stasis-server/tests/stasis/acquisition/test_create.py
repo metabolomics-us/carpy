@@ -25,18 +25,6 @@ def test_create_success_gctof(requireMocking):
         assert "aerial part" == json.loads(response['body'])["metadata"]['organ']
 
 
-def test_create_success_minix(requireMocking):
-    data = {"id": 63618}
-    response = create.fromMinix({'body': json.dumps(data)}, {})
-
-    assert 0 < len(response)
-
-    for item in response:
-        assert 'isBase64Encoded' in item
-        assert 200 == item['statusCode']
-        assert '63618' == json.loads(item['body'])['experiment']
-        assert json.loads(item['body'])['id'] == json.loads(item['body'])['sample']
-
 
 def test_create_non_minix(requireMocking):
     data = {

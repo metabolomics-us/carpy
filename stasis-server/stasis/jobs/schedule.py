@@ -7,7 +7,8 @@ from jsonschema import validate, ValidationError
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.sync import sync_job
 from stasis.schedule.backend import DEFAULT_PROCESSING_BACKEND, Backend
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
+from stasis.schedule.schedule import schedule_to_queue
+from stasis.config import SECURE_CARROT_RUNNER
 from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, \

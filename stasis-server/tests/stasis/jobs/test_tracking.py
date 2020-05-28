@@ -1,10 +1,9 @@
 import json
-import random
 
 from stasis.jobs import tracking
 from stasis.jobs.schedule import monitor_jobs
 from stasis.jobs.sync import calculate_job_state
-from stasis.service.Status import SCHEDULED, AGGREGATING, EXPORTED, FAILED, AGGREGATED, PROCESSING
+from stasis.service.Status import SCHEDULED, PROCESSING
 from stasis.tables import set_job_state
 from stasis.tracking import create
 

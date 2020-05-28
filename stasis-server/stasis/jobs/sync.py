@@ -2,7 +2,8 @@ import simplejson as json
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR, _get_queue
+from stasis.schedule.schedule import schedule_to_queue, _get_queue
+from stasis.config import SECURE_CARROT_AGGREGATOR
 from stasis.service.Status import *
 from stasis.tables import load_job_samples_with_states, update_job_state, \
     get_job_state, load_jobs_for_sample, get_job_config

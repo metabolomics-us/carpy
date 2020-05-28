@@ -7,6 +7,106 @@ from cis import database, headers
 conn = database.connect()
 
 
+def has_members(events, context):
+    """
+    does this given bin has several members
+    :param events:
+    :param context:
+    :return:
+    """
+
+    if 'pathParameters' in events:
+        if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
+            method_name = urllib.parse.unquote(events['pathParameters']['library'])
+            splash = urllib.parse.unquote(events['pathParameters']['splash'])
+            result = database.query(
+                "SELECT count(*) FROM public.pg_target_members a, pg_target b where b.splash = (%s) and b.\"method\" = (%s)",
+                conn, [splash, method_name])
+
+            try:
+                # create a response
+                return {
+                    "statusCode": 200,
+                    "body": json.dumps({
+                        "headers": headers.__HTTP_HEADERS__,
+                        "count": result[0][0],
+                        "library": method_name,
+                        "splash": splash
+                    })
+                }
+            except Exception as e:
+                traceback.print_exc()
+                return {
+                    "statusCode": 500,
+                    "headers": headers.__HTTP_HEADERS__,
+                    "body": json.dumps({
+                        "error": str(e),
+                        "library": method_name
+                    })
+                }
+        else:
+            return {
+                "statusCode": 500,
+                "headers": headers.__HTTP_HEADERS__,
+                "body": json.dumps({
+                    "error": "you need to provide a 'library' name and a splash"
+                })
+            }
+    else:
+        return {
+            "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "error": "missing path parameters"
+            })
+        }
+
+
+def get_members(events, context):
+    """
+    return all members for this given bin
+    :param events:
+    :param context:
+    :return:
+    """
+    if 'pathParameters' in events:
+        if 'offset' in events['pathParameters']:
+            offset = events['pathParameters']['offset']
+        else:
+            offset = 0
+        if 'limit' in events['pathParameters']:
+            limit = events['pathParameters']['limit']
+        else:
+            limit = 10
+
+        if 'library' in events['pathParameters']:
+
+            method_name = urllib.parse.unquote(events['pathParameters']['library'])
+            print(f"loading all compounds for: {method_name} limit {limit} and offset {offset}")
+            transform = lambda x: x[0]
+            sql = "SELECT splash  FROM public.pg_target where \"method\" = %s limit %s offset %s  "
+            return database.html_response_query(sql=sql, connection=conn, transform=transform,
+                                                params=[method_name, limit, offset])
+        else:
+            return {
+                "statusCode": 500,
+                "headers": headers.__HTTP_HEADERS__,
+                "body": json.dumps({
+                    "error": "you need to provide a 'library' name",
+
+                })
+            }
+    else:
+        return {
+            "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "error": "missing path parameters",
+
+            })
+        }
+
+
 def all(events, context):
     if 'pathParameters' in events:
         if 'offset' in events['pathParameters']:

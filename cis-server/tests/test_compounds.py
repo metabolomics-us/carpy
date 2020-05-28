@@ -62,5 +62,25 @@ def test_exist_specific_compound(requireMocking, splash_test_name):
     assert json.loads(response['body'])['splash'] == splash_test_name[0]
 
 
+def test_compound_has_members(requireMocking, splash_test_name):
+    """
+    tests if a compound has more than 1 member
+    :param requireMocking:
+    :param splash_test_name:
+    :return:
+    """
+    fail()
+
+
+def test_compound_get_members(requireMocking, splash_test_name):
+    """
+    tests if pagination works to load all members or a compound
+    :param requireMocking:
+    :param splash_test_name:
+    :return:
+    """
+    fail()
+
+
 def test_edit_specific_compound(requireMocking, library_test_name):
     fail()

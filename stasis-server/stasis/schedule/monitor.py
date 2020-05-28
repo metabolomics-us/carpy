@@ -3,8 +3,11 @@ import traceback
 import simplejson as json
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.schedule.schedule import _get_queue, _free_task_count, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, \
-    MESSAGE_BUFFER, SERVICE, schedule_processing_to_fargate, schedule_aggregation_to_fargate
+from stasis.schedule.fargate import schedule_processing_to_fargate, schedule_aggregation_to_fargate, _current_tasks, \
+    _free_task_count
+from stasis.schedule.schedule import _get_queue
+from stasis.config import SERVICE, MESSAGE_BUFFER, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, \
+    SINGULAR_FARGATE_SERVICES
 
 
 def monitor_queue(event, context):
@@ -24,6 +27,24 @@ def monitor_queue(event, context):
     # if topic exists, we just reuse it
     arn = _get_queue(client=client)
 
+    running = _current_tasks()
+
+    print(f"the current tasks are running: {running}")
+    for x in SINGULAR_FARGATE_SERVICES:
+
+        if x in running:
+            print(f"not able to start another task, blocking task is running: {x}")
+            print(_current_tasks())
+            return {
+                'statusCode': 200,
+                'isBase64Encoded': False,
+                'headers': __HTTP_HEADERS__
+            }
+        else:
+            print(f"no task of type {x} was running. we can continue!")
+
+
+    # stasis is only allowed to run these 2 types of task
     slots = _free_task_count(service=SECURE_CARROT_RUNNER) + _free_task_count(service=SECURE_CARROT_AGGREGATOR)
 
     if slots == 0:
