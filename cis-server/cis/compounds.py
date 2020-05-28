@@ -59,23 +59,22 @@ def get(events, context):
             transform = lambda x: {
                 'id': x[0],
                 'accurate_mass': x[1],
-                'confirmed': x[2],
+                'target_type': x[2],
                 'inchi_key': x[3],
                 'matrix': x[4],
-                'method': x[6],
-                'ms_level': x[7],
-                'required_for_correction': x[9],
-                'retention_index': x[10],
-                'retention_index_standard': x[11],
-                'sample': x[12],
-                'spectrum': x[13],
-                'splash': x[14],
-                'name': x[15],
-                'unique_mass': x[16],
-                'precursor_mass': x[17]
+                'method': x[5],
+                'ms_level': x[6],
+                'required_for_correction': x[8],
+                'retention_index': x[9],
+                'sample': x[10],
+                'spectrum': x[11],
+                'splash': x[12],
+                'name': x[13],
+                'unique_mass': x[14],
+                'precursor_mass': x[15]
             }
             result = database.html_response_query(
-                "SELECT id, accurate_mass, confirmed, inchi_key, matrix, members, \"method\", ms_level, raw_spectrum, required_for_correction, retention_index, retention_index_standard, sample_name, spectrum, splash, target_name, unique_mass, precursor_mass FROM pg_target pt WHERE \"method\" = (%s) and \"splash\" = (%s)",
+                "SELECT id, accurate_mass, target_type, inchi_key, matrix, \"method\", ms_level, raw_spectrum, required_for_correction, retention_index, sample_name, spectrum, splash, target_name, unique_mass, precursor_mass FROM pg_target pt WHERE \"method\" = (%s) and \"splash\" = (%s)",
                 conn, [method_name, splash], transform=transform)
 
             return result
