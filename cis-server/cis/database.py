@@ -21,6 +21,7 @@ def connect():
     try:
         conn = psycopg2.connect(host=env['carrot_host'], database=env['carrot_database'],
                                 user=env['carrot_username'], password=env['carrot_password'], port=env["carrot_port"])
+        conn.set_session(readonly=False, autocommit=True)
 
         return conn
     except  Exception as e:
