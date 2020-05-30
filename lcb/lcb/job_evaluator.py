@@ -73,7 +73,7 @@ class JobEvaluator(Evaluator):
             outdir = args['retrieve']
 
             os.makedirs(outdir, exist_ok=True)
-            decoded = base64.b64decode(content)
+            decoded = content
 
             outfile = "{}/{}.zip".format(outdir, id)
             print("storing result at: {}".format(outfile))
