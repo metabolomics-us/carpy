@@ -65,6 +65,11 @@ def schedule_steac_to_fargate(event, context):
             "name": "carrot-steac",
             "environment": [
                 {
+                    "name": "SPRING_PROFILES_ACTIVE",
+                    "value": "{}{},{}".format('aws', os.getenv('current_stage'), body["profile"])
+                    # AWS profile needs to be active for this system to connect to the AWS database
+                },
+                {
                     "name": "CARROT_METHOD",
                     "value": "{}".format(body['method'])
                 },
@@ -111,6 +116,8 @@ def schedule_steac_to_fargate(event, context):
             'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__
         }
+
+
 def schedule_processing_to_fargate(event, context):
     """
     submits a new task to the cluster - a fargate task will run it
