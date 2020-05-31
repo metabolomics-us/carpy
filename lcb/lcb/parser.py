@@ -49,7 +49,7 @@ class Parser:
 
             parser.set_defaults(func=mapping[key])
         except KeyError as k:
-            raise Exception(f"sorry we did not find '{key}' in the configured mappings {mapping}")
+            raise KeyError(f"sorry we did not find '{key}' in the configured mappings {mapping}")
 
     def parse(self, args=None):
         """
