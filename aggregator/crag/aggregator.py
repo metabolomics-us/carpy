@@ -264,7 +264,7 @@ class Aggregator:
             try:
                 rows.append({
                     'No': i,
-                    'label': x['name'].rsplit('_', 1)[0],
+                    'label': x['name'],
                     'Target RI(s)': x['retentionTimeInSeconds'],
                     'Target mz': x['mass'],
                     'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,

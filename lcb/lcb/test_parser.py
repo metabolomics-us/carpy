@@ -28,7 +28,8 @@ def test_parse_job_mapping_empty(stasis_cli):
 
     parser = Parser(stasis_cli, {
         "job": call,
-        "sample": call
+        "sample": call,
+        "aggregate": call
     })
     parser.parse([])
 
@@ -39,7 +40,8 @@ def test_parse_job_mapping_empty_job_specified(stasis_cli):
 
     parser = Parser(stasis_cli, {
         "job": call,
-        "sample": call
+        "sample": call,
+        "aggregate": call
     })
 
     try:
@@ -55,7 +57,8 @@ def test_parse_job_mapping_job_id_specified(stasis_cli):
 
     parser = Parser(stasis_cli, {
         "job": call,
-        "sample": call
+        "sample": call,
+        "aggregate": call
     })
 
     parser.parse(['job', '-i', 'test'])
@@ -67,7 +70,8 @@ def test_parse_no_arguments(stasis_cli):
 
     parser = Parser(stasis_cli, {
         "job": call,
-        "sample": call
+        "sample": call,
+        "aggregate": call
     })
 
     try:

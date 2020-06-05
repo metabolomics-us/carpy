@@ -6,6 +6,8 @@ from typing import Optional, List
 
 import psycopg2
 
+from cis import headers
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -21,6 +23,7 @@ def connect():
     try:
         conn = psycopg2.connect(host=env['carrot_host'], database=env['carrot_database'],
                                 user=env['carrot_username'], password=env['carrot_password'], port=env["carrot_port"])
+        conn.set_session(readonly=False, autocommit=True)
 
         return conn
     except  Exception as e:
@@ -71,6 +74,7 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
         # create a response
         return {
             "statusCode": 200,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps(
                 result
             )
@@ -79,6 +83,7 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
         traceback.print_exc()
         return {
             "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": str(e),
             })

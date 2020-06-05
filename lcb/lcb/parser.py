@@ -2,6 +2,7 @@ import argparse
 
 from stasis_client.client import StasisClient
 
+from lcb.aggregate_evaluator import AggregateEvaluator
 from lcb.job_evaluator import JobEvaluator
 from lcb.sample_evaluator import SampleEvaluator
 
@@ -21,16 +22,34 @@ class Parser:
             # registers the default mapping
             mapping = {
                 'sample': SampleEvaluator(stasisClient).evaluate,
-                'job': JobEvaluator(stasisClient).evaluate
+                'job': JobEvaluator(stasisClient).evaluate,
+                'aggregate': AggregateEvaluator(stasisClient).evaluate
             }
 
         jobs = self.configure_jobs(main_parser=parser, sub_parser=sub)
-        jobs.set_defaults(func=mapping.get(jobs.prog.replace(parser.prog, "").strip()))
+        self.configure(jobs, mapping)
 
         samples = self.configure_samples(main_parser=parser, sub_parser=sub)
-        samples.set_defaults(func=mapping[samples.prog.replace(parser.prog, "").strip()])
+        self.configure(samples, mapping)
+
+        aggregator = self.configure_aggregate(main_parser=parser, sub_parser=sub)
+        self.configure(aggregator, mapping)
 
         self.parser = parser
+
+    def configure(self, parser, mapping):
+        """
+        associates the mapping with the job
+        :param parser:
+        :param mapping:
+        :return:
+        """
+        key = parser.prog.replace("lcb", "").strip()
+        try:
+
+            parser.set_defaults(func=mapping[key])
+        except KeyError as k:
+            raise KeyError(f"sorry we did not find '{key}' in the configured mappings {mapping}")
 
     def parse(self, args=None):
         """
@@ -53,6 +72,24 @@ class Parser:
         """
         configures a monitor to track the state of calculations
         """
+
+    @staticmethod
+    def configure_aggregate(main_parser, sub_parser):
+
+        parser = sub_parser.add_parser(name="aggregate", help="local aggregation based operations")
+
+        parser.add_argument("-r", "--remote", help="this is your remote job id, you would like to locally aggregate",
+                            required=True)
+
+        parser.add_argument("-s", "--store",
+                            help="this is the directory where do you want to store the aggregated data", required=True,
+                            type=str, default=False)
+
+        parser.add_argument("--zero-replacement", action='store_true', default=True, dest="zero_replacement")
+        parser.add_argument("--mz-tolerance", default=0.01, type=float, dest="mz_tolerance")
+        parser.add_argument("--rt-tolerance", default=0.1, type=float, dest="rt_tolerance")
+
+        return parser
 
     @staticmethod
     def configure_jobs(main_parser, sub_parser):
@@ -80,8 +117,6 @@ class Parser:
         parser.add_argument("--wait-time",
                             help="how long do we wait in seconds between attempts for the wait module",
                             type=int, default=10, dest='wait_time')
-
-        parser.add_argument("-a", "--aggregate", help="this aggregates the specified job locally", action='store_true')
 
         parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
         parser.add_argument("-s", "--status", help="specify this flag to return the current status",

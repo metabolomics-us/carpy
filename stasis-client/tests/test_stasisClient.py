@@ -180,10 +180,14 @@ def test_download_result(stasis_cli, api_token):
             print(f"current state for job {test_id} is {state} and duration is {duration}")
             if state == 'aggregated_and_uploaded':
                 break
+            elif state == 'failed':
+                raise AssertionError("oh noes we failed!!!!")
 
             sleep(30)
             duration = time() - origin
-        except:
+        except AssertionError as e:
+            raise e
+        except Exception as e :
             pass
 
     # side test to ensure results are generated and can be downloaded

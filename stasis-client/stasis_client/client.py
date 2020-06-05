@@ -312,8 +312,7 @@ class StasisClient:
         try:
             key = "{}.zip".format(job)
             print(f"downloading key {key} from bucket {bucket_name}")
-            content = boto3.client('s3').get_object(Bucket=bucket_name, Key=key)['Body'].read().decode(
-                'utf-8')
+            content = boto3.client('s3').get_object(Bucket=bucket_name, Key=key)['Body'].read()
 
             return content
         except Exception as e:

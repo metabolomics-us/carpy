@@ -64,6 +64,7 @@ provider:
     schedule_queue: ${self:custom.scheduleQueue}
     sample_sync_queue: ${self:custom.syncQueue}
     trackingTable: ${self:custom.trackingTable}
+    ecsTable: ${self:custom.ecsTable}
     acquisitionTable: ${self:custom.acquisitionTable}
     aggregation_queue: ${self:custom.aggregationQueue}
     jobStateTable: ${self:custom.jobStateTable}
@@ -87,6 +88,7 @@ custom:
   jobStateTable: "StasisJobStateTable-${self:custom.stage}"
   jobTrackingTable: "StasisJobTrackingTable-${self:custom.stage}"
   resultTable: "wcmc-data-stasis-result-${self:custom.stage}"
+  ecsTable: "wcmc-data-stasis-ecs-${self:custom.stage}"
 
   ###
   # Carrot resources definition
@@ -134,9 +136,6 @@ custom:
     prod: api.metabolomics.us
     test: test-api.metabolomics.us
     dev:  dev-api.metabolomics.us
-    prod2: prod2.metabolomics.us
-    test2: test2.metabolomics.us
-    dev2:  dev2.metabolomics.us
 
   customDomain:
     basePath: "stasis"
@@ -182,6 +181,20 @@ package:
 # this section defines all lambda function and triggers
 ############################################################################################
 functions:
+
+  # logs fargate events for us
+  fargatestatechange:
+    handler: stasis/schedule/tracking.ecs
+    events:
+      - cloudwatchEvent:
+          event:
+            source:
+              - aws.ecs
+            detail-type:
+              - ECS Task State Change
+            detail:
+              lastStatus:
+                - STOPPED
   fargatecount:
     handler: stasis/schedule/schedule.scheduled_task_size
     events:
