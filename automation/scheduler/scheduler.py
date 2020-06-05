@@ -19,12 +19,15 @@ class Scheduler(ABC):
         self.config = args
         self.common_extensions = ['.d', '.mzml', '.raw', '.cdf', '.wiff']
 
+        if self.config['env'] not in ('prod', 'dev', 'test'):
+            self.config['env'] = 'test'
+
         if self.config['env'] == 'prod':
             self.apiBase = 'https://api.metabolomics.us/stasis'
             self.token_var_name = 'PROD_STASIS_API_TOKEN'
         else:
-            self.apiBase = 'https://test-api.metabolomics.us/stasis'
-            self.token_var_name = 'STASIS_API_TOKEN'
+            self.apiBase = f'https://{self.config["env"]}-api.metabolomics.us/stasis'
+            self.token_var_name = f'{self.config["env"]}_STASIS_API_TOKEN'
 
         print(f'Stasis api address: {self.apiBase}')
         print(f'Stasis api key from: {self.token_var_name}')
