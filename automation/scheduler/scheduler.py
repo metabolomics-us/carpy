@@ -49,22 +49,26 @@ class Scheduler(ABC):
 
         return {'x-api-key': api_token}
 
-    def create_metadata(self, filename, chromatography, is_retry=False):
+    def create_metadata(self, filename, chromatography, cls, is_retry=False):
         """Adds basic metadata information to stasis.
         Use this only for samples handled outside the Acquisition Table Generator
 
         Args:
             filename: sample filename
             chromatography: specifies the 'instrument name', 'column', 'method' and 'ion mode' used to run the sample
+            cls: sample class
             is_retry: indicates if the current call is a retry
 
         Returns:
             Status code of update. 200 means sample scheduled successfully, error otherwise.
         """
+        self.config['experiment']['metadata']['class'] = cls
+
         data = {'sample': filename, 'experiment': self.config['experiment']['name'], 'acquisition': {
             'instrument': chromatography['instrument'],
             'method': chromatography['method'],
-            'ionization': chromatography['ion_mode']
+            'column': chromatography['column'],
+            'ionisation': chromatography['ion_mode']
         }, 'processing': {
             'method': f'{chromatography["method"]} | '
                       f'{chromatography["instrument"]} | '
@@ -87,7 +91,7 @@ class Scheduler(ABC):
                 if not is_retry:
                     print('Timeout, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
-                    self.create_metadata(filename, chromatography, True)
+                    self.create_metadata(filename, chromatography, 'class1', True)
                 else:
                     self.acquisition_status.append(filename)
                     status = timeout.response.status_code
@@ -96,15 +100,16 @@ class Scheduler(ABC):
                 if not is_retry:
                     print('Timeout, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
-                    self.create_metadata(filename, chromatography, True)
+                    self.create_metadata(filename, chromatography, 'class1', True)
                 else:
                     self.acquisition_status.append(filename)
+
                     status = ex.response.status_code
             except ConnectionError as ce:
                 if not is_retry:
                     print('Connection error, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
-                    self.create_metadata(filename, chromatography, True)
+                    self.create_metadata(filename, chromatography, 'class1', True)
                 else:
                     self.acquisition_status.append(filename)
                     status = 999
@@ -112,7 +117,7 @@ class Scheduler(ABC):
                 if not is_retry:
                     print('Unknown error, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
-                    self.create_metadata(filename, chromatography, True)
+                    self.create_metadata(filename, chromatography, 'class1', True)
                 else:
                     print(f'unknown error after retrying. Error: {str(e.args)}', flush=True)
                     self.acquisition_status.append(filename)
@@ -300,32 +305,31 @@ class Scheduler(ABC):
             else:
                 data = pd.read_csv(f'{folder}/{input_file}')
 
-            for sheet in data.keys():
-                for sample in data[sheet]:
-                    sample = self.fix_sample_filename(sample)
-                    if pd.notna(sample):
-                        # print('Sample: %s' % sample)
-                        if sample in results[mode].keys():
-                            dupe = f'{sample}_{time.time()}'
-                            print(f'WARNING: Possible duplicate filename: {sample}, storing as {dupe}')
-                        else:
-                            dupe = sample
+            for i, row in data.iterrows():
+                fsample = self.fix_sample_filename(row['samples'])
+                if pd.notna(fsample):
+                    # print(f'Sample: {fsample}  -- class {cls}')
+                    if fsample in results[mode].keys():
+                        dupe = f'{fsample}_{time.time()}'
+                        print(f'WARNING: Possible duplicate filename: {fsample}, storing as {dupe}')
+                    else:
+                        dupe = fsample
 
-                        results[mode][dupe] = {}
+                    results[mode][dupe] = {}
 
-                        # Acquisition Metadata should happen BEFORE tracking status
-                        if self.config['create_acquisition']:
-                            # add acquisition table generation due to manual processing
-                            results[mode][dupe]['acquisition'] = json.dumps(self.create_metadata(sample, chromatography))
+                    # Acquisition Metadata should happen BEFORE tracking status
+                    if self.config['create_acquisition']:
+                        # add acquisition table generation due to manual processing
+                        results[mode][dupe]['acquisition'] = json.dumps(self.create_metadata(fsample, chromatography, row['class']))
 
-                        # Tracking status should happen AFTER Acquisition table generation
-                        if self.config['create_tracking']:
-                            # add upload to eclipse and conversion to mzml due to manual processing
-                            results[mode][dupe]['tracking'] = json.dumps(self.add_tracking(sample))
+                    # Tracking status should happen AFTER Acquisition table generation
+                    if self.config['create_tracking']:
+                        # add upload to eclipse and conversion to mzml due to manual processing
+                        results[mode][dupe]['tracking'] = json.dumps(self.add_tracking(fsample))
 
-                        if self.config['schedule']:
-                            # push the sample to the pipeline
-                            results[mode][dupe]['schedule'] = self.schedule(sample, chromatography)
+                    if self.config['schedule']:
+                        # push the sample to the pipeline
+                        results[mode][dupe]['schedule'] = self.schedule(fsample, chromatography)
 
             self.export_fails(f'missing-trk', self.tracking_status, folder, chromatography)
             self.export_fails(f'missing-acq', self.acquisition_status, folder, chromatography)
