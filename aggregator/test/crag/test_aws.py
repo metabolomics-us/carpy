@@ -17,10 +17,9 @@ def test_aggregate_success(api_token, stasis):
             "B10A_SA8922_TeddyLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
-        "env": "test"
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+    stasis.store_job(job=job)
 
     aggregate = JobAggregator({}, stasis)
 
@@ -39,10 +38,9 @@ def test_aggregate_false(api_token, stasis):
             "B10A_SA8922_TeddyFAILEDLipids_Pos_122WP"
         ],
         "profile": "carrot.lcms",
-        "env": "test"
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+    stasis.store_job(job=job)
 
     aggregate = JobAggregator({}, stasis)
 
