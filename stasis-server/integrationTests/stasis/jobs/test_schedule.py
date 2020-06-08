@@ -115,7 +115,7 @@ def test_job_result_file_not_exist(api_token):
     response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
                              headers=api_token)
 
-    assert response.status_code == 404
+    assert response.status_code == 503
 
 
 def test_job_result_not_exist(api_token):
@@ -130,7 +130,7 @@ def test_job_result_not_exist(api_token):
     response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
                             headers=api_token)
 
-    assert response.status_code == 404
+    assert response.status_code == 503
 
 
 def test_schedule_job_integration(api_token):
