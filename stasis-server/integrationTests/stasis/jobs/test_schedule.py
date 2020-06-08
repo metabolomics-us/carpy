@@ -96,7 +96,7 @@ def test_job_result_not_finished(api_token):
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
 
-    response = requests.get("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
+    response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
                             headers=api_token)
 
     assert response.status_code == 503
@@ -127,10 +127,10 @@ def test_job_result_not_exist(api_token):
 
     test_id = "test_job_i_do_not_exist_{}".format(time())
 
-    response = requests.get("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
+    response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
                             headers=api_token)
 
-    assert response.status_code == 503
+    assert response.status_code == 404
 
 
 def test_schedule_job_integration(api_token):

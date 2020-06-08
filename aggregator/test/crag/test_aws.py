@@ -1,7 +1,5 @@
 from time import time
 
-import requests
-
 from crag.aws import JobAggregator
 
 
@@ -20,7 +18,7 @@ def test_aggregate_success(api_token, stasis):
         "env": "test"
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+    stasis.store_job(job)
 
     aggregate = JobAggregator({}, stasis)
 
@@ -42,7 +40,7 @@ def test_aggregate_false(api_token, stasis):
         "env": "test"
     }
 
-    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+    stasis.store_job(job)
 
     aggregate = JobAggregator({}, stasis)
 
