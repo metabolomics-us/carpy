@@ -1,7 +1,6 @@
 import os
 import re
 import time
-import traceback
 from argparse import Namespace
 from typing import Optional, List
 
@@ -299,6 +298,13 @@ class Aggregator:
         # creating target list
         results = []
 
+        dir = "/tmp" if "dir" not in self.args or self.args.get("dir") is None else self.args.get("dir")
+
+        if not os.path.exists(dir):
+            print("sorry your specified path didn't exist, we can't continue!")
+            raise FileNotFoundError(dir)
+
+        print("looking for local data in directory: {}".format(dir))
         print("using bucket {} for remote downloads".format(self.stasis_cli.get_processed_bucket()))
         sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples', disable=self.disable_progress_bar)
         for sample in sbar:
@@ -306,20 +312,21 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
-            dir = self.args.get("dir", "/tmp")
-            result_file = f'{sample}'
+            result_file = f'{sample}.mzml.json'
             saved_result = f'{dir}/{result_file}'
 
             sbar.write("looking for {}".format(result_file))
             if self.args.get('save') or not os.path.exists(saved_result):
-                sbar.write("downloading result data from stasis for {}.".format(sample))
+                sbar.write(
+                    "downloading result data from stasis for {}, due to file {} not existing locally at".format(sample,
+                                                                                                                saved_result))
                 try:
                     resdata = self.stasis_cli.sample_result_as_json(result_file)
                 except Exception as e:
                     print("we observed an error during downloading the data file: {}".format(str(e)))
                     resdata = None
             else:
-                sbar.write("loading existing result data")
+                sbar.write("loading existing result data from {}".format(saved_result))
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
             if resdata is None:

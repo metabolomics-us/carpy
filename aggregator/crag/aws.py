@@ -28,7 +28,6 @@ class JobAggregator(Aggregator):
         job_data = self.stasis_cli.load_job(job)
 
         assert isinstance(job_data, list), "something went wrong during loading the job data"
-        print("job consists of: \n\n{}\n".format(job_data))
 
         # directory
         directory = "result/{}".format(job)
