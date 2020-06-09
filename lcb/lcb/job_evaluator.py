@@ -43,6 +43,7 @@ class JobEvaluator(Evaluator):
 
         return job
 
+
     def process(self, id, args):
         result = self.client.schedule_job(id)
 
