@@ -132,12 +132,12 @@ def _build_result(stasis, locsamples):
 
 
 def test_aggregate(stasis):
-    aggregator = Aggregator(args=parser.parse_args(['test/test.txt', '--dir', './test/data']), stasis=stasis)
+    aggregator = Aggregator(args=parser.parse_args(['--files', 'test/test.txt', '--dir', './test/data']), stasis=stasis)
     aggregator.aggregate()
 
 
 def test_aggregate_file_not_found(stasis):
-    aggregator = Aggregator(args=parser.parse_args(['bad.txt']), stasis=stasis)
+    aggregator = Aggregator(args=parser.parse_args(['--files', 'bad.txt']), stasis=stasis)
     try:
         aggregator.aggregate()
         fail()
