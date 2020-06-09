@@ -121,14 +121,14 @@ def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_def
          'wait_time': 60})[
         'wait_for']
     if result is False:
+        job_evaluator.evaluate({'id': test_job_definition['id'], 'detail': True})
         fail()
 
     result = job_evaluator.evaluate({'id': test_job_definition['id'], 'retrieve': str(tmp_path.absolute())})[
         'retrieve']
     if result is False:
+        job_evaluator.evaluate({'id': test_job_definition['id'], 'detail': True})
         fail("were not able to download {}".format(test_job_definition['id']))
-
-    job_evaluator.evaluate({'id': test_job_definition['id'], 'detail': True})
 
 
 def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job_definition, test_sample, tmp_path):

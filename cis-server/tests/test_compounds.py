@@ -69,7 +69,18 @@ def test_compound_has_members(requireMocking, splash_test_name):
     :param splash_test_name:
     :return:
     """
-    fail()
+    from cis import compounds
+    response = compounds.has_members({'pathParameters': {
+        "library": splash_test_name[1],
+        "splash": splash_test_name[0]
+    }
+
+    }, {})
+    assert response['statusCode'] == 200
+    assert json.loads(response['body'])['members'] == True
+    assert json.loads(response['body'])['library'] == splash_test_name[1]
+    assert json.loads(response['body'])['splash'] == splash_test_name[0]
+    assert json.loads(response['body'])['count'] > 0
 
 
 def test_compound_get_members(requireMocking, splash_test_name):
@@ -79,7 +90,18 @@ def test_compound_get_members(requireMocking, splash_test_name):
     :param splash_test_name:
     :return:
     """
-    fail()
+    from cis import compounds
+    response = compounds.get_members(
+        {'pathParameters': {
+            "library": splash_test_name[1],
+            "splash": splash_test_name[0]
+        }
+
+        }, {}
+
+    )
+    assert response['statusCode'] == 200
+    assert len(json.loads(response['body'])) > 0
 
 
 def test_edit_specific_compound(requireMocking, library_test_name):

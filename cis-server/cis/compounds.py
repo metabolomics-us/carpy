@@ -24,16 +24,29 @@ def has_members(events, context):
                 conn, [splash, method_name])
 
             try:
-                # create a response
-                return {
-                    "statusCode": 200,
-                    "body": json.dumps({
-                        "headers": headers.__HTTP_HEADERS__,
-                        "count": result[0][0],
-                        "library": method_name,
-                        "splash": splash
-                    })
-                }
+                if result[0][0] > 0:
+                    # create a response
+                    return {
+                        "statusCode": 200,
+                        "body": json.dumps({
+                            "headers": headers.__HTTP_HEADERS__,
+                            "members" : True,
+                            "count": result[0][0],
+                            "library": method_name,
+                            "splash": splash
+                        })
+                    }
+                else:
+                    return {
+                        "statusCode": 404,
+                        "body": json.dumps({
+                            "headers": headers.__HTTP_HEADERS__,
+                            "members" : False,
+                            "count": result[0][0],
+                            "library": method_name,
+                            "splash": splash
+                        })
+                    }
             except Exception as e:
                 traceback.print_exc()
                 return {
