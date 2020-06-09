@@ -13,13 +13,13 @@ from stasis_client.client import StasisClient
 
 AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
-sheet_names = {"intensity": ["Intensity matrix"],
-               "mass": ["Mass matrix"],
-               "ri": ["Retention index matrix"],
-               "rt": ["Original RT matrix"],
-               "repl": ["Replaced values"],
-               "curve": ["Correction curve"],
-               "msms": ["MSMS Spectrum"]}
+sheet_names = {'intensity': ['Intensity matrix'],
+               'mass': ['Mass matrix'],
+               'ri': ['Retention index matrix'],
+               'rt': ['Original RT matrix'],
+               'repl': ['Replaced values'],
+               'curve': ['Correction curve'],
+               'msms': ['MSMS Spectrum']}
 
 
 def percent(x: float, intensity):
@@ -55,7 +55,7 @@ class Aggregator:
         Returns:
 
         """
-        if not value['replaced'] or (value['replaced'] and self.args.get("zero_replacement", False)):
+        if not value['replaced'] or (value['replaced'] and self.args.get('zero_replacement', False)):
             return round(value['intensity'])
         else:
             return 0
@@ -121,7 +121,6 @@ class Aggregator:
             sort_index: sort the data on reindexing, True | False
 
         Returns:
-
         """
 
         # saving excel file
@@ -129,7 +128,7 @@ class Aggregator:
         file, ext = os.path.splitext(infile)
 
         # Build suffix
-        if self.args.get("test", False):
+        if self.args.get('test', False):
             suffix = 'testResults'
         else:
             suffix = 'results'
@@ -139,8 +138,8 @@ class Aggregator:
         else:
             suffix += '-norepl'
 
-        seperator = '' if file.endswith("/") else '-'
-        output_name = f'{file}{seperator}{type.lower().replace(" ", "_")}-{suffix}.xlsx'
+        separator = '' if file.endswith("/") else '-'
+        output_name = f'{file}{separator}{type.lower().replace(" ", "_")}-{suffix}.xlsx'
 
         if type == 'Correction curve':
             data.dropna(inplace=True)
@@ -239,7 +238,7 @@ class Aggregator:
             origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
             replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
             curve = {k: sample['injections'][k]['correction']['curve']}
-            msms = {k: [r['annotation'].get('msms', "") for r in v['results']]}
+            msms = {k: [r['annotation'].get('msms', '') for r in v['results']]}
 
         return [None, intensities, masses, rts, origrts, curve, replaced, msms]
 
@@ -249,13 +248,14 @@ class Aggregator:
         Structures the data to be 'worksheet' ready
         Args:
             targets: list of targets
+            upb: show progress bar, True or False
             label: progress bar message
 
         Returns: a dataframe formatted with the first columns of a final report
 
         """
         rows = []
-        pattern = re.compile(".*?_[A-Z]{14}-[A-Z]{10}-[A-Z]")
+        pattern = re.compile('.*?_[A-Z]{14}-[A-Z]{10}-[A-Z]')
 
         i = 1
         bar = tqdm.tqdm(targets, desc=label, unit=' targets', disable=upb)
@@ -281,31 +281,31 @@ class Aggregator:
     def build_target_identifier(target):
         return f"{target['name']}_{target['retentionTimeInSeconds'] / 60:.1f}_{target['mass']:.1f}"
 
-    def process_sample_list(self, samples, sample_file):
+    def process_sample_list(self, samples, destination):
         """
         Runs the aggregation pipeline on the list of samples
         Args:
             samples: list of sample names
-            sample_file:
+            destination:
 
         Returns:
-
         """
         # use subset of samples for testing
-        if self.args.get("test", False):
+        if self.args.get('test', False):
             samples = samples[:5]
 
         # creating target list
         results = []
 
-        dir = "/tmp" if "dir" not in self.args or self.args.get("dir") is None else self.args.get("dir")
+        dir = self.args.get('dir') or '/tmp'
 
         if not os.path.exists(dir):
             print("sorry your specified path didn't exist, we can't continue!")
             raise FileNotFoundError(dir)
 
-        print("looking for local data in directory: {}".format(dir))
-        print("using bucket {} for remote downloads".format(self.stasis_cli.get_processed_bucket()))
+        print(f'looking for local data in directory: {dir}')
+        print(f'using bucket {self.stasis_cli.get_processed_bucket()} for remote downloads')
+
         sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples', disable=self.disable_progress_bar)
         for sample in sbar:
             sbar.set_description(sample)
@@ -315,18 +315,18 @@ class Aggregator:
             result_file = f'{sample}.mzml.json'
             saved_result = f'{dir}/{result_file}'
 
-            sbar.write("looking for {}".format(result_file))
+            sbar.write(f'looking for {result_file}')
             if self.args.get('save') or not os.path.exists(saved_result):
                 sbar.write(
-                    "downloading result data from stasis for {}, due to file {} not existing locally at".format(sample,
-                                                                                                                saved_result))
+                    f'downloading result data from stasis for {sample}, '
+                    f'due to file {saved_result} not existing locally at')
                 try:
                     resdata = self.stasis_cli.sample_result_as_json(result_file)
                 except Exception as e:
-                    print("we observed an error during downloading the data file: {}".format(str(e)))
+                    print(f'we observed an error during downloading the data file: {str(e)}')
                     resdata = None
             else:
-                sbar.write("loading existing result data from {}".format(saved_result))
+                sbar.write(f'loading existing result data from {saved_result}')
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
             if resdata is None:
@@ -338,11 +338,11 @@ class Aggregator:
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
             else:
-                raise Exception("this should not have happened!")
+                raise Exception('this should not have happened!')
 
         if len(results) == 0:
-            print("we did not manage to discover any of the calculation data for this job!")
-            raise NoSamplesFoundException("sorry none of your samples were found!")
+            print('we did not manage to discover any of the calculation data for this job!')
+            raise NoSamplesFoundException('sorry none of your samples were found!')
         targets = self.get_target_list(results)
 
         # creating spreadsheets
@@ -405,9 +405,9 @@ class Aggregator:
 
         for t in [sheet_names[k] for k in sheet_names.keys()]:
             try:
-                self.export_excel(t[1], t[0], sample_file)
+                self.export_excel(t[1], t[0], destination)
             except Exception as exerr:
-                print(f'Error creating exel file for {t}')
+                print(f'Error creating excel file for {t}')
                 print(str(exerr))
 
     def filter_msms(self, msms, intensity):
@@ -441,25 +441,27 @@ class Aggregator:
         Returns: the filename of the aggregated (excel) file
         """
 
-        if "infiles" not in self.args:
+        if 'infiles' not in self.args:
             raise KeyError("sorry you need to specify at least one input file for this function")
 
-        for sample_file in self.args["infiles"]:
+        for sample_file in self.args['infiles']:
             if not os.path.isfile(sample_file):
-                raise FileNotFoundError("file name {} does not exist".format(sample_file))
+                raise FileNotFoundError(f'file name {sample_file} does not exist')
 
             with open(sample_file) as processed_samples:
-                samples = [p for p in processed_samples.read().strip().splitlines() if p and p != 'samples']
-                self.aggregate_samples(samples, sample_file)
+                samples = [p.split(',')[0] for p in processed_samples.read().strip().splitlines() if p and p != 'samples']
+                self.aggregate_samples(samples, os.path.splitext(sample_file)[0])
 
-    def aggregate_samples(self, samples: List[str], destination: str = "./"):
+    def aggregate_samples(self, samples: List[str], destination: str = './'):
         """
-        aggegrates the samples at the specifed destination
-        :param destination:
-        :param samples:
-        :return:
+        Aggregates the samples at the specified destination
+        Args:
+            samples: list of sample names to aggregate
+            destination: folder to save reports on
+        Returns:
         """
         if os.path.exists(destination) is False:
+            print(f'Creating destination folder: {destination}')
             os.makedirs(destination, exist_ok=True)
 
-        self.process_sample_list(samples, f"{destination}/")
+        self.process_sample_list(samples, destination)
