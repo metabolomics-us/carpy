@@ -67,24 +67,41 @@ class CISClient:
         else:
             raise Exception(result)
 
-    def get_compounds(self, library: str, offset: int = 0) -> List[dict]:
+    def get_compounds(self, library: str, offset: int = 0, autopage: bool = True) -> List[dict]:
         limit = 10
         result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}", headers=self._header)
 
         if result.status_code == 200:
-            return result.json()
+            result: List = result.json()
+
+            if autopage:
+                data = result
+
+                while len(data) > 0:
+                    # avoid recursive calls
+                    offset = offset + limit
+                    data = self.get_compounds(library=library, offset=offset, autopage=False)
+
+                    for x in data:
+                        result.append(x)
+
+            return result
+
+        elif result.status_code == 404:
+            return []
         else:
             raise Exception(result)
 
-    def get_members(self, library: str, splash: str, offset: int = 0) -> List[dict]:
+    def get_members(self, library: str, splash: str, offset: int = 0, autopage: bool = True) -> List[dict]:
         limit = 10
         result = self.http.get(f"{self._url}/compound/members/{library}/{splash}/{limit}/{offset}",
                                headers=self._header)
 
         if result.status_code == 200:
             result: List = result.json()
-            for x in self.get_members(library=library, splash=splash, offset=offset + limit):
-                result.append(x)
+            if autopage:
+                for x in self.get_members(library=library, splash=splash, offset=offset + limit):
+                    result.append(x)
             return result
 
 
