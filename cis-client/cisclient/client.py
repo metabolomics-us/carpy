@@ -77,6 +77,14 @@ class CISClient:
         else:
             raise Exception(result)
 
+    def get_members(self, splash:str, library:str):
+        """
+        returns all members of a consensus spectra
+        :param splash:
+        :param library:
+        :return:
+        """
+
     def exists_compound(self, library: str, splash: str) -> bool:
         result = self.http.head(f"{self._url}/compound/{library}/{splash}", headers=self._header)
 
