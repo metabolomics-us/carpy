@@ -161,7 +161,19 @@ functions:
                 library: true
                 limit: true
                 offset: true
-
+      - http:
+          path: compounds/{library}/{type}/{limit}/{offset}
+          method: get
+          cors: true
+          documentation:
+            summary: returns all the compounds of the given library and type
+          request:
+            parameter:
+              paths:
+                library: true
+                type: true
+                limit: true
+                offset: true
   compoundGet:
     handler: cis/compounds.get
     events:

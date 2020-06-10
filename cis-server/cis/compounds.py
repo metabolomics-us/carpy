@@ -137,9 +137,18 @@ def all(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             print(f"loading all compounds for: {method_name} limit {limit} and offset {offset}")
             transform = lambda x: x[0]
-            sql = "SELECT splash  FROM public.pg_target where \"method\" = %s limit %s offset %s  "
-            return database.html_response_query(sql=sql, connection=conn, transform=transform,
-                                                params=[method_name, limit, offset])
+
+            if 'type' in events['pathParameters']:
+
+                target_type = events['pathParameters']['type']
+                sql = "SELECT splash  FROM public.pg_target where \"method\" = %s and target_type = %s  limit %s offset %s  "
+                return database.html_response_query(sql=sql, connection=conn, transform=transform,
+                                                    params=[method_name, target_type, limit, offset])
+            else:
+                sql = "SELECT splash  FROM public.pg_target where \"method\" = %s limit %s offset %s  "
+                return database.html_response_query(sql=sql, connection=conn, transform=transform,
+                                                    params=[method_name, limit, offset])
+
         else:
             return {
                 "statusCode": 500,
