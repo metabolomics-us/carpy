@@ -59,6 +59,19 @@ def test_get_specific_compound_doesnt_exist(requireMocking, splash_test_name):
     assert response['statusCode'] == 404
 
 
+def test_exist_specific_compound_false(requireMocking, splash_test_name):
+    from cis import compounds
+
+    response = compounds.exists({'pathParameters': {
+        "library": "{}_not real".format(splash_test_name[1]),
+        "splash": splash_test_name[0]
+    }
+
+    }, {})
+
+    assert response['statusCode'] == 404
+
+
 def test_exist_specific_compound(requireMocking, splash_test_name):
     from cis import compounds
 

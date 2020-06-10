@@ -218,27 +218,32 @@ def exists(events, context):
                 "SELECT exists (SELECT 1 FROM pg_target pt WHERE \"method\" = (%s) and \"splash\" = (%s) LIMIT 1)",
                 conn, [method_name, splash])
 
-            try:
-                # create a response
+            if result[0][0] == 0:
                 return {
-                    "statusCode": 200,
-                    "body": json.dumps({
+                    "statusCode": 404,
+                }
+            else:
+                try:
+                    # create a response
+                    return {
+                        "statusCode": 200,
+                        "body": json.dumps({
+                            "headers": headers.__HTTP_HEADERS__,
+                            "exists": result[0][0],
+                            "library": method_name,
+                            "splash": splash
+                        })
+                    }
+                except Exception as e:
+                    traceback.print_exc()
+                    return {
+                        "statusCode": 500,
                         "headers": headers.__HTTP_HEADERS__,
-                        "exists": result[0][0],
-                        "library": method_name,
-                        "splash": splash
-                    })
-                }
-            except Exception as e:
-                traceback.print_exc()
-                return {
-                    "statusCode": 500,
-                    "headers": headers.__HTTP_HEADERS__,
-                    "body": json.dumps({
-                        "error": str(e),
-                        "library": method_name
-                    })
-                }
+                        "body": json.dumps({
+                            "error": str(e),
+                            "library": method_name
+                        })
+                    }
         else:
             return {
                 "statusCode": 500,

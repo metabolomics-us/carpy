@@ -56,7 +56,7 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
         raise error
 
 
-def html_response_query(sql: str, connection, params: Optional[List] = None, transform: Optional = None) -> Optional[
+def html_response_query(sql: str, connection, params: Optional[List] = None, transform: Optional = None, return_404_on_empty = True) -> Optional[
     List]:
     """
     executes a query and converts the response to
@@ -73,7 +73,7 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
             result = list(map(transform, result))
         # create a response
 
-        if len(result) == 0:
+        if len(result) == 0 and return_404_on_empty is True:
             return {
                 "statusCode": 404,
                 "headers": headers.__HTTP_HEADERS__,
