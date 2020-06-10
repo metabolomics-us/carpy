@@ -1,3 +1,2 @@
-pandas
-git+git://github.com/metabolomics-us/carpy.git@master#egg=stasis-client&subdirectory=stasis-client
-git+git://github.com/metabolomics-us/carpy.git@master#egg=cis-client&subdirectory=cis-client
+git+git://github.com/metabolomics-us/carpy.git@steac#egg=cis-client&subdirectory=cis-client
+git+git://github.com/metabolomics-us/carpy.git@steac#egg=stasis-client&subdirectory=stasis-client
