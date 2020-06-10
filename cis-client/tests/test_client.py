@@ -13,6 +13,16 @@ def test_get_compounds(cis_cli, splash_test_name):
     assert len(result) > 0
 
 
+def test_get_compounds_by_target_type(cis_cli, splash_test_name):
+    result = cis_cli.get_compounds_by_type(splash_test_name[1], target_type="UNCONFIRMED")
+    assert len(result) > 0
+
+
+def test_get_compounds_by_target_type_2(cis_cli, splash_test_name):
+    result = cis_cli.get_compounds_by_type(splash_test_name[1], target_type="UNCONFIRMED_CONSENSUS")
+    assert len(result) > 0
+
+
 def test_exists_compound(cis_cli, splash_test_name):
     result = cis_cli.exists_compound(library=splash_test_name[1], splash=splash_test_name[0])
     assert result is True
@@ -34,4 +44,3 @@ def test_get_members(cis_cli, splash_test_name):
 
     for x in result:
         print(x)
-

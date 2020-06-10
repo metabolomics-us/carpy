@@ -161,8 +161,9 @@ functions:
                 library: true
                 limit: true
                 offset: true
+
       - http:
-          path: compounds/{library}/{type}/{limit}/{offset}
+          path: compounds/{library}/{limit}/{offset}/{type}
           method: get
           cors: true
           documentation:

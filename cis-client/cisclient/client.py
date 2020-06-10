@@ -67,6 +67,31 @@ class CISClient:
         else:
             raise Exception(result)
 
+
+    def get_compounds_by_type(self, library: str, target_type:str, offset: int = 0, autopage: bool = True) -> List[dict]:
+        limit = 10
+        result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}/{target_type}", headers=self._header)
+
+        if result.status_code == 200:
+            result: List = result.json()
+
+            if autopage:
+                data = result
+
+                while len(data) > 0:
+                    # avoid recursive calls
+                    offset = offset + limit
+                    data = self.get_compounds_by_type(library=library, offset=offset, autopage=False, target_type=target_type)
+
+                    for x in data:
+                        result.append(x)
+
+            return result
+
+        elif result.status_code == 404:
+            return []
+        else:
+            raise Exception(result)
     def get_compounds(self, library: str, offset: int = 0, autopage: bool = True) -> List[dict]:
         limit = 10
         result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}", headers=self._header)
