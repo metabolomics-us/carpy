@@ -31,7 +31,7 @@ def generate_spectra_plot(compound: dict):
     pass
 
 
-def generate_similarity_plot(compoud: List[dict], tolerance=0.01, title="similarity plot"):
+def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title: str = "similarity plot"):
     """
     this generates a similarity heatmap plot between all the compounds in the given list
     :param compoud:
@@ -40,7 +40,6 @@ def generate_similarity_plot(compoud: List[dict], tolerance=0.01, title="similar
     :return:
     """
     dataframe = to_dataframe(compoud)
-    dataframe = pd.to_numeric(dataframe)
     spectra = dataframe['spectrum'].values
 
     data = []
