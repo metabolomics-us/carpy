@@ -67,9 +67,8 @@ class CISClient:
         else:
             raise Exception(result)
 
-    def get_compounds(self, library: str) -> List[dict]:
+    def get_compounds(self, library: str, offset: int = 0) -> List[dict]:
         limit = 10
-        offset = 0
         result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}", headers=self._header)
 
         if result.status_code == 200:
@@ -77,13 +76,38 @@ class CISClient:
         else:
             raise Exception(result)
 
-    def get_members(self, splash:str, library:str):
+    def get_members(self, library: str, splash: str, offset: int = 0) -> List[dict]:
+        limit = 10
+        result = self.http.get(f"{self._url}/compound/members/{library}/{splash}/{limit}/{offset}",
+                               headers=self._header)
+
+        if result.status_code == 200:
+            result: List = result.json()
+            for x in self.get_members(library=library, splash=splash, offset=offset + limit):
+                result.append(x)
+            return result
+
+
+        elif result.status_code == 404:
+            return []
+        else:
+            raise Exception(result)
+
+    def has_members(self, splash: str, library: str):
         """
         returns all members of a consensus spectra
         :param splash:
         :param library:
         :return:
         """
+        result = self.http.head(f"{self._url}/compound/members/{library}/{splash}", headers=self._header)
+
+        if result.status_code == 200:
+            return True
+        elif result.status_code == 404:
+            return False
+        else:
+            raise Exception(result)
 
     def exists_compound(self, library: str, splash: str) -> bool:
         result = self.http.head(f"{self._url}/compound/{library}/{splash}", headers=self._header)

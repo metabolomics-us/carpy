@@ -176,6 +176,37 @@ functions:
               paths:
                 library: true
                 splash: true
+
+  compoundGetMembers:
+    handler: cis/compounds.get_members
+    events:
+      - http:
+          path: compound/members/{library}/{splash}/{limit}/{offset}
+          method: get
+          cors: true
+          documentation:
+            summary: returns the members of the given compounds
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                limit: true
+                offset: true
+  compoundHasMembers:
+    handler: cis/compounds.has_members
+    events:
+      - http:
+          path: compound/members/{library}/{splash}
+          method: head
+          cors: true
+          documentation:
+            summary: returns if the given compound has any associated splashes in this library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
   compoundExist:
     handler: cis/compounds.exists
     events:

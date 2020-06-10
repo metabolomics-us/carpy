@@ -22,6 +22,7 @@ def api_token():
 def cis_cli():
     return CISClient(os.getenv('CIS_URL'), os.getenv('CIS_API_TOKEN'))
 
+
 @pytest.fixture()
 def library_test_name():
     return "soqtof[M-H] | 6530a | c18 | negative"
@@ -29,4 +30,4 @@ def library_test_name():
 
 @pytest.fixture()
 def splash_test_name():
-    return ("splash10-0002-0309000000-2369135f42cccebdb7f0","soqe[M+H][M+NH4] | QExactive | test | positive")
+    return ("splash10-0002-0090500000-53c0a0bd55cd73db3ed9", "soqe[M-H] | QExactive | test | negative")

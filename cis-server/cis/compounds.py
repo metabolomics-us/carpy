@@ -30,7 +30,7 @@ def has_members(events, context):
                         "statusCode": 200,
                         "body": json.dumps({
                             "headers": headers.__HTTP_HEADERS__,
-                            "members" : True,
+                            "members": True,
                             "count": result[0][0],
                             "library": method_name,
                             "splash": splash
@@ -41,7 +41,7 @@ def has_members(events, context):
                         "statusCode": 404,
                         "body": json.dumps({
                             "headers": headers.__HTTP_HEADERS__,
-                            "members" : False,
+                            "members": False,
                             "count": result[0][0],
                             "library": method_name,
                             "splash": splash
@@ -92,14 +92,15 @@ def get_members(events, context):
         else:
             limit = 10
 
-        if 'library' in events['pathParameters']:
+        if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
 
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
-            print(f"loading all compounds for: {method_name} limit {limit} and offset {offset}")
+            splash = urllib.parse.unquote(events['pathParameters']['splash'])
+            print(f"loading all compounds for: {method_name} and splash {splash} limit {limit} and offset {offset}")
             transform = lambda x: x[0]
-            sql = "SELECT splash  FROM public.pg_target where \"method\" = %s limit %s offset %s  "
+            sql = "SELECT members FROM public.pg_target a, pg_target_members b where a.id = b.pg_target_id and  \"method\" = %s and splash = %s limit %s offset %s  "
             return database.html_response_query(sql=sql, connection=conn, transform=transform,
-                                                params=[method_name, limit, offset])
+                                                params=[method_name, splash, limit, offset])
         else:
             return {
                 "statusCode": 500,

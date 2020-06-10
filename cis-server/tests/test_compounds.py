@@ -130,5 +130,25 @@ def test_compound_get_members(requireMocking, splash_test_name):
     assert len(json.loads(response['body'])) > 0
 
 
+def test_compound_get_members_none(requireMocking, splash_test_name):
+    """
+    tests if pagination works to load all members or a compound
+    :param requireMocking:
+    :param splash_test_name:
+    :return:
+    """
+    from cis import compounds
+    response = compounds.get_members(
+        {'pathParameters': {
+            "library": splash_test_name[1],
+            "splash": "{}_none".format(splash_test_name[0])
+        }
+
+        }, {}
+
+    )
+    assert response['statusCode'] == 404
+
+
 def test_edit_specific_compound(requireMocking, library_test_name):
     fail()
