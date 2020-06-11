@@ -5,3 +5,4 @@ pymzml
 jupyter
 seaborn
 pandas
+jupyter-datatables

@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Optional
 import pandas as pd
 import seaborn as sns
+from matplotlib import ticker
 from pandas import DataFrame
 from pyspec.parser.pymzl.msms_spectrum import MSMSSpectrum
 import matplotlib.pyplot as plt
@@ -28,7 +29,45 @@ def generate_spectra_plot(compound: dict):
     :param compound:
     :return:
     """
-    pass
+    spec = MSMSSpectrum(compound['spectrum'])
+
+
+def generate_histogram_accurate_mass(compound: List[dict], title: str = "accurate mass distribution"):
+    def function(x: dict):
+        return x['accurate_mass']
+
+    generate_histogram(compound, function, title, label_x="accurate mass",format = '{:,.4f}')
+
+
+def generate_histogram_ri(compound: List[dict], title: str = "retention index distribution"):
+    def function(x: dict):
+        return x['retention_index']
+
+    generate_histogram(compound, function, title, label_x="retention index",format = '{:,.2f}')
+
+
+def generate_histogram_intensity(compound: List[dict], title: str = "intensity distribution"):
+    def function(x: dict):
+        spec: MSMSSpectrum = MSMSSpectrum(x['spectrum'])
+        highest = spec.highestPeaks(1)[0, 1]
+
+        return highest
+
+    generate_histogram(compound, function, title, label_x="intensity", format='{:,.0f}')
+
+
+def generate_histogram(compound: List[dict], aggregateFunction, tile: str = "histogram", label_x: str = "x",
+                       label_y: str = "y", format:Optional[str] = None):
+    x = list(map(aggregateFunction, compound))
+    p = sns.distplot(x)
+
+    p.set(xlabel=label_x, ylabel=label_y)
+    if format is not None:
+        p.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: format.format(x)))
+
+    plt.title(tile)
+
+    plt.show()
 
 
 def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title: str = "similarity plot"):

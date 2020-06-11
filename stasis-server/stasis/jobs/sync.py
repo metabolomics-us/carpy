@@ -151,6 +151,9 @@ def calculate_job_state(job: str) -> Optional[str]:
         finally:
             from collections import Counter
             print("state distribution for job '{}' with {} samples is: {}".format(job, len(states), Counter(states)))
+            for sample, tracking_state in job_definition.items():
+                print(f"sample {sample} is in state {state} ")
+            print("done")
 
     else:
         raise Exception("we did not find a job definition for {}, Please investigate".format(job))

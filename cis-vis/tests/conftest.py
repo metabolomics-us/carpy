@@ -29,5 +29,17 @@ def library_test_name():
 
 
 @pytest.fixture()
+def members(splash_test_name, cis_cli):
+    library = splash_test_name[1]
+    splash = splash_test_name[0]
+
+    compound = cis_cli.get_compound(library=library, splash=splash)
+    members = list(map(lambda member: cis_cli.get_compound(library=library, splash=member),
+                       cis_cli.get_members(library=library, splash=splash)))
+
+    return members
+
+
+@pytest.fixture()
 def splash_test_name():
     return ("splash10-0002-0090500000-53c0a0bd55cd73db3ed9", "soqe[M-H] | QExactive | test | negative")
