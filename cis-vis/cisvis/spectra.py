@@ -60,8 +60,9 @@ def generate_histogram_intensity(compound: List[dict], title: str = "intensity d
 
 def generate_histogram(compound: List[dict], aggregateFunction, tile: str = "histogram", label_x: str = "x",
                        label_y: str = "y", format: Optional[str] = None):
+    f, axes = plt.subplots()
     x = list(map(aggregateFunction, compound))
-    p = sns.distplot(x)
+    p = sns.distplot(x, ax=axes)
 
     p.set(xlabel=label_x, ylabel=label_y)
     if format is not None:
@@ -92,8 +93,9 @@ def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title
 
             data.append({'x': x.name, 'y': y.name, 'score': x.spectral_similarity(y, tolerance=tolerance)})
 
+    f, axes = plt.subplots()
     hm = pd.DataFrame(data)
-    sns.heatmap(hm.pivot(index='x', columns='y', values='score'))
+    sns.heatmap(data=hm.pivot(index='x', columns='y', values='score'), ax=axes)
 
     plt.title(title)
     plt.show()
