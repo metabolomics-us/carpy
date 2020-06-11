@@ -151,8 +151,10 @@ def calculate_job_state(job: str) -> Optional[str]:
         finally:
             from collections import Counter
             print("state distribution for job '{}' with {} samples is: {}".format(job, len(states), Counter(states)))
+            counter = 0
             for sample, tracking_state in job_definition.items():
-                print(f"sample {sample} is in state {state} ")
+                print(f"{counter} - sample {sample} is in state {tracking_state} ")
+                counter = counter + 1
             print("done")
 
     else:

@@ -5,6 +5,7 @@ from matplotlib import ticker
 from pandas import DataFrame
 from pyspec.parser.pymzl.msms_spectrum import MSMSSpectrum
 import matplotlib.pyplot as plt
+from pyspec.plot.plot_mass_spectrum import _plot_spectrum, plot_mass_spectrum
 
 
 def to_dataframe(compoud: List[dict]) -> DataFrame:
@@ -29,21 +30,22 @@ def generate_spectra_plot(compound: dict):
     :param compound:
     :return:
     """
-    spec = MSMSSpectrum(compound['spectrum'])
+    plot_mass_spectrum(compound['spectrum'])
+    plt.show()
 
 
 def generate_histogram_accurate_mass(compound: List[dict], title: str = "accurate mass distribution"):
     def function(x: dict):
         return x['accurate_mass']
 
-    generate_histogram(compound, function, title, label_x="accurate mass",format = '{:,.4f}')
+    generate_histogram(compound, function, title, label_x="accurate mass", format='{:,.4f}')
 
 
 def generate_histogram_ri(compound: List[dict], title: str = "retention index distribution"):
     def function(x: dict):
         return x['retention_index']
 
-    generate_histogram(compound, function, title, label_x="retention index",format = '{:,.2f}')
+    generate_histogram(compound, function, title, label_x="retention index", format='{:,.2f}')
 
 
 def generate_histogram_intensity(compound: List[dict], title: str = "intensity distribution"):
@@ -57,7 +59,7 @@ def generate_histogram_intensity(compound: List[dict], title: str = "intensity d
 
 
 def generate_histogram(compound: List[dict], aggregateFunction, tile: str = "histogram", label_x: str = "x",
-                       label_y: str = "y", format:Optional[str] = None):
+                       label_y: str = "y", format: Optional[str] = None):
     x = list(map(aggregateFunction, compound))
     p = sns.distplot(x)
 
