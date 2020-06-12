@@ -29,6 +29,14 @@ def library_test_name():
 
 
 @pytest.fixture()
+def compound(splash_test_name, cis_cli):
+    library = splash_test_name[1]
+    splash = splash_test_name[0]
+    compound = cis_cli.get_compound(library=library, splash=splash)
+    return compound
+
+
+@pytest.fixture()
 def members(splash_test_name, cis_cli):
     library = splash_test_name[1]
     splash = splash_test_name[0]

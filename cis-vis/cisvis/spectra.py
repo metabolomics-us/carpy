@@ -99,3 +99,29 @@ def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title
 
     plt.title(title)
     plt.show()
+
+
+def generate_similarity_histogram(consensus: dict, compoud: List[dict], tolerance: float = 0.01,
+                                  title: str = "similarity histogram plot"):
+    """
+    this generates a similarity heatmap plot between all the compounds in the given list
+    :param compoud:
+    :param tolerance:
+    :param title:
+    :return:
+    """
+    dataframe = to_dataframe(compoud)
+    spectra = dataframe['spectrum'].values
+
+    y = consensus['spectrum']
+    data = []
+    # compute simlarity histogram of all members against the concensus
+    for x in spectra:
+        data.append(x.spectral_similarity(y, tolerance=tolerance))
+    f, axes = plt.subplots()
+    p = sns.distplot(data, ax=axes)
+
+    p.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: "{:,.3f}".format(x)))
+
+    plt.title(title)
+    plt.show()
