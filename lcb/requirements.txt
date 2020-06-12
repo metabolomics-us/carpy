@@ -6,6 +6,7 @@ requests
 pytest
 tqdm
 git+git://github.com/metabolomics-us/carpy.git@steac#egg=stasis-client&subdirectory=stasis-client
+git+git://github.com/metabolomics-us/carpy.git@steac#egg=cis-client&subdirectory=cis-client
 git+git://github.com/metabolomics-us/carpy.git@steac#egg=crag&subdirectory=aggregator
 colorama
 boto3

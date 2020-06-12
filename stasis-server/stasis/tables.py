@@ -861,11 +861,12 @@ def _fetch_experiment(sample: str) -> str:
     )
 
     if result['Items']:
-        print(result['Items'])
         item = result['Items'][0]
 
         if len(result['Items']) > 1:
-            raise Exception("received more than 1 item for this sample: {}".format(sample))
+            raise Exception(
+                "received more than 1 item for this sample: {}. Received {}. Experiments were {}".format(sample, len(
+                    result['Items']), list(map(lambda x: x['experiment'], result['Items']))))
         if 'experiment' in item:
             return item['experiment']
         else:

@@ -8,8 +8,8 @@ apiUrl = "https://test-api.metabolomics.us/stasis/acquisition"
 
 @pytest.mark.parametrize("samples", [1, 10, 25])
 def test_create(samples, api_token):
-    _samplename = 'test_%s' % time.time()
     for sample in range(0, samples):
+        _samplename = 'test_%s' % time.time()
         samplename = "{}_{}".format(_samplename, sample)
 
         response = _upload_test_sample(samplename, samples, api_token)
