@@ -99,7 +99,7 @@ def test_job_result_not_finished(api_token):
     response = requests.get("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
                             headers=api_token)
 
-    assert response.status_code == 503
+    assert response.status_code == 404
 
 
 def test_job_result_file_not_exist(api_token):
@@ -130,7 +130,7 @@ def test_job_result_not_exist(api_token):
     response = requests.get("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
                             headers=api_token)
 
-    assert response.status_code == 503
+    assert response.status_code == 404
 
 
 def test_schedule_job_integration(api_token):
@@ -395,6 +395,98 @@ def test_schedule_job_integration_no_metadata(api_token):
     # fargate should automatically start and process this task for us
     # this should be called infrequently
     while duration < 90000 and exspectation_met is False:
+        response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
+                                headers=api_token)
+        result = json.loads(response.content)
+
+        print(result)
+        if result['job_state'] == 'aggregated_and_uploaded':
+            exspectation_met = True
+            #            assert result['sample_states']['exported'] == 2
+            #            assert result['sample_states']['failed'] == 1
+            break
+
+        if result['job_state'] == 'failed':
+            fail("this job failed!")
+        sleep(10)
+        duration = time() - origin
+
+    assert exspectation_met is True
+
+    print("downloading the result now for {}".format(test_id)
+          )
+    response = requests.head("https://test-api.metabolomics.us/stasis/job/result/{}".format(test_id),
+                             headers=api_token)
+
+    assert response.status_code == 200
+
+
+def test_issue_FIEHNLAB_382(api_token):
+    """
+    https://wcmc.myjetbrains.com/youtrack/issue/FIEHNLAB-382
+    these particular samples keep hanging
+    :param api_token:
+    :return:
+    """
+
+    test_id = "test_job_382_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "soqe[M-H] | QExactive | test | negative",
+        "profile": "carrot.lcms",
+
+    }
+
+    samples = [
+        "SOP_Tissue_PoolMSMS_004_MX524916_negCSH_880_1700",
+        "SOP_Tissue_PoolMSMS_003_MX524916_negCSH_800_880",
+        "SOP_Tissue_PoolMSMS_002_MX524916_negCSH_700_800"
+    ]
+    # reset metadata to state entered for the given samples
+    for sample in samples:
+        send = {
+            "sample": sample,
+            "status": 'entered',
+
+        }
+        result = requests.post('https://test-api.metabolomics.us/stasis/tracking', json=send, headers=api_token)
+        assert result.status_code == 200
+
+        # ensure we only have state entered now for this sample
+        response = requests.get('https://test-api.metabolomics.us/stasis/tracking/{}'.format(sample), headers=api_token)
+        assert 200 == response.status_code
+        content = response.json()
+        assert len(content['status']) == 1
+        assert content['status'][0]['value'] == "entered"
+        assert 'fileHandle' not in content['status'][0]
+
+    # store it
+    response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
+
+    assert response.status_code == 200
+
+    # store sample associations
+    for sample in samples:
+        sample_to_submit = {
+            "job": test_id,
+            "sample": sample,
+        }
+        response = requests.post("https://test-api.metabolomics.us/stasis/job/sample/store", json=sample_to_submit,
+                                 headers=api_token)
+        assert response.status_code == 200
+    # schedule it
+    response = requests.put("https://test-api.metabolomics.us/stasis/job/schedule/{}".format(test_id),
+                            headers=api_token)
+
+    origin = time()
+    duration = 0
+    exspectation_met = False
+
+    # wait until the job is in state aggregated
+    # fargate should automatically start and process this task for us
+    # this should be called infrequently
+    while duration < 100 and exspectation_met is False:
         response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
                                 headers=api_token)
         result = json.loads(response.content)
