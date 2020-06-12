@@ -207,7 +207,7 @@ def test_schedule_job_integration(api_token):
     # wait until the job is in state aggregated
     # fargate should automatically start and process this task for us
     # this should be called infrequently
-    while duration < 90000 and exspectation_met is False:
+    while duration < 900 and exspectation_met is False:
         response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
                                 headers=api_token)
         result = json.loads(response.content)
@@ -305,7 +305,7 @@ def test_schedule_job_integration_no_metadata_single_sample(api_token):
     # wait until the job is in state aggregated
     # fargate should automatically start and process this task for us
     # this should be called infrequently
-    while duration < 90000 and exspectation_met is False:
+    while duration < 900 and exspectation_met is False:
         response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
                                 headers=api_token)
         result = json.loads(response.content)
@@ -394,7 +394,7 @@ def test_schedule_job_integration_no_metadata(api_token):
     # wait until the job is in state aggregated
     # fargate should automatically start and process this task for us
     # this should be called infrequently
-    while duration < 90000 and exspectation_met is False:
+    while duration < 900 and exspectation_met is False:
         response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
                                 headers=api_token)
         result = json.loads(response.content)
