@@ -42,10 +42,10 @@ def test_just_create(samples, api_token):
         assert 200 == response.status_code
 
 
-def _upload_test_sample(samplename, samples, api_token):
+def _upload_test_sample(samplename, samples, api_token, experiment="mySecretExp_{}"):
     data = {
         'sample': samplename,
-        'experiment': 'mySecretExp_{}'.format(samples),
+        'experiment': experiment.format(samples),
         'acquisition': {
             'instrument': 'test inst',
             'ionisation': 'positive',

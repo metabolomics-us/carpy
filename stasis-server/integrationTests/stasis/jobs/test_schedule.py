@@ -4,6 +4,8 @@ from time import time, sleep
 import requests
 from pytest import fail
 
+from integrationTests.stasis.acquisition.test_acquisition import _upload_test_sample
+
 
 def test_store_job_integration(api_token):
     """
@@ -429,7 +431,8 @@ def test_issue_FIEHNLAB_382(api_token):
     :return:
     """
 
-    #TODO register the same sample with a different experiment
+    # TODO register the same sample with a different experiment
+    # to actually simulate this behavior
 
     test_id = "test_job_382_{}".format(time())
 
@@ -462,6 +465,11 @@ def test_issue_FIEHNLAB_382(api_token):
         assert len(content['status']) == 1
         assert content['status'][0]['value'] == "entered"
         assert 'fileHandle' not in content['status'][0]
+
+    # associated samples with some different experument
+    for x in range(0, 4):
+        for y in samples:
+            _upload_test_sample(samplename=y, api_token=api_token, samples=x, experiment="FIEHNLAB382_{}")
 
     # store it
     response = requests.post("https://test-api.metabolomics.us/stasis/job/store", json=job, headers=api_token)
