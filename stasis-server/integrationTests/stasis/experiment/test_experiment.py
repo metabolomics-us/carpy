@@ -5,7 +5,7 @@ import requests
 import simplejson as json
 
 apiUrl = "https://test-api.metabolomics.us/stasis"
-samplename = "test_%s" % str(time.time()).split('.')[-1]
+samplename = "test_%s" % str(time.time())
 delay = 1
 
 

@@ -28,7 +28,7 @@ def delete(events, context):
                 # create a response when sample is found
                 table.delete_item(Key={
                     'id': result['id'],
-                    'experiment': result['experiment']
+                    'sample': result['id']
                 }
                 )
                 return {
