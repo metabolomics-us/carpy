@@ -222,7 +222,7 @@ class TableManager:
                             'KeyType': 'HASH'
                         },
                         {
-                            'AttributeName': 'experiment',
+                            'AttributeName': 'sample',
                             'KeyType': 'RANGE'
                         }
                     ],
@@ -232,30 +232,11 @@ class TableManager:
                             'AttributeType': 'S'
                         },
                         {
-                            'AttributeName': 'experiment',
+                            'AttributeName': 'sample',
                             'AttributeType': 'S'
                         }
                     ],
-                    BillingMode='PAY_PER_REQUEST',
-                    GlobalSecondaryIndexes=[
-                        {
-                            'IndexName': 'experiment-id-index',
-                            'KeySchema': [
-                                {
-                                    'AttributeName': 'experiment',
-                                    'KeyType': 'HASH'
-                                },
-                                {
-                                    'AttributeName': 'id',
-                                    'KeyType': 'RANGE'
-                                }
-                            ],
-                            'Projection': {
-                                'ProjectionType': 'ALL'
-                            },
-
-                        }
-                    ]
+                    BillingMode='PAY_PER_REQUEST'
                 ))
             except ParamValidationError as e:
                 raise e
@@ -823,7 +804,7 @@ def update_sample_status_item(fileHandle, item, new_status, sample, state, table
                 new_status['fileHandle'] = previous['fileHandle']
     # register the new state
     item['status'].append(new_status)
-    item['experiment'] = _fetch_experiment(sample)
+
     item = tm.sanitize_json_for_dynamo(item)
     # put item in table instead of queueing
     saved = {}
