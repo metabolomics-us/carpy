@@ -429,6 +429,8 @@ def test_issue_FIEHNLAB_382(api_token):
     :return:
     """
 
+    #TODO register the same sample with a different experiment
+
     test_id = "test_job_382_{}".format(time())
 
     job = {
@@ -486,7 +488,7 @@ def test_issue_FIEHNLAB_382(api_token):
     # wait until the job is in state aggregated
     # fargate should automatically start and process this task for us
     # this should be called infrequently
-    while duration < 100 and exspectation_met is False:
+    while duration < 90000 and exspectation_met is False:
         response = requests.get("https://test-api.metabolomics.us/stasis/job/status/{}".format(test_id),
                                 headers=api_token)
         result = json.loads(response.content)
@@ -499,6 +501,12 @@ def test_issue_FIEHNLAB_382(api_token):
             break
 
         if result['job_state'] == 'failed':
+            # generate fail report here
+            for sample in samples:
+                response = requests.get('https://test-api.metabolomics.us/stasis/tracking/{}'.format(sample),
+                                        headers=api_token)
+
+                print(response.json())
             fail("this job failed!")
         sleep(10)
         duration = time() - origin
