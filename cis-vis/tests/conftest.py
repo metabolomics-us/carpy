@@ -35,6 +35,12 @@ def compound(splash_test_name, cis_cli):
     compound = cis_cli.get_compound(library=library, splash=splash)
     return compound
 
+@pytest.fixture()
+def compound_with_sim_hits(splash_test_name, cis_cli):
+    library = splash_test_name[1]
+    splash = "splash10-0002-0090000000-77efc06da129bd46ba5f"
+    compound = cis_cli.get_compound(library=library, splash=splash)
+    return compound
 
 @pytest.fixture()
 def members(splash_test_name, cis_cli):
@@ -50,4 +56,4 @@ def members(splash_test_name, cis_cli):
 
 @pytest.fixture()
 def splash_test_name():
-    return ("splash10-0002-0090500000-53c0a0bd55cd73db3ed9", "soqe[M-H] | QExactive | test | negative")
+    return ("splash10-02tc-2390206000-be1400db47ba7333faf1", "soqe[M-H] | QExactive | test | negative")
