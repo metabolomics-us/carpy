@@ -43,6 +43,12 @@ def compound_with_sim_hits(splash_test_name, cis_cli):
     return compound
 
 @pytest.fixture()
+def compound_with_sim_hits2(splash_test_name, cis_cli):
+    library = splash_test_name[1]
+    splash = "splash10-004i-0090000200-0b8bec841b059881a095"
+    compound = cis_cli.get_compound(library=library, splash=splash)
+    return compound
+@pytest.fixture()
 def members(splash_test_name, cis_cli):
     library = splash_test_name[1]
     splash = splash_test_name[0]

@@ -6,10 +6,14 @@ def test_identify_compound_nothing_found(compound):
 
     assert len(result) == 0
 
+
 def test_identify_compound_something_found(compound_with_sim_hits):
     result = identify_compound(compound_with_sim_hits)
 
     assert len(result) > 0
 
-    for hit in result:
-        print(hit)
+
+def test_identify_compound_something_found(compound_with_sim_hits2):
+    result = identify_compound(compound_with_sim_hits2)
+
+    assert len(result) > 0

@@ -15,4 +15,23 @@ def identify_compound(compound: dict, min_similarity=0) -> List[dict]:
 
     result = loader.similarity_serarch(compound['spectrum'], min_similarity=min_similarity,
                                        precursor_mz=compound['precursor_mass'], precursor_tolerance=0.1)
+
+    def convert(hit, score):
+        """
+        converts a spectra to a compound dict
+
+        :param spectra:
+        :param similarity:
+        :return:
+        """
+        return {
+            'spectrum': hit.spectra,
+            'name': hit.name,
+            'id': hit.id,
+            'inchi_key': hit.inchiKey,
+            'splash': hit.splash,
+            'score': score
+        }
+
+    result = list(map(lambda x: convert(x[0], x[1]), result))
     return result
