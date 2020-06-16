@@ -132,6 +132,19 @@ functions:
               paths:
                 library: true
 
+  librarySize:
+    handler: cis/libraries.size
+    events:
+      - http:
+          path: libraries/{library}
+          method: get
+          cors: true
+          documentation:
+            summary: returns the count in compounds of a library by type
+          request:
+            parameter:
+              paths:
+                library: true
   librariesDelete:
     handler: cis/libraries.delete
     events:

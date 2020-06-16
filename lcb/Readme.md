@@ -8,4 +8,5 @@ LCB is the command line driven frontend to interact with the remote lc binbase s
 - query the state of a job
 - download a processed datafile
 - download a processed result file
+- generate compound generation reports
 

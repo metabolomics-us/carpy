@@ -11,3 +11,10 @@ git+git://github.com/metabolomics-us/carpy.git@steac#egg=crag&subdirectory=aggre
 colorama
 boto3
 PyYAML
+git+git://github.com/metabolomics-us/pyspec.git#egg=pyspec&subdirectory=pyspec
+pymzml
+jupyter
+seaborn
+jupyter-datatables
+papermill
+pdfkit

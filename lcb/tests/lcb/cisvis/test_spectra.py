@@ -1,4 +1,4 @@
-from cisvis.spectra import generate_similarity_plot, generate_histogram_intensity, generate_histogram_ri, \
+from lcb.cisvis.spectra import generate_similarity_plot, generate_histogram_intensity, generate_histogram_ri, \
     generate_histogram_accurate_mass, generate_similarity_histogram
 
 

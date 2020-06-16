@@ -1,4 +1,4 @@
-from cisvis.identify import identify_compound
+from lcb.cisvis.identify import identify_compound
 
 
 def test_identify_compound_nothing_found(compound):

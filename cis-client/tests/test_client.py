@@ -8,6 +8,11 @@ def test_exists_library(cis_cli, library_test_name):
     assert result is True
 
 
+def test_size_library(cis_cli, library_test_name):
+    result = cis_cli.size_library(library_test_name)
+    assert len(result) > 0
+
+
 def test_get_compounds(cis_cli, splash_test_name):
     result = cis_cli.get_compounds(splash_test_name[1])
     assert len(result) > 0
