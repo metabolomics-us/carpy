@@ -96,7 +96,7 @@ def test_upload_as_not_supported_extension(job_evaluator, test_job_definition, t
         pass
 
 
-@pytest.mark.parametrize("rerun", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+@pytest.mark.parametrize("rerun", [1, 2, 3])
 def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_definition, test_sample, tmp_path, rerun):
     test_job = test_job_definition
     test_job["method"] = "teddy | 6530 | test | positive"
@@ -149,7 +149,7 @@ def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job_defin
     print("monitoring")
 
     result = job_evaluator.evaluate(
-        {'id': test_job['id'], 'wait': True, 'wait_for': ['failed'], 'wait_attempts': 100,
+        {'id': test_job['id'],  'wait_for': ['failed'], 'wait_attempts': 100,
          'wait_time': 10})[
         'wait_for']
     if result is False:

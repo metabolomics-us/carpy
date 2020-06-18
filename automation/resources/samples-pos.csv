@@ -1,2 +1,3 @@
-samples
-B2A_TeddyLipids_Pos_QC001
+samples,class
+B2A_TeddyLipids_Pos_QC001,class01
+B2A_TeddyLipids_Pos_QC002,class02

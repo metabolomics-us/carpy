@@ -1,11 +1,12 @@
 from typing import List, Optional
+
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from matplotlib import ticker
 from pandas import DataFrame
 from pyspec.parser.pymzl.msms_spectrum import MSMSSpectrum
-import matplotlib.pyplot as plt
-from pyspec.plot.plot_mass_spectrum import _plot_spectrum, plot_mass_spectrum, plot_head_to_tail_mass_spectra
+from pyspec.plot.plot_mass_spectrum import plot_mass_spectrum, plot_head_to_tail_mass_spectra
 
 
 def to_dataframe(compoud: List[dict]) -> DataFrame:
@@ -35,7 +36,7 @@ def generate_spectra_plot(compound: dict):
 
 
 def generate_head_tail_plot(compound: dict, member: dict):
-    plot_head_to_tail_mass_spectra(compound['spectrum'], member['spectrum'])
+    plot_head_to_tail_mass_spectra(compound['spectrum'], member['spectrum'], title=member['id'])
     plt.show()
 
 

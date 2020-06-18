@@ -44,14 +44,14 @@ def compound(splash_test_name, cis_cli):
 @pytest.fixture()
 def compound_with_sim_hits(splash_test_name, cis_cli):
     library = splash_test_name[1]
-    splash = "splash10-0002-0090000000-77efc06da129bd46ba5f"
+    splash = "splash10-0002-0900000000-bc79c0a270a8057469b4"
     compound = cis_cli.get_compound(library=library, splash=splash)
     return compound
 
 @pytest.fixture()
 def compound_with_sim_hits2(splash_test_name, cis_cli):
     library = splash_test_name[1]
-    splash = "splash10-004i-0090000200-0b8bec841b059881a095"
+    splash = "splash10-0002-0900000000-bc79c0a270a8057469b4"
     compound = cis_cli.get_compound(library=library, splash=splash)
     return compound
 @pytest.fixture()
@@ -68,7 +68,7 @@ def members(splash_test_name, cis_cli):
 
 @pytest.fixture()
 def splash_test_name():
-    return ("splash10-02tc-2390206000-be1400db47ba7333faf1", "soqe[M-H] | QExactive | test | negative")
+    return ("splash10-01b9-0970000000-1a036ef46908812dc204", "soqe[M-H] | QExactive | test | negative")
 
 @pytest.fixture
 def stasis_token():
