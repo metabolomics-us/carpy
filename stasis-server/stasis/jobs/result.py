@@ -1,7 +1,8 @@
 import base64
-import simplejson as json
 import os
 import traceback
+
+import simplejson as json
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.service.Bucket import Bucket
@@ -24,7 +25,21 @@ def exist(events, context):
 
             job = events['pathParameters']['job']
             db = Bucket(os.environ["dataBucket"])
+            state: str = get_job_state(job)
 
+            if state is None:
+                return {
+                    "statusCode": 503,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps({"error": "job does not exist!", "job": job})
+                }
+            if state != AGGREGATED_AND_UPLOADED:
+                return {
+                    "statusCode": 503,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps({"error": "job not ready yet!", "job": job, "state": state,
+                                        "required_state": AGGREGATED_AND_UPLOADED})
+                }
             filename = "{}.zip".format(job)
 
             if db.exists(filename):

@@ -1,9 +1,9 @@
-import base64
 import json
-import yaml
 import os
 from time import sleep
 
+import yaml
+from crag.aws import JobAggregator
 from stasis_client.client import StasisClient
 
 from lcb.evaluator import Evaluator
@@ -130,8 +130,15 @@ class JobEvaluator(Evaluator):
                 return False
 
     def aggregate(self, id, args):
-        pass
-        assert False
+
+        arguments = {
+            'job': id,
+            'zero_replacement': True,
+            'upload': False,
+            'mz_tolerance': 0.01,
+            'rt_tolerance': 0.1,
+        }
+        JobAggregator(arguments).aggregate_job(job=id, upload=False)
 
     def monitor(self, id, args):
         """

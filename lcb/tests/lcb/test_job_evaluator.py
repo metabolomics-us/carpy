@@ -149,7 +149,7 @@ def test_upload_and_process_and_monitor_and_failed(job_evaluator, test_job_defin
     print("monitoring")
 
     result = job_evaluator.evaluate(
-        {'id': test_job['id'], 'wait': True, 'wait_for': ['failed'], 'wait_attempts': 100,
+        {'id': test_job['id'],  'wait_for': ['failed'], 'wait_attempts': 100,
          'wait_time': 10})[
         'wait_for']
     if result is False:

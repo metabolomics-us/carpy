@@ -1,7 +1,5 @@
 from time import time
 
-import requests
-
 from crag.aws import JobAggregator
 
 
