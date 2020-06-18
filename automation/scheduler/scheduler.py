@@ -300,6 +300,9 @@ class Scheduler(ABC):
             else:
                 data = pd.read_csv(f'{folder}/{input_file}')
 
+            print(data[sheet])
+            exit()
+
             for sheet in data.keys():
                 for sample in data[sheet]:
                     sample = self.fix_sample_filename(sample)

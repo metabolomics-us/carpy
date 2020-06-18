@@ -21,7 +21,7 @@ if __name__ == "__main__":
         SystemExit('Missing experiment folder')
     folder = args.file.rstrip('/')
 
-    with open(f'{folder}/experiment.yaml', 'r') as stream:
+    with open(f'{folder}/experiment.yml', 'r') as stream:
         try:
             config = yaml.safe_load(stream)
             if args.test:
@@ -31,7 +31,7 @@ if __name__ == "__main__":
         except yaml.YAMLError as exc:
             print(exc)
         except FileNotFoundError as fnf:
-            print(f'Can\'t find experiment.yaml file\n\tERROR: {fnf}')
+            print(f'Can\'t find experiment.yml file\n\tERROR: {fnf}')
             exit(-1)
 
         if 'env' not in config:
