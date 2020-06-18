@@ -308,6 +308,8 @@ class StasisClient:
         downloads the result of a job as base64 encoded string
         :return:
         """
+
+        #TODO check state
         bucket_name = self.get_aggregated_bucket()
         try:
             key = "{}.zip".format(job)

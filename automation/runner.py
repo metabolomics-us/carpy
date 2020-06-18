@@ -10,7 +10,7 @@ from scheduler.scheduler import Scheduler
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('file', help='Folder containing the experiment definition yaml or the samples to '
+    parser.add_argument('file', help='Experiment definition yml or the samples to '
                                      'prepare/schedule', type=str, default='__unknown__')
 
     parser.add_argument('-t', '--test', help='Test run. Do not submit any data.', action='store_true')
@@ -19,9 +19,12 @@ if __name__ == "__main__":
     if args.file == '__unknown__':
         print(parser.print_help())
         SystemExit('Missing experiment folder')
-    folder = args.file.rstrip('/')
+    folder, cfgfile = args.file.rsplit('/', 1)
 
-    with open(f'{folder}/experiment.yml', 'r') as stream:
+    print(f'folder: {folder}')
+    print(f'file: {args.file}')
+
+    with open(f'{args.file}', 'r') as stream:
         try:
             config = yaml.safe_load(stream)
             if args.test:
