@@ -11,6 +11,8 @@ import tqdm
 from pandas import DataFrame
 from stasis_client.client import StasisClient
 
+TARGET_COLUMNS = ['No', 'label', 'Target RI(s)', 'Target mz', 'InChIKey', 'Target Type']
+
 AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
 sheet_names = {'intensity': ['Intensity matrix'],
@@ -267,6 +269,7 @@ class Aggregator:
                     'Target RI(s)': x['retentionTimeInSeconds'],
                     'Target mz': x['mass'],
                     'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,
+                    'Target Type': x['targetType']
                 })
             except TypeError as e:
                 bar.write(f'Error adding {x} to the result set. {e.args}')
@@ -275,11 +278,11 @@ class Aggregator:
 
         df = pd.DataFrame(rows)  # .set_index('ID')
 
-        return df[['No', 'label', 'Target RI(s)', 'Target mz', 'InChIKey']]
+        return df[TARGET_COLUMNS]
 
     @staticmethod
     def build_target_identifier(target):
-        return f"{target['name']}_{target['retentionTimeInSeconds'] / 60:.1f}_{target['mass']:.1f}"
+        return f"{target['name']}_{target['retentionTimeInSeconds'] / 60:.2f}_{target['mass']:.4f}"
 
     def process_sample_list(self, samples, destination):
         """
@@ -386,9 +389,9 @@ class Aggregator:
         pd.set_option('display.width', 1000)
 
         try:
-            discovery = intensity[intensity.columns[5:]].apply(
+            discovery = intensity[intensity.columns[len(TARGET_COLUMNS):]].apply(
                 lambda row: row.dropna()[row > 0].count() / len(row.dropna()), axis=1)
-            intensity.insert(loc=5, column='found %', value=discovery)
+            intensity.insert(loc=len(TARGET_COLUMNS)+1, column='found %', value=discovery)
         except Exception as e:
             print(f'Error in discovery calculation: {str(e.args)}')
 
@@ -412,10 +415,10 @@ class Aggregator:
 
     def filter_msms(self, msms, intensity):
 
-        indices = intensity.iloc[:, 5:].idxmax(axis=1)
+        indices = intensity.iloc[:, len(TARGET_COLUMNS):].idxmax(axis=1)
 
         reducedMSMS = msms.apply(lambda x: x[indices[x['No'] - 1]], axis=1)
-        msms.drop(msms.columns[5:], axis=1, inplace=True)
+        msms.drop(msms.columns[len(TARGET_COLUMNS):], axis=1, inplace=True)
         msms['MSMS Spectrum'] = reducedMSMS
         return msms
 
@@ -432,6 +435,7 @@ class Aggregator:
         targets = [x['target'] for x in
                    [results[0]['injections'][k]['results'] for k in list(results[0]['injections'].keys())][0]]
 
+        targets = list(filter(lambda x: x['targetType'] != 'UNCONFIRMED_CONSENSUS', targets))
         return targets
 
     def aggregate(self):
@@ -449,7 +453,8 @@ class Aggregator:
                 raise FileNotFoundError(f'file name {sample_file} does not exist')
 
             with open(sample_file) as processed_samples:
-                samples = [p.split(',')[0] for p in processed_samples.read().strip().splitlines() if p and p != 'samples']
+                samples = [p.split(',')[0] for p in processed_samples.read().strip().splitlines() if
+                           p and p != 'samples']
                 self.aggregate_samples(samples, os.path.splitext(sample_file)[0])
 
     def aggregate_samples(self, samples: List[str], destination: str = './'):
