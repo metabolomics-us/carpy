@@ -312,8 +312,8 @@ class Aggregator:
             if sample in ['samples']:
                 continue
 
-            result_file = f'{sample}.mzml.json'
-            saved_result = f'{dir}/{result_file}'
+            result_file = f'{sample}'
+            saved_result = f'{dir}/{result_file}.mzml.json'
 
             sbar.write(f'looking for {result_file}')
             if self.args.get('save') or not os.path.exists(saved_result):
