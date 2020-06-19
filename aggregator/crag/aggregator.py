@@ -11,6 +11,8 @@ import tqdm
 from pandas import DataFrame
 from stasis_client.client import StasisClient
 
+TARGET_COLUMNS = ['No', 'label', 'Target RI(s)', 'Target mz', 'InChIKey', 'Type']
+
 AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
 sheet_names = {'intensity': ['Intensity matrix'],
@@ -267,6 +269,7 @@ class Aggregator:
                     'Target RI(s)': x['retentionTimeInSeconds'],
                     'Target mz': x['mass'],
                     'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,
+                    'Type': x['targetType']
                 })
             except TypeError as e:
                 bar.write(f'Error adding {x} to the result set. {e.args}')
@@ -275,7 +278,7 @@ class Aggregator:
 
         df = pd.DataFrame(rows)  # .set_index('ID')
 
-        return df[['No', 'label', 'Target RI(s)', 'Target mz', 'InChIKey']]
+        return df[TARGET_COLUMNS]
 
     @staticmethod
     def build_target_identifier(target):
@@ -386,9 +389,9 @@ class Aggregator:
         pd.set_option('display.width', 1000)
 
         try:
-            discovery = intensity[intensity.columns[5:]].apply(
+            discovery = intensity[intensity.columns[len(TARGET_COLUMNS):]].apply(
                 lambda row: row.dropna()[row > 0].count() / len(row.dropna()), axis=1)
-            intensity.insert(loc=5, column='found %', value=discovery)
+            intensity.insert(loc=len(TARGET_COLUMNS), column='found %', value=discovery)
         except Exception as e:
             print(f'Error in discovery calculation: {str(e.args)}')
 
@@ -412,10 +415,10 @@ class Aggregator:
 
     def filter_msms(self, msms, intensity):
 
-        indices = intensity.iloc[:, 5:].idxmax(axis=1)
+        indices = intensity.iloc[:, len(TARGET_COLUMNS):].idxmax(axis=1)
 
         reducedMSMS = msms.apply(lambda x: x[indices[x['No'] - 1]], axis=1)
-        msms.drop(msms.columns[5:], axis=1, inplace=True)
+        msms.drop(msms.columns[len(TARGET_COLUMNS):], axis=1, inplace=True)
         msms['MSMS Spectrum'] = reducedMSMS
         return msms
 
