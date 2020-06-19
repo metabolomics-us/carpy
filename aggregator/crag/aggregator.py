@@ -11,7 +11,7 @@ import tqdm
 from pandas import DataFrame
 from stasis_client.client import StasisClient
 
-TARGET_COLUMNS = ['No', 'label', 'Target RI(s)', 'Target mz', 'InChIKey', 'Type']
+TARGET_COLUMNS = ['No', 'label', 'Target RI(s)', 'Target mz', 'InChIKey', 'Target Type']
 
 AVG_BR_ = 'AVG (br)'
 RSD_BR_ = '% RSD (br)'
@@ -269,7 +269,7 @@ class Aggregator:
                     'Target RI(s)': x['retentionTimeInSeconds'],
                     'Target mz': x['mass'],
                     'InChIKey': x['name'].split('_')[-1] if pattern.match(x['name']) else None,
-                    'Type': x['targetType']
+                    'Target Type': x['targetType']
                 })
             except TypeError as e:
                 bar.write(f'Error adding {x} to the result set. {e.args}')
@@ -391,7 +391,7 @@ class Aggregator:
         try:
             discovery = intensity[intensity.columns[len(TARGET_COLUMNS):]].apply(
                 lambda row: row.dropna()[row > 0].count() / len(row.dropna()), axis=1)
-            intensity.insert(loc=len(TARGET_COLUMNS), column='found %', value=discovery)
+            intensity.insert(loc=len(TARGET_COLUMNS)+1, column='found %', value=discovery)
         except Exception as e:
             print(f'Error in discovery calculation: {str(e.args)}')
 
@@ -469,4 +469,4 @@ class Aggregator:
             print(f'Creating destination folder: {destination}')
             os.makedirs(destination, exist_ok=True)
 
-        self.process_sample_list(samples, destination)
+        self.process_sample_list(samples[:5], destination)
