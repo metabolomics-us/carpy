@@ -27,11 +27,15 @@ class AggregateEvaluator(Evaluator):
 
     def remote_data(self, args):
 
-        arguments = {
-            'job': args['remote'],
-            'zero_replacement': args['zero_replacement'],
-            'upload': False,
-            'mz_tolerance': args['mz_tolerance'],
-            'rt_tolerance': args['rt_tolerance'],
-        }
-        JobAggregator(arguments).aggregate_job(job=args['remote'], upload=False)
+        if args['remote'] == '*':
+            print("aggregating all known jobs")
+            raise Exception("todo!!!")
+        else:
+            arguments = {
+                'job': args['remote'],
+                'zero_replacement': args['zero_replacement'],
+                'upload': False,
+                'mz_tolerance': args['mz_tolerance'],
+                'rt_tolerance': args['rt_tolerance'],
+            }
+            JobAggregator(arguments).aggregate_job(job=args['remote'], upload=False)

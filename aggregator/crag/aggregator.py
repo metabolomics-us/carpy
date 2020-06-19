@@ -469,4 +469,4 @@ class Aggregator:
             print(f'Creating destination folder: {destination}')
             os.makedirs(destination, exist_ok=True)
 
-        self.process_sample_list(samples[:5], destination)
+        self.process_sample_list(samples, destination)
