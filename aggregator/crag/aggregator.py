@@ -140,7 +140,7 @@ class Aggregator:
         else:
             suffix += '-norepl'
 
-        separator = '' if file.endswith("/") else '-'
+        separator = '' if file.endswith("/") else '/'
         output_name = f'{file}{separator}{type.lower().replace(" ", "_")}-{suffix}.xlsx'
 
         if type == 'Correction curve':
@@ -469,4 +469,4 @@ class Aggregator:
             print(f'Creating destination folder: {destination}')
             os.makedirs(destination, exist_ok=True)
 
-        self.process_sample_list(samples, destination)
+        self.process_sample_list(samples[:2], destination)
