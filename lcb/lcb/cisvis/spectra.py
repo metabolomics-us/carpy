@@ -66,17 +66,21 @@ def generate_histogram_intensity(compound: List[dict], title: str = "intensity d
 
 def generate_histogram(compound: List[dict], aggregateFunction, tile: str = "histogram", label_x: str = "x",
                        label_y: str = "count", format: Optional[str] = None):
-    f, axes = plt.subplots()
-    x = list(map(aggregateFunction, compound))
-    p = sns.distplot(x, ax=axes)
+    try:
+        f, axes = plt.subplots()
+        x = list(map(aggregateFunction, compound))
+        p = sns.distplot(x, ax=axes)
 
-    p.set(xlabel=label_x, ylabel=label_y)
-    if format is not None:
-        p.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: format.format(x)))
+        p.set(xlabel=label_x, ylabel=label_y)
+        if format is not None:
+            p.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: format.format(x)))
 
-    plt.title(tile)
+        plt.title(tile)
 
-    plt.show()
+        plt.show()
+
+    except Exception as e:
+        print(e)
 
 
 def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title: str = "similarity plot"):
@@ -87,24 +91,29 @@ def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title
     :param title:
     :return:
     """
-    dataframe = to_dataframe(compoud)
-    spectra = dataframe['spectrum'].values
 
-    data = []
-    # compute simlarity matrix
-    for first in spectra:
-        for second in spectra:
-            x: MSMSSpectrum = first
-            y: MSMSSpectrum = second
+    try:
+        dataframe = to_dataframe(compoud)
+        spectra = dataframe['spectrum'].values
 
-            data.append({'x': x.name, 'y': y.name, 'score': x.spectral_similarity(y, tolerance=tolerance)})
+        data = []
+        # compute simlarity matrix
+        for first in spectra:
+            for second in spectra:
+                x: MSMSSpectrum = first
+                y: MSMSSpectrum = second
 
-    f, axes = plt.subplots()
-    hm = pd.DataFrame(data)
-    sns.heatmap(data=hm.pivot(index='x', columns='y', values='score'), ax=axes)
+                data.append({'x': x.name, 'y': y.name, 'score': x.spectral_similarity(y, tolerance=tolerance)})
 
-    plt.title(title)
-    plt.show()
+        f, axes = plt.subplots()
+        hm = pd.DataFrame(data)
+        sns.heatmap(data=hm.pivot(index='x', columns='y', values='score'), ax=axes)
+
+        plt.title(title)
+        plt.show()
+        return hm
+    except Exception as e:
+        print(e)
 
 
 def generate_similarity_histogram(consensus: dict, compoud: List[dict], tolerance: float = 0.01,
