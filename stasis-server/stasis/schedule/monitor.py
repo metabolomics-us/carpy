@@ -43,7 +43,6 @@ def monitor_queue(event, context):
         else:
             print(f"no task of type {x} was running. we can continue!")
 
-
     # stasis is only allowed to run these 2 types of task
     slots = _free_task_count(service=SECURE_CARROT_RUNNER) + _free_task_count(service=SECURE_CARROT_AGGREGATOR)
 
@@ -89,6 +88,7 @@ def monitor_queue(event, context):
                 slots = _free_task_count(service=body[SERVICE])
 
                 if slots > 0:
+                    print("{} free slots to run for {}".format(slots, body[SERVICE]))
                     if body[SERVICE] == SECURE_CARROT_RUNNER:
                         result.append(schedule_processing_to_fargate({'body': json.dumps(body)}, {}))
                     elif body[SERVICE] == SECURE_CARROT_AGGREGATOR:
@@ -101,6 +101,7 @@ def monitor_queue(event, context):
                         ReceiptHandle=receipt_handle
                     )
                 else:
+                    print("no free slots for {}".format(body[SERVICE]))
                     # nothing found
                     pass
             except Exception as e:
