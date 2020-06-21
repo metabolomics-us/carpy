@@ -65,7 +65,7 @@ def generate_histogram_intensity(compound: List[dict], title: str = "intensity d
 
 
 def generate_histogram(compound: List[dict], aggregateFunction, tile: str = "histogram", label_x: str = "x",
-                       label_y: str = "y", format: Optional[str] = None):
+                       label_y: str = "count", format: Optional[str] = None):
     f, axes = plt.subplots()
     x = list(map(aggregateFunction, compound))
     p = sns.distplot(x, ax=axes)
