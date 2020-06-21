@@ -40,34 +40,39 @@ def generate_head_tail_plot(compound: dict, member: dict):
     plt.show()
 
 
-def generate_histogram_accurate_mass(compound: List[dict], title: str = "accurate mass distribution"):
+def generate_histogram_accurate_mass(compound: List[dict], title: str = "accurate mass distribution", axes=None):
     def function(x: dict):
         return x['accurate_mass']
 
-    generate_histogram(compound, function, title, label_x="accurate mass", format='{:,.4f}')
+    generate_histogram(compound, function, title, label_x="accurate mass", format='{:,.4f}', axes=axes)
 
 
-def generate_histogram_ri(compound: List[dict], title: str = "retention index distribution"):
+def generate_histogram_ri(compound: List[dict], title: str = "retention index distribution", axes=None):
     def function(x: dict):
         return x['retention_index']
 
-    generate_histogram(compound, function, title, label_x="retention index", format='{:,.2f}')
+    generate_histogram(compound, function, title, label_x="retention index", format='{:,.2f}', axes=axes)
 
 
-def generate_histogram_intensity(compound: List[dict], title: str = "intensity distribution"):
+def generate_histogram_intensity(compound: List[dict], title: str = "intensity distribution", axes=None):
     def function(x: dict):
         spec: MSMSSpectrum = MSMSSpectrum(x['spectrum'])
         highest = spec.highestPeaks(1)[0, 1]
 
         return highest
 
-    generate_histogram(compound, function, title, label_x="intensity", format='{:,.0f}')
+    generate_histogram(compound, function, title, label_x="intensity", format='{:,.0f}', axes=axes)
 
 
 def generate_histogram(compound: List[dict], aggregateFunction, tile: str = "histogram", label_x: str = "x",
-                       label_y: str = "count", format: Optional[str] = None):
+                       label_y: str = "count", format: Optional[str] = None, axes=None):
     try:
-        f, axes = plt.subplots()
+        if axes is None:
+            show = True
+            f, axes = plt.subplots(
+            )
+        else:
+            show = False
         x = list(map(aggregateFunction, compound))
         p = sns.distplot(x, ax=axes)
 
@@ -77,13 +82,14 @@ def generate_histogram(compound: List[dict], aggregateFunction, tile: str = "his
 
         plt.title(tile)
 
-        plt.show()
+        if show:
+            plt.show()
 
     except Exception as e:
         print(e)
 
 
-def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title: str = "similarity plot"):
+def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title: str = "similarity plot", axes=None):
     """
     this generates a similarity heatmap plot between all the compounds in the given list
     :param compoud:
@@ -105,7 +111,8 @@ def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title
 
                 data.append({'x': x.name, 'y': y.name, 'score': x.spectral_similarity(y, tolerance=tolerance)})
 
-        f, axes = plt.subplots()
+        if axes is None:
+            f, axes = plt.subplots()
         hm = pd.DataFrame(data)
         sns.heatmap(data=hm.pivot(index='x', columns='y', values='score'), ax=axes)
 
@@ -117,7 +124,7 @@ def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title
 
 
 def generate_similarity_histogram(consensus: dict, compoud: List[dict], tolerance: float = 0.01,
-                                  title: str = "similarity histogram plot"):
+                                  title: str = "similarity histogram plot", axes=None):
     """
     this generates a similarity heatmap plot between all the compounds in the given list
     :param compoud:
@@ -133,7 +140,8 @@ def generate_similarity_histogram(consensus: dict, compoud: List[dict], toleranc
     # compute simlarity histogram of all members against the concensus
     for x in spectra:
         data.append(x.spectral_similarity(y, tolerance=tolerance))
-    f, axes = plt.subplots()
+    if axes is None:
+        f, axes = plt.subplots()
     p = sns.distplot(data, ax=axes)
 
     p.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: "{:,.3f}".format(x)))
