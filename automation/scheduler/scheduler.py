@@ -52,7 +52,7 @@ class Scheduler(ABC):
 
         return {'x-api-key': api_token}
 
-    def create_metadata(self, filename, chromatography, cls, is_retry=False):
+    def create_metadata(self, filename, chromatography, cls, specie, organ, is_retry=False):
         """Adds basic metadata information to stasis.
         Use this only for samples handled outside the Acquisition Table Generator
 
@@ -66,6 +66,8 @@ class Scheduler(ABC):
             Status code of update. 200 means sample scheduled successfully, error otherwise.
         """
         self.config['experiment']['metadata']['class'] = cls
+        self.config['experiment']['metadata']['species'] = specie
+        self.config['experiment']['metadata']['organ'] = organ
 
         data = {'sample': filename, 'experiment': self.config['experiment']['name'], 'acquisition': {
             'instrument': chromatography['instrument'],
@@ -94,7 +96,7 @@ class Scheduler(ABC):
                 if not is_retry:
                     print('Timeout, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
-                    self.create_metadata(filename, chromatography, 'class1', True)
+                    self.create_metadata(filename, chromatography, cls, specie, organ, True)
                 else:
                     self.acquisition_status.append(filename)
                     status = timeout.response.status_code
@@ -103,7 +105,7 @@ class Scheduler(ABC):
                 if not is_retry:
                     print('Timeout, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
-                    self.create_metadata(filename, chromatography, 'class1', True)
+                    self.create_metadata(filename, chromatography, cls, specie, organ, True)
                 else:
                     self.acquisition_status.append(filename)
                     status = ex.response.status_code
@@ -111,7 +113,7 @@ class Scheduler(ABC):
                 if not is_retry:
                     print('Connection error, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
-                    self.create_metadata(filename, chromatography, 'class1', True)
+                    self.create_metadata(filename, chromatography, cls, specie, organ, True)
                 else:
                     self.acquisition_status.append(filename)
                     status = 999
@@ -119,7 +121,7 @@ class Scheduler(ABC):
                 if not is_retry:
                     print('Unknown error, retrying in 5 seconds...', flush=True)
                     time.sleep(5)
-                    self.create_metadata(filename, chromatography, 'class1', True)
+                    self.create_metadata(filename, chromatography, cls, specie, organ, True)
                 else:
                     print(f'unknown error after retrying. Error: {str(e.args)}', flush=True)
                     self.acquisition_status.append(filename)
@@ -303,9 +305,9 @@ class Scheduler(ABC):
                 input_file = chromatography['raw_files_list']
 
             if input_file.endswith('xlsx'):
-                data = pd.read_excel(f'{folder}/{input_file}')
+                data = pd.read_excel(f'{folder}/{input_file}', usecols=['samples', 'class', 'specie', 'organ'])
             else:
-                data = pd.read_csv(f'{folder}/{input_file}')
+                data = pd.read_csv(f'{folder}/{input_file}', usecols=['samples', 'class', 'specie', 'organ'])
 
             for i, row in data.iterrows():
                 fsample = self.fix_sample_filename(row['samples'])
@@ -322,7 +324,7 @@ class Scheduler(ABC):
                     # Acquisition Metadata should happen BEFORE tracking status
                     if self.config['create_acquisition']:
                         # add acquisition table generation due to manual processing
-                        results[mode][dupe]['acquisition'] = json.dumps(self.create_metadata(fsample, chromatography, row['class']))
+                        results[mode][dupe]['acquisition'] = json.dumps(self.create_metadata(fsample, chromatography, row['class'], row['specie'], row['organ']))
 
                     # Tracking status should happen AFTER Acquisition table generation
                     if self.config['create_tracking']:
