@@ -35,8 +35,9 @@ def generate_spectra_plot(compound: dict):
     plt.show()
 
 
-def generate_head_tail_plot(compound: dict, member: dict):
-    plot_head_to_tail_mass_spectra(compound['spectrum'], member['spectrum'], title=member['id'])
+def generate_head_tail_plot(compound: dict, member: dict,figsize):
+    plot_head_to_tail_mass_spectra(member['spectrum'], compound['spectrum'],
+                                   title="id: {}. sample: {}".format(member['id'], member['sample']),figsize=figsize)
     plt.show()
 
 
@@ -81,6 +82,8 @@ def generate_histogram(compound: List[dict], aggregateFunction, tile: str = "his
             p.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: format.format(x)))
 
         plt.title(tile)
+        for tick in axes.get_xticklabels():
+            tick.set_rotation(45)
 
         if show:
             plt.show()
@@ -109,12 +112,12 @@ def generate_similarity_plot(compoud: List[dict], tolerance: float = 0.01, title
                 x: MSMSSpectrum = first
                 y: MSMSSpectrum = second
 
-                data.append({'x': x.name, 'y': y.name, 'score': x.spectral_similarity(y, tolerance=tolerance)})
+                data.append({'x (spectra id)': x.name, 'y (spectra id)': y.name, 'score': x.spectral_similarity(y, tolerance=tolerance)})
 
         if axes is None:
             f, axes = plt.subplots()
         hm = pd.DataFrame(data)
-        sns.heatmap(data=hm.pivot(index='x', columns='y', values='score'), ax=axes)
+        sns.heatmap(data=hm.pivot(index='x (spectra id)', columns='y (spectra id)', values='score'), ax=axes)
 
         plt.title(title)
         plt.show()
