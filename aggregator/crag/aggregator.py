@@ -1,3 +1,4 @@
+import bz2
 import os
 import re
 import time
@@ -300,6 +301,8 @@ class Aggregator:
         # creating target list
         results = []
 
+        os.makedirs("{}/json".format(destination), exist_ok=True)
+
         dir = self.args.get('dir') or '/tmp'
 
         if not os.path.exists(dir):
@@ -340,6 +343,9 @@ class Aggregator:
                     f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {result_file} located at {dir}')
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
+                with bz2.BZ2File("{}/json/{}.mzml.json".format(destination,sample), 'w', compresslevel=9) as outfile:
+                    d = json.dumps(resdata, indent=4)
+                    outfile.write(d.encode())
             else:
                 raise Exception('this should not have happened!')
 
@@ -391,7 +397,7 @@ class Aggregator:
         try:
             discovery = intensity[intensity.columns[len(TARGET_COLUMNS):]].apply(
                 lambda row: row.dropna()[row > 0].count() / len(row.dropna()), axis=1)
-            intensity.insert(loc=len(TARGET_COLUMNS)+1, column='found %', value=discovery)
+            intensity.insert(loc=len(TARGET_COLUMNS) + 1, column='found %', value=discovery)
         except Exception as e:
             print(f'Error in discovery calculation: {str(e.args)}')
 
@@ -412,6 +418,7 @@ class Aggregator:
             except Exception as exerr:
                 print(f'Error creating excel file for {t}')
                 print(str(exerr))
+        # save json files to the result folder
 
     def filter_msms(self, msms, intensity):
 
@@ -469,4 +476,4 @@ class Aggregator:
             print(f'Creating destination folder: {destination}')
             os.makedirs(destination, exist_ok=True)
 
-        self.process_sample_list(samples, destination)
+        self.process_sample_list(samples[:3], destination)
