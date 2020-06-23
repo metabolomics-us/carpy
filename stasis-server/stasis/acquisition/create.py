@@ -39,7 +39,7 @@ def triggerEvent(data):
         # add 'entered' tracking status
         tracking = {
             'id': data['id'],
-            'experiment': data['experiment'] if 'experiment' in data else _fetch_experiment(data['sample']),
+            'experiment': data['experiment'] if data['experiment'] is not None else _fetch_experiment(data['sample']),
             'sample': data['sample'],
             'status': [{
                 'time': data['time'],

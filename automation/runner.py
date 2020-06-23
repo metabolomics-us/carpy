@@ -2,10 +2,27 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import os
 
 import yaml
+from stasis_client.client import StasisClient
 
 from scheduler.scheduler import Scheduler
+
+
+def create_stasis_instance(config):
+    if 'env' in config and config['env'] == 'prod':
+        url = 'https://api.metabolomics.us/stasis'
+    else:
+        url = f'https://{config["env"].lower()}-api.metabolomics.us/stasis'
+    key_name = f'{config["env"].upper()}_STASIS_API_TOKEN'
+    key = os.environ[key_name].strip()
+
+    print(f'Stasis api address: {url}')
+    print(f'Stasis api key from: {key_name} = {key}')
+
+    return StasisClient(url, key)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -42,5 +59,5 @@ if __name__ == "__main__":
         if 'task_version' not in config:
             config['task_version'] = 164
 
-        sched = Scheduler(config)
+        sched = Scheduler(config, create_stasis_instance(config))
         sched.process(folder)
