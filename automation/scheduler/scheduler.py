@@ -30,17 +30,17 @@ class Scheduler(ABC):
             self.token_var_name = f'{self.config["env"]}_STASIS_API_TOKEN'
 
         print(f'Stasis api address: {self.apiBase}')
-        print(f'Stasis api key from: {self.token_var_name}')
+        print(f'Stasis api key from: {self.token_var_name} = {os.environ[self.token_var_name].strip()}')
 
         self.tracking_status = []
         self.acquisition_status = []
         self.schedule_status = []
 
-    def _api_token(self):
-        """Requests an API token
+    def headers(self):
+        """Creates the request headers
 
         Returns:
-            Authorization token
+            A dict with minimum required headers
 
         Raises:
             RequestException
@@ -50,7 +50,9 @@ class Scheduler(ABC):
             raise RequestException(f"Missing authorization token. Please add a '{self.token_var_name}' environment "
                                    "variable with the correct value")
 
-        return {'x-api-key': api_token}
+        return {'Content-type': 'application/json',
+                'Accept': 'application/json',
+                'x-api-key': api_token}
 
     def create_metadata(self, filename, chromatography, cls, specie, organ, is_retry=False):
         """Adds basic metadata information to stasis.
@@ -58,8 +60,10 @@ class Scheduler(ABC):
 
         Args:
             filename: sample filename
-            chromatography: specifies the 'instrument name', 'column', 'method' and 'ion mode' used to run the sample
+            chromatography: dictionary containing values for method, instrument, column and ion_mode
             cls: sample class
+            specie: sample specie
+            organ: sample organ
             is_retry: indicates if the current call is a retry
 
         Returns:
@@ -69,17 +73,20 @@ class Scheduler(ABC):
         self.config['experiment']['metadata']['species'] = specie
         self.config['experiment']['metadata']['organ'] = organ
 
-        data = {'sample': filename, 'experiment': self.config['experiment']['name'], 'acquisition': {
-            'instrument': chromatography['instrument'],
-            'method': chromatography['method'],
-            'column': chromatography['column'],
-            'ionisation': chromatography['ion_mode']
-        }, 'processing': {
-            'method': f'{chromatography["method"]} | '
-                      f'{chromatography["instrument"]} | '
-                      f'{chromatography["column"]} | '
-                      f'{chromatography["ion_mode"]}'
-        }, 'metadata': self.config['experiment']['metadata']}
+        data = {'sample': filename, 'experiment': self.config['experiment']['name'],
+                'acquisition': {
+                    'instrument': chromatography['instrument'],
+                    'method': chromatography['method'],
+                    'column': chromatography['column'],
+                    'ionisation': chromatography['ion_mode']
+                },
+                'processing': {
+                    'method': f'{chromatography["method"]} | '
+                              f'{chromatography["instrument"]} | '
+                              f'{chromatography["column"]} | '
+                              f'{chromatography["ion_mode"]}'
+                },
+                'metadata': self.config['experiment']['metadata']}
 
         status = {}
         if self.config['test']:
@@ -87,7 +94,7 @@ class Scheduler(ABC):
             status = {'status_code': 200}
         else:
             try:
-                response = requests.post('%s/acquisition' % self.apiBase, json=data, headers=self._api_token())
+                response = requests.post(f'{self.apiBase}/acquisition', json=data, headers=self.headers())
                 response.raise_for_status()
                 print(f'{time.strftime("%H:%M:%S")} - Added acquisition metadata for {filename}', flush=True)
                 status = response.status_code
@@ -103,7 +110,7 @@ class Scheduler(ABC):
 
             except HTTPError as ex:
                 if not is_retry:
-                    print('Timeout, retrying in 5 seconds...', flush=True)
+                    print(f'HTTPError, retrying in 5 seconds...\n{ex.response}', flush=True)
                     time.sleep(5)
                     self.create_metadata(filename, chromatography, cls, specie, organ, True)
                 else:
@@ -119,7 +126,7 @@ class Scheduler(ABC):
                     status = 999
             except Exception as e:
                 if not is_retry:
-                    print('Unknown error, retrying in 5 seconds...', flush=True)
+                    print(f'Unknown error, retrying in 5 seconds...\n{e.args}', flush=True)
                     time.sleep(5)
                     self.create_metadata(filename, chromatography, cls, specie, organ, True)
                 else:
@@ -151,7 +158,7 @@ class Scheduler(ABC):
                     print(f'{time.strftime("%H:%M:%S")} - {data}')
                     stat[trk] = 200
                 else:
-                    response = requests.post('%s/tracking' % self.apiBase, json=data, headers=self._api_token())
+                    response = requests.post('%s/tracking' % self.apiBase, json=data, headers=self.headers())
                     response.raise_for_status()
                     stat[trk] = response.status_code
             except Timeout as timeout:
@@ -227,7 +234,7 @@ class Scheduler(ABC):
             return 200
         else:
             try:
-                result = requests.post('%s/secure_schedule' % self.apiBase, json=data, headers=self._api_token())
+                result = requests.post('%s/secure_schedule' % self.apiBase, json=data, headers=self.headers())
                 result.raise_for_status()
                 print(f'{time.strftime("%H:%M:%S")} - Sample {sample} scheduled.', flush=True)
                 status = result.status_code
@@ -295,7 +302,7 @@ class Scheduler(ABC):
         results = {}
 
         for chromatography in self.config['experiment']['chromatography']:
-            print(f'Preparing chromatographic method: {chromatography}')
+            print(f'Preparing chromatographic method: {chromatography["method"]}')
             mode = chromatography['ion_mode']
             results[mode] = {}
 
@@ -324,7 +331,8 @@ class Scheduler(ABC):
                     # Acquisition Metadata should happen BEFORE tracking status
                     if self.config['create_acquisition']:
                         # add acquisition table generation due to manual processing
-                        results[mode][dupe]['acquisition'] = json.dumps(self.create_metadata(fsample, chromatography, row['class'], row['specie'], row['organ']))
+                        results[mode][dupe]['acquisition'] = json.dumps(
+                            self.create_metadata(fsample, chromatography, row['class'], row['specie'], row['organ']))
 
                     # Tracking status should happen AFTER Acquisition table generation
                     if self.config['create_tracking']:
@@ -344,6 +352,6 @@ class Scheduler(ABC):
     def export_fails(self, prefix, data, folder, chromatography):
         curr_time = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        with open(f"{folder}/{prefix}-{chromatography['ion_mode'][0:3]}-{curr_time}.txt", "w") as f:
-            f.write('samples\n')
-            f.write('\n'.join(set(data)))
+        # with open(f"{folder}/{prefix}-{chromatography['ion_mode'][0:3]}-{curr_time}.txt", "w") as f:
+        #     f.write('samples\n')
+        #     f.write('\n'.join(set(data)))

@@ -35,8 +35,8 @@ class TestScheduler(unittest.TestCase):
                   },
                   'task_version': 164,
                   'create_tracking': True,
-                  'create_acquisition': True,
-                  'schedule': True,
+                  'create_acquisition': False,
+                  'schedule': False,
                   'env': 'test',
                   'additional_profiles': None
                   }
@@ -46,7 +46,7 @@ class TestScheduler(unittest.TestCase):
         self.scheduler.config['save_msms'] = False
 
     def test_api_token_with_test_env_set(self):
-        token = self.scheduler._api_token()
+        token = self.scheduler.headers()
         self.pp.pprint(token)
         self.assertIsNotNone(token['x-api-key'])
         self.assertTrue(token['x-api-key'].startswith('GU'))
@@ -54,7 +54,7 @@ class TestScheduler(unittest.TestCase):
     def test_api_token_with_prod_env_set(self):
         self.scheduler.config['test'] = False
         self.scheduler.token_var_name = 'PROD_STASIS_API_TOKEN'
-        token = self.scheduler._api_token()
+        token = self.scheduler.headers()
         self.pp.pprint(f'Token: {token}')
         self.assertIsNotNone(token['x-api-key'])
         self.assertTrue(token['x-api-key'].startswith('cW'))
@@ -66,7 +66,7 @@ class TestScheduler(unittest.TestCase):
         self.mp.setattr(os, 'environ', envs)
 
         with pytest.raises(RequestException, match=r"Missing authorization token.*"):
-            self.scheduler._api_token()
+            self.scheduler.headers()
 
     def test_schedule_in_test_mode(self):
         self.assertEquals(200, self.scheduler.schedule('B2A_TeddyLipids_Pos_QC001',
@@ -86,12 +86,14 @@ class TestScheduler(unittest.TestCase):
             'acquisition': {
                 'instrument': 'QExactive',
                 'ionisation': 'positive',
-                'method': 'hilic'
+                'method': 'hilic',
+                'column': 'test'
             },
             'processing': {
                 'method': 'hilic | QExactive | test | positive'
             },
             'metadata': {
+                'class': 'plasma',
                 'species': 'human',
                 'organ': 'plasma'
             }
@@ -100,9 +102,13 @@ class TestScheduler(unittest.TestCase):
         self.scheduler.token_var_name = 'STASIS_API_TOKEN'
         self.scheduler.config['experiment']['name'] = 'test'
         self.scheduler.config['test'] = False
+        self.scheduler.create_metadata(data['sample'], self.scheduler.config['experiment']['chromatography'][0],
+                                       'plasma', 'human', 'plasma')
 
-        stasis = StasisClient('https://test-api.metabolomics.us/stasis', os.getenv('STASIS_API_TOKEN'))
-        stasis.sample_acquisition_create(data)
+        stasis = StasisClient('https://test-api.metabolomics.us/stasis', os.getenv('test_STASIS_API_TOKEN'))
+        metadata = stasis.sample_acquisition_get('test-file')
+        self.assertIsNotNone(metadata)
+        self.pp.pprint(metadata)
 
         self.scheduler.add_tracking('test-file')
 
