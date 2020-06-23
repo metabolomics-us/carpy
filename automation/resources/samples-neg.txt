@@ -1,3 +1,3 @@
-samples,class
-B2A_TeddyLipids_Neg_QC001,class01
-B2A_TeddyLipids_Neg_QC002,class02
+samples,class,specie,organ
+B2A_TeddyLipids_Neg_QC002,class02,s-test,o-test
+B2A_TeddyLipids_Neg_QC001,class01,s-test,o-test
