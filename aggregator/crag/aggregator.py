@@ -58,10 +58,13 @@ class Aggregator:
         Returns:
 
         """
-        if not value['replaced'] or (value['replaced'] and self.args.get('zero_replacement', False)):
-            return round(value['intensity'])
-        else:
-            return 0
+        try:
+            if not value['replaced'] or (value['replaced'] and self.args.get('zero_replacement', False)):
+                return round(value['intensity'])
+            else:
+                return 0
+        except Exception as e:
+            raise e
 
     @staticmethod
     def find_replaced(value) -> int:
@@ -234,14 +237,21 @@ class Aggregator:
         replaced = []
         msms = []
 
+        def debug(value,type):
+            print(value)
+            if isinstance(value,type) is False:
+                raise Exception("tinvalid type: {} - {}".format(value,type))
+            return value
+
         for k, v in sample['injections'].items():
-            intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
-            masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
-            rts = {k: [round(r['annotation']['retentionIndex'], 2) for r in v['results']]}
-            origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
-            replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
-            curve = {k: sample['injections'][k]['correction']['curve']}
-            msms = {k: [r['annotation'].get('msms', '') for r in v['results']]}
+                intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
+                masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
+                rts = {k: [round(debug(r['annotation']['retentionIndex'],float), 2) for r in v['results']]}
+                origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
+                replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
+                curve = {k: sample['injections'][k]['correction']['curve']}
+                msms = {k: [r['annotation'].get('msms', '') for r in v['results']]}
+
 
         return [None, intensities, masses, rts, origrts, curve, replaced, msms]
 
