@@ -237,21 +237,20 @@ class Aggregator:
         replaced = []
         msms = []
 
-        def debug(value,type):
+        def debug(value, type):
             print(value)
-            if isinstance(value,type) is False:
-                raise Exception("tinvalid type: {} - {}".format(value,type))
+            if isinstance(value, type) is False:
+                raise Exception("tinvalid type: {} - {}".format(value, type))
             return value
 
         for k, v in sample['injections'].items():
-                intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
-                masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
-                rts = {k: [round(debug(r['annotation']['retentionIndex'],float), 2) for r in v['results']]}
-                origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
-                replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
-                curve = {k: sample['injections'][k]['correction']['curve']}
-                msms = {k: [r['annotation'].get('msms', '') for r in v['results']]}
-
+            intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
+            masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
+            rts = {k: [round(debug(r['annotation']['retentionIndex'], float), 2) for r in v['results']]}
+            origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
+            replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
+            curve = {k: sample['injections'][k]['correction']['curve']}
+            msms = {k: [r['annotation'].get('msms', '') for r in v['results']]}
 
         return [None, intensities, masses, rts, origrts, curve, replaced, msms]
 
@@ -353,7 +352,8 @@ class Aggregator:
                     f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {result_file} located at {dir}')
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
-                with bz2.BZ2File("{}/json/{}.mzml.json".format(destination,sample), 'w', compresslevel=9) as outfile:
+                with bz2.BZ2File("{}/json/{}.mzml.json.bz2".format(destination, sample), 'w',
+                                 compresslevel=9) as outfile:
                     d = json.dumps(resdata, indent=4)
                     outfile.write(d.encode())
             else:
@@ -428,7 +428,6 @@ class Aggregator:
             except Exception as exerr:
                 print(f'Error creating excel file for {t}')
                 print(str(exerr))
-        # save json files to the result folder
 
     def filter_msms(self, msms, intensity):
 
@@ -486,4 +485,4 @@ class Aggregator:
             print(f'Creating destination folder: {destination}')
             os.makedirs(destination, exist_ok=True)
 
-        self.process_sample_list(samples[:3], destination)
+        self.process_sample_list(samples, destination)
