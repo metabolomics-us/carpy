@@ -7,6 +7,15 @@ from cis import database, headers
 conn = database.connect()
 
 
+def register_name(events, context):
+    """
+    registers a new name for a given target
+    :param events:
+    :param context:
+    :return:
+    """
+
+
 def has_members(events, context):
     """
     does this given bin has several members
