@@ -118,6 +118,8 @@ class Parser:
                             help="how long do we wait in seconds between attempts for the wait module",
                             type=int, default=10, dest='wait_time')
 
+        parser.add_argument("-d", "--detail", help="specify this flag to return a detailed report",
+                            action='store_true')
         parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
         parser.add_argument("-s", "--status", help="specify this flag to return the current status",
                             action='store_true')

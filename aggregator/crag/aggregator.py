@@ -1,3 +1,4 @@
+import bz2
 import os
 import re
 import time
@@ -57,10 +58,13 @@ class Aggregator:
         Returns:
 
         """
-        if not value['replaced'] or (value['replaced'] and self.args.get('zero_replacement', False)):
-            return round(value['intensity'])
-        else:
-            return 0
+        try:
+            if not value['replaced'] or (value['replaced'] and self.args.get('zero_replacement', False)):
+                return round(value['intensity'])
+            else:
+                return 0
+        except Exception as e:
+            raise e
 
     @staticmethod
     def find_replaced(value) -> int:
@@ -233,10 +237,16 @@ class Aggregator:
         replaced = []
         msms = []
 
+        def debug(value, type):
+            print(value)
+            if isinstance(value, type) is False:
+                raise Exception("tinvalid type: {} - {}".format(value, type))
+            return value
+
         for k, v in sample['injections'].items():
             intensities = {k: [self.find_intensity(r['annotation']) for r in v['results']]}
             masses = {k: [round(r['annotation']['mass'], 4) for r in v['results']]}
-            rts = {k: [round(r['annotation']['retentionIndex'], 2) for r in v['results']]}
+            rts = {k: [round(debug(r['annotation']['retentionIndex'], float), 2) for r in v['results']]}
             origrts = {k: [round(r['annotation']['nonCorrectedRt'], 2) for r in v['results']]}
             replaced = {k: [self.find_replaced(r['annotation']) for r in v['results']]}
             curve = {k: sample['injections'][k]['correction']['curve']}
@@ -300,6 +310,8 @@ class Aggregator:
         # creating target list
         results = []
 
+        os.makedirs("{}/json".format(destination), exist_ok=True)
+
         dir = self.args.get('dir') or '/tmp'
 
         if not os.path.exists(dir):
@@ -340,6 +352,10 @@ class Aggregator:
                     f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {result_file} located at {dir}')
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
+                with bz2.BZ2File("{}/json/{}.mzml.json.bz2".format(destination, sample), 'w',
+                                 compresslevel=9) as outfile:
+                    d = json.dumps(resdata, indent=4)
+                    outfile.write(d.encode())
             else:
                 raise Exception('this should not have happened!')
 
@@ -391,7 +407,7 @@ class Aggregator:
         try:
             discovery = intensity[intensity.columns[len(TARGET_COLUMNS):]].apply(
                 lambda row: row.dropna()[row > 0].count() / len(row.dropna()), axis=1)
-            intensity.insert(loc=len(TARGET_COLUMNS)+1, column='found %', value=discovery)
+            intensity.insert(loc=len(TARGET_COLUMNS) + 1, column='found %', value=discovery)
         except Exception as e:
             print(f'Error in discovery calculation: {str(e.args)}')
 

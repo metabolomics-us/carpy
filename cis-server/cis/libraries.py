@@ -10,7 +10,7 @@ conn = database.connect()
 def libraries(event, context):
     transform = lambda x: x[0]
 
-    sql = "SELECT \"method\" FROM public.pg_target group by \"method\""
+    sql = "SELECT \"method\" FROM public.pgtarget where dtype = 'PgInternalTarget' group by \"method\""
     return database.html_response_query(sql=sql, connection=conn, transform=transform)
 
 
@@ -20,7 +20,7 @@ def delete(event, context):
             method_name = urllib.parse.unquote(event['pathParameters']['library'])
 
             result = database.query(
-                "DELETE FROM pg_target pt where \"method\" = (%s)", conn, [method_name])
+                "DELETE FROM pgtarget pt where dtype = 'PgInternalTarget' and \"method\" = (%s)", conn, [method_name])
 
             try:
                 # create a response
@@ -65,7 +65,7 @@ def size(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
 
             result = database.html_response_query(
-                "SELECT count(*), pt.target_type FROM pg_target pt WHERE \"method\" = (%s) group by target_type", conn, [method_name])
+                "SELECT count(*), pt.target_type FROM pgtarget pt WHERE dtype = 'PgInternalTarget' and \"method\" = (%s) group by target_type", conn, [method_name])
 
             try:
                 # create a response
@@ -105,7 +105,7 @@ def exists(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
 
             result = database.query(
-                "SELECT exists (SELECT 1 FROM pg_target pt WHERE \"method\" = (%s) LIMIT 1)", conn, [method_name])
+                "SELECT exists (SELECT 1 FROM pgtarget pt WHERE dtype = 'PgInternalTarget' and \"method\" = (%s) LIMIT 1)", conn, [method_name])
 
             try:
                 # create a response

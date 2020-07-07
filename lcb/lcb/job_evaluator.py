@@ -5,6 +5,7 @@ from time import sleep
 import yaml
 from crag.aws import JobAggregator
 from stasis_client.client import StasisClient
+from tqdm import tqdm
 
 from lcb.evaluator import Evaluator
 
@@ -84,10 +85,14 @@ class JobEvaluator(Evaluator):
 
     def detail(self, id, args):
         job_state = self.client.load_job_state(id)
+
+        print("loading job...")
         job = self.client.load_job(id)
 
+        print(json.dumps(job, indent=4))
+
         samples = []
-        for sample in job:
+        for sample in tqdm(job,desc="loading details for all samples"):
             samples.append(self.client.sample_state(sample['sample'], full_response=True))
         result = {
             'job': job_state,

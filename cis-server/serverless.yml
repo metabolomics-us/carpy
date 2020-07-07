@@ -187,7 +187,22 @@ functions:
                 library: true
                 type: true
                 limit: true
-                offset: true
+  compoundSetName:
+    handler: cis/compounds.register_name
+    events:
+      - http:
+          path: compound/identify/{library}/{splash}/{identifiedBy}/{name}
+          method: post
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                identifiedBy: true
+                name: true
   compoundGet:
     handler: cis/compounds.get
     events:
