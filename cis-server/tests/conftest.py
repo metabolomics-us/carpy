@@ -37,4 +37,4 @@ def library_test_name():
 
 @pytest.fixture()
 def splash_test_name():
-    return ("splash10-0002-0090500000-53c0a0bd55cd73db3ed9", "soqe[M-H] | QExactive | test | negative")
+    return ("splash10-001i-0090000200-bccd4f06d0b5c3e48c6a", "soqe[M-H] | QExactive | test | negative")
