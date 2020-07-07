@@ -32,7 +32,7 @@ def requireMocking():
 
 @pytest.fixture()
 def library_test_name():
-    return "soqtof[M-H] | 6530a | c18 | negative"
+    return "soqe[M-H] | QExactive | test | negative"
 
 
 @pytest.fixture()
