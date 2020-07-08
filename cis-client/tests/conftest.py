@@ -25,9 +25,11 @@ def cis_cli():
 
 @pytest.fixture()
 def library_test_name():
-    return "soqtof[M-H] | 6530a | c18 | negative"
+    return "soqe[M-H] | QExactive | test | negative"
 
 
 @pytest.fixture()
-def splash_test_name():
+def splash_test_name(cis_cli,library_test_name):
+    result = cis_cli.get_compounds(library=library_test_name)
+
     return ("splash10-0002-0090500000-53c0a0bd55cd73db3ed9", "soqe[M-H] | QExactive | test | negative")

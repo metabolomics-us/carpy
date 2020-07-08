@@ -7,6 +7,46 @@ from cis import database, headers
 conn = database.connect()
 
 
+def delete_names(events, context):
+    splash = events['pathParameters']['splash']
+    library = events['pathParameters']['library']
+
+    result = database.query(
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method\" = (%s)",
+        conn, [splash, library])
+
+    if result is not None:
+
+        for row in result:
+            name_id = row[1]
+
+            # drop references with this id = name + identifier
+
+            database.query(
+                "delete from pgtarget_names  where names_id  = %s",
+                conn, [name_id])
+            database.query(
+                "delete from pgtarget_name  where id  = %s",
+                conn, [name_id])
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "headers": headers.__HTTP_HEADERS__,
+                "library": library,
+                "splash": splash
+            })
+    }
+    else:
+        return {
+            "statusCode": 404,
+            "body": json.dumps({
+                "headers": headers.__HTTP_HEADERS__,
+                "library": library,
+                "splash": splash
+            })
+        }
+
 def register_name(events, context):
     """
     registers a new name for a given target

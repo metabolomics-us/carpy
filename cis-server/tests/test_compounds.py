@@ -212,6 +212,17 @@ def test_edit_specific_compound(requireMocking, library_test_name):
 
 def test_compound_register_name(requireMocking, splash_test_name):
     from cis import compounds
+
+    compounds.delete_names(
+        {'pathParameters': {
+            "library": splash_test_name[1],
+            "splash": "{}".format(splash_test_name[0]),
+        }
+
+        }, {}
+
+    )
+
     response = compounds.register_name(
         {'pathParameters': {
             "library": splash_test_name[1],
@@ -241,8 +252,20 @@ def test_compound_register_name(requireMocking, splash_test_name):
     assert result['associated_names'][0]['identifiedBy'] == 'test'
     assert result['associated_names'][0]['comment'] == ''
 
+
 def test_compound_register_names(requireMocking, splash_test_name):
     from cis import compounds
+
+    compounds.delete_names(
+        {'pathParameters': {
+            "library": splash_test_name[1],
+            "splash": "{}".format(splash_test_name[0]),
+        }
+
+        }, {}
+
+    )
+
     response = compounds.register_name(
         {'pathParameters': {
             "library": splash_test_name[1],
@@ -287,6 +310,6 @@ def test_compound_register_names(requireMocking, splash_test_name):
     assert result['associated_names'][0]['identifiedBy'] == 'test'
     assert result['associated_names'][0]['comment'] == ''
 
-    assert result['associated_names'][0]['name'] == 'test2'
-    assert result['associated_names'][0]['identifiedBy'] == 'testA'
-    assert result['associated_names'][0]['comment'] == ''
+    assert result['associated_names'][1]['name'] == 'test2'
+    assert result['associated_names'][1]['identifiedBy'] == 'testA'
+    assert result['associated_names'][1]['comment'] == ''
