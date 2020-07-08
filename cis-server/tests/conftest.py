@@ -1,4 +1,5 @@
 # Set AWS environment variables if they don't exist before importing moto/boto3
+import json
 import os
 
 import moto
@@ -36,5 +37,7 @@ def library_test_name():
 
 
 @pytest.fixture()
-def splash_test_name():
-    return ("splash10-001i-0090000200-bccd4f06d0b5c3e48c6a", "soqe[M-H] | QExactive | test | negative")
+def splash_test_name(library_test_name):
+    from cis import compounds
+    data = json.loads(compounds.all({'pathParameters':{'library' : library_test_name}},{})['body'])
+    return (data[0], library_test_name)

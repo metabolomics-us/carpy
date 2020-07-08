@@ -45,6 +45,9 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
             cur.execute(sql)
         else:
             cur.execute(sql, params)
+        if cur.rowcount == 0 or cur.description is None:
+            return None
+
         rows = cur.fetchall()
         result = []
         for row in rows:
@@ -56,7 +59,8 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
         raise error
 
 
-def html_response_query(sql: str, connection, params: Optional[List] = None, transform: Optional = None, return_404_on_empty = True) -> Optional[
+def html_response_query(sql: str, connection, params: Optional[List] = None, transform: Optional = None,
+                        return_404_on_empty=True) -> Optional[
     List]:
     """
     executes a query and converts the response to

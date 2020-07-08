@@ -15,6 +15,70 @@ def register_name(events, context):
     :return:
     """
 
+    splash = events['pathParameters']['splash']
+    library = events['pathParameters']['library']
+    identifiedBy = events['pathParameters']['identifiedBy']
+    name = events['pathParameters']['name']
+
+    # load compound to get the correct id
+    result = database.query(
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        conn, [splash, library, name, identifiedBy])
+
+    if result is None:
+        result = database.query(
+            "select p.id from pgtarget p where splash = (%s) and \"method\" = (%s)",
+            conn, [splash, library])
+
+        if len(result) > 0:
+            id = result[0][0]
+        else:
+            return {
+                "statusCode": 404,
+                "body": json.dumps({
+                    "headers": headers.__HTTP_HEADERS__,
+                    "library": library,
+                    "splash": splash
+                })
+            }
+    elif len(result) > 0:
+        id = result[0][0]
+
+        for row in result:
+            name_id = row[1]
+
+            # drop references with this id = name + identifier
+
+            result = database.query(
+                "delete from pgtarget_names  where names_id  = %s",
+                conn, [name_id])
+            result = database.query(
+                "delete from pgtarget_name  where id  = %s",
+                conn, [name_id])
+
+    # now register the given name and associated information
+    # 1. get new sequence number
+    result = database.query("select nextval('hibernate_sequence')", conn)
+
+    newNameId = result[0][0]
+
+    result = database.query(
+        "insert into pgtarget_name(\"id\",\"name\",\"identified_by\",\"comment\") values(%s,%s,%s,%s)",
+        conn, [newNameId, name, identifiedBy, ''])
+    result = database.query("insert into pgtarget_names(\"names_id\",\"pg_internal_target_id\") values(%s,%s)",
+                            conn,
+                            [newNameId, id])
+    # create a response
+    return {
+        "statusCode": 200,
+        "body": json.dumps({
+            "headers": headers.__HTTP_HEADERS__,
+            "members": True,
+            "library": library,
+            "splash": splash
+        })
+    }
+
 
 def has_members(events, context):
     """
@@ -200,7 +264,11 @@ def get(events, context):
                 'sample': x[9],
                 'spectrum': x[10],
                 'splash': x[11],
-                'name': x[12],
+                'preferred_name': x[12],
+                'associated_names': list(
+                    map(lambda y: {'name': y[1], 'identifiedBy': y[0], 'comment': y[2]}, database.query(
+                        "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and p.id = %s",
+                        conn, [x[0]]))),
                 'unique_mass': x[13],
                 'precursor_mass': x[14]
             }

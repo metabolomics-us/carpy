@@ -208,3 +208,85 @@ def test_compound_get_members_none(requireMocking, splash_test_name):
 
 def test_edit_specific_compound(requireMocking, library_test_name):
     fail()
+
+
+def test_compound_register_name(requireMocking, splash_test_name):
+    from cis import compounds
+    response = compounds.register_name(
+        {'pathParameters': {
+            "library": splash_test_name[1],
+            "splash": "{}".format(splash_test_name[0]),
+            "identifiedBy": "test",
+            "name": "test1"
+        }
+
+        }, {}
+
+    )
+
+    assert response['statusCode'] == 200
+    response = compounds.get({'pathParameters': {
+        "library": splash_test_name[1],
+        "splash": splash_test_name[0]
+    }
+
+    }, {})
+
+    assert response['statusCode'] == 200
+    result = json.loads(response['body'])[0]
+    print(result)
+
+    assert len(result['associated_names']) == 1
+    assert result['associated_names'][0]['name'] == 'test1'
+    assert result['associated_names'][0]['identifiedBy'] == 'test'
+    assert result['associated_names'][0]['comment'] == ''
+
+def test_compound_register_names(requireMocking, splash_test_name):
+    from cis import compounds
+    response = compounds.register_name(
+        {'pathParameters': {
+            "library": splash_test_name[1],
+            "splash": "{}".format(splash_test_name[0]),
+            "identifiedBy": "test",
+            "name": "test1"
+        }
+
+        }, {}
+
+    )
+
+    assert response['statusCode'] == 200
+    response = compounds.register_name(
+        {'pathParameters': {
+            "library": splash_test_name[1],
+            "splash": "{}".format(splash_test_name[0]),
+            "identifiedBy": "testA",
+            "name": "test2"
+        }
+
+        }, {}
+
+    )
+
+    assert response['statusCode'] == 200
+
+    response = compounds.get({'pathParameters': {
+        "library": splash_test_name[1],
+        "splash": splash_test_name[0]
+    }
+
+    }, {})
+
+    assert response['statusCode'] == 200
+    result = json.loads(response['body'])[0]
+    print(result)
+
+    assert len(result['associated_names']) == 2
+
+    assert result['associated_names'][0]['name'] == 'test1'
+    assert result['associated_names'][0]['identifiedBy'] == 'test'
+    assert result['associated_names'][0]['comment'] == ''
+
+    assert result['associated_names'][0]['name'] == 'test2'
+    assert result['associated_names'][0]['identifiedBy'] == 'testA'
+    assert result['associated_names'][0]['comment'] == ''

@@ -238,7 +238,6 @@ class Aggregator:
         msms = []
 
         def debug(value, type):
-            print(value)
             if isinstance(value, type) is False:
                 raise Exception("tinvalid type: {} - {}".format(value, type))
             return value
@@ -337,6 +336,7 @@ class Aggregator:
                     f'due to file {saved_result} not existing locally at')
                 try:
                     resdata = self.stasis_cli.sample_result_as_json(result_file)
+                    sbar.write("\t\t=> successfully downloaded data file")
                 except Exception as e:
                     print(f'we observed an error during downloading the data file: {str(e)}')
                     resdata = None
@@ -344,6 +344,7 @@ class Aggregator:
                 sbar.write(f'loading existing result data from {saved_result}')
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
+                    sbar.write("\t\t=> successfully loaded existing data file")
             if resdata is None:
                 sbar.write(
                     f'Failed getting {sample}. We looked in bucket {self.bucket_used}')
