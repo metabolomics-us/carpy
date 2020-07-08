@@ -36,7 +36,7 @@ def delete_names(events, context):
                 "library": library,
                 "splash": splash
             })
-    }
+        }
     else:
         return {
             "statusCode": 404,
@@ -46,6 +46,7 @@ def delete_names(events, context):
                 "splash": splash
             })
         }
+
 
 def register_name(events, context):
     """
@@ -292,6 +293,16 @@ def get(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             splash = urllib.parse.unquote(events['pathParameters']['splash'])
 
+            def generate_name_list(x):
+                names = database.query(
+                    "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and p.id = %s",
+                    conn, [x])
+                if names is None:
+                    return []
+                else:
+                    return list(
+                        map(lambda y: {'name': y[1], 'identifiedBy': y[0], 'comment': y[2]}, names))
+
             transform = lambda x: {
                 'id': x[0],
                 'accurate_mass': x[1],
@@ -305,10 +316,7 @@ def get(events, context):
                 'spectrum': x[10],
                 'splash': x[11],
                 'preferred_name': x[12],
-                'associated_names': list(
-                    map(lambda y: {'name': y[1], 'identifiedBy': y[0], 'comment': y[2]}, database.query(
-                        "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and p.id = %s",
-                        conn, [x[0]]))),
+                'associated_names': generate_name_list(x[0]),
                 'unique_mass': x[13],
                 'precursor_mass': x[14]
             }

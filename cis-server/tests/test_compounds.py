@@ -210,6 +210,28 @@ def test_edit_specific_compound(requireMocking, library_test_name):
     fail()
 
 
+def test_compound_no_registered_names(requireMocking, splash_test_name):
+    from cis import compounds
+
+    compounds.delete_names(
+        {'pathParameters': {
+            "library": splash_test_name[1],
+            "splash": "{}".format(splash_test_name[0]),
+        }
+
+        }, {}
+
+    )
+
+    response = compounds.get({'pathParameters': {
+        "library": splash_test_name[1],
+        "splash": splash_test_name[0]
+    }
+
+    }, {})
+
+    assert response['statusCode'] == 200
+
 def test_compound_register_name(requireMocking, splash_test_name):
     from cis import compounds
 
