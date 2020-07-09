@@ -170,6 +170,13 @@ class CISClient:
         else:
             raise Exception(result)
 
+    def name_compound(self, library: str, splash: str, name: str, identifiedBy: str, comment: str):
+        result = self.http.post(f"{self._url}/compound/identify/{library}/{splash}/{identifiedBy}/{name}",
+                                headers=self._header, data=comment)
+
+        if result.status_code != 200:
+            raise Exception(result)
+
     def get_compound(self, library: str, splash: str) -> dict:
         result = self.http.get(f"{self._url}/compound/{library}/{splash}", headers=self._header)
 

@@ -73,16 +73,18 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
     try:
         result = query(sql, connection, params)
 
-        if transform is not None:
-            result = list(map(transform, result))
-        # create a response
+        if result is None:
+            result = []
 
         if len(result) == 0 and return_404_on_empty is True:
             return {
                 "statusCode": 404,
                 "headers": headers.__HTTP_HEADERS__,
+                "body": json.dumps([])
             }
         else:
+            if transform is not None:
+                result = list(map(transform, result))
             return {
                 "statusCode": 200,
                 "headers": headers.__HTTP_HEADERS__,

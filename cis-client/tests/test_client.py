@@ -38,6 +38,21 @@ def test_get_compound(cis_cli, splash_test_name):
     assert len(result) > 0
 
 
+def test_name_compound(cis_cli, splash_test_name):
+    cis_cli.name_compound(library=splash_test_name[1], splash=splash_test_name[0], name="test", identifiedBy="tester",
+                          comment="")
+    result = cis_cli.get_compound(library=splash_test_name[1], splash=splash_test_name[0])
+
+    success = False
+
+    for name in result['associated_names']:
+        if name['name'] == 'test':
+            if name['identifiedBy'] == 'tester':
+                success = True
+
+    assert success
+
+
 def test_get_members_false(cis_cli, splash_test_name):
     result = cis_cli.get_members(library=splash_test_name[1], splash="{}_nodice".format(splash_test_name[0]))
     assert len(result) == 0

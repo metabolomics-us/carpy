@@ -55,12 +55,12 @@ def register_name(events, context):
     :param context:
     :return:
     """
+    splash = urllib.parse.unquote(events['pathParameters']['splash'])
+    library = urllib.parse.unquote(events['pathParameters']['library'])
+    identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
+    name = urllib.parse.unquote(events['pathParameters']['name'])
 
-    splash = events['pathParameters']['splash']
-    library = events['pathParameters']['library']
-    identifiedBy = events['pathParameters']['identifiedBy']
-    name = events['pathParameters']['name']
-
+    print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
     result = database.query(
         "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
@@ -71,7 +71,7 @@ def register_name(events, context):
             "select p.id from pgtarget p where splash = (%s) and \"method\" = (%s)",
             conn, [splash, library])
 
-        if len(result) > 0:
+        if result is not None and len(result) > 0:
             id = result[0][0]
         else:
             return {
@@ -297,6 +297,8 @@ def get(events, context):
                 names = database.query(
                     "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and p.id = %s",
                     conn, [x])
+
+                print("received: {}".format(names))
                 if names is None:
                     return []
                 else:

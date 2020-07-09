@@ -2,6 +2,29 @@ import json
 
 from pytest import fail
 
+def test_getall_full_pagination(requireMocking, library_test_name):
+    from cis import compounds
+
+    more = True
+    data = []
+    while more:
+        temp = json.loads(
+            compounds.all({'pathParameters': {
+            "library": library_test_name,
+            "offset": len(data),
+            "limit": 10,
+        }
+
+        }, {})['body']
+        )
+
+        more = len(temp) > 0
+        for x in temp:
+            data.append(x)
+
+        print(len(data))
+    print(len(data))
+    assert len(data) > 10
 
 def test_getall_by_type_unconfirmed(requireMocking, library_test_name):
     from cis import compounds
