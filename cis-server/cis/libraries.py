@@ -26,6 +26,7 @@ def delete(event, context):
                 # create a response
                 return {
                     "statusCode": 200,
+                    "headers": headers.__HTTP_HEADERS__,
                     "body": json.dumps({
                         "library": method_name
                     })
@@ -34,8 +35,8 @@ def delete(event, context):
                 traceback.print_exc()
                 return {
                     "statusCode": 500,
+                    "headers": headers.__HTTP_HEADERS__,
                     "body": json.dumps({
-                        "headers": headers.__HTTP_HEADERS__,
                         "error": str(e),
                         "library": method_name
                     })
@@ -43,16 +44,16 @@ def delete(event, context):
         else:
             return {
                 "statusCode": 500,
+                "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
-                    "headers": headers.__HTTP_HEADERS__,
                     "error": "you need to provide a 'library' name"
                 })
             }
     else:
         return {
             "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
-                "headers": headers.__HTTP_HEADERS__,
                 "error": "missing path parameters"
             })
         }
@@ -74,8 +75,8 @@ def size(events, context):
                 traceback.print_exc()
                 return {
                     "statusCode": 500,
+                    "headers": headers.__HTTP_HEADERS__,
                     "body": json.dumps({
-                        "headers": headers.__HTTP_HEADERS__,
                         "error": str(e),
                         "library": method_name
                     })
@@ -83,16 +84,16 @@ def size(events, context):
         else:
             return {
                 "statusCode": 500,
+                "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
-                    "headers": headers.__HTTP_HEADERS__,
                     "error": "you need to provide a 'library' name"
                 })
             }
     else:
         return {
             "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
-                "headers": headers.__HTTP_HEADERS__,
                 "error": "missing path parameters"
             })
         }
@@ -111,8 +112,8 @@ def exists(events, context):
                 # create a response
                 return {
                     "statusCode": 200,
+                    "headers": headers.__HTTP_HEADERS__,
                     "body": json.dumps({
-                        "headers": headers.__HTTP_HEADERS__,
                         "exists": result[0][0],
                         "library": method_name
                     })
@@ -121,8 +122,8 @@ def exists(events, context):
                 traceback.print_exc()
                 return {
                     "statusCode": 500,
+                    "headers": headers.__HTTP_HEADERS__,
                     "body": json.dumps({
-                        "headers": headers.__HTTP_HEADERS__,
                         "error": str(e),
                         "library": method_name
                     })
@@ -130,16 +131,16 @@ def exists(events, context):
         else:
             return {
                 "statusCode": 500,
+                "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
-                    "headers": headers.__HTTP_HEADERS__,
                     "error": "you need to provide a 'library' name"
                 })
             }
     else:
         return {
             "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
-                "headers": headers.__HTTP_HEADERS__,
                 "error": "missing path parameters"
             })
         }

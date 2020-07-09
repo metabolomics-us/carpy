@@ -31,8 +31,8 @@ def delete_names(events, context):
 
         return {
             "statusCode": 200,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
-                "headers": headers.__HTTP_HEADERS__,
                 "library": library,
                 "splash": splash
             })
@@ -40,8 +40,8 @@ def delete_names(events, context):
     else:
         return {
             "statusCode": 404,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
-                "headers": headers.__HTTP_HEADERS__,
                 "library": library,
                 "splash": splash
             })
@@ -76,8 +76,8 @@ def register_name(events, context):
         else:
             return {
                 "statusCode": 404,
+                "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
-                    "headers": headers.__HTTP_HEADERS__,
                     "library": library,
                     "splash": splash
                 })
@@ -112,8 +112,8 @@ def register_name(events, context):
     # create a response
     return {
         "statusCode": 200,
+        "headers": headers.__HTTP_HEADERS__,
         "body": json.dumps({
-            "headers": headers.__HTTP_HEADERS__,
             "members": True,
             "library": library,
             "splash": splash
@@ -142,8 +142,8 @@ def has_members(events, context):
                     # create a response
                     return {
                         "statusCode": 200,
+                        "headers": headers.__HTTP_HEADERS__,
                         "body": json.dumps({
-                            "headers": headers.__HTTP_HEADERS__,
                             "members": True,
                             "count": result[0][0],
                             "library": method_name,
@@ -153,8 +153,8 @@ def has_members(events, context):
                 else:
                     return {
                         "statusCode": 404,
+                        "headers": headers.__HTTP_HEADERS__,
                         "body": json.dumps({
-                            "headers": headers.__HTTP_HEADERS__,
                             "members": False,
                             "count": result[0][0],
                             "library": method_name,
@@ -330,16 +330,16 @@ def get(events, context):
         else:
             return {
                 "statusCode": 500,
+                "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
-                    "headers": headers.__HTTP_HEADERS__,
                     "error": "you need to provide a 'library' name and a splash"
                 })
             }
     else:
         return {
             "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
-                "headers": headers.__HTTP_HEADERS__,
                 "error": "missing path parameters"
             })
         }
@@ -363,8 +363,8 @@ def exists(events, context):
                     # create a response
                     return {
                         "statusCode": 200,
+                        "headers": headers.__HTTP_HEADERS__,
                         "body": json.dumps({
-                            "headers": headers.__HTTP_HEADERS__,
                             "exists": result[0][0],
                             "library": method_name,
                             "splash": splash
