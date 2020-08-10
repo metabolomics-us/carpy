@@ -314,16 +314,15 @@ def get(events, context):
                 'ms_level': x[5],
                 'required_for_correction': x[7],
                 'retention_index': x[8],
-                'sample': x[9],
-                'spectrum': x[10],
-                'splash': x[11],
-                'preferred_name': x[12],
+                'spectrum': x[9],
+                'splash': x[10],
+                'preferred_name': x[11],
                 'associated_names': generate_name_list(x[0]),
-                'unique_mass': x[13],
-                'precursor_mass': x[14]
+                'unique_mass': x[12],
+                'precursor_mass': x[13]
             }
             result = database.html_response_query(
-                "SELECT id, accurate_mass, target_type, inchi_key, \"method\", ms_level, raw_spectrum, required_for_correction, retention_index, sample_name, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
+                "SELECT id, accurate_mass, target_type, inchi_key, \"method\", ms_level, raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
                 conn, [method_name, splash], transform=transform)
 
             return result
