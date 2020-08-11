@@ -107,10 +107,10 @@ class Scheduler(ABC):
                     'fileHandle': filename + handle_ext[trk]}
             try:
                 if self.config['test']:
-                    print(f'{time.strftime("%H:%M:%S")} - {data}')
+                    print(f'{time.strftime("%H:%M:%S")} - {data["sample"]} - {data["status"]} - {data["fileHandle"]}')
                     stat[trk] = 200
                 else:
-                    response = self.stasis.sample_state_update(data['sample'], data['trk'], data['fileHandle'])
+                    response = self.stasis.sample_state_update(data['sample'], data['status'], data['fileHandle'])
                     # response = requests.post('%s/tracking' % self.apiBase, json=data, headers=self.headers())
                     # response.raise_for_status()
                     stat[trk] = response.status_code
