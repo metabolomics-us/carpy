@@ -560,6 +560,42 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
+
+
+  #schedule data to for handling the processing and aggregation on the backend
+  jobremovesample:
+    handler: stasis/jobs/schedule.remove_sample_for_job
+    events:
+      - http:
+          path: job/sample/remove/{job}/{sample}
+          method: delete
+          private: true
+          cors: true
+          documentation:
+            summary: removes a sample associated with a job. required for performance reasons
+
+          request:
+            parameter:
+              paths:
+                job: true
+                sample: true
+
+    # requires more memory to get access to faster cpus
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
   #schedule data to for handling the processing and aggregation on the backend
   jobstoresample:
     handler: stasis/jobs/schedule.store_sample_for_job

@@ -5,7 +5,7 @@ import requests
 from pytest import fail
 
 
-@pytest.mark.parametrize("sample_count", [5, 10, 50, 100, 300, 500])
+@pytest.mark.parametrize("sample_count", [5, 10, 50])
 def test_store_job_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
 
@@ -32,6 +32,49 @@ def test_store_job_sizes(sample_count, stasis_cli):
 
     print(result)
 
+@pytest.mark.parametrize("sample_count", [5, 10, 50])
+def test_overwrite_job_sizes(sample_count, stasis_cli):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+    }
+
+    samples = []
+    for x in range(0, sample_count):
+        samples.append(f"test_sample_{x}")
+
+    job['samples'] = samples
+    stasis_cli.store_job(job, enable_progress_bar=True)
+    result = stasis_cli.load_job(test_id)
+
+    assert len(result) == sample_count
+
+    result = stasis_cli.load_job_state(test_id)
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+    }
+
+    samples = []
+    for x in range(0, sample_count-2):
+        samples.append(f"test_sample_{x}_2")
+
+    job['samples'] = samples
+    stasis_cli.store_job(job, enable_progress_bar=True)
+    result = stasis_cli.load_job(test_id)
+
+    assert len(result) == sample_count-2
+
+    result = stasis_cli.load_job_state(test_id)
+
+    print(result)
 
 @pytest.mark.parametrize("sample_count", [50, 100, 300])
 def test_schedule_job_sizes(sample_count, stasis_cli):

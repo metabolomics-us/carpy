@@ -224,7 +224,10 @@ class StasisClient:
             else:
                 result = self.http.get(f"{self._url}/job/{job}/{last}", headers=self._header)
             if result.status_code != 200 and last is None:
-                raise Exception(
+                if result.status_code == 404:
+                    return False
+                else:
+                    raise Exception(
                     f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
             elif result.status_code == 200:
                 result = json.loads(result.content)
@@ -236,6 +239,10 @@ class StasisClient:
                 return []
 
         result = fetch(job_id)
+
+        if result is False:
+            # 404 nothing found
+            return []
 
         while len(result) == 10:
             result = fetch(job=job_id, last=data[-1]['id'])
@@ -309,7 +316,7 @@ class StasisClient:
         :return:
         """
 
-        #TODO check state
+        # TODO check state
         bucket_name = self.get_aggregated_bucket()
         try:
             key = "{}.zip".format(job)
@@ -321,6 +328,22 @@ class StasisClient:
             print("failed for some reason: {}".format(str(e)))
             return None
 
+    def drop_job_samples(self, job: str, enable_progress_bar: bool = False):
+        """
+        drops all samples from the given job
+        """
+
+        content = self.load_job(job_id=job)
+
+        from tqdm import tqdm
+        for sample in tqdm(content, desc="dropping sample definitions for job", disable=enable_progress_bar is False):
+            url = f"{self._url}/job/sample/remove/{job}/{sample['sample']}"
+            print(f"fetching url : ${url}")
+            res = requests.delete(url,headers=self._header)
+            if res.status_code != 200:
+                raise Exception(
+                    f"we observed an error. Status code was {res.status_code} and error was {res.reason} for {job}")
+
     def store_job(self, job: dict, enable_progress_bar: bool = False):
         """
         stores a job in the system in preparation for scheduling
@@ -330,6 +353,7 @@ class StasisClient:
         meta = job.pop('meta', {})
         samples = job.pop('samples')
 
+        self.drop_job_samples(job['id'], enable_progress_bar=enable_progress_bar)
         response = self.http.post(f"{self._url}/job/store", json=job, headers=self._header)
 
         if response.status_code != 200:
