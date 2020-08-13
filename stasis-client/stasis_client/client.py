@@ -209,7 +209,7 @@ class StasisClient:
             f"we observed an error. Status code was {result.status_code} and error was {result.reason}")
         return result.json()
 
-    def load_job(self, job_id) -> List[dict]:
+    def load_job(self, job_id, enable_progress_bar: bool = False) -> List[dict]:
         """
         loads a job from stasis
         :param job_id:
@@ -228,7 +228,7 @@ class StasisClient:
                     return False
                 else:
                     raise Exception(
-                    f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
+                        f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job_id}")
             elif result.status_code == 200:
                 result = json.loads(result.content)
                 for x in result:
@@ -244,8 +244,10 @@ class StasisClient:
             # 404 nothing found
             return []
 
+        #from tqdm import tqdm
+        #for load in tqdm(desc="loading job description", disable=enable_progress_bar is False):
         while len(result) == 10:
-            result = fetch(job=job_id, last=data[-1]['id'])
+                result = fetch(job=job_id, last=data[-1]['id'])
 
         return data
 
@@ -333,13 +335,12 @@ class StasisClient:
         drops all samples from the given job
         """
 
-        content = self.load_job(job_id=job)
+        content = self.load_job(job_id=job, enable_progress_bar=enable_progress_bar)
 
         from tqdm import tqdm
         for sample in tqdm(content, desc="dropping sample definitions for job", disable=enable_progress_bar is False):
             url = f"{self._url}/job/sample/remove/{job}/{sample['sample']}"
-            print(f"fetching url : ${url}")
-            res = requests.delete(url,headers=self._header)
+            res = requests.delete(url, headers=self._header)
             if res.status_code != 200:
                 raise Exception(
                     f"we observed an error. Status code was {res.status_code} and error was {res.reason} for {job}")
