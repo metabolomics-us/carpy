@@ -512,6 +512,21 @@ functions:
               - name: job
                 description: the job id
                 required: true
+      - http:
+          path: job/status/{job}
+          private: true
+          method: post
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+          documentation:
+            summary: forcefully updates the status of a job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
 
     #defines to which topic we want to connect
     environment:

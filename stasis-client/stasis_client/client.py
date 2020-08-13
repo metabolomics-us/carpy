@@ -112,6 +112,24 @@ class StasisClient:
             f"we observed an error. Status code was {result.status_code} and error was {result.reason} for sample {sample_name}")
         return result.json()
 
+    def set_job_state(self, job: str, state: str, reason: Optional[str] = None):
+        """
+        manually forces a job state
+        """
+
+        data = {
+            'job_state': state
+        }
+
+        if reason is not None:
+            data['reason'] = reason
+
+        result = self.http.post(f"{self._url}/job/status/{job}", json=data, headers=self._header)
+        if result.status_code != 200:
+            raise Exception(
+                f"we observed an error. Status code was {result.status_code} and error was {result.reason} for job {job}")
+        return result.json()
+
     def sample_state(self, sample_name: str, full_response: bool = False):
         """Returns the state of the given sample by calling Stasis' tracking API
         Args:
@@ -244,10 +262,10 @@ class StasisClient:
             # 404 nothing found
             return []
 
-        #from tqdm import tqdm
-        #for load in tqdm(desc="loading job description", disable=enable_progress_bar is False):
+        # from tqdm import tqdm
+        # for load in tqdm(desc="loading job description", disable=enable_progress_bar is False):
         while len(result) == 10:
-                result = fetch(job=job_id, last=data[-1]['id'])
+            result = fetch(job=job_id, last=data[-1]['id'])
 
         return data
 

@@ -32,6 +32,13 @@ def test_store_job_sizes(sample_count, stasis_cli):
 
     print(result)
 
+    stasis_cli.set_job_state(test_id, "failed")
+
+    result = stasis_cli.load_job_state(test_id)
+
+    assert result['job_state'] == "failed"
+
+
 @pytest.mark.parametrize("sample_count", [5, 10, 50])
 def test_overwrite_job_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
@@ -63,18 +70,19 @@ def test_overwrite_job_sizes(sample_count, stasis_cli):
     }
 
     samples = []
-    for x in range(0, sample_count-2):
+    for x in range(0, sample_count - 2):
         samples.append(f"test_sample_{x}_2")
 
     job['samples'] = samples
     stasis_cli.store_job(job, enable_progress_bar=True)
     result = stasis_cli.load_job(test_id)
 
-    assert len(result) == sample_count-2
+    assert len(result) == sample_count - 2
 
     result = stasis_cli.load_job_state(test_id)
 
     print(result)
+
 
 @pytest.mark.parametrize("sample_count", [50, 100, 300])
 def test_schedule_job_sizes(sample_count, stasis_cli):
@@ -118,6 +126,7 @@ def test_schedule_job_sizes(sample_count, stasis_cli):
         except Exception as e:
             print(str(e))
             pass
+
 
 def test_sample_acquisition_create(stasis_cli, sample):
     data = sample
@@ -260,14 +269,15 @@ def test_download_result_is_none(stasis_cli, api_token):
     data = stasis_cli.download_job_result("i_do_not_exist")
 
     assert data is None
-    
-def test_download_processed_sample_result_as_json(stasis_cli, api_token):
 
+
+def test_download_processed_sample_result_as_json(stasis_cli, api_token):
     data = stasis_cli.sample_result_as_json("B10A_SA8922_TeddyLipids_Pos_122WP")
 
     assert data is not None
 
     print(data)
+
 
 def test_download_result(stasis_cli, api_token):
     test_id = "test_job_{}".format(time())
@@ -301,7 +311,7 @@ def test_download_result(stasis_cli, api_token):
             duration = time() - origin
         except AssertionError as e:
             raise e
-        except Exception as e :
+        except Exception as e:
             pass
 
     # side test to ensure results are generated and can be downloaded

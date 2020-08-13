@@ -2,7 +2,7 @@ import simplejson as json
 from boto3.dynamodb.conditions import Key
 
 from stasis.headers import __HTTP_HEADERS__
-from stasis.tables import TableManager, _set_sample_job_state, get_tracked_sample
+from stasis.tables import TableManager, _set_sample_job_state, get_tracked_sample, update_job_state
 
 
 def create(event, context):
@@ -67,50 +67,65 @@ def status(event, context):
             tm = TableManager()
             table_overall_state = tm.get_job_state_table()
 
-            job_state = table_overall_state.query(
-                **{
-                    'IndexName': 'job-id-state-index',
-                    'Select': 'ALL_ATTRIBUTES',
-                    'KeyConditionExpression': Key('job').eq(job)
-                }
-            )
+            print(event)
+            if 'body' in event and event.get("httpMethod","") != 'GET':
+                content = json.loads(event['body'])
 
-            # this queries the state of all the samples
-            if "Items" in job_state and len(job_state['Items']) > 0:
-                job_state = job_state["Items"]
-
-                if len(job_state) > 0:
-                    job_state = job_state[0]
-                    return {
-                        "statusCode": 200,
-                        "headers": __HTTP_HEADERS__,
-                        "body": json.dumps({
-                            "job_state": job_state['state'],
-                            "job_info": job_state
-                        }
-                        )
+                result = update_job_state(job, content['job_state'], content.get("reason", ""))
+                return {
+                    "statusCode": 200,
+                    "headers": __HTTP_HEADERS__,
+                    "body": json.dumps({
+                        "job_state": result,
+                        "job_info": result
                     }
+                    )
+                }
+            else:
+                job_state = table_overall_state.query(
+                    **{
+                        'IndexName': 'job-id-state-index',
+                        'Select': 'ALL_ATTRIBUTES',
+                        'KeyConditionExpression': Key('job').eq(job)
+                    }
+                )
+
+                # this queries the state of all the samples
+                if "Items" in job_state and len(job_state['Items']) > 0:
+                    job_state = job_state["Items"]
+
+                    if len(job_state) > 0:
+                        job_state = job_state[0]
+                        return {
+                            "statusCode": 200,
+                            "headers": __HTTP_HEADERS__,
+                            "body": json.dumps({
+                                "job_state": job_state['state'],
+                                "job_info": job_state
+                            }
+                            )
+                        }
+                    else:
+                        return {
+                            "statusCode": 503,
+                            "headers": __HTTP_HEADERS__,
+                            "body": json.dumps({
+                                "job_state": "no associated state found!",
+                            }
+                            )
+                        }
+
                 else:
                     return {
-                        "statusCode": 503,
+                        "statusCode": 404,
                         "headers": __HTTP_HEADERS__,
-                        "body": json.dumps({
-                            "job_state": "no associated state found!",
-                        }
-                        )
+                        "body": json.dumps({"error": "no job found with this identifier : {}".format(
+                            event['pathParameters']['job'])})
                     }
-
-            else:
-                return {
-                    "statusCode": 404,
-                    "headers": __HTTP_HEADERS__,
-                    "body": json.dumps({"error": "no job found with this identifier : {}".format(
-                        event['pathParameters']['job'])})
-                }
-        # invalid!
-    return {
-        'statusCode': 503
-    }
+            # invalid!
+        return {
+            'statusCode': 503
+        }
 
 
 def description(event, context):

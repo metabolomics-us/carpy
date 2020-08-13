@@ -44,4 +44,6 @@ class JobAggregator(Aggregator):
 
             return True
         except NoSamplesFoundException:
+            # mark job as failed now
+            self.stasis_cli.
             return False
