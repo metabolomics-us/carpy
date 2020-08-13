@@ -43,7 +43,9 @@ class JobAggregator(Aggregator):
                 self.stasis_cli.upload_job_result(job, directory)
 
             return True
-        except NoSamplesFoundException:
+        except NoSamplesFoundException as e:
             # mark job as failed now
-            self.stasis_cli.
+            self.stasis_cli.set_job_state(job, "failed", str(e))
+
+            print(self.stasis_cli.load_job_state(job))
             return False
