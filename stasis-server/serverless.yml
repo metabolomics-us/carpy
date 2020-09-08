@@ -20,6 +20,10 @@ provider:
   apiKeys:
     - "stasis-${self:custom.stage}"
 
+  tracing:
+    lambda: true
+    apiGateway: true
+
   #required permissions
   iamRoleStatements:
     - Effect: Allow
@@ -46,7 +50,12 @@ provider:
       Action:
         - iam:PassRole
       Resource: "*"
-
+    - Effect: Allow
+      Action:
+        - xray:PutTraceSegment
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+      Resource: "*"
   memorySize: 128
   timeout: 30
   versionFunctions: false
@@ -788,4 +797,3 @@ functions:
     timeout: 900
     environment:
       dataBucket: ${self:custom.dataJSONBucketName}
-

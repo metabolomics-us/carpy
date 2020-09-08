@@ -288,15 +288,21 @@ def _free_task_count(service: Optional[str] = None) -> int:
         result = len(tasks)
 
         if result > (MAX_FARGATE_TASKS - 1):
-            print("fargate queue was full, no scheduling possible")
+            print(f"fargate queue was full and contains {result}, so no further scheduling possible")
             return 0
         else:
             return MAX_FARGATE_TASKS - result
     else:
-        filtered_tasks = list(filter(lambda d: d['name'] == service, tasks))
-        result = len(filtered_tasks)
-        if result > (MAX_FARGATE_TASKS_BY_SERVICE[service] - 1):
-            print("fargate queue was full for service {}, no scheduling possible".format(service))
+
+        running = 0
+        for x in tasks:
+            if service == x['name']:
+                running = running + 1
+
+        if running > (MAX_FARGATE_TASKS_BY_SERVICE[service] - 1):
+            print(
+                "fargate queue was full for service {}, no scheduling possible. Currently it has occupied {} tasks. While a max of {} are allowed".format(
+                    service, running, MAX_FARGATE_TASKS_BY_SERVICE[service]))
             return 0
         else:
-            return MAX_FARGATE_TASKS_BY_SERVICE[service] - result
+            return MAX_FARGATE_TASKS_BY_SERVICE[service] - running

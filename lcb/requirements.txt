@@ -18,3 +18,4 @@ seaborn
 jupyter-datatables
 papermill
 pdfkit
+docker

@@ -7,7 +7,7 @@ from stasis.schedule.fargate import schedule_processing_to_fargate, schedule_agg
     _free_task_count
 from stasis.schedule.schedule import _get_queue
 from stasis.config import SERVICE, MESSAGE_BUFFER, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, \
-    SINGULAR_FARGATE_SERVICES
+    SINGULAR_FARGATE_SERVICES, ENABLE_AUTOMATIC_SCHEDULING
 
 
 def monitor_queue(event, context):
@@ -19,6 +19,18 @@ def monitor_queue(event, context):
     :param context:
     :return:
     """
+
+    if ENABLE_AUTOMATIC_SCHEDULING is False:
+        return {
+            'statusCode': 200,
+            'headers': __HTTP_HEADERS__,
+            'isBase64Encoded': False,
+            'body': json.dumps(
+                {
+                    'scheduled': 0,
+                    'automatic': ENABLE_AUTOMATIC_SCHEDULING
+                })
+        }
 
     import boto3
     # receive message from queue
@@ -53,7 +65,7 @@ def monitor_queue(event, context):
             'headers': __HTTP_HEADERS__
         }
 
-    print("we have: {} slots free for tasks".format(slots))
+    print("we have: {} slots free for tasks. Total allowed tasks are {}".format(slots, _current_tasks()))
 
     message_count = slots if 0 < slots <= MESSAGE_BUFFER else MESSAGE_BUFFER if slots > 0 else 1
     message = client.receive_message(
@@ -101,7 +113,7 @@ def monitor_queue(event, context):
                         ReceiptHandle=receipt_handle
                     )
                 else:
-                    print("no free slots for {}".format(body[SERVICE]))
+                    print("no free slots for {} are available".format(body[SERVICE]))
                     # nothing found
                     pass
             except Exception as e:
@@ -110,7 +122,8 @@ def monitor_queue(event, context):
             'statusCode': 200,
             'headers': __HTTP_HEADERS__,
             'isBase64Encoded': False,
-            'body': json.dumps({'scheduled': len(result)})
+            'body': json.dumps({'scheduled': len(result)}),
+            'automatic': ENABLE_AUTOMATIC_SCHEDULING
         }
 
     else:
