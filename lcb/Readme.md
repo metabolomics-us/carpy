@@ -9,7 +9,8 @@ LCB is the command line driven frontend to interact with the remote lc binbase s
 - download a processed datafile
 - download a processed result file
 - generate compound generation reports
-
+- run a compute node to process data
+- aggregate a specific job
 
 ### Requirements
 
@@ -72,4 +73,14 @@ to start processing execute
 lcb job --process --id <JOB_ID>
 ```
 
+to run a local node, to process data locally
+
+```
+lcb node --single
+```
+
+this will subscribe to the queue and execute received samples in order
+
 Further operations can be seen by adding '--help' to the lcb command
+
+
