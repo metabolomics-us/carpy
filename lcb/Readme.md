@@ -22,6 +22,34 @@ env variables for applicable
 - STASIS_API_TOKEN 
 - STASIS_API_URL
 
+
+### Local installation
+
+1. create venv
+``` 
+virtualenv env 
+```
+2. activate env
+```
+source env/bin/activate
+```
+3. install requirements
+```
+pip install --upgrade -r requirements.txt
+```
+
+4. install lcb
+
+```
+pip install ./
+
+```
+4. run
+
+```
+lcb-client.py <?>
+```
+
 ### Operations
 
 to import one of the job please execute:
