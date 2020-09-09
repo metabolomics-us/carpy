@@ -44,7 +44,16 @@ pip install --upgrade -r requirements.txt
 pip install ./
 
 ```
-4. run
+
+5. set the required variables
+```
+export STASIS_API_TOKEN=*********<secret>*
+export STASIS_API_URL=https://dev-api.metabolomics.us/stasis****
+```
+
+These define the evironment you want to be in. Nost of the time this should be either prod-api or dev-api
+
+5. run
 
 ```
 lcb-client.py <?>
