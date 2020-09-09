@@ -33,6 +33,8 @@ class NodeEvaluator(Evaluator):
 
         # todo get correct queue name from stasis
         queue_url = "https://sqs.us-west-2.amazonaws.com/702514165722/StasisScheduleQueue-dev_FARGATE"
+        # start docker
+        client = docker.from_env()
 
         while True:
             # Receive message from SQS queue
@@ -57,29 +59,20 @@ class NodeEvaluator(Evaluator):
             session = Session()
             credentials = session.get_credentials()
             current_credentials = credentials.get_frozen_credentials()
+            environment = {
+                'AWS_ACCESS_KEY_ID': current_credentials.access_key,
+                'AWS_DEFAULT_REGION': 'us-west-2',
+                'AWS_SECRET_ACCESS_KEY': current_credentials.secret_key,
+                'STASIS_KEY': os.getenv('STASIS_API_TOKEN'),
+                'STASIS_URL': os.getenv('STASIS_API_URL'),
+            }
 
             if config['stasis-service'] == 'secure-carrot-runner':
-                environment = {
-                    'AWS_ACCESS_KEY_ID': current_credentials.access_key,
-                    'AWS_DEFAULT_REGION': 'us-west-2',
-                    'AWS_SECRET_ACCESS_KEY': current_credentials.secret_key,
-                    'STASIS_KEY': os.getenv('STASIS_API_TOKEN'),
-                    'STASIS_URL': os.getenv('STASIS_API_URL'),
-                    'SPRING_PROFILES_ACTIVE': "{}{},{}".format('aws', 'dev', config['profile']),
-                    'CARROT_SAMPLE': config['sample'],
-                    'CARROT_METHOD': config['method'],
-                    'CARROT_MODE': config['profile']
-                }
-                # get message
-
-                # evaluate what kind of task we got
-
-                # build environmment variables
-
-                # start docker
-                client = docker.from_env()
-
-                print("start process environment")
+                environment['SPRING_PROFILES_ACTIVE'] = "{}{},{}".format('aws', 'dev', config['profile'])
+                environment['CARROT_SAMPLE'] = config['sample']
+                environment['CARROT_METHOD'] = config['method']
+                environment['CARROT_MODE'] = config['profile']
+                print("start SAMPLE process environment")
                 container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:latest",
                                                   environment=environment, detach=True, auto_remove=True)
                 # run image
@@ -93,6 +86,24 @@ class NodeEvaluator(Evaluator):
                     QueueUrl=queue_url,
                     ReceiptHandle=receipt_handle
                 )
+
+            elif config['stasis-service'] == 'secure-carrot-aggregator':
+                environment['CARROT_JOB'] = config['job']
+                print("start JOB process environment")
+                container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest",
+                                                  environment=environment, detach=True, auto_remove=True)
+                # run image
+                for line in container.logs(stream=True):
+                    print(str(line.strip()))
+                pass
+
+                receipt_handle = message['ReceiptHandle']
+
+                sqs.delete_message(
+                    QueueUrl=queue_url,
+                    ReceiptHandle=receipt_handle
+                )
+
             else:
                 print("not yet supported!!!")
-                print(json.dump(body,indent=4))
+                print(json.dump(body, indent=4))
