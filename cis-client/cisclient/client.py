@@ -57,6 +57,13 @@ class CISClient:
         else:
             raise Exception(result)
 
+    def size_library(self, library) -> List[str]:
+        result: requests.Response = self.http.get(f"{self._url}/libraries/{library}", headers=self._header)
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
+
     def exists_library(self, library: str) -> bool:
         result = self.http.head(f"{self._url}/libraries/{library}", headers=self._header)
 
@@ -67,13 +74,89 @@ class CISClient:
         else:
             raise Exception(result)
 
-    def get_compounds(self, library: str) -> List[dict]:
+    def get_compounds_by_type(self, library: str, target_type: str, offset: int = 0, autopage: bool = True) -> List[
+        dict]:
         limit = 10
-        offset = 0
+        result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}/{target_type}", headers=self._header)
+
+        if result.status_code == 200:
+            result: List = result.json()
+
+            if autopage:
+                data = result
+
+                while len(data) > 0:
+                    # avoid recursive calls
+                    offset = offset + limit
+                    data = self.get_compounds_by_type(library=library, offset=offset, autopage=False,
+                                                      target_type=target_type)
+
+                    for x in data:
+                        result.append(x)
+
+            return result
+
+        elif result.status_code == 404:
+            return []
+        else:
+            raise Exception(result)
+
+    def get_compounds(self, library: str, offset: int = 0, autopage: bool = True) -> List[dict]:
+        limit = 10
         result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}", headers=self._header)
 
         if result.status_code == 200:
-            return result.json()
+            result: List = result.json()
+
+            if autopage:
+                data = result
+
+                while len(data) > 0:
+                    # avoid recursive calls
+                    offset = offset + limit
+                    data = self.get_compounds(library=library, offset=offset, autopage=False)
+
+                    for x in data:
+                        result.append(x)
+
+            return result
+
+        elif result.status_code == 404:
+            return []
+        else:
+            raise Exception(result)
+
+    def get_members(self, library: str, splash: str, offset: int = 0, autopage: bool = True) -> List[dict]:
+        limit = 10
+        result = self.http.get(f"{self._url}/compound/members/{library}/{splash}/{limit}/{offset}",
+                               headers=self._header)
+
+        if result.status_code == 200:
+            result: List = result.json()
+            if autopage:
+                for x in self.get_members(library=library, splash=splash, offset=offset + limit):
+                    result.append(x)
+            return result
+
+
+        elif result.status_code == 404:
+            return []
+        else:
+            raise Exception(result)
+
+    def has_members(self, splash: str, library: str):
+        """
+        returns all members of a consensus spectra
+        :param splash:
+        :param library:
+        :return:
+        """
+        result = self.http.head(f"{self._url}/compound/members/{library}/{splash}", headers=self._header)
+
+        if result.status_code == 200:
+            return True
+        elif result.status_code == 404:
+            return False
         else:
             raise Exception(result)
 
@@ -85,6 +168,13 @@ class CISClient:
         elif result.status_code == 404:
             return False
         else:
+            raise Exception(result)
+
+    def name_compound(self, library: str, splash: str, name: str, identifiedBy: str, comment: str):
+        result = self.http.post(f"{self._url}/compound/identify/{library}/{splash}/{identifiedBy}/{name}",
+                                headers=self._header, data=comment)
+
+        if result.status_code != 200:
             raise Exception(result)
 
     def get_compound(self, library: str, splash: str) -> dict:

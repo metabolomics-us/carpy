@@ -70,7 +70,7 @@ def test_find_replaced():
 def test_add_metadata(stasis):
     # Test correct indexing of samples in header
 
-    aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': 'samples'}, stasis)
+    aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': 'test/data'}, stasis)
     results = _build_result(stasis, samples)
 
     md = aggregator.add_metadata(samples, results)
@@ -100,14 +100,14 @@ def test_process_sample_list(stasis):
                'lgvty_cells_pilot_2_NEG_50K_BR_03',
                'lgvty_cells_pilot_2_NEG_50K_BR_05']
 
-    aggregator = Aggregator({'infile': 'samples/test.txt', 'dir': 'samples'}, stasis)
-    aggregator.process_sample_list(samples, 'samples/test.txt')
+    aggregator = Aggregator({'infile': './test/data/test.txt', 'dir': './test/data'}, stasis)
+    aggregator.process_sample_list(samples, './test/data/test.txt')
 
 
 def test_format_sample(stasis):
     sample = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
     samplefile = 'lgvty_cells_pilot_2_NEG_50K_BR_01'
-    aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': 'samples'}, stasis)
+    aggregator = Aggregator({'infile': 'filename', 'save': True, 'dir': './test/data/samples'}, stasis)
     result = stasis.sample_result_as_json(samplefile)
 
     formatted = aggregator.format_sample(result)
@@ -132,12 +132,12 @@ def _build_result(stasis, locsamples):
 
 
 def test_aggregate(stasis):
-    aggregator = Aggregator(args=parser.parse_args(['test/test.txt']), stasis=stasis)
+    aggregator = Aggregator(args=parser.parse_args(['--files', 'test/test.txt', '--dir', './test/data']), stasis=stasis)
     aggregator.aggregate()
 
 
 def test_aggregate_file_not_found(stasis):
-    aggregator = Aggregator(args=parser.parse_args(['bad.txt']), stasis=stasis)
+    aggregator = Aggregator(args=parser.parse_args(['--files', 'bad.txt']), stasis=stasis)
     try:
         aggregator.aggregate()
         fail()
@@ -156,6 +156,6 @@ def test_aggregate_no_args(stasis):
 
 
 def test_aggregate_sample_only(stasis):
-    aggregator = Aggregator({}, stasis)
+    aggregator = Aggregator(args=parser.parse_args(['--dir', './test/data']), stasis=stasis)
 
     aggregator.aggregate_samples(samples=samples)

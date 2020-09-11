@@ -4,6 +4,7 @@ from stasis_client.client import StasisClient
 
 from lcb.aggregate_evaluator import AggregateEvaluator
 from lcb.job_evaluator import JobEvaluator
+from lcb.node_evaluator import NodeEvaluator
 from lcb.sample_evaluator import SampleEvaluator
 
 
@@ -23,9 +24,12 @@ class Parser:
             mapping = {
                 'sample': SampleEvaluator(stasisClient).evaluate,
                 'job': JobEvaluator(stasisClient).evaluate,
-                'aggregate': AggregateEvaluator(stasisClient).evaluate
+                'aggregate': AggregateEvaluator(stasisClient).evaluate,
+                'node': NodeEvaluator(stasisClient).evaluate
             }
 
+
+        # TODO this needs to be more dynamic done over all the mappings
         jobs = self.configure_jobs(main_parser=parser, sub_parser=sub)
         self.configure(jobs, mapping)
 
@@ -34,6 +38,9 @@ class Parser:
 
         aggregator = self.configure_aggregate(main_parser=parser, sub_parser=sub)
         self.configure(aggregator, mapping)
+
+        node = self.configure_node(main_parser=parser, sub_parser=sub)
+        self.configure(node, mapping)
 
         self.parser = parser
 
@@ -72,6 +79,15 @@ class Parser:
         """
         configures a monitor to track the state of calculations
         """
+
+    @staticmethod
+    def configure_node(main_parser, sub_parser):
+
+        parser = sub_parser.add_parser(name="node", help="starts a node for computations")
+
+        parser.add_argument("-s", "--single", help="runs a single node", action="store_true",
+                            required=True)
+        return parser
 
     @staticmethod
     def configure_aggregate(main_parser, sub_parser):
@@ -118,6 +134,8 @@ class Parser:
                             help="how long do we wait in seconds between attempts for the wait module",
                             type=int, default=10, dest='wait_time')
 
+        parser.add_argument("-d", "--detail", help="specify this flag to return a detailed report",
+                            action='store_true')
         parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
         parser.add_argument("-s", "--status", help="specify this flag to return the current status",
                             action='store_true')

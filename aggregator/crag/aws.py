@@ -28,7 +28,6 @@ class JobAggregator(Aggregator):
         job_data = self.stasis_cli.load_job(job)
 
         assert isinstance(job_data, list), "something went wrong during loading the job data"
-        print("job consists of: \n\n{}\n".format(job_data))
 
         # directory
         directory = "result/{}".format(job)
@@ -44,5 +43,9 @@ class JobAggregator(Aggregator):
                 self.stasis_cli.upload_job_result(job, directory)
 
             return True
-        except NoSamplesFoundException:
+        except NoSamplesFoundException as e:
+            # mark job as failed now
+            self.stasis_cli.set_job_state(job, "failed", str(e))
+
+            print(self.stasis_cli.load_job_state(job))
             return False

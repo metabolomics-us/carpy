@@ -7,7 +7,8 @@ import pytest
 from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job, store_sample_for_job, schedule_job_from_queue
 from stasis.schedule.backend import Backend
 from stasis.schedule.monitor import monitor_queue
-from stasis.schedule.schedule import MESSAGE_BUFFER, _get_queue
+from stasis.schedule.schedule import _get_queue
+from stasis.config import MESSAGE_BUFFER
 from stasis.service.Status import *
 from stasis.tables import load_job_samples_with_states, get_tracked_state, get_job_state, get_job_config, \
     get_tracked_sample
@@ -49,8 +50,6 @@ def test_store_job_fail_empty_method(requireMocking):
     assert result['statusCode'] == 503
 
 
-
-
 def test_store_job_fail_empty_profile(requireMocking):
     """
     tests storing a job in the database
@@ -68,7 +67,7 @@ def test_store_job_fail_empty_profile(requireMocking):
     assert result['statusCode'] == 503
 
 
-@pytest.mark.parametrize("samples", [50, 500, 1000, 5000])
+@pytest.mark.parametrize("samples", [50, 500, 100, 500])
 def test_store_job_many_samples(requireMocking, samples):
     """
     tests storing a job in the database
@@ -323,7 +322,7 @@ def validate_backened(backend, mocked_10_sample_job):
     assert job_config['resource'] == backend
 
 
-@pytest.mark.parametrize("samples", [15,33,50,66, 500, 1000])
+@pytest.mark.parametrize("samples", [15, 33, 50, 66, 100, 500])
 def test_schedule_job_many_samples(requireMocking, samples):
     """
     tests scheduling very large jobs

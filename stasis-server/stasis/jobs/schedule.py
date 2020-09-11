@@ -7,11 +7,65 @@ from jsonschema import validate, ValidationError
 from stasis.headers import __HTTP_HEADERS__
 from stasis.jobs.sync import sync_job
 from stasis.schedule.backend import DEFAULT_PROCESSING_BACKEND, Backend
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_RUNNER
+from stasis.schedule.schedule import schedule_to_queue
+from stasis.config import SECURE_CARROT_RUNNER
 from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, \
     get_job_config, get_file_handle, save_sample_state, load_job_samples_with_pagination
+
+
+def remove_sample_for_job(event, context):
+    """
+    remove a sample from a stored job
+    """
+
+    print(event)
+    if 'pathParameters' in event:
+        parameters = event['pathParameters']
+        if 'sample' in parameters and 'job' in parameters:
+            tm = TableManager()
+            rid = tm.generate_job_id(parameters['job'], parameters['sample'])
+            trktable = tm.get_job_sample_state_table()
+
+            print(f"generated id: {rid}")
+            try:
+                saved = trktable.delete_item(
+                    Key={
+                        'id': rid,
+                        'job': parameters['job']
+                    }
+                )  # save or update our item
+
+                print(saved)
+                return {
+
+                    'body': '',
+
+                    'statusCode': 200,
+
+                    'isBase64Encoded': False,
+
+                    'headers': __HTTP_HEADERS__
+
+                }
+            except Exception as e:
+
+                traceback.print_exc()
+                return {
+
+                    'body': str(e),
+
+                    'statusCode': 500,
+
+                    'isBase64Encoded': False,
+
+                    'headers': __HTTP_HEADERS__
+
+                }
+        return {
+            'statusCode': 503
+        }
 
 
 def store_sample_for_job(event, context):
@@ -128,7 +182,6 @@ def store_job(event, context):
     # send to processing queue, might timeout web session for very large jobs
     # refactor later accordingly to let it get processed in a lambda itself to avoid this
     try:
-
         # store actual job in the job table with state scheduled
         set_job_state(job=job_id, method=method, profile=profile,
                       state=ENTERED, resource=resource)
@@ -146,7 +199,7 @@ def store_job(event, context):
         }
     except Exception as e:
         # update job state in the system to failed with the related reason
-        set_job_state(job=job_id, method=method,  profile=profile,
+        set_job_state(job=job_id, method=method, profile=profile,
                       state=FAILED, reason=str(e))
 
         traceback.print_exc()
@@ -200,7 +253,7 @@ def schedule_job_from_queue(event, context):
                                   queue_name="jobQueue")
 
 
-def schedule_samples_to_queue( job_id, key, method, profile, resource, samples):
+def schedule_samples_to_queue(job_id, key, method, profile, resource, samples):
     """
     schedules a sample to the internal scheduling queue for fargate jobs
     """
@@ -260,7 +313,7 @@ def schedule_job(event, context):
     resource = details['resource']
     try:
         # update job state
-        set_job_state(job=job_id, method=method,  profile=profile,
+        set_job_state(job=job_id, method=method, profile=profile,
                       state=SCHEDULING, resource=resource)
 
         # now send to job sync queue

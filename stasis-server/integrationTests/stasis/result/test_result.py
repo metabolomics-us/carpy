@@ -68,12 +68,6 @@ def test_create(api_token):
 
     time.sleep(5)
 
-    response = requests.get(apiUrl + '/' + samplename, headers=api_token)
-    assert 200 == response.status_code
-
-    sample = json.loads(response.content)
-    assert samplename == sample['sample']
-
     response = requests.head(apiUrl + '/' + samplename, headers=api_token)
     assert 200 == response.status_code
 

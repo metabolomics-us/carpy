@@ -132,6 +132,19 @@ functions:
               paths:
                 library: true
 
+  librarySize:
+    handler: cis/libraries.size
+    events:
+      - http:
+          path: libraries/{library}
+          method: get
+          cors: true
+          documentation:
+            summary: returns the count in compounds of a library by type
+          request:
+            parameter:
+              paths:
+                library: true
   librariesDelete:
     handler: cis/libraries.delete
     events:
@@ -162,6 +175,34 @@ functions:
                 limit: true
                 offset: true
 
+      - http:
+          path: compounds/{library}/{limit}/{offset}/{type}
+          method: get
+          cors: true
+          documentation:
+            summary: returns all the compounds of the given library and type
+          request:
+            parameter:
+              paths:
+                library: true
+                type: true
+                limit: true
+  compoundSetName:
+    handler: cis/compounds.register_name
+    events:
+      - http:
+          path: compound/identify/{library}/{splash}/{identifiedBy}/{name}
+          method: post
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                identifiedBy: true
+                name: true
   compoundGet:
     handler: cis/compounds.get
     events:
@@ -171,6 +212,37 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+
+  compoundGetMembers:
+    handler: cis/compounds.get_members
+    events:
+      - http:
+          path: compound/members/{library}/{splash}/{limit}/{offset}
+          method: get
+          cors: true
+          documentation:
+            summary: returns the members of the given compounds
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                limit: true
+                offset: true
+  compoundHasMembers:
+    handler: cis/compounds.has_members
+    events:
+      - http:
+          path: compound/members/{library}/{splash}
+          method: head
+          cors: true
+          documentation:
+            summary: returns if the given compound has any associated splashes in this library
           request:
             parameter:
               paths:

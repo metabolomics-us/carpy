@@ -21,7 +21,9 @@ def stasis():
         """
         print("mocking call by loading from file directly: {}".format(sample_name))
         try:
-            with open("test/data/{}.mzml.json".format(sample_name), 'r') as f:
+            if 'mzml.json' not in sample_name:
+                sample_name = "{}.mzml.json".format(sample_name)
+            with open("test/data/{}".format(sample_name), 'r') as f:
                 return json.load(f)
         except FileNotFoundError:
             return None

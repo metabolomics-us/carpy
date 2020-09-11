@@ -142,6 +142,3 @@ def test_create_reinjection(requireMocking):
 
     print([json.loads(s['body']) for s in responses])
 
-    # if we decide to strip reinjections from the sample in traking, uncomment following line
-    # assert all('test_reinjected' == json.loads(resp['body'])['sample'] for resp in responses)
-    assert all('myReinjectionTest' == json.loads(resp['body'])['experiment'] for resp in responses)

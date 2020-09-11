@@ -222,7 +222,7 @@ class TableManager:
                             'KeyType': 'HASH'
                         },
                         {
-                            'AttributeName': 'experiment',
+                            'AttributeName': 'sample',
                             'KeyType': 'RANGE'
                         }
                     ],
@@ -232,30 +232,11 @@ class TableManager:
                             'AttributeType': 'S'
                         },
                         {
-                            'AttributeName': 'experiment',
+                            'AttributeName': 'sample',
                             'AttributeType': 'S'
                         }
                     ],
-                    BillingMode='PAY_PER_REQUEST',
-                    GlobalSecondaryIndexes=[
-                        {
-                            'IndexName': 'experiment-id-index',
-                            'KeySchema': [
-                                {
-                                    'AttributeName': 'experiment',
-                                    'KeyType': 'HASH'
-                                },
-                                {
-                                    'AttributeName': 'id',
-                                    'KeyType': 'RANGE'
-                                }
-                            ],
-                            'Projection': {
-                                'ProjectionType': 'ALL'
-                            },
-
-                        }
-                    ]
+                    BillingMode='PAY_PER_REQUEST'
                 ))
             except ParamValidationError as e:
                 raise e
@@ -786,10 +767,12 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
     if reason is not None:
         new_status['reason'] = reason
 
+    results = []
     if resp['Items']:
         # only keep elements with a lower priority
-        item = resp['Items'][0]
-        item['status'] = [x for x in item['status'] if int(x['priority']) < int(new_status['priority'])]
+        for item in resp['Items']:
+            item['status'] = [x for x in item['status'] if int(x['priority']) < int(new_status['priority'])]
+            results.append(update_sample_status_item(fileHandle, item, new_status, sample, state, table, tm))
     else:
         item = {
             'id': sample,
@@ -797,6 +780,16 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
             'status': []
         }
 
+        results.append(update_sample_status_item(fileHandle, item, new_status, sample, state, table, tm))
+
+    # uggly hack TODO fing a better solution long term. Like looking up the experiment and ensure that the item is not stored twice
+    return results[0]
+
+
+def update_sample_status_item(fileHandle, item, new_status, sample, state, table, tm):
+    """
+    updates a sample status item in the system
+    """
     if len(item['status']) > 0:
         previous = item['status'][-1]
         # update if no previous file handle is set
@@ -809,10 +802,8 @@ def save_sample_state(sample: str, state: str, fileHandle: Optional[str] = None,
         else:
             if 'fileHandle' in previous:
                 new_status['fileHandle'] = previous['fileHandle']
-
     # register the new state
     item['status'].append(new_status)
-    item['experiment'] = _fetch_experiment(sample)
 
     item = tm.sanitize_json_for_dynamo(item)
     # put item in table instead of queueing
@@ -852,6 +843,11 @@ def _fetch_experiment(sample: str) -> str:
 
     if result['Items']:
         item = result['Items'][0]
+
+        if len(result['Items']) > 1:
+            raise Exception(
+                "received more than 1 item for this sample: {}. Received {}. Experiments were {}".format(sample, len(
+                    result['Items']), list(map(lambda x: x['experiment'], result['Items']))))
         if 'experiment' in item:
             return item['experiment']
         else:

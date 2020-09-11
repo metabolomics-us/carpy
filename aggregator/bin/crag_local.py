@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 
 from crag.aggregator import Aggregator
@@ -6,7 +7,7 @@ from crag.aggregator import Aggregator
 def create_parser():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('infiles', nargs='+', metavar='FILE', type=str,
+    parser.add_argument('-f', '--files', nargs='*', type=str, required=False, dest='infiles',
                         help='full filename of the text files containing the list of samples (one per line) to '
                              'aggregate.')
     parser.add_argument('-e', '--experiment', help='name of the experiment to aggregate results', required=False)

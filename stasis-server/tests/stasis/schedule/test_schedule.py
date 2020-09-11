@@ -2,9 +2,10 @@ import time
 
 import simplejson as json
 
+import stasis.schedule.fargate
 import stasis.schedule.monitor
 from stasis.schedule import schedule as s
-from stasis.schedule.schedule import SECURE_CARROT_RUNNER, MAX_FARGATE_TASKS, MAX_FARGATE_TASKS_BY_SERVICE
+from stasis.config import SECURE_CARROT_RUNNER, MAX_FARGATE_TASKS_BY_SERVICE, MAX_FARGATE_TASKS
 
 
 def test_current_tasks(requireMocking):
@@ -56,11 +57,11 @@ def test__free_task_count_no_service(requireMocking):
         response = s.schedule({'body': jsonString}, {})
         stasis.schedule.monitor.monitor_queue({}, {})
 
-        tasks_for_service = s._free_task_count(service=SECURE_CARROT_RUNNER)
+        tasks_for_service = stasis.schedule.fargate._free_task_count(service=SECURE_CARROT_RUNNER)
         max_tasks_for_service = MAX_FARGATE_TASKS_BY_SERVICE[SECURE_CARROT_RUNNER]
 
         assert max_tasks_for_service - x - 1 == tasks_for_service
 
-    assert s._free_task_count(service=SECURE_CARROT_RUNNER) == 0
-    assert s._free_task_count() == MAX_FARGATE_TASKS - MAX_FARGATE_TASKS_BY_SERVICE[
+    assert stasis.schedule.fargate._free_task_count(service=SECURE_CARROT_RUNNER) == 0
+    assert stasis.schedule.fargate._free_task_count() == MAX_FARGATE_TASKS - MAX_FARGATE_TASKS_BY_SERVICE[
         SECURE_CARROT_RUNNER]

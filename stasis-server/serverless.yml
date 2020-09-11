@@ -20,6 +20,10 @@ provider:
   apiKeys:
     - "stasis-${self:custom.stage}"
 
+  tracing:
+    lambda: true
+    apiGateway: true
+
   #required permissions
   iamRoleStatements:
     - Effect: Allow
@@ -46,7 +50,12 @@ provider:
       Action:
         - iam:PassRole
       Resource: "*"
-
+    - Effect: Allow
+      Action:
+        - xray:PutTraceSegment
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+      Resource: "*"
   memorySize: 128
   timeout: 30
   versionFunctions: false
@@ -512,6 +521,21 @@ functions:
               - name: job
                 description: the job id
                 required: true
+      - http:
+          path: job/status/{job}
+          private: true
+          method: post
+          cors: true
+          request:
+            parameter:
+              paths:
+                job: true
+          documentation:
+            summary: forcefully updates the status of a job
+            queryParams:
+              - name: job
+                description: the job id
+                required: true
 
     #defines to which topic we want to connect
     environment:
@@ -560,6 +584,42 @@ functions:
       trackingTable: ${self:custom.trackingTable}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
+
+
+  #schedule data to for handling the processing and aggregation on the backend
+  jobremovesample:
+    handler: stasis/jobs/schedule.remove_sample_for_job
+    events:
+      - http:
+          path: job/sample/remove/{job}/{sample}
+          method: delete
+          private: true
+          cors: true
+          documentation:
+            summary: removes a sample associated with a job. required for performance reasons
+
+          request:
+            parameter:
+              paths:
+                job: true
+                sample: true
+
+    # requires more memory to get access to faster cpus
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
   #schedule data to for handling the processing and aggregation on the backend
   jobstoresample:
     handler: stasis/jobs/schedule.store_sample_for_job
@@ -737,4 +797,3 @@ functions:
     timeout: 900
     environment:
       dataBucket: ${self:custom.dataJSONBucketName}
-

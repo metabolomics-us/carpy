@@ -2,7 +2,8 @@ import simplejson as json
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend, DEFAULT_PROCESSING_BACKEND
-from stasis.schedule.schedule import schedule_to_queue, SECURE_CARROT_AGGREGATOR, _get_queue
+from stasis.schedule.schedule import schedule_to_queue, _get_queue
+from stasis.config import SECURE_CARROT_AGGREGATOR
 from stasis.service.Status import *
 from stasis.tables import load_job_samples_with_states, update_job_state, \
     get_job_state, load_jobs_for_sample, get_job_config
@@ -150,6 +151,11 @@ def calculate_job_state(job: str) -> Optional[str]:
         finally:
             from collections import Counter
             print("state distribution for job '{}' with {} samples is: {}".format(job, len(states), Counter(states)))
+            counter = 0
+            for sample, tracking_state in job_definition.items():
+                print(f"{counter} - sample {sample} is in state {tracking_state} ")
+                counter = counter + 1
+            print("done")
 
     else:
         raise Exception("we did not find a job definition for {}, Please investigate".format(job))

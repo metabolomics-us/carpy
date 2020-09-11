@@ -1,10 +1,9 @@
 import json
-import random
 
 from stasis.jobs import tracking
-from stasis.jobs.schedule import monitor_jobs
+from stasis.jobs.schedule import monitor_jobs, FAILED
 from stasis.jobs.sync import calculate_job_state
-from stasis.service.Status import SCHEDULED, AGGREGATING, EXPORTED, FAILED, AGGREGATED, PROCESSING
+from stasis.service.Status import SCHEDULED, PROCESSING
 from stasis.tables import set_job_state
 from stasis.tracking import create
 
@@ -145,6 +144,17 @@ def test_status(requireMocking):
 
     assert json.loads(result['body'])['job_state'] == PROCESSING
 
+    result = tracking.status({
+        "pathParameters": {
+            "job": "123456",
+        },
+        "body": json.dumps({
+            'job_state': FAILED
+        })
+    }, {})
+
+    assert json.loads(result['body'])['job_state'] == FAILED
+
 
 def test_description(requireMocking):
     for x in range(0, 40):
@@ -182,6 +192,7 @@ def test_description(requireMocking):
     assert result is not None
     assert result['statusCode'] == 200
     assert len(json.loads(result['body'])) == 15
+
 
 def test_description_updated_sample_must_be_exported(requireMocking):
     for x in range(0, 10):

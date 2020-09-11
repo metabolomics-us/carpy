@@ -4,7 +4,7 @@ import requests
 import simplejson as json
 
 apiUrl = "https://test-api.metabolomics.us/stasis"
-samplename = "test_%s" % str(time.time()).split('.')[-1]
+samplename = "test_%s" % str(time.time())
 delay = 1
 
 
@@ -14,6 +14,7 @@ def test_create(api_token):
         'status': 'entered'
     }
 
+    print(data)
     response = requests.post(apiUrl + '/tracking', json=data, headers=api_token)
     assert 200 == response.status_code
     time.sleep(delay)

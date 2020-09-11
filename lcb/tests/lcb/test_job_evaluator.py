@@ -117,15 +117,17 @@ def test_upload_and_process_and_monitor_and_download(job_evaluator, test_job_def
     print("monitoring")
 
     result = job_evaluator.evaluate(
-        {'id': test_job['id'],  'wait_for': ['aggregated_and_uploaded'], 'wait_attempts': 100,
-         'wait_time': 10})['wait_for']
-
+        {'id': test_job['id'], 'wait': True, 'wait_for': ['aggregated_and_uploaded', 'failed'], 'wait_attempts': 10,
+         'wait_time': 60})[
+        'wait_for']
     if result is False:
+        job_evaluator.evaluate({'id': test_job_definition['id'], 'detail': True})
         fail()
 
     result = job_evaluator.evaluate({'id': test_job_definition['id'], 'retrieve': str(tmp_path.absolute())})[
         'retrieve']
     if result is False:
+        job_evaluator.evaluate({'id': test_job_definition['id'], 'detail': True})
         fail("were not able to download {}".format(test_job_definition['id']))
 
 
