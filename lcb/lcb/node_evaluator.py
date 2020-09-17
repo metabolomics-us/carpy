@@ -93,7 +93,7 @@ class NodeEvaluator(Evaluator):
         environment['CARROT_JOB'] = config['job']
         print("start JOB process environment")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest",
-                                          environment=environment, detach=True, auto_remove=True)
+                                          environment=environment, detach=True, auto_remove=False)
         # run image
         for line in container.logs(stream=True):
             print(str(line.strip()))

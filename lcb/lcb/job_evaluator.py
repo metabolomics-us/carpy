@@ -44,7 +44,6 @@ class JobEvaluator(Evaluator):
 
         return job
 
-
     def process(self, id, args):
         result = self.client.schedule_job(id)
 
@@ -92,7 +91,7 @@ class JobEvaluator(Evaluator):
         print(json.dumps(job, indent=4))
 
         samples = []
-        for sample in tqdm(job,desc="loading details for all samples"):
+        for sample in tqdm(job, desc="loading details for all samples"):
             samples.append(self.client.sample_state(sample['sample'], full_response=True))
         result = {
             'job': job_state,
@@ -165,13 +164,17 @@ class JobEvaluator(Evaluator):
         """
         print("waiting for job to be in state {}".format(args['wait_for']))
         for x in range(0, args['wait_attempts']):
-            result = self.client.load_job_state(id)
+            try:
+                result = self.client.load_job_state(id)
 
-            print(result)
-            if result['job_state'] in args['wait_for']:
-                return True
+                print(result)
+                if result['job_state'] in args['wait_for']:
+                    return True
 
-            sleep(args['wait_time'])
+            except Exception as e:
+                print(f"observed error, ignoring it: {e}")
+            finally:
+                sleep(args['wait_time'])
 
         return False
 
