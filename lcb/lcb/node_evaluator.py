@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from time import time, sleep
 
 from lcb.evaluator import Evaluator
@@ -74,19 +75,23 @@ class NodeEvaluator(Evaluator):
                     'STASIS_URL': os.getenv('STASIS_API_URL'),
                 }
 
-                if config['stasis-service'] == 'secure-carrot-runner':
-                    self.process_single_sample(client, config, environment, message, queue_url, sqs)
+                try:
+                    if config['stasis-service'] == 'secure-carrot-runner':
+                        self.process_single_sample(client, config, environment, message, queue_url, sqs, args)
 
-                elif config['stasis-service'] == 'secure-carrot-aggregator':
-                    self.process_aggregation(client, config, environment, message, queue_url, sqs)
-                else:
-                    print("not yet supported!!!")
-                    print(json.dump(body, indent=4))
+                    elif config['stasis-service'] == 'secure-carrot-aggregator':
+                        self.process_aggregation(client, config, environment, message, queue_url, sqs, args)
+                    else:
+                        print("not yet supported!!!")
+                        print(json.dumps(body, indent=4))
+                except Exception as e:
+                    traceback.print_exc()
+                    print("major error observed which breaks!")
             else:
                 print("sleeping for 5 seconds since queue is empty")
                 sleep(5)
 
-    def process_aggregation(self, client, config, environment, message, queue_url, sqs):
+    def process_aggregation(self, client, config, environment, message, queue_url, sqs, args):
         """
         processes a local aggregation in this node
         """
@@ -104,17 +109,37 @@ class NodeEvaluator(Evaluator):
             ReceiptHandle=receipt_handle
         )
 
-    def process_single_sample(self, client, config, environment, message, queue_url, sqs):
+    def process_single_sample(self, client, config, environment, message, queue_url, sqs, args):
         """
         procees a single sample
         """
-        environment['SPRING_PROFILES_ACTIVE'] = "{}{},{}".format('aws', 'dev', config['profile'])
+
+        springProfiles = self.optimize_profiles(args, config)
+
+        print(f"generated spring profiles to activate: {springProfiles}")
+        environment['SPRING_PROFILES_ACTIVE'] = springProfiles
         environment['CARROT_SAMPLE'] = config['sample']
         environment['CARROT_METHOD'] = config['method']
         environment['CARROT_MODE'] = config['profile']
+
+        for env in args['env']:
+            environment[env] = os.getenv(env)
+
         print("start SAMPLE process environment")
-        container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:latest",
-                                          environment=environment, detach=True, auto_remove=True)
+
+        docker_args = {
+            'image': "702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:latest",
+            'environment': environment, 'detach': True,
+            'auto_remove': args['keep'] is False
+        }
+
+        for docker in args['docker']:
+            key, value = docker.split("=")
+            docker_args[key] = value
+
+        print(f"utilizing docker configuration:\n {json.dumps(docker_args, indent=4)}")
+        container = client.containers.run(**docker_args)
+
         # run image
         for line in container.logs(stream=True):
             print(str(line.strip()))
@@ -124,3 +149,16 @@ class NodeEvaluator(Evaluator):
             QueueUrl=queue_url,
             ReceiptHandle=receipt_handle
         )
+
+    @staticmethod
+    def optimize_profiles(args, config):
+        """
+        optimizes the profiles to be activate or deactivated in the processor
+        """
+        springProfiles = config['profile'].split(",")
+        for add in args['add']:
+            springProfiles.append(add)
+        for remove in args['remove']:
+            if remove in springProfiles:
+                springProfiles.remove(remove)
+        return ",".join(springProfiles).strip()

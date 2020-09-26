@@ -28,7 +28,6 @@ class Parser:
                 'node': NodeEvaluator(stasisClient).evaluate
             }
 
-
         # TODO this needs to be more dynamic done over all the mappings
         jobs = self.configure_jobs(main_parser=parser, sub_parser=sub)
         self.configure(jobs, mapping)
@@ -87,6 +86,22 @@ class Parser:
 
         parser.add_argument("-s", "--single", help="runs a single node", action="store_true",
                             required=True)
+        parser.add_argument("-r", "--remove",
+                            help="remove a profile from instructions. In case we don't want to use it right now",
+                            action="append",
+                            required=False, default=[])
+        parser.add_argument("-a", "--add", help="add a profile to the calculation instructions", action="append",
+                            required=False, default=['awsdev'])
+
+        parser.add_argument("-k", "--keep", help="keep the executed docker container and logs for diagnostics",
+                            action="store_true",
+                            required=False, default=False)
+        parser.add_argument("-d", "--docker", help="additional arguments for the docker container to be run",
+                            action="append",
+                            required=False, default=[])
+        parser.add_argument("-e", "--env",
+                            help="forward the specified env variable from the host to the docker container",
+                            action="append", required=False, default=[])
         return parser
 
     @staticmethod
