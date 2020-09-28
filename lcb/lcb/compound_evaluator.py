@@ -1,5 +1,4 @@
 from cisclient.client import CISClient
-from crag.aws import JobAggregator
 from stasis_client.client import StasisClient
 
 from lcb.evaluator import Evaluator
@@ -60,7 +59,7 @@ class SteacEvaluator(Evaluator):
 
         parser = sub_parser.add_parser(name="steac", help="provides steac interactions")
 
-        parser.add_argument("-m", "--method", help="this is the method you want to run steac",
+        parser.add_argument("-m", "--method", help="this is the methods you want to run steac over",
                             required=False, action="append", default=[])
 
         parser.add_argument("-l", "--local", help="this is the method you want to run steac",
