@@ -194,3 +194,46 @@ class JobEvaluator(Evaluator):
         except Exception as e:
             print(e)
             return False
+
+    @staticmethod
+    def configure_jobs(main_parser, sub_parser):
+        """
+        configures all the options for handling of jobs
+        :param jobs:
+        :return:
+        """
+
+        parser = sub_parser.add_parser(name="job", help="job based operations")
+        parser.add_argument("-i", "--id", help="this is your job id", required=True)
+
+        parser.add_argument("-u", "--upload",
+                            help="registers the specified job file in the system in preparation for processing. You steel need to start the processing",
+                            type=str, default=False)
+        parser.add_argument("-p", "--process",
+                            help="this starts the processing of the specified job id in the remote system",
+                            action='store_true')
+        parser.add_argument("--wait-for", nargs='+',
+                            help="which states we want to wait for.", dest='wait_for',
+                            type=str, default=False)
+        parser.add_argument("--wait-attempts",
+                            help="how many attempts we do until we are done waiting for a job",
+                            type=int, default=10000, dest='wait_attempts')
+        parser.add_argument("--wait-time",
+                            help="how long do we wait in seconds between attempts for the wait module",
+                            type=int, default=10, dest='wait_time')
+
+        parser.add_argument("-d", "--detail", help="specify this flag to return a detailed report",
+                            action='store_true')
+        parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
+        parser.add_argument("-s", "--status", help="specify this flag to return the current status",
+                            action='store_true')
+        parser.add_argument("-r", "--retrieve",
+                            help="this downloads the specified job, if available to the specified directory..",
+                            type=str, default=False)
+
+        parser.add_argument("--force-sync",
+                            help="forces a synchronization of the given job. In case stasis is hanging",
+                            action='store_true', dest='force_sync')
+
+        return parser
+

@@ -39,3 +39,21 @@ class AggregateEvaluator(Evaluator):
                 'rt_tolerance': args['rt_tolerance'],
             }
             JobAggregator(arguments).aggregate_job(job=args['remote'], upload=False)
+
+    @staticmethod
+    def configure_aggregate(main_parser, sub_parser):
+
+        parser = sub_parser.add_parser(name="aggregate", help="local aggregation based operations")
+
+        parser.add_argument("-r", "--remote", help="this is your remote job id, you would like to locally aggregate",
+                            required=True)
+
+        parser.add_argument("-s", "--store",
+                            help="this is the directory where do you want to store the aggregated data", required=True,
+                            type=str, default=False)
+
+        parser.add_argument("--zero-replacement", action='store_true', default=True, dest="zero_replacement")
+        parser.add_argument("--mz-tolerance", default=0.01, type=float, dest="mz_tolerance")
+        parser.add_argument("--rt-tolerance", default=0.1, type=float, dest="rt_tolerance")
+
+        return parser

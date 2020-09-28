@@ -142,3 +142,29 @@ class SampleEvaluator(Evaluator):
         :return:
         """
         self.client
+
+    @staticmethod
+    def configure_samples(main_parser, sub_parser):
+        """
+        configures all the options for a sample parser
+        :param sample_parser:
+        :return:
+        """
+
+        parser = sub_parser.add_parser(name="sample", help="sample based operations")
+        parser.add_argument("-i", "--id", help="this is your sample id or name", required=True)
+        parser.add_argument("-s", "--status", help="specify this flag to return the current status",
+                            action='store_true')
+        parser.add_argument("-p", "--process", help="this starts the processing of the specified sample",
+                            action='store_true')
+        parser.add_argument("-r", "--retrieve", help="this downloads the specified sample result", action='store_true')
+        parser.add_argument("-f", "--full",
+                            help="this downloads the specified sample result and all associated metadata",
+                            action='store_true')
+        parser.add_argument("-e", "--exist", help="checks if the given sample exist", action='store_true')
+        parser.add_argument("-d", "--detail", help="provides a complete detailed view of the sample",
+                            action='store_true')
+        parser.add_argument("--profile", help="which profile to utilize for scheduling", default="lcms", required=False)
+        parser.add_argument("--env", help="which env to utilize for scheduling", default="test", required=False)
+
+        return parser

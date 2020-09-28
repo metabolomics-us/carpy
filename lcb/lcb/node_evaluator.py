@@ -1,7 +1,9 @@
 import json
 import os
 import traceback
+from optparse import Option
 from time import time, sleep
+from typing import Optional
 
 from lcb.evaluator import Evaluator
 
@@ -40,7 +42,7 @@ class NodeEvaluator(Evaluator):
         # todo get correct queue name from stasis
         queue_url = "https://sqs.us-west-2.amazonaws.com/702514165722/StasisScheduleQueue-dev_FARGATE"
         # start docker
-        client = docker.from_env()
+        client = self.buildClient()
 
         while True:
             # Receive message from SQS queue
@@ -64,16 +66,7 @@ class NodeEvaluator(Evaluator):
 
                 config = json.loads(json.loads(body)['default'])
 
-                session = Session()
-                credentials = session.get_credentials()
-                current_credentials = credentials.get_frozen_credentials()
-                environment = {
-                    'AWS_ACCESS_KEY_ID': current_credentials.access_key,
-                    'AWS_DEFAULT_REGION': 'us-west-2',
-                    'AWS_SECRET_ACCESS_KEY': current_credentials.secret_key,
-                    'STASIS_KEY': os.getenv('STASIS_API_TOKEN'),
-                    'STASIS_URL': os.getenv('STASIS_API_URL'),
-                }
+                environment = self.get_aws_env()
 
                 try:
                     if config['stasis-service'] == 'secure-carrot-runner':
@@ -91,26 +84,62 @@ class NodeEvaluator(Evaluator):
                 print("sleeping for 5 seconds since queue is empty")
                 sleep(5)
 
+    def get_aws_env(self):
+        session = Session()
+        credentials = session.get_credentials()
+        current_credentials = credentials.get_frozen_credentials()
+        environment = {
+            'AWS_ACCESS_KEY_ID': current_credentials.access_key,
+            'AWS_DEFAULT_REGION': 'us-west-2',
+            'AWS_SECRET_ACCESS_KEY': current_credentials.secret_key,
+            'STASIS_KEY': self.client._token,
+            'STASIS_URL': self.client.get_url(),
+        }
+        return environment
+
+    def buildClient(self):
+        client = docker.from_env()
+        return client
+
     def process_aggregation(self, client, config, environment, message, queue_url, sqs, args):
         """
         processes a local aggregation in this node
         """
         environment['CARROT_JOB'] = config['job']
-        environment['STASIS_KEY'] = os.getenv('STASIS_API_TOKEN')
-        environment['STASIS_URL'] = os.getenv('STASIS_API_URL')
+        environment['STASIS_KEY'] = self.client._token
+        environment['STASIS_URL'] = self.client.get_url()
 
         print("start JOB process environment")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest",
                                           environment=environment, detach=True, auto_remove=False)
+        self.execute_container(container, message, queue_url, sqs)
+
+    def process_steac(self, client, config, environment, message: Optional, queue_url: Optional, sqs: Optional, args):
+        """
+        processes a local aggregation in this node
+        """
+        environment['CARROT_METHOD'] = config['method']
+        environment['STASIS_KEY'] = self.client._token
+        environment['STASIS_URL'] = self.client.get_url()
+        print("start JOB process environment")
+        container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest",
+                                          environment=environment, detach=True, auto_remove=False)
+        self.execute_container(container, message, queue_url, sqs)
+
+    def execute_container(self, container, message, queue_url, sqs):
+        """
+        executes the specied container and logs out the content
+        """
         # run image
         for line in container.logs(stream=True):
             print(str(line.strip()))
-        pass
-        receipt_handle = message['ReceiptHandle']
-        sqs.delete_message(
-            QueueUrl=queue_url,
-            ReceiptHandle=receipt_handle
-        )
+
+        if message is not None:
+            receipt_handle = message['ReceiptHandle']
+            sqs.delete_message(
+                QueueUrl=queue_url,
+                ReceiptHandle=receipt_handle
+            )
 
     def process_single_sample(self, client, config, environment, message, queue_url, sqs, args):
         """
@@ -124,7 +153,8 @@ class NodeEvaluator(Evaluator):
         environment['CARROT_SAMPLE'] = config['sample']
         environment['CARROT_METHOD'] = config['method']
         environment['CARROT_MODE'] = config['profile']
-
+        environment['STASIS_KEY'] = self.client._token
+        environment['STASIS_URL'] = self.client.get_url()
         for env in args['env']:
             environment[env] = os.getenv(env)
 
@@ -142,16 +172,7 @@ class NodeEvaluator(Evaluator):
 
         print(f"utilizing docker configuration:\n {json.dumps(docker_args, indent=4)}")
         container = client.containers.run(**docker_args)
-
-        # run image
-        for line in container.logs(stream=True):
-            print(str(line.strip()))
-        pass
-        receipt_handle = message['ReceiptHandle']
-        sqs.delete_message(
-            QueueUrl=queue_url,
-            ReceiptHandle=receipt_handle
-        )
+        self.execute_container(container, message, queue_url, sqs)
 
     @staticmethod
     def optimize_profiles(args, config):
@@ -165,3 +186,31 @@ class NodeEvaluator(Evaluator):
             if remove in springProfiles:
                 springProfiles.remove(remove)
         return ",".join(springProfiles).strip()
+
+    @staticmethod
+    def configure_node(main_parser, sub_parser):
+
+        parser = sub_parser.add_parser(name="node", help="starts a node for computations")
+
+        parser.add_argument("-s", "--single", help="runs a single node", action="store_true",
+                            required=True)
+        parser.add_argument("-r", "--remove",
+                            help="remove a profile from instructions. In case we don't want to use it right now",
+                            action="append",
+                            required=False, default=[])
+        parser.add_argument("-a", "--add", help="add a profile to the calculation instructions", action="append",
+                            required=False, default=['awsdev'])
+
+        parser.add_argument("-k", "--keep", help="keep the executed docker container and logs for diagnostics",
+                            action="store_true",
+                            required=False, default=False)
+        parser.add_argument("-d", "--docker", help="additional arguments for the docker container to be run",
+                            action="append",
+                            required=False, default=[])
+        parser.add_argument("-e", "--env",
+                            help="forward the specified env variable from the host to the docker container",
+                            action="append", required=False, default=[])
+        return parser
+
+
+
