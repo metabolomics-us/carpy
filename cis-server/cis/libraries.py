@@ -10,7 +10,7 @@ conn = database.connect()
 def libraries(event, context):
     transform = lambda x: x[0]
 
-    sql = "SELECT \"method\" FROM public.pgtarget group by \"method\""
+    sql = "SELECT \"id\" FROM public.pgmethod"
     return database.html_response_query(sql=sql, connection=conn, transform=transform)
 
 
@@ -66,7 +66,8 @@ def size(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
 
             result = database.html_response_query(
-                "SELECT count(*), pt.target_type FROM pgtarget pt WHERE dtype = 'PgInternalTarget' and \"method\" = (%s) group by target_type", conn, [method_name])
+                "SELECT count(*), pt.target_type FROM pgtarget pt WHERE dtype = 'PgInternalTarget' and \"method_id\" = (%s) group by target_type",
+                conn, [method_name])
 
             try:
                 # create a response
@@ -106,7 +107,7 @@ def exists(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
 
             result = database.query(
-                "SELECT exists (SELECT 1 FROM pgtarget pt WHERE dtype = 'PgInternalTarget' and \"method\" = (%s) LIMIT 1)", conn, [method_name])
+                "SELECT exists (SELECT 1 FROM pgmethod pt WHERE \"id\" = (%s) LIMIT 1)", conn, [method_name])
 
             try:
                 # create a response
