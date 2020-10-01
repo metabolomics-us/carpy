@@ -91,6 +91,9 @@ class NodeEvaluator(Evaluator):
         processes a local aggregation in this node
         """
         environment['CARROT_JOB'] = config['job']
+        environment['STASIS_KEY'] = os.getenv('STASIS_API_TOKEN')
+        environment['STASIS_URL'] = os.getenv('STASIS_API_URL')
+
         print("start JOB process environment")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest",
                                           environment=environment, detach=True, auto_remove=False)
