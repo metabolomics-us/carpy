@@ -196,7 +196,7 @@ class StasisClient:
             f"we observed an error. Status code was {result.status_code} and error was {result.reason} and {sample_name} in {state} with {file_handle}")
         return result
 
-    def sample_result_as_json(self, sample_name) -> dict:
+    def sample_result_as_json(self, sample_name, fileHandle: Optional[str] = None) -> dict:
         """
         download a sample result as json from the result bucket we are using
 
@@ -211,7 +211,10 @@ class StasisClient:
         except Exception as e:
             pass
 
-        file = self.file_handle_by_state(sample_name, "exported")
+        if fileHandle is None:
+            file = self.file_handle_by_state(sample_name, "exported")
+        else:
+            file = fileHandle
 
         content = boto3.client('s3').get_object(Bucket=bucket_name, Key="{}".format(file))['Body'].read().decode(
             'utf-8')
