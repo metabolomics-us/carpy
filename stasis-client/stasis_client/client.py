@@ -213,7 +213,9 @@ class StasisClient:
 
         if fileHandle is None:
             file = self.file_handle_by_state(sample_name, "exported")
+            print(f"using stasis provided filename: {file}")
         else:
+            print(f"using explicit provided file handle: {fileHandle}")
             file = fileHandle
 
         content = boto3.client('s3').get_object(Bucket=bucket_name, Key="{}".format(file))['Body'].read().decode(
