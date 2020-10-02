@@ -68,7 +68,7 @@ def register_name(events, context):
 
     if result is None:
         result = database.query(
-            "select p.id from pgtarget p where splash = (%s) and \"method\" = (%s)",
+            "select p.id from pgtarget p where splash = (%s) and \"method_id\" = (%s)",
             conn, [splash, library])
 
         if result is not None and len(result) > 0:
@@ -210,9 +210,10 @@ def get_members(events, context):
 
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             splash = urllib.parse.unquote(events['pathParameters']['splash'])
-            print(f"loading all compounds for: {method_name} and splash {splash} limit {limit} and offset {offset}")
+            # print(f"loading all compounds for: {method_name} and splash {splash} limit {limit} and offset {offset}")
             transform = lambda x: x[0]
             sql = "SELECT members FROM public.pgtarget a, pg_internal_target_members b where a.id = b.pg_internal_target_id and  \"method_id\" = %s and splash = %s limit %s offset %s  "
+
             return database.html_response_query(sql=sql, connection=conn, transform=transform,
                                                 params=[method_name, splash, limit, offset])
         else:
@@ -322,7 +323,7 @@ def get(events, context):
                 'precursor_mass': x[13]
             }
             result = database.html_response_query(
-                "SELECT id, accurate_mass, target_type, inchi_key, \"method\", ms_level, raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
+                "SELECT id, accurate_mass, target_type, inchi_key, \"method_id\", ms_level, raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
                 conn, [method_name, splash], transform=transform)
 
             return result

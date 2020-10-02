@@ -20,7 +20,7 @@ def delete(event, context):
             method_name = urllib.parse.unquote(event['pathParameters']['library'])
 
             result = database.query(
-                "DELETE FROM pgtarget pt where \"method\" = (%s)", conn, [method_name])
+                "DELETE FROM pgtarget pt where \"method_id\" = (%s)", conn, [method_name])
 
             try:
                 # create a response
