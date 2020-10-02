@@ -34,8 +34,8 @@ class AggregateEvaluator(Evaluator):
             arguments = {
                 'job': args['remote'],
                 'zero_replacement': args['zero_replacement'],
-                'upload': False,
+                'upload': args['upload'],
                 'mz_tolerance': args['mz_tolerance'],
                 'rt_tolerance': args['rt_tolerance'],
             }
-            JobAggregator(arguments).aggregate_job(job=args['remote'], upload=False)
+            JobAggregator(arguments).aggregate_job(job=args['remote'], upload=args['upload'])

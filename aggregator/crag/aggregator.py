@@ -341,10 +341,18 @@ class Aggregator:
 
                     try:
                         print(f'we observed an error during downloading the data file: {str(e)}, using backup approach')
-                        resdata = self.stasis_cli.sample_result_as_json(result_file, f"{result_file}.mzml.json")
-                        sbar.write("\t\t=> successfully downloaded data file -> using explicit file handle")
+
+                        retry = 10
+                        while retry > 0:
+                            try:
+                                resdata = self.stasis_cli.sample_result_as_json(result_file, f"{result_file}.mzml.json")
+                                sbar.write("\t\t=> successfully downloaded data file -> using explicit file handle")
+                                retry = retry - 1
+                            except Exception as ex:
+                                time.sleep(1)
+                                raise ex
                     except Exception as exe:
-                        print(f'we observed an error during downloading the data file: {str(exe)}')
+                        print(f'we observed an error during downloading the data file: {str(result_file)}. Exception type was {str(exe)}')
                         resdata = None
             else:
                 sbar.write(f'loading existing result data from {saved_result}')

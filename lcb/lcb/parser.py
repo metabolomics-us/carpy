@@ -101,6 +101,10 @@ class Parser:
                             help="this is the directory where do you want to store the aggregated data", required=True,
                             type=str, default=False)
 
+        parser.add_argument("-u", "--upload",
+                            help="uploads the result to the remote buckets", required=False,
+                            action="store_true", default=False)
+
         parser.add_argument("--zero-replacement", action='store_true', default=True, dest="zero_replacement")
         parser.add_argument("--mz-tolerance", default=0.01, type=float, dest="mz_tolerance")
         parser.add_argument("--rt-tolerance", default=0.1, type=float, dest="rt_tolerance")
