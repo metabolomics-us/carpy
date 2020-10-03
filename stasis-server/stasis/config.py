@@ -24,4 +24,4 @@ MAX_FARGATE_TASKS = sum(MAX_FARGATE_TASKS_BY_SERVICE.values())
 ##
 # do we permit automatic scheduling using cloud resources
 #
-ENABLE_AUTOMATIC_SCHEDULING = True
+ENABLE_AUTOMATIC_SCHEDULING = False

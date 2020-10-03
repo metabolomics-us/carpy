@@ -306,6 +306,19 @@ def get(events, context):
                     return list(
                         map(lambda y: {'name': y[1], 'identifiedBy': y[0], 'comment': y[2]}, names))
 
+            def generate_samples_list(splash, method):
+                samples = database.query(
+                    "select distinct file_name from pgtarget p , pgtarget_samples ps , pgsample p2 where p.id = ps.targets_id and p2.id = ps.samples_id and splash = %s and method_id = %s",
+                    conn, [splash, method])
+
+                print("received: {}".format(samples))
+                if samples is None:
+                    return []
+                else:
+                    return list(
+                        map(lambda y: {'name': y[0]}, samples)
+                    )
+
             transform = lambda x: {
                 'id': x[0],
                 'accurate_mass': x[1],
@@ -320,7 +333,8 @@ def get(events, context):
                 'preferred_name': x[11],
                 'associated_names': generate_name_list(x[0]),
                 'unique_mass': x[12],
-                'precursor_mass': x[13]
+                'precursor_mass': x[13],
+                'samples': generate_samples_list(x[10], x[4])
             }
             result = database.html_response_query(
                 "SELECT id, accurate_mass, target_type, inchi_key, \"method_id\", ms_level, raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",

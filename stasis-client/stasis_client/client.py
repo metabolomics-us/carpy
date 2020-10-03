@@ -375,6 +375,8 @@ class StasisClient:
         :return:
         """
         meta = job.pop('meta', {})
+        classes = job.pop('classes', [])
+
         samples = job.pop('samples')
 
         self.drop_job_samples(job['id'], enable_progress_bar=enable_progress_bar)
@@ -386,16 +388,23 @@ class StasisClient:
 
         from tqdm import tqdm
 
+        sample_meta = self.compute_sample_classes(classes)
+
         for sample in tqdm(samples, desc="storing sample definitions", disable=enable_progress_bar is False):
             finished = 0
 
+            if sample in sample_meta:
+                meta['class'] = sample_meta[sample]
+
             while finished < 100:
                 try:
-                    res = requests.post(f"{self._url}/job/sample/store", json={
+                    to_post = {
                         "sample": sample,
                         "job": job['id'],
                         "meta": meta
-                    }, headers=self._header)
+                    }
+
+                    res = requests.post(f"{self._url}/job/sample/store", json=to_post, headers=self._header)
 
                     finished = 100
                     if res.status_code != 200:
@@ -404,6 +413,27 @@ class StasisClient:
                 except CE as e:
                     finished = finished + 1
                     sleep(1000)
+
+    def compute_sample_classes(self, classes) -> dict:
+        """
+        computes a map of sample to class associations to update the metadata
+        """
+        sample_meta = {}
+        for clazz in classes:
+            name = clazz.get("name", None)
+
+            if name is not None:
+                organ = clazz.get('organ', None)
+                species = clazz.get('species', None)
+                related_sammples = clazz.get('samples', [])
+
+                for s in related_sammples:
+                    sample_meta[s] = {
+                        'name': name,
+                        'organ': organ,
+                        'species': species}
+
+        return sample_meta
 
     def schedule_job(self, job_id: str) -> dict:
         """

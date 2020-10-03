@@ -2,6 +2,7 @@ import json
 
 from pytest import fail
 
+
 def test_getall_full_pagination(requireMocking, library_test_name):
     from cis import compounds
 
@@ -10,12 +11,12 @@ def test_getall_full_pagination(requireMocking, library_test_name):
     while more:
         temp = json.loads(
             compounds.all({'pathParameters': {
-            "library": library_test_name,
-            "offset": len(data),
-            "limit": 10,
-        }
+                "library": library_test_name,
+                "offset": len(data),
+                "limit": 10,
+            }
 
-        }, {})['body']
+            }, {})['body']
         )
 
         more = len(temp) > 0
@@ -25,6 +26,7 @@ def test_getall_full_pagination(requireMocking, library_test_name):
         print(len(data))
     print(len(data))
     assert len(data) > 10
+
 
 def test_getall_by_type_unconfirmed(requireMocking, library_test_name):
     from cis import compounds
@@ -121,6 +123,8 @@ def test_get_specific_compound(requireMocking, splash_test_name_with_members):
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
+
+    print(json.dumps(result, indent=4))
     assert result['method'] == splash_test_name_with_members[1]
     assert result['splash'] == splash_test_name_with_members[0]
 
@@ -254,6 +258,7 @@ def test_compound_no_registered_names(requireMocking, splash_test_name_with_memb
     }, {})
 
     assert response['statusCode'] == 200
+
 
 def test_compound_register_name(requireMocking, splash_test_name_with_members):
     from cis import compounds
