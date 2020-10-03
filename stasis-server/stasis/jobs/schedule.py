@@ -1,3 +1,4 @@
+import time
 import traceback
 
 import simplejson as json
@@ -9,10 +10,10 @@ from stasis.jobs.sync import sync_job
 from stasis.schedule.backend import DEFAULT_PROCESSING_BACKEND, Backend
 from stasis.schedule.schedule import schedule_to_queue
 from stasis.config import SECURE_CARROT_RUNNER
-from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__
+from stasis.schema import __JOB_SCHEMA__, __SAMPLE_JOB_SCHEMA__, __ACQUISITION_SCHEMA__
 from stasis.service.Status import *
 from stasis.tables import set_sample_job_state, set_job_state, TableManager, update_job_state, \
-    get_job_config, get_file_handle, save_sample_state, load_job_samples_with_pagination
+    get_job_config, get_file_handle, save_sample_state, load_job_samples_with_pagination, _fetch_experiment
 
 
 def remove_sample_for_job(event, context):
@@ -93,6 +94,7 @@ def store_sample_for_job(event, context):
 
         }
     tracking = body.get('meta', {}).get('tracking', [])
+    clazz = body.get('meta', {}).get('class', None)
     sample = body.get('sample')
     job = body.get("job")
 
@@ -105,6 +107,44 @@ def store_sample_for_job(event, context):
                 fileHandle = None
 
             save_sample_state(sample=sample, state=track['state'], fileHandle=fileHandle)
+
+        if clazz is not None:
+            # update the class here by updating the acquisition part
+            # 1. get acquisition data
+            # 2. set new metadata
+            tm = TableManager()
+            acqtable = tm.get_acquisition_table()
+            result = acqtable.query(
+                KeyConditionExpression=Key('id').eq(sample)
+            )
+
+            if "Items" in result and len(result['Items']) > 0:
+                data = result['Items'][0]
+            else:
+
+                timestamp = int(time.time() * 1000)
+                data = {
+                    'time': timestamp,
+                    'id': sample,
+                    'sample': sample,
+                    'experiment': _fetch_experiment(sample),
+                    'acquisition': {
+                        'instrument': 'unknown',
+                        'ionisation': 'unknown',
+                        'method': 'unknown'
+                    },
+                    'processing': {
+                        'method': 'unknown'
+                    },
+                }
+
+            data['metadata'] = {
+                'class': clazz.get('name', 'unknown'),
+                'species': clazz.get('species', 'unknown'),
+                'organ': clazz.get('organ', 'unknown')
+            }
+            validate(data, __ACQUISITION_SCHEMA__)
+            acqtable.put_item(Item=data)
 
         set_sample_job_state(
             job=job,

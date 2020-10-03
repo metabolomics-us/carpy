@@ -1,3 +1,5 @@
+import os
+
 from cisclient.client import CISClient
 from stasis_client.client import StasisClient
 
@@ -44,6 +46,15 @@ class SteacEvaluator(Evaluator):
             elevator = NodeEvaluator(self.client)
 
             env = elevator.get_aws_env()
+
+            springProfiles = elevator.optimize_profiles(args)
+
+            print(f"generated spring profiles to activate: {springProfiles}")
+            env['SPRING_PROFILES_ACTIVE'] = springProfiles
+
+            for e in args['env']:
+                env[e] = os.getenv(e)
+
             elevator.process_steac(
                 client=elevator.buildClient(),
                 config={"method": method},
@@ -65,4 +76,14 @@ class SteacEvaluator(Evaluator):
         parser.add_argument("-l", "--local", help="this is the method you want to run steac",
                             required=False, default=False, action="store_true")
 
+        parser.add_argument("-a", "--add", help="add a profile to the calculation instructions", action="append",
+                            required=False, default=[])
+
+        parser.add_argument("-r", "--remove",
+                            help="remove a profile from instructions. In case we don't want to use it right now",
+                            action="append",
+                            required=False, default=[])
+        parser.add_argument("-e", "--env",
+                            help="register this environment variable",
+                            action="append", required=False, default=[])
         return parser

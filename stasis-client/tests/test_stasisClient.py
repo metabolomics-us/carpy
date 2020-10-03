@@ -39,6 +39,66 @@ def test_store_job_sizes(sample_count, stasis_cli):
     assert result['job_state'] == "failed"
 
 
+def test_store_job_with_class(stasis_cli):
+    test_id = "test_job_{}".format(time())
+
+    job = {
+        "id": test_id,
+        "method": "teddy | 6530 | test | positive",
+
+        "profile": "carrot.lcms",
+
+        "samples": [
+            "sample_1",
+            "sample_2",
+            "sample_3",
+            "sample_4",
+            "sample_5",
+            "sample_6",
+        ],
+
+        "meta": {
+            "tracking": [
+                {
+                    "state": "entered"
+                },
+                {
+                    "state": "acquired",
+                    "extension": "d"
+                },
+                {
+                    "state": "converted",
+                    "extension": "mzml"
+                }
+            ]
+        },
+        "classes": [
+            {
+                "name": "a",
+                "organ": "test",
+                "species": "human_test",
+                "samples": [
+                    "sample_1",
+                    "sample_2",
+                    "sample_3"
+                ]
+            }
+
+        ]
+    }
+
+    stasis_cli.store_job(job, enable_progress_bar=True)
+
+    result1 = stasis_cli.sample_acquisition_get("sample_1")
+    result2 = stasis_cli.sample_acquisition_get("sample_2")
+    result3 = stasis_cli.sample_acquisition_get("sample_3")
+    result4 = stasis_cli.sample_acquisition_get("sample_4")
+    result5 = stasis_cli.sample_acquisition_get("sample_5")
+    result6 = stasis_cli.sample_acquisition_get("sample_6")
+
+    print(result1)
+
+
 @pytest.mark.parametrize("sample_count", [5, 10, 50])
 def test_overwrite_job_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())

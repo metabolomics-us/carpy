@@ -7,7 +7,7 @@ def test_libraries(requireMocking):
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    print(json.dumps(body,indent=4))
+    print(json.dumps(body, indent=4))
     assert len(body) > 0
 
 
@@ -45,11 +45,13 @@ def test_size(requireMocking, library_test_name):
         "library": library_test_name
     }}, {})
 
+    print(response)
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
     print(body)
     assert len(body) > 0
+
 
 def test_exist_false(requireMocking, library_test_name):
     from cis import libraries

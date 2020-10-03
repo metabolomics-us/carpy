@@ -32,12 +32,19 @@ def requireMocking():
 
 
 @pytest.fixture()
-def library_test_name():
+def library_test_name() -> str:
     return "soqe[M+H][M+NH4] | QExactive | test | positive"
 
 
 @pytest.fixture()
-def splash_test_name(library_test_name):
+def splash_test_name_with_members(library_test_name):
     from cis import compounds
-    data = json.loads(compounds.all({'pathParameters':{'library' : library_test_name}},{})['body'])
-    return (data[0], library_test_name)
+    data = json.loads(compounds.all({'pathParameters': {'library': library_test_name, 'limit': 100000}}, {})['body'])
+
+    for num, splash in enumerate(data):
+        response = compounds.get_members({'pathParameters': {'library': library_test_name, 'splash': splash}}, {})
+        if response['statusCode'] == 200:
+            result = (data[num], library_test_name)
+            return result
+
+    raise Exception(f"did not find a standard with members in {library_test_name}")

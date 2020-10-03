@@ -175,14 +175,14 @@ class NodeEvaluator(Evaluator):
         self.execute_container(container, message, queue_url, sqs)
 
     @staticmethod
-    def optimize_profiles(args, config):
+    def optimize_profiles(args, config: Optional[dict] = {}):
         """
         optimizes the profiles to be activate or deactivated in the processor
         """
-        springProfiles = config['profile'].split(",")
+        springProfiles = config['profile'].split(",") if "profile" in config else []
         for add in args['add']:
             springProfiles.append(add)
-        for remove in args['remove']:
+        for remove in args.get('remove'):
             if remove in springProfiles:
                 springProfiles.remove(remove)
         return ",".join(springProfiles).strip()
@@ -211,6 +211,3 @@ class NodeEvaluator(Evaluator):
                             help="forward the specified env variable from the host to the docker container",
                             action="append", required=False, default=[])
         return parser
-
-
-
