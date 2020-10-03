@@ -203,3 +203,64 @@ def mocked_10_sample_job(backend):
         assert result['statusCode'] == 200
 
     return get_job_config("12345")
+
+
+@pytest.fixture()
+def mocked_10_sample_job_with_classoverride(backend):
+    job = {
+        "id": "12345",
+        "method": "test",
+
+        "profile": "lcms",
+        "resource": backend.value
+    }
+
+    result = store_job({'body': json.dumps(job)}, {})
+
+    assert result['statusCode'] == 200
+
+    samples = [
+        "abc_0",
+        "abc_1",
+        "abc_2",
+        "abc_3",
+        "abc_4",
+        "abc_5",
+        "abc_6",
+        "abc_7",
+        "abc_8",
+        "abc_9",
+    ]
+
+    for sample in samples:
+        result = store_sample_for_job({
+            'body': json.dumps({
+                'job': "12345",
+                'sample': sample,
+                'meta': {
+                    "tracking": [
+                        {
+                            "state": "entered"
+                        },
+                        {
+                            "state": "acquired",
+                            "extension": "d"
+                        },
+                        {
+                            "state": "converted",
+                            "extension": "mzml"
+                        }
+                    ],
+                    "class": {
+                        "name": "test_a",
+                        "organ": "test_organ",
+                        "species": "test_species"
+                    }
+                }
+            }
+            )
+        }, {})
+
+        assert result['statusCode'] == 200
+
+    return get_job_config("12345")
