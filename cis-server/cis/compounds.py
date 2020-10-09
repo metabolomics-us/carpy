@@ -12,7 +12,7 @@ def delete_names(events, context):
     library = events['pathParameters']['library']
 
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method\" = (%s)",
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method_id\" = (%s)",
         conn, [splash, library])
 
     if result is not None:
@@ -63,12 +63,12 @@ def register_name(events, context):
     print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
         conn, [splash, library, name, identifiedBy])
 
     if result is None:
         result = database.query(
-            "select p.id from pgtarget p where splash = (%s) and \"method\" = (%s)",
+            "select p.id from pgtarget p where splash = (%s) and \"method_id\" = (%s)",
             conn, [splash, library])
 
         if result is not None and len(result) > 0:
@@ -134,7 +134,7 @@ def has_members(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             splash = urllib.parse.unquote(events['pathParameters']['splash'])
             result = database.query(
-                "SELECT count(*) FROM public.pg_internal_target_members a, pgtarget b where b.splash = (%s) and b.\"method\" = (%s)",
+                "SELECT count(*) FROM public.pg_internal_target_members a, pgtarget b where b.splash = (%s) and b.\"method_id\" = (%s)",
                 conn, [splash, method_name])
 
             try:
@@ -210,9 +210,10 @@ def get_members(events, context):
 
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             splash = urllib.parse.unquote(events['pathParameters']['splash'])
-            print(f"loading all compounds for: {method_name} and splash {splash} limit {limit} and offset {offset}")
+            # print(f"loading all compounds for: {method_name} and splash {splash} limit {limit} and offset {offset}")
             transform = lambda x: x[0]
-            sql = "SELECT members FROM public.pgtarget a, pg_internal_target_members b where a.id = b.pg_internal_target_id and  \"method\" = %s and splash = %s limit %s offset %s  "
+            sql = "SELECT members FROM public.pgtarget a, pg_internal_target_members b where a.id = b.pg_internal_target_id and  \"method_id\" = %s and splash = %s limit %s offset %s  "
+
             return database.html_response_query(sql=sql, connection=conn, transform=transform,
                                                 params=[method_name, splash, limit, offset])
         else:
@@ -255,11 +256,11 @@ def all(events, context):
             if 'type' in events['pathParameters']:
 
                 target_type = events['pathParameters']['type']
-                sql = "SELECT splash  FROM public.pgtarget where \"method\" = %s and target_type = %s and dtype = 'PgInternalTarget'  limit %s offset %s  "
+                sql = "SELECT splash  FROM public.pgtarget where \"method_id\" = %s and target_type = %s and dtype = 'PgInternalTarget'  limit %s offset %s  "
                 return database.html_response_query(sql=sql, connection=conn, transform=transform,
                                                     params=[method_name, target_type, limit, offset])
             else:
-                sql = "SELECT splash  FROM public.pgtarget where \"method\" = %s and dtype = 'PgInternalTarget' limit %s offset %s  "
+                sql = "SELECT splash  FROM public.pgtarget where \"method_id\" = %s and dtype = 'PgInternalTarget' limit %s offset %s  "
                 return database.html_response_query(sql=sql, connection=conn, transform=transform,
                                                     params=[method_name, limit, offset])
 
@@ -305,6 +306,19 @@ def get(events, context):
                     return list(
                         map(lambda y: {'name': y[1], 'identifiedBy': y[0], 'comment': y[2]}, names))
 
+            def generate_samples_list(splash, method):
+                samples = database.query(
+                    "select distinct file_name from pgtarget p , pgtarget_samples ps , pgsample p2 where p.id = ps.targets_id and p2.id = ps.samples_id and splash = %s and method_id = %s",
+                    conn, [splash, method])
+
+                print("received: {}".format(samples))
+                if samples is None:
+                    return []
+                else:
+                    return list(
+                        map(lambda y: {'name': y[0]}, samples)
+                    )
+
             transform = lambda x: {
                 'id': x[0],
                 'accurate_mass': x[1],
@@ -319,10 +333,11 @@ def get(events, context):
                 'preferred_name': x[11],
                 'associated_names': generate_name_list(x[0]),
                 'unique_mass': x[12],
-                'precursor_mass': x[13]
+                'precursor_mass': x[13],
+                'samples': generate_samples_list(x[10], x[4])
             }
             result = database.html_response_query(
-                "SELECT id, accurate_mass, target_type, inchi_key, \"method\", ms_level, raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
+                "SELECT id, accurate_mass, target_type, inchi_key, \"method_id\", ms_level, raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
                 conn, [method_name, splash], transform=transform)
 
             return result
@@ -350,7 +365,7 @@ def exists(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             splash = urllib.parse.unquote(events['pathParameters']['splash'])
             result = database.query(
-                "SELECT exists (SELECT 1 FROM pgtarget pt WHERE \"method\" = (%s) and \"splash\" = (%s) and dtype = 'PgInternalTarget' LIMIT 1)",
+                "SELECT exists (SELECT 1 FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype = 'PgInternalTarget' LIMIT 1)",
                 conn, [method_name, splash])
 
             if result[0][0] == 0:

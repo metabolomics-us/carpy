@@ -4,6 +4,7 @@ import random
 
 import pytest
 
+from stasis.acquisition import get
 from stasis.jobs.schedule import schedule_job, monitor_jobs, store_job, store_sample_for_job, schedule_job_from_queue
 from stasis.schedule.backend import Backend
 from stasis.schedule.monitor import monitor_queue
@@ -209,7 +210,7 @@ def test_schedule_job(requireMocking, mocked_10_sample_job, backend):
     # simulate the receiving of an aggregation event
 
 
-def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_job, backend):
+def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_job_with_classoverride, backend):
     """
     tests the scheduling of a job
     """
@@ -217,15 +218,15 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
     ##
     # check for the correct backend
     ##
-    validate_backened(backend, mocked_10_sample_job)
+    validate_backened(backend, mocked_10_sample_job_with_classoverride)
 
     # here we do the actual schedulign now
     result = schedule_job({'pathParameters': {
-        "job": mocked_10_sample_job['id']
+        "job": mocked_10_sample_job_with_classoverride['id']
     }}, {})
 
     watch_job_schedule_queue()
-    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job_with_classoverride['id'])
     for k, v in job.items():
         assert v == 'scheduled'
 
@@ -246,6 +247,20 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
         assert sample_state['status'][4]['value'] == 'scheduled'
         assert sample_state['status'][4]['fileHandle'] == "{}.mzml".format(k)
 
+        # process data
+        result = get.get({
+            "pathParameters": {
+                "sample": k
+            }
+        }, {})
+
+        assert result['statusCode'] == 200
+        result = json.loads(result['body'])
+        assert result['metadata']['class'] == 'test_a'
+        assert result['metadata']['species'] == 'test_species'
+        assert result['metadata']['organ'] == 'test_organ'
+        pass
+
     # since AWS only allows to process 10 messages at a time and we have more than that
     # this has to be called several times
     # in production this is driven by a timer
@@ -256,10 +271,10 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
     # synchronize the job and sample tracking table
     monitor_jobs({}, {})
 
-    validate_backened(backend, mocked_10_sample_job)
-    assert get_job_state(mocked_10_sample_job['id']) == SCHEDULED
+    validate_backened(backend, mocked_10_sample_job_with_classoverride)
+    assert get_job_state(mocked_10_sample_job_with_classoverride['id']) == SCHEDULED
 
-    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job_with_classoverride['id'])
     assert len(job) == 10
 
     # at this stage all jobs should be scheduled
@@ -275,9 +290,9 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
 
-    validate_backened(backend, mocked_10_sample_job)
+    validate_backened(backend, mocked_10_sample_job_with_classoverride)
     # the overal job state is currently processing
-    assert get_job_state(mocked_10_sample_job['id']) == PROCESSING
+    assert get_job_state(mocked_10_sample_job_with_classoverride['id']) == PROCESSING
 
     # all job items should be in state processing
     for k, v in job.items():
@@ -290,9 +305,9 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
     # sync all normally cron would do this for us
     monitor_jobs({}, {})
 
-    validate_backened(backend, mocked_10_sample_job)
+    validate_backened(backend, mocked_10_sample_job_with_classoverride)
     # all job items should be in state finished on the stasis side and processed on the job side
-    job = load_job_samples_with_states(job=mocked_10_sample_job['id'])
+    job = load_job_samples_with_states(job=mocked_10_sample_job_with_classoverride['id'])
     for k, v in job.items():
         assert get_tracked_state(k) == "exported"
 
@@ -304,14 +319,14 @@ def test_schedule_job_override_tracking_data(requireMocking, mocked_10_sample_jo
     for x in range(0, math.ceil(len(job) / MESSAGE_BUFFER)):
         monitor_queue({}, {})
 
-    validate_backened(backend, mocked_10_sample_job)
+    validate_backened(backend, mocked_10_sample_job_with_classoverride)
     # we should now have jobs in the state aggregation scheduled
     # this means the jobs should be in the aggregator queue
     # but not processed by fargate yet
 
-    validate_backened(backend, mocked_10_sample_job)
+    validate_backened(backend, mocked_10_sample_job_with_classoverride)
 
-    state = get_job_state(mocked_10_sample_job['id'])
+    state = get_job_state(mocked_10_sample_job_with_classoverride['id'])
     assert state in [AGGREGATING, AGGREGATING_SCHEDULED]  # kinda buggy
 
     # simulate the receiving of an aggregation event
@@ -386,6 +401,10 @@ def watch_job_schedule_queue():
                         'body': m['Body']
                     }
                 ]}, {})
+                client.delete_message(
+                    QueueUrl=arn,
+                    ReceiptHandle=m['ReceiptHandle']
+                )
 
         else:
             more_messages = False
