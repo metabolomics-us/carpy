@@ -313,7 +313,7 @@ class Aggregator:
 
         os.makedirs("{}/json".format(destination), exist_ok=True)
 
-        dir = self.args.get('dir') or '/tmp'
+        dir = self.args.get('dir', '/tmp')
 
         if not os.path.exists(dir):
             print("sorry your specified path didn't exist, we can't continue!")
@@ -355,7 +355,8 @@ class Aggregator:
                                 time.sleep(1)
                                 raise ex
                     except Exception as exe:
-                        print(f'we observed an error during downloading the data file: {str(result_file)}. Exception type was {str(exe)}')
+                        print(f'we observed an error during downloading the data file: {str(result_file)}. '
+                              f'Exception type was {str(exe)}')
                         resdata = None
             else:
                 sbar.write(f'loading existing result data from {saved_result}')
@@ -442,6 +443,8 @@ class Aggregator:
         sheet_names['curve'].append(curve)
         sheet_names['msms'].append(msms)
 
+        print(f'\nSaving results to {destination}')
+
         for t in [sheet_names[k] for k in sheet_names.keys()]:
             try:
                 self.export_excel(t[1], t[0], destination)
@@ -488,12 +491,14 @@ class Aggregator:
             if not os.path.isfile(sample_file):
                 raise FileNotFoundError(f'file name {sample_file} does not exist')
 
-            with open(sample_file) as processed_samples:
-                samples = [p.split(',')[0] for p in processed_samples.read().strip().splitlines() if
-                           p and p != 'samples']
-                self.aggregate_samples(samples, os.path.splitext(sample_file)[0])
+            suffix =  os.path.splitext(os.path.split(sample_file)[-1])[0]
+            dest = self.args.get('dir', './') + f'/{suffix}' if 'dir' in self.args else f'./{suffix}'
 
-    def aggregate_samples(self, samples: List[str], destination: str = './'):
+            with open(sample_file) as processed_samples:
+                samples = [p.split(',')[0] for p in processed_samples.read().strip().splitlines() if p]
+                self.aggregate_samples(samples, dest)
+
+    def aggregate_samples(self, samples: List[str], destination: str):
         """
         Aggregates the samples at the specified destination
         Args:
@@ -504,5 +509,8 @@ class Aggregator:
         if os.path.exists(destination) is False:
             print(f'Creating destination folder: {destination}')
             os.makedirs(destination, exist_ok=True)
+
+        if samples[0].startswith('samples'):
+            samples = samples[1:]
 
         self.process_sample_list(samples, destination)
