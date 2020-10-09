@@ -161,6 +161,8 @@ class Aggregator:
         reindexed.fillna('').to_excel(writer, type)
         writer.save()
 
+        print(f'Saved file {output_name}')
+
     @staticmethod
     def calculate_average(intensity, mass, rt, origrt, biorecs):
         """
@@ -311,14 +313,14 @@ class Aggregator:
 
         os.makedirs("{}/json".format(destination), exist_ok=True)
 
-        dir = self.args.get('dir') or '/tmp'
+        dir = self.args.get('dir', '/tmp')
 
         if not os.path.exists(dir):
             print("sorry your specified path didn't exist, we can't continue!")
             raise FileNotFoundError(dir)
 
         print(f'looking for local data in directory: {dir}')
-        print(f'using bucket {self.stasis_cli.get_processed_bucket()} for remote downloads')
+        # print(f'using bucket {self.stasis_cli.get_processed_bucket()} for remote downloads')
 
         sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples', disable=self.disable_progress_bar)
         for sample in sbar:
@@ -330,6 +332,7 @@ class Aggregator:
             saved_result = f'{dir}/{result_file}.mzml.json'
 
             sbar.write(f'looking for {result_file}')
+            sbar.write(f'looking for {saved_result}')
             if self.args.get('save') or not os.path.exists(saved_result):
                 sbar.write(
                     f'downloading result data from stasis for {sample}, '
@@ -352,13 +355,15 @@ class Aggregator:
                                 time.sleep(1)
                                 raise ex
                     except Exception as exe:
-                        print(f'we observed an error during downloading the data file: {str(result_file)}. Exception type was {str(exe)}')
+                        print(f'we observed an error during downloading the data file: {str(result_file)}. '
+                              f'Exception type was {str(exe)}')
                         resdata = None
             else:
                 sbar.write(f'loading existing result data from {saved_result}')
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
                     sbar.write("\t\t=> successfully loaded existing data file")
+
             if resdata is None:
                 sbar.write(
                     f'Failed getting {sample}. We looked in bucket {self.bucket_used}')
@@ -403,6 +408,7 @@ class Aggregator:
                 replaced[sample] = pd.DataFrame(formatted[6])
                 msms[sample] = pd.DataFrame(formatted[7])
             else:
+                sbar.write('Error in data')
                 intensity[sample] = np.nan
                 mass[sample] = np.nan
                 rt[sample] = np.nan
@@ -436,6 +442,8 @@ class Aggregator:
         sheet_names['repl'].append(replaced)
         sheet_names['curve'].append(curve)
         sheet_names['msms'].append(msms)
+
+        print(f'\nSaving results to {destination}')
 
         for t in [sheet_names[k] for k in sheet_names.keys()]:
             try:
@@ -483,12 +491,14 @@ class Aggregator:
             if not os.path.isfile(sample_file):
                 raise FileNotFoundError(f'file name {sample_file} does not exist')
 
-            with open(sample_file) as processed_samples:
-                samples = [p.split(',')[0] for p in processed_samples.read().strip().splitlines() if
-                           p and p != 'samples']
-                self.aggregate_samples(samples, os.path.splitext(sample_file)[0])
+            suffix =  os.path.splitext(os.path.split(sample_file)[-1])[0]
+            dest = self.args.get('dir', './') + f'/{suffix}' if 'dir' in self.args else f'./{suffix}'
 
-    def aggregate_samples(self, samples: List[str], destination: str = './'):
+            with open(sample_file) as processed_samples:
+                samples = [p.split(',')[0] for p in processed_samples.read().strip().splitlines() if p]
+                self.aggregate_samples(samples, dest)
+
+    def aggregate_samples(self, samples: List[str], destination: str):
         """
         Aggregates the samples at the specified destination
         Args:
@@ -499,5 +509,8 @@ class Aggregator:
         if os.path.exists(destination) is False:
             print(f'Creating destination folder: {destination}')
             os.makedirs(destination, exist_ok=True)
+
+        if samples[0].startswith('samples'):
+            samples = samples[1:]
 
         self.process_sample_list(samples, destination)
