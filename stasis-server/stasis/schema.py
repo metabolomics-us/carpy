@@ -220,7 +220,7 @@ __JOB_SCHEMA__ = {
         'id'
     ],
 
-    "additionalProperties": False
+    "additionalProperties": True
 }
 # defines the schema of the incoming data object
 __RESULT_SCHEMA__ = {

@@ -401,6 +401,10 @@ def watch_job_schedule_queue():
                         'body': m['Body']
                     }
                 ]}, {})
+                client.delete_message(
+                    QueueUrl=arn,
+                    ReceiptHandle=m['ReceiptHandle']
+                )
 
         else:
             more_messages = False

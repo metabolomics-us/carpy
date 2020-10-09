@@ -390,6 +390,7 @@ class StasisClient:
 
         sample_meta = self.compute_sample_classes(classes)
 
+        stored_samples = 0
         for sample in tqdm(samples, desc="storing sample definitions", disable=enable_progress_bar is False):
             finished = 0
 
@@ -410,9 +411,12 @@ class StasisClient:
                     if res.status_code != 200:
                         raise Exception(
                             f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job}")
+                    stored_samples = stored_samples + 1
                 except CE as e:
                     finished = finished + 1
                     sleep(1000)
+
+        return stored_samples
 
     def compute_sample_classes(self, classes) -> dict:
         """
