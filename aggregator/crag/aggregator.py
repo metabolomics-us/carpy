@@ -161,6 +161,8 @@ class Aggregator:
         reindexed.fillna('').to_excel(writer, type)
         writer.save()
 
+        print(f'Saved file {output_name}')
+
     @staticmethod
     def calculate_average(intensity, mass, rt, origrt, biorecs):
         """
@@ -318,7 +320,7 @@ class Aggregator:
             raise FileNotFoundError(dir)
 
         print(f'looking for local data in directory: {dir}')
-        print(f'using bucket {self.stasis_cli.get_processed_bucket()} for remote downloads')
+        # print(f'using bucket {self.stasis_cli.get_processed_bucket()} for remote downloads')
 
         sbar = tqdm.tqdm(samples, desc='Getting results', unit=' samples', disable=self.disable_progress_bar)
         for sample in sbar:
@@ -330,6 +332,7 @@ class Aggregator:
             saved_result = f'{dir}/{result_file}.mzml.json'
 
             sbar.write(f'looking for {result_file}')
+            sbar.write(f'looking for {saved_result}')
             if self.args.get('save') or not os.path.exists(saved_result):
                 sbar.write(
                     f'downloading result data from stasis for {sample}, '
@@ -345,6 +348,7 @@ class Aggregator:
                 with open(saved_result, 'rb') as data:
                     resdata = json.load(data)
                     sbar.write("\t\t=> successfully loaded existing data file")
+
             if resdata is None:
                 sbar.write(
                     f'Failed getting {sample}. We looked in bucket {self.bucket_used}')
@@ -389,6 +393,7 @@ class Aggregator:
                 replaced[sample] = pd.DataFrame(formatted[6])
                 msms[sample] = pd.DataFrame(formatted[7])
             else:
+                sbar.write('Error in data')
                 intensity[sample] = np.nan
                 mass[sample] = np.nan
                 rt[sample] = np.nan
