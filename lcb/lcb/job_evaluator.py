@@ -236,4 +236,3 @@ class JobEvaluator(Evaluator):
                             action='store_true', dest='force_sync')
 
         return parser
-

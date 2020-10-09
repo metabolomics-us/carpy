@@ -1,4 +1,5 @@
 import os
+from time import sleep
 
 from cisclient.client import CISClient
 from stasis_client.client import StasisClient
@@ -37,6 +38,10 @@ class SteacEvaluator(Evaluator):
             print("you did not specify any methods, we fetch all methods remotely now!")
             methods = self.cis.get_libraries()
 
+        if args['delay'] > 0:
+            print(f"start got delayed by {args['delay']}s")
+            sleep(args['delay'])
+
         print(f"we are running steac over these methods: {methods}")
         for method in methods:
             """
@@ -70,6 +75,9 @@ class SteacEvaluator(Evaluator):
 
         parser = sub_parser.add_parser(name="steac", help="provides steac interactions")
 
+        parser.add_argument("-d", "--delay",
+                            help="delay the start of this tool until the given time in seconds is ellapsed",
+                            required=False, type=int, default=0)
         parser.add_argument("-m", "--method", help="this is the methods you want to run steac over",
                             required=False, action="append", default=[])
 

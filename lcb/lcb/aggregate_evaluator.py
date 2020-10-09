@@ -38,7 +38,6 @@ class AggregateEvaluator(Evaluator):
                 'mz_tolerance': args['mz_tolerance'],
                 'rt_tolerance': args['rt_tolerance'],
             }
-<<<<<<< HEAD
             JobAggregator(arguments).aggregate_job(job=args['remote'], upload=False)
 
     @staticmethod
@@ -53,11 +52,12 @@ class AggregateEvaluator(Evaluator):
                             help="this is the directory where do you want to store the aggregated data", required=True,
                             type=str, default=False)
 
+        parser.add_argument("-u", "--upload",
+                            help="uploads the result to the remote buckets", required=False,
+                            action="store_true", default=False)
+
         parser.add_argument("--zero-replacement", action='store_true', default=True, dest="zero_replacement")
         parser.add_argument("--mz-tolerance", default=0.01, type=float, dest="mz_tolerance")
         parser.add_argument("--rt-tolerance", default=0.1, type=float, dest="rt_tolerance")
 
         return parser
-=======
-            JobAggregator(arguments).aggregate_job(job=args['remote'], upload=args['upload'])
->>>>>>> 02d08a26025fc67f2d633d5668f865573c1dfcfb
