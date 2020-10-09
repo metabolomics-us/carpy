@@ -82,19 +82,54 @@ def test_store_job_with_class(stasis_cli):
                     "sample_2",
                     "sample_3"
                 ]
+            },
+            {
+                "name": "b",
+                "organ": "test_2",
+                "species": "human_test_2",
+                "samples": [
+                    "sample_4",
+                    "sample_5",
+                    "sample_6"
+                ]
             }
 
         ]
     }
 
-    stasis_cli.store_job(job, enable_progress_bar=True)
+    stored_samples = stasis_cli.store_job(job, enable_progress_bar=True)
 
+    assert stored_samples == 6
     result1 = stasis_cli.sample_acquisition_get("sample_1")
     result2 = stasis_cli.sample_acquisition_get("sample_2")
     result3 = stasis_cli.sample_acquisition_get("sample_3")
     result4 = stasis_cli.sample_acquisition_get("sample_4")
     result5 = stasis_cli.sample_acquisition_get("sample_5")
     result6 = stasis_cli.sample_acquisition_get("sample_6")
+
+    assert result1['metadata']['organ'] == 'test'
+    assert result1['metadata']['species'] == 'human_test'
+    assert result1['metadata']['class'] == 'a'
+
+    assert result2['metadata']['organ'] == 'test'
+    assert result2['metadata']['species'] == 'human_test'
+    assert result2['metadata']['class'] == 'a'
+
+    assert result3['metadata']['organ'] == 'test'
+    assert result3['metadata']['species'] == 'human_test'
+    assert result3['metadata']['class'] == 'a'
+
+    assert result4['metadata']['organ'] == 'test_2'
+    assert result4['metadata']['species'] == 'human_test_2'
+    assert result4['metadata']['class'] == 'b'
+
+    assert result5['metadata']['organ'] == 'test_2'
+    assert result5['metadata']['species'] == 'human_test_2'
+    assert result5['metadata']['class'] == 'b'
+
+    assert result6['metadata']['organ'] == 'test_2'
+    assert result6['metadata']['species'] == 'human_test_2'
+    assert result6['metadata']['class'] == 'b'
 
     print(result1)
 
@@ -134,7 +169,8 @@ def test_overwrite_job_sizes(sample_count, stasis_cli):
         samples.append(f"test_sample_{x}_2")
 
     job['samples'] = samples
-    stasis_cli.store_job(job, enable_progress_bar=True)
+    stored_samples = stasis_cli.store_job(job, enable_progress_bar=True)
+    assert stored_samples == sample_count - 2
     result = stasis_cli.load_job(test_id)
 
     assert len(result) == sample_count - 2
@@ -162,7 +198,9 @@ def test_schedule_job_sizes(sample_count, stasis_cli):
 
     job['samples'] = samples
 
-    stasis_cli.store_job(job, enable_progress_bar=True)
+    stored_samples = stasis_cli.store_job(job, enable_progress_bar=True)
+
+    assert stored_samples == 6
     stasis_cli.schedule_job(job['id'])
 
     print("requesting job to be scheduled")

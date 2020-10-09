@@ -100,7 +100,7 @@ class Scheduler(ABC):
             Status code for each of the tracking statuses (entered, acquired, converted).
         """
         stat = {}
-        handle_ext = {'entered': '', 'acquired': '.d', 'converted': '.mzml'}
+        handle_ext = {'entered': '', 'acquired': '.raw', 'converted': '.mzml'}
         for trk in ['entered', 'acquired', 'converted']:
             data = {'status': trk,
                     'sample': filename,

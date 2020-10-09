@@ -713,6 +713,7 @@ functions:
     handler: stasis/jobs/schedule.schedule_job_from_queue
     events:
       - sqs:
+          batchSize: 1
           arn:
             Fn::Join:
               - ':'
