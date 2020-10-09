@@ -13,7 +13,8 @@ class Parser:
     general command line parser
     """
 
-    def __init__(self, stasisClient: StasisClient, mapping: dict = None):
+    def __init__(self, mapping: dict = None):
+
         parser = argparse.ArgumentParser(prog="lcb")
         parser.add_argument("--json", action="store_true", help="try to print everything as JSON")
 
@@ -22,12 +23,11 @@ class Parser:
         if mapping is None:
             # registers the default mapping
             mapping = {
-                'sample': SampleEvaluator(stasisClient).evaluate,
-                'job': JobEvaluator(stasisClient).evaluate,
-                'aggregate': AggregateEvaluator(stasisClient).evaluate,
-                'node': NodeEvaluator(stasisClient).evaluate
+                'sample': SampleEvaluator().evaluate,
+                'job': JobEvaluator().evaluate,
+                'aggregate': AggregateEvaluator().evaluate,
+                'node': NodeEvaluator().evaluate
             }
-
 
         # TODO this needs to be more dynamic done over all the mappings
         jobs = self.configure_jobs(main_parser=parser, sub_parser=sub)

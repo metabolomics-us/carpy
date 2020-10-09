@@ -1,8 +1,6 @@
 import json
 from datetime import datetime
 
-from stasis_client.client import StasisClient
-
 from lcb.evaluator import Evaluator
 
 
@@ -10,9 +8,6 @@ class SampleEvaluator(Evaluator):
     """
     evaluates received commands from the client
     """
-
-    def __init__(self, stasis: StasisClient):
-        super().__init__(stasis)
 
     def evaluate(self, args: dict):
         """

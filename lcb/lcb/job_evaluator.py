@@ -12,9 +12,6 @@ from lcb.evaluator import Evaluator
 
 class JobEvaluator(Evaluator):
 
-    def __init__(self, stasis: StasisClient):
-        super().__init__(stasis)
-
     def evaluate(self, args: dict):
         mapping = {
             'status': self.status,

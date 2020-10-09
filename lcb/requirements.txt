@@ -19,3 +19,4 @@ jupyter-datatables
 papermill
 pdfkit
 docker
+get-docker-secret

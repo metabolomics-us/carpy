@@ -63,16 +63,7 @@ class NodeEvaluator(Evaluator):
 
                 config = json.loads(json.loads(body)['default'])
 
-                session = Session()
-                credentials = session.get_credentials()
-                current_credentials = credentials.get_frozen_credentials()
-                environment = {
-                    'AWS_ACCESS_KEY_ID': current_credentials.access_key,
-                    'AWS_DEFAULT_REGION': 'us-west-2',
-                    'AWS_SECRET_ACCESS_KEY': current_credentials.secret_key,
-                    'STASIS_KEY': os.getenv('STASIS_API_TOKEN'),
-                    'STASIS_URL': os.getenv('STASIS_API_URL'),
-                }
+                environment = self._secret_config
 
                 if config['stasis-service'] == 'secure-carrot-runner':
                     self.process_single_sample(client, config, environment, message, queue_url, sqs)
@@ -91,8 +82,6 @@ class NodeEvaluator(Evaluator):
         processes a local aggregation in this node
         """
         environment['CARROT_JOB'] = config['job']
-        environment['STASIS_KEY'] = os.getenv('STASIS_API_TOKEN')
-        environment['STASIS_URL'] = os.getenv('STASIS_API_URL')
 
         print("start JOB process environment")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest",
