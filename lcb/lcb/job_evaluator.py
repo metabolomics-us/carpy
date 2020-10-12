@@ -35,21 +35,21 @@ class JobEvaluator(Evaluator):
         return results
 
     def status(self, id, args):
-        job = self.client.load_job_state(job_id=id)
+        job = self.stasisClient.load_job_state(job_id=id)
 
         print(json.dumps(job, indent=4))
 
         return job
 
     def process(self, id, args):
-        result = self.client.schedule_job(id)
+        result = self.stasisClient.schedule_job(id)
 
         print("job scheduled for processing: {}".format(result))
         return result
 
     def exist(self, id, args):
         try:
-            result = self.client.load_job_state(id)
+            result = self.stasisClient.load_job_state(id)
             print("job {} exists: True".format(id))
             return True
         except Exception:
@@ -58,11 +58,11 @@ class JobEvaluator(Evaluator):
 
     def retrieve(self, id: str, args):
 
-        content = self.client.download_job_result(job=id)
+        content = self.stasisClient.download_job_result(job=id)
 
         if content is None:
-            print("did not find a result for '{}' on '{}'".format(id, self.client.get_aggregated_bucket()))
-            state = self.client.load_job_state(id)
+            print("did not find a result for '{}' on '{}'".format(id, self.stasisClient.get_aggregated_bucket()))
+            state = self.stasisClient.load_job_state(id)
             print("jobs current state is")
             print(json.dumps(state, indent=4))
             return False
@@ -80,16 +80,16 @@ class JobEvaluator(Evaluator):
             return True
 
     def detail(self, id, args):
-        job_state = self.client.load_job_state(id)
+        job_state = self.stasisClient.load_job_state(id)
 
         print("loading job...")
-        job = self.client.load_job(id)
+        job = self.stasisClient.load_job(id)
 
         print(json.dumps(job, indent=4))
 
         samples = []
         for sample in tqdm(job, desc="loading details for all samples"):
-            samples.append(self.client.sample_state(sample['sample'], full_response=True))
+            samples.append(self.stasisClient.sample_state(sample['sample'], full_response=True))
         result = {
             'job': job_state,
             'samples':
@@ -121,7 +121,7 @@ class JobEvaluator(Evaluator):
             try:
                 print("uploading job")
                 print(json.dumps(job, indent=4))
-                result = self.client.store_job(job, enable_progress_bar=True)
+                result = self.stasisClient.store_job(job, enable_progress_bar=True)
                 print("done")
                 return True
             except Exception as e:
@@ -149,7 +149,7 @@ class JobEvaluator(Evaluator):
         :return:
         """
 
-        result = self.client.load_job_state(id)
+        result = self.stasisClient.load_job_state(id)
 
         print(result)
 
@@ -162,7 +162,7 @@ class JobEvaluator(Evaluator):
         print("waiting for job to be in state {}".format(args['wait_for']))
         for x in range(0, args['wait_attempts']):
             try:
-                result = self.client.load_job_state(id)
+                result = self.stasisClient.load_job_state(id)
 
                 print(result)
                 if result['job_state'] in args['wait_for']:
@@ -185,9 +185,51 @@ class JobEvaluator(Evaluator):
 
         print(f"forcing synchronization of job {id}")
         try:
-            result = self.client.force_sync(id)
+            result = self.stasisClient.force_sync(id)
             print(result)
             return True
         except Exception as e:
             print(e)
             return False
+
+    @staticmethod
+    def configure_jobs(main_parser, sub_parser):
+        """
+        configures all the options for handling of jobs
+        :param jobs:
+        :return:
+        """
+
+        parser = sub_parser.add_parser(name="job", help="job based operations")
+        parser.add_argument("-i", "--id", help="this is your job id", required=True)
+
+        parser.add_argument("-u", "--upload",
+                            help="registers the specified job file in the system in preparation for processing. You steel need to start the processing",
+                            type=str, default=False)
+        parser.add_argument("-p", "--process",
+                            help="this starts the processing of the specified job id in the remote system",
+                            action='store_true')
+        parser.add_argument("--wait-for", nargs='+',
+                            help="which states we want to wait for.", dest='wait_for',
+                            type=str, default=False)
+        parser.add_argument("--wait-attempts",
+                            help="how many attempts we do until we are done waiting for a job",
+                            type=int, default=10000, dest='wait_attempts')
+        parser.add_argument("--wait-time",
+                            help="how long do we wait in seconds between attempts for the wait module",
+                            type=int, default=10, dest='wait_time')
+
+        parser.add_argument("-d", "--detail", help="specify this flag to return a detailed report",
+                            action='store_true')
+        parser.add_argument("-e", "--exist", help="checks if the given job exist", action='store_true')
+        parser.add_argument("-s", "--status", help="specify this flag to return the current status",
+                            action='store_true')
+        parser.add_argument("-r", "--retrieve",
+                            help="this downloads the specified job, if available to the specified directory..",
+                            type=str, default=False)
+
+        parser.add_argument("--force-sync",
+                            help="forces a synchronization of the given job. In case stasis is hanging",
+                            action='store_true', dest='force_sync')
+
+        return parser

@@ -39,11 +39,11 @@ class SampleEvaluator(Evaluator):
 
         # 1. fetch metadata for sample
 
-        acquistion_data = self.client.sample_acquisition_get(id)
+        acquistion_data = self.stasisClient.sample_acquisition_get(id)
         # 2. schedule
 
         print()
-        result = self.client.schedule_sample_for_computation(
+        result = self.stasisClient.schedule_sample_for_computation(
             sample_name=id,
             method=acquistion_data['processing']['method'],
             profile=args['profile'],
@@ -62,7 +62,7 @@ class SampleEvaluator(Evaluator):
         :return:
         """
 
-        result = self.client.sample_state(sample_name=id, full_response=True)
+        result = self.stasisClient.sample_state(sample_name=id, full_response=True)
 
         for x in result['status']:
             timestamp = datetime.fromtimestamp(x['time'] / 1000)
@@ -79,7 +79,7 @@ class SampleEvaluator(Evaluator):
         :return:
         """
 
-        result = self.client.sample_result_as_json(sample_name=id)
+        result = self.stasisClient.sample_result_as_json(sample_name=id)
 
         with open("{}.json".format(id), 'w') as file:
             json.dump(result, file, indent=4)
@@ -94,8 +94,8 @@ class SampleEvaluator(Evaluator):
         """
         print()
         try:
-            acquistion_data = self.client.sample_acquisition_get(id)
-            state = self.client.sample_state(sample_name=id)
+            acquistion_data = self.stasisClient.sample_acquisition_get(id)
+            state = self.stasisClient.sample_state(sample_name=id)
 
             result = {
                 'meta': acquistion_data,
@@ -114,9 +114,9 @@ class SampleEvaluator(Evaluator):
         """
         print()
         try:
-            acquistion_data = self.client.sample_acquisition_get(id)
-            state = self.client.sample_state(sample_name=id)
-            processing_result = self.client.sample_result_as_json(sample_name=id)
+            acquistion_data = self.stasisClient.sample_acquisition_get(id)
+            state = self.stasisClient.sample_state(sample_name=id)
+            processing_result = self.stasisClient.sample_result_as_json(sample_name=id)
             result = {
                 'meta': acquistion_data,
                 'state': state,
@@ -136,4 +136,30 @@ class SampleEvaluator(Evaluator):
         :param id:
         :return:
         """
-        self.client
+        self.stasisClient
+
+    @staticmethod
+    def configure_samples(main_parser, sub_parser):
+        """
+        configures all the options for a sample parser
+        :param sample_parser:
+        :return:
+        """
+
+        parser = sub_parser.add_parser(name="sample", help="sample based operations")
+        parser.add_argument("-i", "--id", help="this is your sample id or name", required=True)
+        parser.add_argument("-s", "--status", help="specify this flag to return the current status",
+                            action='store_true')
+        parser.add_argument("-p", "--process", help="this starts the processing of the specified sample",
+                            action='store_true')
+        parser.add_argument("-r", "--retrieve", help="this downloads the specified sample result", action='store_true')
+        parser.add_argument("-f", "--full",
+                            help="this downloads the specified sample result and all associated metadata",
+                            action='store_true')
+        parser.add_argument("-e", "--exist", help="checks if the given sample exist", action='store_true')
+        parser.add_argument("-d", "--detail", help="provides a complete detailed view of the sample",
+                            action='store_true')
+        parser.add_argument("--profile", help="which profile to utilize for scheduling", default="lcms", required=False)
+        parser.add_argument("--env", help="which env to utilize for scheduling", default="test", required=False)
+
+        return parser
