@@ -17,6 +17,9 @@ services:
     networks:
       - lcb
     deploy:
+      placement:
+        constraints:
+          - "node.labels.database==true"
       resources:
         limits:
           cpus: '2.0'
@@ -41,6 +44,10 @@ services:
     #    command: ['sleep','10000']
     entrypoint: [ 'python3','bin/lcb-client.py', 'node' ,'--single', '--remove' ,'awsdev' ,'--add' ,'localdev' ,'--docker', 'network_mode=host' ,'--env', 'LCB_DB_SERVER' ]
     deploy:
+      placement:
+        constraints:
+          - "node.role == worker"
+      replicas: 20
       resources:
         limits:
           cpus: '2.0'
