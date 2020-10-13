@@ -16,6 +16,14 @@ services:
       - POSTGRES_DB=lcb
     networks:
       - lcb
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 8196M
+        reservations:
+          cpus: '1.50'
+          memory: 8196M
 
 
   ##
