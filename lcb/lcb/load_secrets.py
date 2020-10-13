@@ -1,6 +1,7 @@
 import os
+import json
 
-from boto3 import Session
+from boto3 import Session, setup_default_session
 from get_docker_secret import get_docker_secret
 
 
@@ -11,17 +12,28 @@ class Secrets:
     """
 
     def load(self) -> dict:
-        session = Session()
-        credentials = session.get_credentials()
-        current_credentials = credentials.get_frozen_credentials()
-        return {
 
-            'CIS_TOKEN': get_docker_secret('CIS_TOKEN', default=os.getenv('CIS_TOKEN',os.getenv('CIS_API_TOKEN'))),
-            'CIS_URL': get_docker_secret('CIS_URL', default=os.getenv('CIS_URL',os.getenv('CIS_API_URL'))),
-            'STASIS_TOKEN': get_docker_secret('STASIS_TOKEN', default=os.getenv('STASIS_TOKEN',os.getenv('STASIS_API_TOKEN'))),
-            'STASIS_URL': get_docker_secret('STASIS_URL', default=os.getenv('STASIS_URL',os.getenv('STASIS_API_TOKEN'))),
-            'AWS_ACCESS_KEY_ID': get_docker_secret('AWS_ACCESS_KEY_ID', default=current_credentials.access_key),
-            'AWS_SECRET_ACCESS_KEY': get_docker_secret('AWS_SECRET_ACCESS_KEY',
-                                                       default=current_credentials.secret_key),
+        s = get_docker_secret("node")
 
-        }
+        if s is None:
+            secrets = os.environ
+        else:
+            secrets = json.loads(s)
+
+        try:
+            session = Session()
+            credentials = session.get_credentials()
+            current_credentials = credentials.get_frozen_credentials()
+
+            key = current_credentials.secret_key
+            access = current_credentials.access_key
+
+            secrets['AWS_ACCESS_KEY_ID'] = access
+            secrets['AWS_SECRET_ACCESS_KEY'] = key
+        except Exception as e:
+            pass
+
+        # configure default boto session here
+        setup_default_session(aws_access_key_id=secrets['AWS_ACCESS_KEY_ID'],
+                              aws_secret_access_key=secrets['AWS_SECRET_ACCESS_KEY'], region_name="us-west-2")
+        return secrets

@@ -1,0 +1,60 @@
+version: "3.7"
+
+services:
+
+  ##
+  # this is the main database service, which is storing all the results
+  #
+  database:
+    image: 'postgres:10'
+    hostname: "postgresql"
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=lcb
+      - POSTGRES_PASSWORD=lcb
+      - POSTGRES_DB=lcb
+    networks:
+      - lcb
+
+
+  ##
+  # this is a compute node
+  #
+  node:
+    image: "702514165722.dkr.ecr.us-west-2.amazonaws.com/lcb:latest"
+    environment:
+      - POSTGRES_USER=lcb
+      - POSTGRES_PASSWORD=lcb
+      - POSTGRES_DB=lcb
+    networks:
+      - lcb
+
+    #    command: ['sleep','10000']
+    entrypoint: [ 'python3','bin/lcb-client.py', 'node' ,'--single', '--remove' ,'awsdev' ,'--add' ,'localdev' ,'--docker', 'network_mode=host' ,'--env', 'LCB_DB_SERVER' ]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 20000M
+        reservations:
+          cpus: '1.50'
+          memory: 16196M
+
+    secrets:
+      - source: node
+        target: node
+        uid: '103'
+        gid: '103'
+        mode: 0440
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+networks:
+  lcb:
+    external: false
+
+#volumes:
+
+secrets:
+  node:
+    file: ./node_secret.json

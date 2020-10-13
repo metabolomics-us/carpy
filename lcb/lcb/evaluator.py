@@ -16,6 +16,7 @@ class Evaluator:
         if secret is None:
             secret = Secrets()
 
+        self._secret = secret
         self._secret_config = secret.load()
 
         self.stasisClient = StasisClient(url=self._secret_config['STASIS_URL'],

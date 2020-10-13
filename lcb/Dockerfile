@@ -1,8 +1,8 @@
-FROM docker:dind
+FROM alpine:latest
 
 RUN apk update
 RUN apk upgrade
-RUN apk add --no-cache --update bash git openssh build-base gcc abuild binutils binutils-doc gcc-doc cmake cmake-doc extra-cmake-modules extra-cmake-modules-doc jpeg jpeg-dev zlib zlib-dev python3 python3-dev  g++ python3-dev libffi-dev openssl-dev python3 postgresql-dev gcc python3-dev musl-dev openblas-dev lapack-dev gfortran libxml2-dev libxslt-dev
+RUN apk add --no-cache --update bash git openssh build-base gcc abuild binutils binutils-doc gcc-doc jpeg jpeg-dev zlib zlib-dev python3 python3-dev  g++ python3-dev libffi-dev openssl-dev python3 postgresql-dev gcc python3-dev musl-dev openblas-dev lapack-dev gfortran libxml2-dev libxslt-dev docker
 
 # setup python env
 ENV PYTHONUNBUFFERED=1

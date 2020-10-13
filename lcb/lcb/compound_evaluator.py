@@ -45,7 +45,7 @@ class SteacEvaluator(Evaluator):
             start local processing
             """
             pass
-            elevator = NodeEvaluator(self.stasisClient)
+            elevator = NodeEvaluator(self._secret)
 
             env = elevator.get_aws_env()
 
