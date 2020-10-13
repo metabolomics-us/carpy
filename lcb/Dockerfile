@@ -14,6 +14,7 @@ RUN mkdir /lcb
 WORKDIR /lcb
 COPY requirements.txt /lcb
 COPY . /lcb
+RUN rm -rdf ./lcb/.venv
 
 # update all dependencies
 RUN pip install -r requirements.txt
