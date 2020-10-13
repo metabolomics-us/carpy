@@ -18,5 +18,5 @@ seaborn
 jupyter-datatables
 papermill
 pdfkit
-docker
+docker-py
 get-docker-secret

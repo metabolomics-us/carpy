@@ -16,7 +16,7 @@ class Secrets:
         s = get_docker_secret("node")
 
         if s is None:
-            secrets = os.environ
+            secrets = dict(os.environ)
         else:
             secrets = json.loads(s)
 
