@@ -112,7 +112,7 @@ class NodeEvaluator(Evaluator):
         client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/agg:latest")
         print("start JOB process environment")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/agg:latest",
-                                          environment=environment, detach=True, auto_remove=False)
+                                          environment=environment, detach=True, auto_remove=True)
         self.execute_container(container, message, queue_url, sqs)
 
     def process_steac(self, client, config, environment, message: Optional, queue_url: Optional, sqs: Optional, args):
@@ -123,7 +123,7 @@ class NodeEvaluator(Evaluator):
         print("start JOB process environment")
         client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest",
-                                          environment=environment, detach=True, auto_remove=False)
+                                          environment=environment, detach=True, auto_remove=True)
         self.execute_container(container, message, queue_url, sqs)
 
     def execute_container(self, container, message, queue_url, sqs):
@@ -153,6 +153,12 @@ class NodeEvaluator(Evaluator):
         environment['CARROT_SAMPLE'] = config['sample']
         environment['CARROT_METHOD'] = config['method']
         environment['CARROT_MODE'] = config['profile']
+
+        # this overrides variables in lc binbase, required to connect to certain services
+
+        environment['STASIS_BASEURL'] = environment['STASIS_URL']
+        environment['STASIS_KEY'] = environment['STASIS_TOKEN']
+
         for env in args['env']:
             environment[env] = os.getenv(env)
 
