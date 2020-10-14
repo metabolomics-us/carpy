@@ -97,7 +97,7 @@ class NodeEvaluator(Evaluator):
 
         print("start JOB process environment")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest",
-                                          environment=environment, detach=True, auto_remove=False)
+                                          environment=environment, detach=True, auto_remove=True)
         self.execute_container(container, message, queue_url, sqs)
 
     def process_steac(self, client, config, environment, message: Optional, queue_url: Optional, sqs: Optional, args):
@@ -107,7 +107,7 @@ class NodeEvaluator(Evaluator):
         environment['CARROT_METHOD'] = config['method']
         print("start JOB process environment")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest",
-                                          environment=environment, detach=True, auto_remove=False)
+                                          environment=environment, detach=True, auto_remove=True)
         self.execute_container(container, message, queue_url, sqs)
 
     def execute_container(self, container, message, queue_url, sqs):
