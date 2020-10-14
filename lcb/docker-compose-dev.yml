@@ -16,6 +16,17 @@ services:
       - POSTGRES_DB=lcb
     networks:
       - lcb
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.database==true"
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 8196M
+        reservations:
+          cpus: '1.50'
+          memory: 8196M
 
 
   ##
@@ -27,12 +38,18 @@ services:
       - POSTGRES_USER=lcb
       - POSTGRES_PASSWORD=lcb
       - POSTGRES_DB=lcb
+      - LCB_DB_SERVER=database
     networks:
       - lcb
 
     #    command: ['sleep','10000']
-    entrypoint: [ 'python3','bin/lcb-client.py', 'node' ,'--single', '--remove' ,'awsdev' ,'--add' ,'localdev' ,'--docker', 'network_mode=host' ,'--env', 'LCB_DB_SERVER' ]
+    # please be aware that this stack only works
+    entrypoint: [ 'python3','bin/lcb-client.py', 'node' ,'--single', '--remove' ,'awsdev' ,'--add' ,'localdev' ,'--docker', 'network=lcb_lcb' ,'--env', 'LCB_DB_SERVER' ]
     deploy:
+      placement:
+        constraints:
+          - "node.role == worker"
+      replicas: 1
       resources:
         limits:
           cpus: '2.0'
@@ -52,6 +69,8 @@ services:
 networks:
   lcb:
     external: false
+    #    driver: overlay
+    attachable: true
 
 #volumes:
 

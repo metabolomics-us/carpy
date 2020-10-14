@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import traceback
@@ -32,15 +33,13 @@ class NodeEvaluator(Evaluator):
         """
         connects to the queue and processes received messages one at a time
         """
-        # connect to queue
-
+        environment = self.get_aws_env()
         # Create SQS client
         sqs = boto3.client('sqs')
 
         # todo get correct queue name from stasis
         queue_url = "https://sqs.us-west-2.amazonaws.com/702514165722/StasisScheduleQueue-dev_FARGATE"
         # start docker
-        client = self.buildClient()
 
         while True:
             # Receive message from SQS queue
@@ -59,12 +58,11 @@ class NodeEvaluator(Evaluator):
 
             if 'Messages' in response and len(response['Messages']) > 0:
 
+                client = self.buildClient()
                 message = response['Messages'][0]
                 body = message['Body']
 
                 config = json.loads(json.loads(body)['default'])
-
-                environment = self.get_aws_env()
 
                 try:
                     if config['stasis-service'] == 'secure-carrot-runner':
@@ -86,7 +84,19 @@ class NodeEvaluator(Evaluator):
         return self._secret_config
 
     def buildClient(self):
+        ecr = boto3.client('ecr')
+
+        token = ecr.get_authorization_token()
+        username, password = base64.b64decode(token['authorizationData'][0]['authorizationToken']).decode().split(':')
+        registry = token['authorizationData'][0]['proxyEndpoint'].replace("https://", "")
         client = docker.from_env()
+
+        client.login(
+            username=username,
+            password=password,
+            registry=registry
+        )
+
         return client
 
     def process_aggregation(self, client, config, environment, message, queue_url, sqs, args):
@@ -95,8 +105,9 @@ class NodeEvaluator(Evaluator):
         """
         environment['CARROT_JOB'] = config['job']
 
+        client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/agg:latest")
         print("start JOB process environment")
-        container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:agg-latest",
+        container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/agg:latest",
                                           environment=environment, detach=True, auto_remove=True)
         self.execute_container(container, message, queue_url, sqs)
 
@@ -106,6 +117,7 @@ class NodeEvaluator(Evaluator):
         """
         environment['CARROT_METHOD'] = config['method']
         print("start JOB process environment")
+        client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest",
                                           environment=environment, detach=True, auto_remove=True)
         self.execute_container(container, message, queue_url, sqs)
@@ -137,10 +149,18 @@ class NodeEvaluator(Evaluator):
         environment['CARROT_SAMPLE'] = config['sample']
         environment['CARROT_METHOD'] = config['method']
         environment['CARROT_MODE'] = config['profile']
+
+        # this overrides variables in lc binbase, required to connect to certain services
+
+        environment['STASIS_BASEURL'] = environment['STASIS_URL']
+        environment['STASIS_KEY'] = environment['STASIS_TOKEN']
+
         for env in args['env']:
             environment[env] = os.getenv(env)
 
         print("start SAMPLE process environment")
+
+        client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:latest")
 
         docker_args = {
             'image': "702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:latest",
@@ -152,7 +172,7 @@ class NodeEvaluator(Evaluator):
             key, value = docker.split("=")
             docker_args[key] = value
 
-        print(f"utilizing docker configuration:\n {json.dumps(docker_args, indent=4)}")
+        print(f"utilizing docker configuration:\n {docker_args}")
         container = client.containers.run(**docker_args)
         self.execute_container(container, message, queue_url, sqs)
 

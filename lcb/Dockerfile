@@ -1,8 +1,7 @@
-FROM alpine:latest
+FROM python:3.8-slim
 
-RUN apk update
-RUN apk upgrade
-RUN apk add --no-cache --update bash git openssh build-base gcc abuild binutils binutils-doc gcc-doc jpeg jpeg-dev zlib zlib-dev python3 python3-dev  g++ python3-dev libffi-dev openssl-dev python3 postgresql-dev gcc python3-dev musl-dev openblas-dev lapack-dev gfortran libxml2-dev libxslt-dev docker
+RUN apt update && apt upgrade -y
+RUN apt install -y bash git docker
 
 # setup python env
 ENV PYTHONUNBUFFERED=1
@@ -15,6 +14,7 @@ RUN mkdir /lcb
 WORKDIR /lcb
 COPY requirements.txt /lcb
 COPY . /lcb
+RUN rm -rdf ./lcb/.venv
 
 # update all dependencies
 RUN pip install -r requirements.txt
