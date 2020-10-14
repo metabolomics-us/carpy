@@ -89,13 +89,17 @@ class NodeEvaluator(Evaluator):
         token = ecr.get_authorization_token()
         username, password = base64.b64decode(token['authorizationData'][0]['authorizationToken']).decode().split(':')
         registry = token['authorizationData'][0]['proxyEndpoint'].replace("https://", "")
+
+        print(f"token {token} is user for {registry} with username: {username} and password {password}")
         client = docker.from_env()
 
-        client.login(
+        result = client.login(
             username=username,
             password=password,
             registry=registry
         )
+
+        print(f"logged into client: {result}")
 
         return client
 
