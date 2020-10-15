@@ -28,9 +28,11 @@ env variables for application
 ### Local installation
 
 1. create venv
+
 ``` 
 virtualenv env 
 ```
+
 2. activate env
 ```
 source env/bin/activate
@@ -89,7 +91,7 @@ Further operations can be seen by adding '--help' to the lcb command
 
 If you would like to run LCB on a local docker swarm cluster, we provide you with a complete docker-compose file to ease this process.
 
-1. setup a secret file in the lcb directory of this repo
+#### setup a secret file in the lcb directory of this repo
 
 ```json
 {
@@ -102,15 +104,39 @@ If you would like to run LCB on a local docker swarm cluster, we provide you wit
 }
 ```
 
-2. ensure your local docker is in swarm mode
+#### ensure your local docker is in swarm mode
 
-3. deploy the lcb cluster
+if you have not generated a swarm yet, please initialize it
+```
+docker swarm init
+```
+
+and add your nodes afterrds.
+
+#### deploy the lcb cluster
+
+All these steps need to be executed on the manager node.
 
 ```shell script
 docker stack deploy -c docker-compose.yml lbc
 ```
 
-4. utilize the lcb tool to register a job and schedule it
+to ensure that all login tokens are correct and that every node ues the latest images, please execute
+these two commands.
+
+#### distribute the login token
+
+```shell script
+eval $(aws ecr get-login --no-include-email)
+docker service update -d -q --with-registry-auth lcb_node
+```
+
+#### force update to use the latest image on all nodes
+```shell script
+docker service update --force lcb_node
+```
+
+#### utilize the lcb tool to register a job and schedule it
 
 ```shell script
 lcb job --upload <JOB_FILE> --id <JOB_ID>

@@ -67,9 +67,10 @@ class NodeEvaluator(Evaluator):
                 try:
                     if config['stasis-service'] == 'secure-carrot-runner':
                         self.process_single_sample(client, config, environment, message, queue_url, sqs, args)
-
                     elif config['stasis-service'] == 'secure-carrot-aggregator':
                         self.process_aggregation(client, config, environment, message, queue_url, sqs, args)
+                    elif config['stasis-service'] == 'secure-carrot-steac':
+                        self.process_steac(client, config, environment, message, queue_url, sqs, args)
                     else:
                         print("not yet supported!!!")
                         print(json.dumps(body, indent=4))
@@ -77,7 +78,7 @@ class NodeEvaluator(Evaluator):
                     traceback.print_exc()
                     print("major error observed which breaks!")
             else:
-                print("sleeping for 5 seconds since queue is empty")
+                #                print("sleeping for 5 seconds since queue is empty")
                 sleep(5)
 
     def get_aws_env(self):
@@ -112,8 +113,8 @@ class NodeEvaluator(Evaluator):
         client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/agg:latest")
         print("start JOB process environment")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/agg:latest",
-                                          environment=environment, detach=True, auto_remove=True)
-        self.execute_container(container, message, queue_url, sqs)
+                                          environment=environment, detach=True, auto_remove=False)
+        self.execute_container(container, message, queue_url, sqs, args)
 
     def process_steac(self, client, config, environment, message: Optional, queue_url: Optional, sqs: Optional, args):
         """
@@ -123,10 +124,10 @@ class NodeEvaluator(Evaluator):
         print("start JOB process environment")
         client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest")
         container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest",
-                                          environment=environment, detach=True, auto_remove=True)
-        self.execute_container(container, message, queue_url, sqs)
+                                          environment=environment, detach=True, auto_remove=False)
+        self.execute_container(container, message, queue_url, sqs, args)
 
-    def execute_container(self, container, message, queue_url, sqs):
+    def execute_container(self, container, message, queue_url, sqs, args):
         """
         executes the specied container and logs out the content
         """
@@ -134,12 +135,24 @@ class NodeEvaluator(Evaluator):
         for line in container.logs(stream=True):
             print(str(line.strip()))
 
-        if message is not None:
+        result = container.wait()
+
+        statusCode = result['StatusCode']
+        if args['keep'] is False:
+            print(f"cleaning up container with id {container.id}")
+            container.remove()
+
+        if message is not None and statusCode == 0:
             receipt_handle = message['ReceiptHandle']
             sqs.delete_message(
                 QueueUrl=queue_url,
                 ReceiptHandle=receipt_handle
             )
+        elif message is not None:
+            print("returning messagee, due to an invalid status code")
+            message.change_visibility(VisibilityTimeout=0)
+        else:
+            print("received message was None, just moving one")
 
     def process_single_sample(self, client, config, environment, message, queue_url, sqs, args):
         """
@@ -169,7 +182,7 @@ class NodeEvaluator(Evaluator):
         docker_args = {
             'image': "702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:latest",
             'environment': environment, 'detach': True,
-            'auto_remove': args['keep'] is False
+            'auto_remove': False
         }
 
         for docker in args['docker']:
@@ -178,7 +191,7 @@ class NodeEvaluator(Evaluator):
 
         print(f"utilizing docker configuration:\n {docker_args}")
         container = client.containers.run(**docker_args)
-        self.execute_container(container, message, queue_url, sqs)
+        self.execute_container(container, message, queue_url, sqs, args)
 
     @staticmethod
     def optimize_profiles(args, config: Optional[dict] = {}):
