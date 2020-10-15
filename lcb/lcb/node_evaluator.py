@@ -97,7 +97,6 @@ class NodeEvaluator(Evaluator):
         username, password = base64.b64decode(token['authorizationData'][0]['authorizationToken']).decode().split(':')
         registry = token['authorizationData'][0]['proxyEndpoint'].replace("https://", "")
 
-        print(f"token {token} is user for {registry} with username: {username} and password {password}")
         client = docker.from_env()
 
         result = client.login(
@@ -106,8 +105,6 @@ class NodeEvaluator(Evaluator):
             registry=registry,
             reauth=True
         )
-
-        print(f"logged into client: {result}")
 
         return client
 
@@ -146,7 +143,8 @@ class NodeEvaluator(Evaluator):
             key, value = docker.split("=")
             docker_args[key] = value
 
-        print(f"utilizing docker configuration:\n {docker_args}")
+        if args['log'] is True:
+            print(f"utilizing docker configuration:\n {docker_args}")
         container = client.containers.run(**docker_args)
         self.execute_container(container, message, queue_url, sqs, args)
 
@@ -198,8 +196,13 @@ class NodeEvaluator(Evaluator):
                 ReceiptHandle=receipt_handle
             )
         elif message is not None:
-            print("returning messagee, due to an invalid status code")
-            message.change_visibility(VisibilityTimeout=0)
+            receipt_handle = message['ReceiptHandle']
+            print("returning message due to an invalid status code")
+            sqs.change_visibility(
+                VisibilityTimeout=0,
+                QueueUrl=queue_url,
+                ReceiptHandle=receipt_handle
+            )
         else:
             print("received message was None, just moving one")
 
