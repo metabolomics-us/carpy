@@ -9,12 +9,18 @@ import boto3
 import docker
 
 from lcb.evaluator import Evaluator
+from lcb.load_secrets import Secrets
 
 
 class NodeEvaluator(Evaluator):
     """
     provides a simple node for running calculation tasks for us
     """
+
+    def __init__(self, secret: Optional[Secrets] = None):
+        super().__init__(secret)
+
+        self.registry = "702514165722.dkr.ecr.us-west-2.amazonaws.com"
 
     def evaluate(self, args: dict):
         mapping = {
@@ -97,62 +103,13 @@ class NodeEvaluator(Evaluator):
         result = client.login(
             username=username,
             password=password,
-            registry=registry
+            registry=registry,
+            reauth=True
         )
 
         print(f"logged into client: {result}")
 
         return client
-
-    def process_aggregation(self, client, config, environment, message, queue_url, sqs, args):
-        """
-        processes a local aggregation in this node
-        """
-        environment['CARROT_JOB'] = config['job']
-
-        client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/agg:latest")
-        print("start JOB process environment")
-        container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/agg:latest",
-                                          environment=environment, detach=True, auto_remove=False)
-        self.execute_container(container, message, queue_url, sqs, args)
-
-    def process_steac(self, client, config, environment, message: Optional, queue_url: Optional, sqs: Optional, args):
-        """
-        processes a local aggregation in this node
-        """
-        environment['CARROT_METHOD'] = config['method']
-        print("start JOB process environment")
-        client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest")
-        container = client.containers.run("702514165722.dkr.ecr.us-west-2.amazonaws.com/steac:latest",
-                                          environment=environment, detach=True, auto_remove=False)
-        self.execute_container(container, message, queue_url, sqs, args)
-
-    def execute_container(self, container, message, queue_url, sqs, args):
-        """
-        executes the specied container and logs out the content
-        """
-        # run image
-        for line in container.logs(stream=True):
-            print(str(line.strip()))
-
-        result = container.wait()
-
-        statusCode = result['StatusCode']
-        if args['keep'] is False:
-            print(f"cleaning up container with id {container.id}")
-            container.remove()
-
-        if message is not None and statusCode == 0:
-            receipt_handle = message['ReceiptHandle']
-            sqs.delete_message(
-                QueueUrl=queue_url,
-                ReceiptHandle=receipt_handle
-            )
-        elif message is not None:
-            print("returning messagee, due to an invalid status code")
-            message.change_visibility(VisibilityTimeout=0)
-        else:
-            print("received message was None, just moving one")
 
     def process_single_sample(self, client, config, environment, message, queue_url, sqs, args):
         """
@@ -177,10 +134,10 @@ class NodeEvaluator(Evaluator):
 
         print("start SAMPLE process environment")
 
-        client.api.pull("702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:latest")
+        client.api.pull(f"{self.registry}/carrot:latest")
 
         docker_args = {
-            'image': "702514165722.dkr.ecr.us-west-2.amazonaws.com/carrot:latest",
+            'image': f"{self.registry}/carrot:latest",
             'environment': environment, 'detach': True,
             'auto_remove': False
         }
@@ -192,6 +149,59 @@ class NodeEvaluator(Evaluator):
         print(f"utilizing docker configuration:\n {docker_args}")
         container = client.containers.run(**docker_args)
         self.execute_container(container, message, queue_url, sqs, args)
+
+    def process_aggregation(self, client, config, environment, message, queue_url, sqs, args):
+        """
+        processes a local aggregation in this node
+        """
+        environment['CARROT_JOB'] = config['job']
+
+        client.api.pull(f"{self.registry}/agg:latest")
+        print("start JOB process environment")
+        container = client.containers.run(f"${self.registry}/agg:latest",
+                                          environment=environment, detach=True, auto_remove=False)
+        self.execute_container(container, message, queue_url, sqs, args)
+
+    def process_steac(self, client, config, environment, message: Optional, queue_url: Optional, sqs: Optional, args):
+        """
+        processes a local aggregation in this node
+        """
+        environment['CARROT_METHOD'] = config['method']
+        print("start JOB process environment")
+        client.api.pull(f"{self.registry}/steac:latest")
+        container = client.containers.run(f"{self.registry}/steac:latest",
+                                          environment=environment, detach=True, auto_remove=False)
+        self.execute_container(container, message, queue_url, sqs, args)
+
+    def execute_container(self, container, message, queue_url, sqs, args):
+        """
+        executes the specied container and logs out the content
+        """
+
+        if args['log'] is True:
+            # run image
+            for line in container.logs(stream=True):
+                print(str(line.strip()))
+
+        print(f"waiting for shutdown of container now: {container}")
+        result = container.wait()
+
+        statusCode = result['StatusCode']
+        if args['keep'] is False:
+            print(f"cleaning up container with id {container.id}")
+            container.remove()
+
+        if message is not None and statusCode == 0:
+            receipt_handle = message['ReceiptHandle']
+            sqs.delete_message(
+                QueueUrl=queue_url,
+                ReceiptHandle=receipt_handle
+            )
+        elif message is not None:
+            print("returning messagee, due to an invalid status code")
+            message.change_visibility(VisibilityTimeout=0)
+        else:
+            print("received message was None, just moving one")
 
     @staticmethod
     def optimize_profiles(args, config: Optional[dict] = {}):
@@ -223,10 +233,16 @@ class NodeEvaluator(Evaluator):
         parser.add_argument("-k", "--keep", help="keep the executed docker container and logs for diagnostics",
                             action="store_true",
                             required=False, default=False)
+
+        parser.add_argument("-l", "--log", help="do you want to log the spawned docker container to stdout?",
+                            action="store_true",
+                            required=False, default=False)
+
         parser.add_argument("-d", "--docker", help="additional arguments for the docker container to be run",
                             action="append",
                             required=False, default=[])
         parser.add_argument("-e", "--env",
                             help="forward the specified env variable from the host to the docker container",
                             action="append", required=False, default=[])
+
         return parser
