@@ -169,6 +169,9 @@ class NodeEvaluator(Evaluator):
         self.execute_container(container, message, queue_url, sqs, args, environment)
 
     def _printenv(self, docker_args, indent=""):
+        """
+        prints out the given args in an orderly fashin
+        """
         for e in docker_args:
 
             if isinstance(docker_args[e], dict):
