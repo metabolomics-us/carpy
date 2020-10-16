@@ -14,6 +14,9 @@ services:
       - POSTGRES_USER=lcb
       - POSTGRES_PASSWORD=lcb
       - POSTGRES_DB=lcb
+
+    command: postgres -c 'max_connections=500'
+
     networks:
       - lcb
     deploy:

@@ -80,6 +80,8 @@ class NodeEvaluator(Evaluator):
                     else:
                         print("not yet supported!!!")
                         print(json.dumps(body, indent=4))
+
+                    print()
                 except Exception as e:
                     traceback.print_exc()
                     print("major error observed which breaks!")
@@ -193,7 +195,7 @@ class NodeEvaluator(Evaluator):
 
         if args['log'] is True:
             # run image
-            for line in container.logs(stream=True):
+            for line in container.logs(stream=True, logs=True):
                 print(str(line.strip()))
 
         print(f"waiting for shutdown of container now: {container}")
@@ -207,8 +209,13 @@ class NodeEvaluator(Evaluator):
                 ReceiptHandle=message['ReceiptHandle']
             )
         elif message is not None:
-            print( f"returning message due to an invalid status code: {statusCode} and executed container was: {container}")
+            print(
+                f"returning message due to an invalid status code: {statusCode} and executed container was: {container}")
             self._printenv(environment, indent="\t\t => \t")
+            print("associated container log file:")
+            for line in container.logs(stream=True):
+                print(f"\t\t{str(line.strip())}")
+            print()
             try:
                 sqs.change_message_visibility(
                     VisibilityTimeout=0,
@@ -223,7 +230,6 @@ class NodeEvaluator(Evaluator):
         if args['keep'] is False:
             print(f"cleaning up container with id {container.id}")
             container.remove()
-
 
     @staticmethod
     def optimize_profiles(args, config: Optional[dict] = {}):
