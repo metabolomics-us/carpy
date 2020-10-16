@@ -88,7 +88,7 @@ class NodeEvaluator(Evaluator):
                 sleep(5)
 
     def get_aws_env(self):
-        return self._secret_config
+        return self._secret_config.copy()
 
     def buildClient(self):
         ecr = boto3.client('ecr')
@@ -99,7 +99,7 @@ class NodeEvaluator(Evaluator):
 
         client = docker.from_env()
 
-        result = client.login(
+        client.login(
             username=username,
             password=password,
             registry=registry,
@@ -139,14 +139,13 @@ class NodeEvaluator(Evaluator):
             'auto_remove': False
         }
 
-        for docker in args['docker']:
-            key, value = docker.split("=")
+        for d in args['docker']:
+            key, value = d.split("=")
             docker_args[key] = value
 
-        if args['log'] is True:
-            print(f"utilizing docker configuration:\n {docker_args}")
+        self._printenv(docker_args)
         container = client.containers.run(**docker_args)
-        self.execute_container(container, message, queue_url, sqs, args)
+        self.execute_container(container, message, queue_url, sqs, args, environment)
 
     def process_aggregation(self, client, config, environment, message, queue_url, sqs, args):
         """
@@ -155,23 +154,39 @@ class NodeEvaluator(Evaluator):
         environment['CARROT_JOB'] = config['job']
 
         client.api.pull(f"{self.registry}/agg:latest")
-        print("start JOB process environment")
-        container = client.containers.run(f"${self.registry}/agg:latest",
-                                          environment=environment, detach=True, auto_remove=False)
-        self.execute_container(container, message, queue_url, sqs, args)
+        print(f"start aggregation process environment")
+
+        docker_args = {
+            'image': f"{self.registry}/agg:latest",
+            'environment': environment, 'detach': True,
+            'auto_remove': False
+        }
+
+        self._printenv(docker_args)
+        container = client.containers.run(**docker_args)
+        self.execute_container(container, message, queue_url, sqs, args, environment)
+
+    def _printenv(self, docker_args, indent=""):
+        for e in docker_args:
+
+            if isinstance(docker_args[e], dict):
+                print(f"{indent}{e} =>")
+                self._printenv(docker_args[e], indent + "\t")
+            else:
+                print(f"{indent}{e} = {docker_args[e]}")
 
     def process_steac(self, client, config, environment, message: Optional, queue_url: Optional, sqs: Optional, args):
         """
         processes a local aggregation in this node
         """
         environment['CARROT_METHOD'] = config['method']
-        print("start JOB process environment")
+        print("start STEAC process environment")
         client.api.pull(f"{self.registry}/steac:latest")
         container = client.containers.run(f"{self.registry}/steac:latest",
                                           environment=environment, detach=True, auto_remove=False)
-        self.execute_container(container, message, queue_url, sqs, args)
+        self.execute_container(container, message, queue_url, sqs, args, environment)
 
-    def execute_container(self, container, message, queue_url, sqs, args):
+    def execute_container(self, container, message, queue_url, sqs, args, environment):
         """
         executes the specied container and logs out the content
         """
@@ -185,26 +200,30 @@ class NodeEvaluator(Evaluator):
         result = container.wait()
 
         statusCode = result['StatusCode']
+
+        if message is not None and statusCode == 0:
+            sqs.delete_message(
+                QueueUrl=queue_url,
+                ReceiptHandle=message['ReceiptHandle']
+            )
+        elif message is not None:
+            print( f"returning message due to an invalid status code: {statusCode} and executed container was: {container}")
+            self._printenv(environment, indent="\t\t => \t")
+            try:
+                sqs.change_message_visibility(
+                    VisibilityTimeout=0,
+                    QueueUrl=queue_url,
+                    ReceiptHandle=message['ReceiptHandle']
+                )
+            except Exception as e:
+                if args['log']:
+                    print(f"warning, we observed an error while sending back the message {message}, error was {e}")
+                    traceback.print_exc()
+
         if args['keep'] is False:
             print(f"cleaning up container with id {container.id}")
             container.remove()
 
-        if message is not None and statusCode == 0:
-            receipt_handle = message['ReceiptHandle']
-            sqs.delete_message(
-                QueueUrl=queue_url,
-                ReceiptHandle=receipt_handle
-            )
-        elif message is not None:
-            receipt_handle = message['ReceiptHandle']
-            print("returning message due to an invalid status code")
-            sqs.change_visibility(
-                VisibilityTimeout=0,
-                QueueUrl=queue_url,
-                ReceiptHandle=receipt_handle
-            )
-        else:
-            print("received message was None, just moving one")
 
     @staticmethod
     def optimize_profiles(args, config: Optional[dict] = {}):
