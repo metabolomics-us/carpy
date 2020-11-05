@@ -461,8 +461,7 @@ class Aggregator:
         msms['MSMS Spectrum'] = reducedMSMS
         return msms
 
-    @staticmethod
-    def get_target_list(results):
+    def get_target_list(self, results):
         """
         Returns the list of targets from a result file
         Args:
@@ -474,7 +473,10 @@ class Aggregator:
         targets = [x['target'] for x in
                    [results[0]['injections'][k]['results'] for k in list(results[0]['injections'].keys())][0]]
 
-        targets = list(filter(lambda x: x['targetType'] != 'UNCONFIRMED_CONSENSUS', targets))
+        if self.args.get('unknowns'):
+            targets = list(filter(lambda x: x['targetType'] != 'UNCONFIRMED_CONSENSUS', targets))
+
+        print(f'found {len(targets)} targets.')
         return targets
 
     def aggregate(self):
