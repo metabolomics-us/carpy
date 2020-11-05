@@ -9,9 +9,6 @@ class AggregateEvaluator(Evaluator):
     executes aggregations locally
     """
 
-    def __init__(self, stasis: StasisClient):
-        super().__init__(stasis)
-
     def evaluate(self, args: dict):
         mapping = {
             'remote': self.remote_data,
@@ -38,4 +35,26 @@ class AggregateEvaluator(Evaluator):
                 'mz_tolerance': args['mz_tolerance'],
                 'rt_tolerance': args['rt_tolerance'],
             }
-            JobAggregator(arguments).aggregate_job(job=args['remote'], upload=args['upload'])
+            JobAggregator(arguments, stasis=self.stasisClient).aggregate_job(job=args['remote'], upload=False)
+
+    @staticmethod
+    def configure_aggregate(main_parser, sub_parser):
+
+        parser = sub_parser.add_parser(name="aggregate", help="local aggregation based operations")
+
+        parser.add_argument("-r", "--remote", help="this is your remote job id, you would like to locally aggregate",
+                            required=True)
+
+        parser.add_argument("-s", "--store",
+                            help="this is the directory where do you want to store the aggregated data", required=True,
+                            type=str, default=False)
+
+        parser.add_argument("-u", "--upload",
+                            help="uploads the result to the remote buckets", required=False,
+                            action="store_true", default=False)
+
+        parser.add_argument("--zero-replacement", action='store_true', default=True, dest="zero_replacement")
+        parser.add_argument("--mz-tolerance", default=0.01, type=float, dest="mz_tolerance")
+        parser.add_argument("--rt-tolerance", default=0.1, type=float, dest="rt_tolerance")
+
+        return parser

@@ -1,0 +1,82 @@
+version: "3.7"
+
+services:
+
+  ##
+  # this is the main database service, which is storing all the results
+  #
+  database:
+    image: 'postgres:10'
+    hostname: "postgresql"
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=lcb
+      - POSTGRES_PASSWORD=lcb
+      - POSTGRES_DB=lcb
+
+    command: postgres -c 'max_connections=500'
+
+    networks:
+      - lcb
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.database==true"
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 8196M
+        reservations:
+          cpus: '1.50'
+          memory: 8196M
+
+
+  ##
+  # this is a compute node
+  #
+  node:
+    image: "702514165722.dkr.ecr.us-west-2.amazonaws.com/lcb:latest"
+    environment:
+      - POSTGRES_USER=lcb
+      - POSTGRES_PASSWORD=lcb
+      - POSTGRES_DB=lcb
+      - LCB_DB_SERVER=database
+    networks:
+      - lcb
+
+    #    command: ['sleep','10000']
+    # please be aware that this stack only works
+    entrypoint: [ 'python3','bin/lcb-client.py', 'node' ,'--single', '--remove' ,'awsdev' ,'--add' ,'localdev' ,'--docker', 'network=lcb_lcb' ,'--env', 'LCB_DB_SERVER' ]
+    deploy:
+      placement:
+        constraints:
+          - "node.role == worker"
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 20000M
+        reservations:
+          cpus: '1.50'
+          memory: 16196M
+
+    secrets:
+      - source: node
+        target: node
+        uid: '103'
+        gid: '103'
+        mode: 0440
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+networks:
+  lcb:
+    external: false
+    #    driver: overlay
+    attachable: true
+
+#volumes:
+
+secrets:
+  node:
+    file: ./node_secret.json

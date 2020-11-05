@@ -11,6 +11,7 @@ LCB is the command line driven frontend to interact with the remote lc binbase s
 - generate compound generation reports
 - run a compute node to process data
 - aggregate a specific job
+- execute steac calculations
 
 ### Requirements
 
@@ -18,7 +19,7 @@ python-3.8
 
 lcb: https://github.com/metabolomics-us/carpy/tree/master/lcb
 
-env variables for applicable 
+env variables for application
 
 - STASIS_API_TOKEN 
 - STASIS_API_URL
@@ -27,9 +28,11 @@ env variables for applicable
 ### Local installation
 
 1. create venv
+
 ``` 
 virtualenv env 
 ```
+
 2. activate env
 ```
 source env/bin/activate
@@ -84,3 +87,61 @@ this will subscribe to the queue and execute received samples in order
 Further operations can be seen by adding '--help' to the lcb command
 
 
+## Deployment on the cluster
+
+If you would like to run LCB on a local docker swarm cluster, we provide you with a complete docker-compose file to ease this process.
+
+#### setup a secret file in the lcb directory of this repo
+
+```json
+{
+  "STASIS_URL": "****",
+  "STASIS_TOKEN": "****",
+  "CIS_URL": "****",
+  "CIS_TOKEN": "****",
+  "AWS_ACCESS_KEY_ID": "****",
+  "AWS_SECRET_ACCESS_KEY": "****"
+}
+```
+
+#### ensure your local docker is in swarm mode
+
+if you have not generated a swarm yet, please initialize it
+```
+docker swarm init
+```
+
+and add your nodes afterrds.
+
+#### deploy the lcb cluster
+
+All these steps need to be executed on the manager node.
+
+```shell script
+docker stack deploy -c docker-compose.yml lbc
+```
+
+to ensure that all login tokens are correct and that every node ues the latest images, please execute
+these two commands.
+
+#### distribute the login token
+
+```shell script
+eval $(aws ecr get-login --no-include-email)
+docker service update -d -q --with-registry-auth lcb_node
+```
+
+#### force update to use the latest image on all nodes
+```shell script
+docker service update --force lcb_node
+```
+
+#### utilize the lcb tool to register a job and schedule it
+
+```shell script
+lcb job --upload <JOB_FILE> --id <JOB_ID>
+lcb job --process --id <JOB_ID>
+```
+
+this will connect to your configured aws service and push the results to the database
+in your cluster!
