@@ -14,7 +14,7 @@ def create_parser():
     parser.add_argument('-t', '--test', help='Test mode. Run with only a few samples', action='store_true')
     parser.add_argument('-zr', '--zero-replacement', help='Include replaced intensity values', action='store_true')
     parser.add_argument('-l', '--log', help='Log stasis responses', action='store_true')
-    parser.add_argument('-u', '--unknowns', help='save unconfirmed targets', action='store_true', default='false')
+    parser.add_argument('-u', '--unknowns', help='save unconfirmed targets', action='store_true')
 
     parser.add_argument('-d', '--dir', help='local directory with results files')
     parser.add_argument('-s', '--save', help='save results files to local directory (requires --dir)',

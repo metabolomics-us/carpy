@@ -473,10 +473,11 @@ class Aggregator:
         targets = [x['target'] for x in
                    [results[0]['injections'][k]['results'] for k in list(results[0]['injections'].keys())][0]]
 
-        if self.args.get('unknowns'):
+        if not self.args.get('unknowns'):
+            print('\nOnly saving confirmed targets\n')
             targets = list(filter(lambda x: x['targetType'] != 'UNCONFIRMED_CONSENSUS', targets))
 
-        print(f'found {len(targets)} targets.')
+        print(f'Found {len(targets)} targets.')
         return targets
 
     def aggregate(self):
@@ -493,7 +494,7 @@ class Aggregator:
             if not os.path.isfile(sample_file):
                 raise FileNotFoundError(f'file name {sample_file} does not exist')
 
-            suffix =  os.path.splitext(os.path.split(sample_file)[-1])[0]
+            suffix = os.path.splitext(os.path.split(sample_file)[-1])[0]
             dest = self.args.get('dir', './') + f'/{suffix}' if 'dir' in self.args else f'./{suffix}'
 
             with open(sample_file) as processed_samples:
