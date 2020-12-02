@@ -203,6 +203,40 @@ functions:
                 splash: true
                 identifiedBy: true
                 name: true
+  compoundSetAdduct:
+    handler: cis/compounds.register_adduct
+    events:
+      - http:
+          path: compound/adduct/{library}/{splash}/{identifiedBy}/{name}
+          method: post
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                identifiedBy: true
+                name: true
+
+  compoundSetComment:
+    handler: cis/compounds.register_comment
+    events:
+      - http:
+          path: compound/comment/{library}/{splash}/{identifiedBy}
+          method: post
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                identifiedBy: true
+
+
   compoundGet:
     handler: cis/compounds.get
     events:

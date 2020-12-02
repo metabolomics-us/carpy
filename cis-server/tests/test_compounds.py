@@ -1,4 +1,6 @@
 import json
+import random
+import string
 
 from pytest import fail
 
@@ -258,6 +260,92 @@ def test_compound_no_registered_names(requireMocking, splash_test_name_with_memb
     }, {})
 
     assert response['statusCode'] == 200
+
+
+
+def test_compound_register_comment(requireMocking, splash_test_name_with_members):
+    from cis import compounds
+
+    comments = ''.join(random.choice(string.ascii_lowercase) for x in range(1000))
+
+    compounds.delete_comments(
+        {'pathParameters': {
+            "library": splash_test_name_with_members[1],
+            "splash": "{}".format(splash_test_name_with_members[0]),
+        }
+
+        }, {}
+
+    )
+
+    response = compounds.register_comment(
+        {'pathParameters': {
+            "library": splash_test_name_with_members[1],
+            "splash": "{}".format(splash_test_name_with_members[0]),
+            "identifiedBy": "test"
+        }
+
+        }, {}
+
+    )
+
+    assert response['statusCode'] == 200
+    response = compounds.get({'pathParameters': {
+        "library": splash_test_name_with_members[1],
+        "splash": splash_test_name_with_members[0]
+    }
+
+    }, {})
+
+    assert response['statusCode'] == 200
+    result = json.loads(response['body'])[0]
+    print(json.dumps(result, indent=4))
+
+    assert len(result['associated_comments']) == 1
+    assert result['associated_comments'][0]['identifiedBy'] == 'test'
+    assert result['associated_comments'][0]['comment'] == comments
+
+def test_compound_register_adduct(requireMocking, splash_test_name_with_members):
+    from cis import compounds
+
+    compounds.delete_adducts(
+        {'pathParameters': {
+            "library": splash_test_name_with_members[1],
+            "splash": "{}".format(splash_test_name_with_members[0]),
+        }
+
+        }, {}
+
+    )
+
+    response = compounds.register_adduct(
+        {'pathParameters': {
+            "library": splash_test_name_with_members[1],
+            "splash": "{}".format(splash_test_name_with_members[0]),
+            "identifiedBy": "test",
+            "name": "Na+"
+        }
+
+        }, {}
+
+    )
+
+    assert response['statusCode'] == 200
+    response = compounds.get({'pathParameters': {
+        "library": splash_test_name_with_members[1],
+        "splash": splash_test_name_with_members[0]
+    }
+
+    }, {})
+
+    assert response['statusCode'] == 200
+    result = json.loads(response['body'])[0]
+    print(json.dumps(result, indent=4))
+
+    assert len(result['associated_adducts']) == 1
+    assert result['associated_adducts'][0]['name'] == 'Na+'
+    assert result['associated_adducts'][0]['identifiedBy'] == 'test'
+    assert result['associated_adducts'][0]['comment'] == ''
 
 
 def test_compound_register_name(requireMocking, splash_test_name_with_members):
