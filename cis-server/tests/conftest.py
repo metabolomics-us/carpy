@@ -37,14 +37,24 @@ def library_test_name() -> str:
 
 
 @pytest.fixture()
-def splash_test_name_with_members(library_test_name):
+def splash_test_name_with_members(library_test_name, request):
     from cis import compounds
-    data = json.loads(compounds.all({'pathParameters': {'library': library_test_name, 'limit': 100000}}, {})['body'])
+    result = request.config.cache.get("cis/members", None)
+
+    if result is not None:
+        print(f"using cached object: {result}")
+        return result
+    else:
+        print("loading all, takes forever and should be cached instead...")
+        data = json.loads(
+            compounds.all({'pathParameters': {'library': library_test_name, 'limit': 100000}}, {})['body'])
 
     for num, splash in enumerate(data):
         response = compounds.get_members({'pathParameters': {'library': library_test_name, 'splash': splash}}, {})
         if response['statusCode'] == 200:
             result = (data[num], library_test_name)
+
+            request.config.cache.set("cis/members", result)
             return result
 
     raise Exception(f"did not find a standard with members in {library_test_name}")

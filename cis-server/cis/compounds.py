@@ -7,6 +7,146 @@ from cis import database, headers
 conn = database.connect()
 
 
+def register_comment(events, context):
+    """
+    registers a new comment for a given target
+    :param events:
+    :param context:
+    :return:
+    """
+    splash = urllib.parse.unquote(events['pathParameters']['splash'])
+    library = urllib.parse.unquote(events['pathParameters']['library'])
+    identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
+    comment = events['body']
+
+    print(f"{splash} - {library} - {identifiedBy} - {comment}")
+    # load compound to get the correct id
+    result = database.query(
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_comment pn, pgtarget_comments pn2 where p.id = pn2.pg_internal_target_id and pn2.comments_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and \"identified_by\" = %s",
+        conn, [splash, library, identifiedBy])
+
+    if result is None:
+        result = database.query(
+            "select p.id from pgtarget p where splash = (%s) and \"method_id\" = (%s)",
+            conn, [splash, library])
+
+        if result is not None and len(result) > 0:
+            id = result[0][0]
+        else:
+            return {
+                "statusCode": 404,
+                "headers": headers.__HTTP_HEADERS__,
+                "body": json.dumps({
+                    "library": library,
+                    "splash": splash
+                })
+            }
+
+    # now register the given name and associated information
+    # 1. get new sequence number
+    result = database.query("select nextval('hibernate_sequence')", conn)
+
+    newNameId = result[0][0]
+
+    result = database.query(
+        "insert into pgtarget_comment(\"id\",\"identified_by\",\"comment\") values(%s,%s,%s)",
+        conn, [newNameId, identifiedBy, comment])
+    result = database.query("insert into pgtarget_comments(\"comments_id\",\"pg_internal_target_id\") values(%s,%s)",
+                            conn,
+                            [newNameId, id])
+    # create a response
+    return {
+        "statusCode": 200,
+        "headers": headers.__HTTP_HEADERS__,
+        "body": json.dumps({
+            "members": True,
+            "library": library,
+            "splash": splash
+        })
+    }
+
+def delete_comments(events, context):
+    splash = events['pathParameters']['splash']
+    library = events['pathParameters']['library']
+
+    result = database.query(
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_comment pn, pgtarget_comments pn2 where p.id = pn2.pg_internal_target_id and pn2.comments_id  = pn.id and splash = (%s) and \"method_id\" = (%s)",
+        conn, [splash, library])
+
+    if result is not None:
+
+        for row in result:
+            name_id = row[1]
+
+            # drop references with this id = name + identifier
+
+            database.query(
+                "delete from pgtarget_comments  where comments_id  = %s",
+                conn, [name_id])
+            database.query(
+                "delete from pgtarget_comment  where id  = %s",
+                conn, [name_id])
+
+        return {
+            "statusCode": 200,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash
+            })
+        }
+    else:
+        return {
+            "statusCode": 404,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash
+            })
+        }
+
+
+def delete_adducts(events, context):
+    splash = events['pathParameters']['splash']
+    library = events['pathParameters']['library']
+
+    result = database.query(
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_adduct pn, pgtarget_adducts pn2 where p.id = pn2.pg_internal_target_id and pn2.adducts_id  = pn.id and splash = (%s) and \"method_id\" = (%s)",
+        conn, [splash, library])
+
+    if result is not None:
+
+        for row in result:
+            name_id = row[1]
+
+            # drop references with this id = name + identifier
+
+            database.query(
+                "delete from pgtarget_adducts  where adducts_id  = %s",
+                conn, [name_id])
+            database.query(
+                "delete from pgtarget_adduct  where id  = %s",
+                conn, [name_id])
+
+        return {
+            "statusCode": 200,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash
+            })
+        }
+    else:
+        return {
+            "statusCode": 404,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash
+            })
+        }
+
+
 def delete_names(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -48,6 +188,81 @@ def delete_names(events, context):
         }
 
 
+
+def register_adduct(events, context):
+    """
+    registers a new adduct for a given target
+    :param events:
+    :param context:
+    :return:
+    """
+    splash = urllib.parse.unquote(events['pathParameters']['splash'])
+    library = urllib.parse.unquote(events['pathParameters']['library'])
+    identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
+    name = urllib.parse.unquote(events['pathParameters']['name'])
+    comment = events.get('body','')
+
+    print(f"{splash} - {library} - {identifiedBy} - {name}")
+    # load compound to get the correct id
+    result = database.query(
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_adduct pn, pgtarget_adducts pn2 where p.id = pn2.pg_internal_target_id and pn2.adducts_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        conn, [splash, library, name, identifiedBy])
+
+    if result is None:
+        result = database.query(
+            "select p.id from pgtarget p where splash = (%s) and \"method_id\" = (%s)",
+            conn, [splash, library])
+
+        if result is not None and len(result) > 0:
+            id = result[0][0]
+        else:
+            return {
+                "statusCode": 404,
+                "headers": headers.__HTTP_HEADERS__,
+                "body": json.dumps({
+                    "library": library,
+                    "splash": splash
+                })
+            }
+    elif len(result) > 0:
+        id = result[0][0]
+
+        for row in result:
+            name_id = row[1]
+
+            # drop references with this id = name + identifier
+
+            result = database.query(
+                "delete from pgtarget_adducts  where adducts_id  = %s",
+                conn, [name_id])
+            result = database.query(
+                "delete from pgtarget_adduct  where id  = %s",
+                conn, [name_id])
+
+    # now register the given name and associated information
+    # 1. get new sequence number
+    result = database.query("select nextval('hibernate_sequence')", conn)
+
+    newNameId = result[0][0]
+
+    result = database.query(
+        "insert into pgtarget_adduct(\"id\",\"name\",\"identified_by\",\"comment\") values(%s,%s,%s,%s)",
+        conn, [newNameId, name, identifiedBy, comment])
+    result = database.query("insert into pgtarget_adducts(\"adducts_id\",\"pg_internal_target_id\") values(%s,%s)",
+                            conn,
+                            [newNameId, id])
+    # create a response
+    return {
+        "statusCode": 200,
+        "headers": headers.__HTTP_HEADERS__,
+        "body": json.dumps({
+            "members": True,
+            "library": library,
+            "splash": splash
+        })
+    }
+
+
 def register_name(events, context):
     """
     registers a new name for a given target
@@ -59,6 +274,7 @@ def register_name(events, context):
     library = urllib.parse.unquote(events['pathParameters']['library'])
     identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
     name = urllib.parse.unquote(events['pathParameters']['name'])
+    comment = events.get('body',"")
 
     print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
@@ -105,7 +321,7 @@ def register_name(events, context):
 
     result = database.query(
         "insert into pgtarget_name(\"id\",\"name\",\"identified_by\",\"comment\") values(%s,%s,%s,%s)",
-        conn, [newNameId, name, identifiedBy, ''])
+        conn, [newNameId, name, identifiedBy, comment])
     result = database.query("insert into pgtarget_names(\"names_id\",\"pg_internal_target_id\") values(%s,%s)",
                             conn,
                             [newNameId, id])
@@ -294,6 +510,42 @@ def get(events, context):
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             splash = urllib.parse.unquote(events['pathParameters']['splash'])
 
+
+            def generate_metas_list(x):
+                names = database.query(
+                    "select pn.identified_by, pn.name, pn.value , pn.\"comment\" from pgtarget p , pgtarget_meta pn, pgtarget_metas pn2 where p.id = pn2.pg_internal_target_id and pn2.metas_id  = pn.id and p.id = %s",
+                    conn, [x])
+
+                print("received comments: {}".format(names))
+                if names is None:
+                    return []
+                else:
+                    return list(
+                        map(lambda y: {'identifiedBy': y[0], 'name':y[1], 'value': y[2], 'comment': y[3]}, names))
+            def generate_comments_list(x):
+                names = database.query(
+                    "select pn.identified_by , pn.\"comment\" from pgtarget p , pgtarget_comment pn, pgtarget_comments pn2 where p.id = pn2.pg_internal_target_id and pn2.comments_id  = pn.id and p.id = %s",
+                    conn, [x])
+
+                print("received comments: {}".format(names))
+                if names is None:
+                    return []
+                else:
+                    return list(
+                        map(lambda y: {'identifiedBy': y[0], 'comment': y[1]}, names))
+
+            def generate_adducts_list(x):
+                names = database.query(
+                    "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_adduct pn, pgtarget_adducts pn2 where p.id = pn2.pg_internal_target_id and pn2.adducts_id  = pn.id and p.id = %s",
+                    conn, [x])
+
+                print("received adducts: {}".format(names))
+                if names is None:
+                    return []
+                else:
+                    return list(
+                        map(lambda y: {'name': y[1], 'identifiedBy': y[0], 'comment': y[2]}, names))
+
             def generate_name_list(x):
                 names = database.query(
                     "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and p.id = %s",
@@ -332,6 +584,9 @@ def get(events, context):
                 'splash': x[10],
                 'preferred_name': x[11],
                 'associated_names': generate_name_list(x[0]),
+                'associated_adducts': generate_adducts_list(x[0]),
+                'associated_comments': generate_comments_list(x[0]),
+                'associated_meta': generate_metas_list(x[0]),
                 'unique_mass': x[12],
                 'precursor_mass': x[13],
                 'samples': generate_samples_list(x[10], x[4])
@@ -410,3 +665,119 @@ def exists(events, context):
                 "error": "missing path parameters"
             })
         }
+
+def register_meta(events, context):
+    """
+    registers a new adduct for a given target
+    :param events:
+    :param context:
+    :return:
+    """
+    splash = urllib.parse.unquote(events['pathParameters']['splash'])
+    library = urllib.parse.unquote(events['pathParameters']['library'])
+    identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
+    name = urllib.parse.unquote(events['pathParameters']['name'])
+    value = urllib.parse.unquote(events['pathParameters']['value'])
+
+    comment = events.get('body','')
+
+    print(f"{splash} - {library} - {identifiedBy} - {name}")
+    # load compound to get the correct id
+    result = database.query(
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_meta pn, pgtarget_metas pn2 where p.id = pn2.pg_internal_target_id and pn2.metas_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s and pn.\"value\" = %s",
+        conn, [splash, library, name, identifiedBy, value])
+
+    if result is None:
+        result = database.query(
+            "select p.id from pgtarget p where splash = (%s) and \"method_id\" = (%s)",
+            conn, [splash, library])
+
+        if result is not None and len(result) > 0:
+            id = result[0][0]
+        else:
+            return {
+                "statusCode": 404,
+                "headers": headers.__HTTP_HEADERS__,
+                "body": json.dumps({
+                    "library": library,
+                    "splash": splash
+                })
+            }
+    elif len(result) > 0:
+        id = result[0][0]
+
+        for row in result:
+            name_id = row[1]
+
+            # drop references with this id = name + identifier
+
+            result = database.query(
+                "delete from pgtarget_metas  where metas_id  = %s",
+                conn, [name_id])
+            result = database.query(
+                "delete from pgtarget_meta  where id  = %s",
+                conn, [name_id])
+
+    # now register the given name and associated information
+    # 1. get new sequence number
+    result = database.query("select nextval('hibernate_sequence')", conn)
+
+    newNameId = result[0][0]
+
+    result = database.query(
+        "insert into pgtarget_meta(\"id\",\"name\",\"value\",\"identified_by\",\"comment\") values(%s,%s,%s,%s,%s)",
+        conn, [newNameId, name, value, identifiedBy, comment])
+    result = database.query("insert into pgtarget_metas(\"metas_id\",\"pg_internal_target_id\") values(%s,%s)",
+                            conn,
+                            [newNameId, id])
+    # create a response
+    return {
+        "statusCode": 200,
+        "headers": headers.__HTTP_HEADERS__,
+        "body": json.dumps({
+            "members": True,
+            "library": library,
+            "splash": splash
+        })
+    }
+
+def delete_meta(events, context):
+    splash = events['pathParameters']['splash']
+    library = events['pathParameters']['library']
+
+    result = database.query(
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_meta pn, pgtarget_metas pn2 where p.id = pn2.pg_internal_target_id and pn2.metas_id  = pn.id and splash = (%s) and \"method_id\" = (%s)",
+        conn, [splash, library])
+
+    if result is not None:
+
+        for row in result:
+            name_id = row[1]
+
+            # drop references with this id = name + identifier
+
+            database.query(
+                "delete from pgtarget_metas  where metas_id  = %s",
+                conn, [name_id])
+            database.query(
+                "delete from pgtarget_meta  where id  = %s",
+                conn, [name_id])
+
+        return {
+            "statusCode": 200,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash
+            })
+        }
+    else:
+        return {
+            "statusCode": 404,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash
+            })
+        }
+
