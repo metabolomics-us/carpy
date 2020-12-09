@@ -36,4 +36,25 @@ class Secrets:
         # configure default boto session here
         setup_default_session(aws_access_key_id=secrets['AWS_ACCESS_KEY_ID'],
                               aws_secret_access_key=secrets['AWS_SECRET_ACCESS_KEY'], region_name="us-west-2")
+
+        self.fix_old_variable_names(secrets)
+
         return secrets
+
+    def fix_old_variable_names(self, secrets):
+        """
+        fixes the old naming convention to the new ones, which is simpler. Mostly related to outdated configurations
+        """
+        # fix stupid naming errors
+        if 'STASIS_API_TOKEN' in secrets:
+            secrets['STASIS_TOKEN'] = secrets['STASIS_API_TOKEN']
+        if 'STASIS_API_URL' in secrets:
+            secrets['STASIS_URL'] = secrets['STASIS_API_URL']
+        if 'CIS_API_TOKEN' in secrets:
+            secrets['CIS_TOKEN'] = secrets['CIS_API_TOKEN']
+        if 'CIS_API_URL' in secrets:
+            secrets['CIS_URL'] = secrets['CIS_API_URL']
+        if 'CIS_TOKEN' not in secrets:
+            secrets['CIS_TOKEN'] = secrets['STASIS_TOKEN']
+        if 'CIS_URL' not in secrets:
+            secrets['CIS_URL'] = secrets['STASIS_URL'].replace("/stasis", "/cis")
