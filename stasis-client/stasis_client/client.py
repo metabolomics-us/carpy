@@ -439,6 +439,19 @@ class StasisClient:
 
         return sample_meta
 
+    def schedule_queue(self) -> dict:
+        """
+        returns the queue the system is using for all its computations
+        :param job_id:
+        :return:
+        """
+        response = self.http.get(f"{self._url}/schedule/queue", headers=self._header)
+        if response.status_code != 200:
+            raise Exception(
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job_id}")
+        else:
+            return json.loads(response.content)['queue']
+
     def schedule_job(self, job_id: str) -> dict:
         """
         scheduels a job for calculation
