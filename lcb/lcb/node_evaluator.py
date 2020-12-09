@@ -70,12 +70,16 @@ class NodeEvaluator(Evaluator):
 
                 config = json.loads(json.loads(body)['default'])
 
+                print("received new message to process...")
                 try:
                     if config['stasis-service'] == 'secure-carrot-runner':
+                        print("it's a sample we need to process")
                         self.process_single_sample(client, config, environment, message, queue_url, sqs, args)
                     elif config['stasis-service'] == 'secure-carrot-aggregator':
+                        print("it's an aggregation to run")
                         self.process_aggregation(client, config, environment, message, queue_url, sqs, args)
                     elif config['stasis-service'] == 'secure-carrot-steac':
+                        print("it's a steac process")
                         self.process_steac(client, config, environment, message, queue_url, sqs, args)
                     else:
                         print("not yet supported!!!")
@@ -87,12 +91,15 @@ class NodeEvaluator(Evaluator):
                     print("major error observed which breaks!")
             else:
                 #                print("sleeping for 5 seconds since queue is empty")
+                print("queue is empty, nothing todo!")
                 sleep(5)
 
     def get_aws_env(self):
         return self._secret_config.copy()
 
     def buildClient(self):
+
+        print("building client for ecr")
         ecr = boto3.client('ecr')
 
         token = ecr.get_authorization_token()
@@ -108,6 +115,7 @@ class NodeEvaluator(Evaluator):
             reauth=True
         )
 
+        print("success")
         return client
 
     def process_single_sample(self, client, config, environment, message, queue_url, sqs, args):
@@ -161,7 +169,7 @@ class NodeEvaluator(Evaluator):
         docker_args = {
             'image': f"{self.registry}/agg:latest",
             'environment': environment, 'detach': True,
-            'auto_remove': False
+            'auto_remove': True
         }
 
         self._printenv(docker_args)
@@ -198,7 +206,7 @@ class NodeEvaluator(Evaluator):
 
         if args['log'] is True:
             # run image
-            for line in container.logs(stream=True, logs=True):
+            for line in container.logs(stream=True):
                 print(str(line.strip()))
 
         print(f"waiting for shutdown of container now: {container}")
