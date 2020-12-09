@@ -43,10 +43,10 @@ class NodeEvaluator(Evaluator):
         # Create SQS client
         sqs = boto3.client('sqs')
 
-        # todo get correct queue name from stasis
-        queue_url = "https://sqs.us-west-2.amazonaws.com/702514165722/StasisScheduleQueue-dev_FARGATE"
+        queue_url = self.stasisClient.schedule_queue()
         # start docker
 
+        print(f"utilizing queue: {queue_url}")
         while True:
             # Receive message from SQS queue
             response = sqs.receive_message(
