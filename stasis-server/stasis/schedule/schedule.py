@@ -46,6 +46,20 @@ def scheduled_task_size(event, context):
     }
 
 
+def schedule_queue(event, context):
+    # get topic refrence
+    import boto3
+    client = boto3.client('sqs')
+
+    queue = _get_queue(client)
+
+    return {
+        'body': json.dumps({'queue': queue}),
+        'statusCode': 200,
+        'headers': __HTTP_HEADERS__
+    }
+
+
 def schedule(event, context):
     """
     schedules the given even to the internal queuing system
