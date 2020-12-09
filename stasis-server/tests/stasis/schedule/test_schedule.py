@@ -10,6 +10,10 @@ from stasis.config import SECURE_CARROT_RUNNER, MAX_FARGATE_TASKS_BY_SERVICE, MA
 def test_current_queue(requireMocking):
     result = s.schedule_queue({},{})
 
+    result = json.loads(result['body'])
+
+    assert 'queue' in result
+    assert 'test_schedule_FARGATE' in result['queue']
     pass
 
 def test_current_tasks(requireMocking):
