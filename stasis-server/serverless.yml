@@ -402,6 +402,17 @@ functions:
           cors: true
           documentation:
             summary: creates a new record with the given acquisition information
+  # fetches the list of tracking statuses
+  schedule_queue:
+    handler: stasis/schedule/schedule.schedule_queue
+    events:
+      - http:
+          path: schedule/queue
+          method: get
+          private: true
+          cors: true
+          documentation:
+            summary: returns the queue used for scheduling
 
   #schedule data to stasis, for handling the processing on the backend
   schedule:

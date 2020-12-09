@@ -7,6 +7,10 @@ import stasis.schedule.monitor
 from stasis.schedule import schedule as s
 from stasis.config import SECURE_CARROT_RUNNER, MAX_FARGATE_TASKS_BY_SERVICE, MAX_FARGATE_TASKS
 
+def test_current_queue(requireMocking):
+    result = s.schedule_queue({},{})
+
+    pass
 
 def test_current_tasks(requireMocking):
     jsonString = json.dumps(
