@@ -91,8 +91,11 @@ class NodeEvaluator(Evaluator):
                     print("major error observed which breaks!")
             else:
                 #                print("sleeping for 5 seconds since queue is empty")
-                print("queue is empty, nothing todo!")
+                print(f"queue is empty, nothing todo: ${queue_url}")
                 sleep(5)
+            if args['once'] is True:
+                print("shutting down node, only was supposed to process 1 message!")
+                return
 
     def get_aws_env(self):
         return self._secret_config.copy()
@@ -262,6 +265,10 @@ class NodeEvaluator(Evaluator):
 
         parser.add_argument("-s", "--single", help="runs a single node", action="store_true",
                             required=True)
+
+        parser.add_argument("-o", "--once", help="processes one message and shutdown", action="store_true",
+                            required=True)
+
         parser.add_argument("-r", "--remove",
                             help="remove a profile from instructions. In case we don't want to use it right now",
                             action="append",
