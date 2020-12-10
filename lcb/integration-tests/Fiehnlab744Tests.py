@@ -55,27 +55,28 @@ def test_failed_storage_of_samples_local(stasis_cli, node_evaluator):
     stasis_cli.schedule_job(job_id=test_id)
     # 2. process data locally
 
-    for sample in job["samples"]:
-        node_evaluator.evaluate({
-            "single": True,
-            "once": True,
-            "remove": ['awsdev'],
-            "add": ['awstest', 'splashone'],
-            "keep": False,
-            "log": False
-        })
-
-    # there should be one aggregation schedule, process this one
-    node_evaluator.evaluate({
-        "single": True,
-        "once": True,
-        "remove": ['awsdev'],
-        "add": ['awstest', 'splashone'],
-        "keep": False,
-        "log": False
-    })
+#    for sample in job["samples"]:
+#        node_evaluator.evaluate({
+#            "single": True,
+#            "once": True,
+#            "remove": ['awsdev'],
+#            "add": ['awstest', 'splashone'],
+#            "keep": False,
+#            "log": False
+#        })
+#
+#    # there should be one aggregation schedule, process this one
+#    node_evaluator.evaluate({
+#        "single": True,
+#        "once": True,
+#        "remove": ['awsdev'],
+#        "add": ['awstest', 'splashone'],
+#        "keep": False,
+#        "log": False
+#    })
 
     # 3. run steac
+    stasis_cli.schedule_steac("soqtof[M-H] | 6530a | c18 | negative")
 
     # 4. reprocess data locally
 

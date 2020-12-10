@@ -688,10 +688,10 @@ functions:
       acquisitionTable: ${self:custom.acquisitionTable}
 
   steacschedule:
-    handler: stasis/schedule/fargate/schedule.schedule_steac_to_fargate
+    handler: stasis/schedule/fargate.schedule_steac_to_fargate
     events:
       - http:
-          path: steac/schedule
+          path: schedule/steac
           method: post
           private: true
           cors: true
