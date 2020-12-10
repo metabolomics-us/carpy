@@ -1,10 +1,22 @@
-from time import time
+from time import time, sleep
+
+import boto3
 
 
 def test_failed_storage_of_samples_local(stasis_cli, node_evaluator):
+    sqs = boto3.client('sqs')
 
+    queue_url = stasis_cli.schedule_queue()
+
+    assert "test" in queue_url
+    print("purging the queue")
     # purge the test queue
+    sqs.purge_queue(
+        QueueUrl=queue_url
+    )
 
+    print("wait 60 seconds")
+    sleep(60)
     # 1. register job description
 
     test_id = "test_job_744_few_samples"
@@ -49,8 +61,8 @@ def test_failed_storage_of_samples_local(stasis_cli, node_evaluator):
             "once": True,
             "remove": ['awsdev'],
             "add": ['awstest', 'splashone'],
-            "keep": True,
-            "log": True
+            "keep": False,
+            "log": False
         })
 
     # there should be one aggregation schedule, process this one
@@ -59,8 +71,8 @@ def test_failed_storage_of_samples_local(stasis_cli, node_evaluator):
         "once": True,
         "remove": ['awsdev'],
         "add": ['awstest', 'splashone'],
-        "keep": True,
-        "log": True
+        "keep": False,
+        "log": False
     })
 
     # 3. run steac

@@ -1,19 +1,14 @@
 import os
-from time import sleep, time
 
 import pytest
-import requests
-
 from cisclient.client import CISClient
 from stasis_client.client import StasisClient
 
-from lcb.job_evaluator import JobEvaluator
 from lcb.node_evaluator import NodeEvaluator
-from lcb.sample_evaluator import SampleEvaluator
 
 
 def pytest_generate_tests(metafunc):
-    os.environ['CIS_URL'] = 'https://dev-api.metabolomics.us/cis'
+    os.environ['CIS_URL'] = 'https://test-api.metabolomics.us/cis'
     os.environ['CIS_API_TOKEN'] = 'rDJfRW6ilG2WooOR72AaE3NqL4m23WvY6ub4FEoS'
 
 

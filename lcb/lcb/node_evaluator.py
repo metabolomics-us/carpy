@@ -139,7 +139,7 @@ class NodeEvaluator(Evaluator):
         environment['STASIS_BASEURL'] = environment['STASIS_URL']
         environment['STASIS_KEY'] = environment['STASIS_TOKEN']
 
-        for env in args['env']:
+        for env in args.get('env',{}):
             environment[env] = os.getenv(env)
 
         print("start SAMPLE process environment")
@@ -152,7 +152,7 @@ class NodeEvaluator(Evaluator):
             'auto_remove': False
         }
 
-        for d in args['docker']:
+        for d in args.get('docker',{}):
             key, value = d.split("=")
             docker_args[key] = value
 

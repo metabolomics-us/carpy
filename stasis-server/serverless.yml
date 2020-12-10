@@ -686,7 +686,33 @@ functions:
       jobTrackingTable: ${self:custom.jobTrackingTable}
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
-    #schedule data to for handling the processing and aggregation on the backend
+
+  steacschedule:
+    handler: stasis/schedule/fargate/schedule.schedule_steac_to_fargate
+    events:
+      - http:
+          path: steac/schedule
+          method: post
+          private: true
+          cors: true
+          documentation:
+            summary: schedules a steac method for processing
+
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
   jobschedule:
     handler: stasis/jobs/schedule.schedule_job
     events:
