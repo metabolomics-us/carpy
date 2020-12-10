@@ -180,6 +180,15 @@ def test_overwrite_job_sizes(sample_count, stasis_cli):
     print(result)
 
 
+def test_schedule_queue(stasis_cli):
+
+
+    queue = stasis_cli.schedule_queue()
+
+    assert 'StasisScheduleQueue-test_FARGATE' in queue
+    pass
+
+
 @pytest.mark.parametrize("sample_count", [50, 100, 300])
 def test_schedule_job_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
