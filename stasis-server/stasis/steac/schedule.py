@@ -1,5 +1,6 @@
 import json
 import traceback
+from urllib.parse import unquote
 
 from stasis.config import SECURE_CARROT_STEAC
 from stasis.headers import __HTTP_HEADERS__
@@ -18,7 +19,7 @@ def schedule(event, context):
     else:
         key = None
 
-    method = event['pathParameters']['method']
+    method = unquote(event['pathParameters']['method'])
 
     try:
         # now send to job sync queue
