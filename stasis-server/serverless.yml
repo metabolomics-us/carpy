@@ -688,16 +688,20 @@ functions:
       acquisitionTable: ${self:custom.acquisitionTable}
 
   steacschedule:
-    handler: stasis/schedule/fargate.schedule_steac_to_fargate
+    handler: stasis/steac/schedule.schedule
     events:
       - http:
-          path: schedule/steac
+          path: schedule/steac/{method}
           method: post
           private: true
           cors: true
           documentation:
             summary: schedules a steac method for processing
 
+          request:
+            parameter:
+              paths:
+                method: true
     #defines to which topic we want to connect
     environment:
 
