@@ -1,12 +1,12 @@
 import json
 import traceback
 
+from stasis.config import SECURE_CARROT_STEAC
+from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend
 from stasis.schedule.schedule import schedule_to_queue
 from stasis.service.Status import SCHEDULING
 
-from stasis.config import SERVICE, SECURE_CARROT_STEAC
-from stasis.headers import __HTTP_HEADERS__
 
 def schedule(event, context):
     """
@@ -21,10 +21,9 @@ def schedule(event, context):
     method = event['pathParameters']['method']
 
     try:
-
         # now send to job sync queue
-        schedule_to_queue(body={"method": method, "key": key}, resource=Backend.NO_BACKEND_REQUIRED, service=SECURE_CARROT_STEAC,
-                          queue_name="jobQueue")
+        schedule_to_queue(body={"method": method, "key": key}, resource=Backend.FARGATE, service=SECURE_CARROT_STEAC,
+                          queue_name="schedule_queue")
         return {
 
             'body': json.dumps({'state': str(SCHEDULING), 'method': method}),
@@ -49,4 +48,3 @@ def schedule(event, context):
             'headers': __HTTP_HEADERS__
 
         }
-

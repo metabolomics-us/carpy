@@ -126,39 +126,35 @@ class NodeEvaluator(Evaluator):
         procees a single sample
         """
 
-        spring_profiles = self.optimize_profiles(args, config)
+        print("start SAMPLE process environment")
+        image = f"{self.registry}/carrot:latest"
+        docker_args = self.setup_environment(args, client, config, environment, image)
+        container = client.containers.run(**docker_args)
+        self.execute_container(container, message, queue_url, sqs, args, environment)
 
+    def setup_environment(self, args, client, config, environment, image):
+        spring_profiles = self.optimize_profiles(args, config)
         print(f"generated spring profiles to activate: {spring_profiles}")
         environment['SPRING_PROFILES_ACTIVE'] = spring_profiles
         environment['CARROT_SAMPLE'] = config['sample']
         environment['CARROT_METHOD'] = config['method']
         environment['CARROT_MODE'] = config['profile']
-
         # this overrides variables in lc binbase, required to connect to certain services
-
         environment['STASIS_BASEURL'] = environment['STASIS_URL']
         environment['STASIS_KEY'] = environment['STASIS_TOKEN']
-
-        for env in args.get('env',{}):
+        for env in args.get('env', {}):
             environment[env] = os.getenv(env)
-
-        print("start SAMPLE process environment")
-
-        client.api.pull(f"{self.registry}/carrot:latest")
-
+        client.api.pull(image)
         docker_args = {
-            'image': f"{self.registry}/carrot:latest",
+            'image': image,
             'environment': environment, 'detach': True,
             'auto_remove': False
         }
-
-        for d in args.get('docker',{}):
+        for d in args.get('docker', {}):
             key, value = d.split("=")
             docker_args[key] = value
-
         self._printenv(docker_args)
-        container = client.containers.run(**docker_args)
-        self.execute_container(container, message, queue_url, sqs, args, environment)
+        return docker_args
 
     def process_aggregation(self, client, config, environment, message, queue_url, sqs, args):
         """
@@ -195,10 +191,11 @@ class NodeEvaluator(Evaluator):
         """
         processes a local aggregation in this node
         """
+        image = f"{self.registry}/steac:latest"
         environment['CARROT_METHOD'] = config['method']
         print("start STEAC process environment")
-        client.api.pull(f"{self.registry}/steac:latest")
-        container = client.containers.run(f"{self.registry}/steac:latest",
+        docker_args = self.setup_environment(args, client, config, environment, image)
+        container = client.containers.run(image,
                                           environment=environment, detach=True, auto_remove=False)
         self.execute_container(container, message, queue_url, sqs, args, environment)
 
