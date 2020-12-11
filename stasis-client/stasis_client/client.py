@@ -2,7 +2,7 @@ import os
 import shutil
 from time import sleep
 from typing import Optional, List
-from urllib.parse import urlencode, unquote
+from urllib.parse import urlencode
 
 import boto3
 import boto3.s3
@@ -447,8 +447,7 @@ class StasisClient:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason} ")
         else:
-            method = unquote(json.loads(response.content))
-            return method
+            return json.loads(response.content)
 
     def schedule_queue(self) -> dict:
         """
