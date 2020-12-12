@@ -13,10 +13,10 @@ class SteacEvaluator(Evaluator):
     executes aggregations locally
     """
 
-
     def evaluate(self, args: dict):
         mapping = {
             'local': self.local,
+            'remote': self.remote
         }
 
         results = {}
@@ -26,6 +26,16 @@ class SteacEvaluator(Evaluator):
                 if args[x] is not False or str(args[x]) != 'False':
                     results[x] = mapping[x](args)
         return results
+
+    def remote(self, args):
+
+        methods = args['method']
+        if len(methods) == 0:
+            print("you did not specify any methods, we fetch all methods remotely now!")
+            methods = self.cisClient.get_libraries()
+
+        for method in methods:
+            self.stasisClient.schedule_steac(method)
 
     def local(self, args):
 
@@ -78,7 +88,10 @@ class SteacEvaluator(Evaluator):
         parser.add_argument("-m", "--method", help="this is the methods you want to run steac over",
                             required=False, action="append", default=[])
 
-        parser.add_argument("-l", "--local", help="this is the method you want to run steac",
+        parser.add_argument("-r", "--remote", help="this schedules the operation to the remote queue",
+                            required=False, default=False, action="store_true")
+
+        parser.add_argument("-l", "--local", help="this does the processing locally",
                             required=False, default=False, action="store_true")
 
         parser.add_argument("-a", "--add", help="add a profile to the calculation instructions", action="append",
@@ -88,6 +101,7 @@ class SteacEvaluator(Evaluator):
                             help="remove a profile from instructions. In case we don't want to use it right now",
                             action="append",
                             required=False, default=[])
+
         parser.add_argument("-e", "--env",
                             help="register this environment variable",
                             action="append", required=False, default=[])

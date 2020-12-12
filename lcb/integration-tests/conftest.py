@@ -2,10 +2,36 @@ import os
 
 import pytest
 from cisclient.client import CISClient
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from stasis_client.client import StasisClient
 
 from lcb.node_evaluator import NodeEvaluator
 
+
+@pytest.fixture
+def database():
+    import psycopg2
+    con = psycopg2.connect(database="carrot-test", user="postgres", password="Fiehnlab2020",
+                           host="lc-binbase-dev.czbqhgrlaqbf.us-west-2.rds.amazonaws.com", port="5432")
+    con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+
+    return con
+
+
+@pytest.fixture
+def drop_schema(database):
+
+    # 2. drop database schema
+    psqlCursor = database.cursor()
+    try:
+        psqlCursor.execute("drop schema public cascade")
+    except:
+        pass
+    psqlCursor.execute("create schema public")
+    psqlCursor.execute("ALTER SCHEMA public OWNER TO postgres")
+    psqlCursor.close()
+
+    return True
 
 def pytest_generate_tests(metafunc):
     os.environ['CIS_URL'] = 'https://test-api.metabolomics.us/cis'
@@ -39,7 +65,7 @@ def stasis_token():
 
 @pytest.fixture
 def stasis_url():
-    url =  "https://test-api.metabolomics.us/stasis"
+    url = "https://test-api.metabolomics.us/stasis"
     os.environ['STASIS_URL'] = url
     return url
 

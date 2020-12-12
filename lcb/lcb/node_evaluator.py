@@ -151,6 +151,7 @@ class NodeEvaluator(Evaluator):
             'environment': environment, 'detach': True,
             'auto_remove': False
         }
+        print(f"using image: ${image}")
         for d in args.get('docker', {}):
             key, value = d.split("=")
             docker_args[key] = value
@@ -238,7 +239,11 @@ class NodeEvaluator(Evaluator):
 
         if args['keep'] is False:
             print(f"cleaning up container with id {container.id}")
-            container.remove()
+            try:
+                container.remove()
+            except Exception as e:
+                print("observed error during removal of container, ignoring it...")
+                pass
 
     @staticmethod
     def optimize_profiles(args, config: Optional[dict] = {}):

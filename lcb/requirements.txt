@@ -19,3 +19,4 @@ papermill
 pdfkit
 docker
 get-docker-secret
+psycopg2-binary
