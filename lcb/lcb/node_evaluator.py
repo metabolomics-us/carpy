@@ -3,6 +3,7 @@ import json
 import os
 import traceback
 from time import sleep
+import time
 from typing import Optional
 
 import boto3
@@ -169,7 +170,7 @@ class NodeEvaluator(Evaluator):
         docker_args = {
             'image': f"{self.registry}/agg:latest",
             'environment': environment, 'detach': True,
-            'auto_remove': True
+            'auto_remove': False
         }
 
         container = client.containers.run(**docker_args)
@@ -210,9 +211,13 @@ class NodeEvaluator(Evaluator):
 
         print("storing log file...")
 
-        with open(container.names[0], "w") as file:
+        if not os.path.exists("logs"):
+            os.makedirs("logs")
+
+        with open(f"logs/{container.name}_{time.time()}.txt", "w") as file:
             for line in container.logs(stream=True):
                 file.write(line.decode("utf-8").strip())
+                file.write("\n")
         print(f"waiting for shutdown of container now: {container}")
 
         result = container.wait()
