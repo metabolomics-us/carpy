@@ -206,9 +206,15 @@ class NodeEvaluator(Evaluator):
         if args['log'] is True:
             # run image
             for line in container.logs(stream=True):
-                print(str(line.strip()))
+                print(str(line.decode("utf-8").strip()))
 
+        print("storing log file...")
+
+        with open(container.names[0], "w") as file:
+            for line in container.logs(stream=True):
+                file.write(line.decode("utf-8").strip())
         print(f"waiting for shutdown of container now: {container}")
+
         result = container.wait()
 
         statusCode = result['StatusCode']
