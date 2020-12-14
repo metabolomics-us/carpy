@@ -88,10 +88,10 @@ class SteacEvaluator(Evaluator):
         parser.add_argument("-m", "--method", help="this is the methods you want to run steac over",
                             required=False, action="append", default=[])
 
-        parser.add_argument("-r", "--remote", help="this schedules the operation to the remote queue",
+        parser.add_argument("--remote", help="this schedules the operation to the remote queue",
                             required=False, default=False, action="store_true")
 
-        parser.add_argument("-l", "--local", help="this does the processing locally",
+        parser.add_argument("--local", help="this does the processing locally",
                             required=False, default=False, action="store_true")
 
         parser.add_argument("-a", "--add", help="add a profile to the calculation instructions", action="append",

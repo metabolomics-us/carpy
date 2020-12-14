@@ -267,7 +267,7 @@ class NodeEvaluator(Evaluator):
                             required=True)
 
         parser.add_argument("-o", "--once", help="processes one message and shutdown", action="store_true",
-                            required=True)
+                            required=False, default=False)
 
         parser.add_argument("-r", "--remove",
                             help="remove a profile from instructions. In case we don't want to use it right now",
