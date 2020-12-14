@@ -2,6 +2,7 @@ import os
 import shutil
 from time import sleep
 from typing import Optional, List
+from urllib.parse import urlencode
 
 import boto3
 import boto3.s3
@@ -439,6 +440,15 @@ class StasisClient:
 
         return sample_meta
 
+    def schedule_steac(self, method: str):
+        response = self.http.post(f"{self._url}/schedule/steac/{method}", json={"method": method},
+                                  headers=self._header)
+        if response.status_code != 200:
+            raise Exception(
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason} ")
+        else:
+            return json.loads(response.content)
+
     def schedule_queue(self) -> dict:
         """
         returns the queue the system is using for all its computations
@@ -448,7 +458,7 @@ class StasisClient:
         response = self.http.get(f"{self._url}/schedule/queue", headers=self._header)
         if response.status_code != 200:
             raise Exception(
-                f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job_id}")
+                f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
         else:
             return json.loads(response.content)['queue']
 

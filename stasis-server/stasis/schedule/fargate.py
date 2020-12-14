@@ -7,7 +7,7 @@ from jsonschema import validate, ValidationError
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.config import SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, MAX_FARGATE_TASKS_BY_SERVICE, \
-    MAX_FARGATE_TASKS
+    MAX_FARGATE_TASKS, SECURE_CARROT_STEAC
 from stasis.schema import __SCHEDULE__
 from stasis.service.Status import FAILED
 from stasis.tables import update_job_state
@@ -66,7 +66,7 @@ def schedule_steac_to_fargate(event, context):
             "environment": [
                 {
                     "name": "SPRING_PROFILES_ACTIVE",
-                    "value": "{}{},{}".format('aws', os.getenv('current_stage'), body["profile"])
+                    "value": "{}{}".format('aws', os.getenv('current_stage'))
                     # AWS profile needs to be active for this system to connect to the AWS database
                 },
                 {
@@ -77,7 +77,7 @@ def schedule_steac_to_fargate(event, context):
             ]
         }]}
 
-        task_name = "{}-{}".format(os.getenv("current_stage"), SECURE_CARROT_RUNNER)
+        task_name = "{}-{}".format(os.getenv("current_stage"), SECURE_CARROT_STEAC)
 
         if 'key' in body and body['key'] is not None:
             overrides['containerOverrides'][0]['environment'].append({
@@ -90,7 +90,10 @@ def schedule_steac_to_fargate(event, context):
         return {
             'statusCode': 200,
             'isBase64Encoded': False,
-            'headers': __HTTP_HEADERS__
+            'headers': __HTTP_HEADERS__,
+            'body' : {
+                "message" : "scheduled a steac aggregation"
+            }
         }
 
     except ValidationError as e:

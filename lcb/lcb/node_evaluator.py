@@ -3,6 +3,7 @@ import json
 import os
 import traceback
 from time import sleep
+import time
 from typing import Optional
 
 import boto3
@@ -91,8 +92,11 @@ class NodeEvaluator(Evaluator):
                     print("major error observed which breaks!")
             else:
                 #                print("sleeping for 5 seconds since queue is empty")
-                print("queue is empty, nothing todo!")
+                print(f"queue is empty, nothing todo: ${queue_url}")
                 sleep(5)
+            if args['once'] is True:
+                print("shutting down node, only was supposed to process 1 message!")
+                return
 
     def get_aws_env(self):
         return self._secret_config.copy()
@@ -123,39 +127,36 @@ class NodeEvaluator(Evaluator):
         procees a single sample
         """
 
-        spring_profiles = self.optimize_profiles(args, config)
-
-        print(f"generated spring profiles to activate: {spring_profiles}")
-        environment['SPRING_PROFILES_ACTIVE'] = spring_profiles
+        print("start SAMPLE process environment")
+        image = f"{self.registry}/carrot:latest"
         environment['CARROT_SAMPLE'] = config['sample']
         environment['CARROT_METHOD'] = config['method']
         environment['CARROT_MODE'] = config['profile']
+        docker_args = self.setup_environment(args, client, config, environment, image)
+        container = client.containers.run(**docker_args)
+        self.execute_container(container, message, queue_url, sqs, args, environment)
+
+    def setup_environment(self, args, client, config, environment, image):
+        spring_profiles = self.optimize_profiles(args, config)
+        print(f"generated spring profiles to activate: {spring_profiles}")
+        environment['SPRING_PROFILES_ACTIVE'] = spring_profiles
 
         # this overrides variables in lc binbase, required to connect to certain services
-
         environment['STASIS_BASEURL'] = environment['STASIS_URL']
         environment['STASIS_KEY'] = environment['STASIS_TOKEN']
-
-        for env in args['env']:
+        for env in args.get('env', {}):
             environment[env] = os.getenv(env)
-
-        print("start SAMPLE process environment")
-
-        client.api.pull(f"{self.registry}/carrot:latest")
-
+        client.api.pull(image)
         docker_args = {
-            'image': f"{self.registry}/carrot:latest",
+            'image': image,
             'environment': environment, 'detach': True,
             'auto_remove': False
         }
-
-        for d in args['docker']:
+        print(f"using image: ${image}")
+        for d in args.get('docker', {}):
             key, value = d.split("=")
             docker_args[key] = value
-
-        self._printenv(docker_args)
-        container = client.containers.run(**docker_args)
-        self.execute_container(container, message, queue_url, sqs, args, environment)
+        return docker_args
 
     def process_aggregation(self, client, config, environment, message, queue_url, sqs, args):
         """
@@ -169,10 +170,9 @@ class NodeEvaluator(Evaluator):
         docker_args = {
             'image': f"{self.registry}/agg:latest",
             'environment': environment, 'detach': True,
-            'auto_remove': True
+            'auto_remove': False
         }
 
-        self._printenv(docker_args)
         container = client.containers.run(**docker_args)
         self.execute_container(container, message, queue_url, sqs, args, environment)
 
@@ -192,11 +192,11 @@ class NodeEvaluator(Evaluator):
         """
         processes a local aggregation in this node
         """
+        image = f"{self.registry}/steac:latest"
         environment['CARROT_METHOD'] = config['method']
         print("start STEAC process environment")
-        client.api.pull(f"{self.registry}/steac:latest")
-        container = client.containers.run(f"{self.registry}/steac:latest",
-                                          environment=environment, detach=True, auto_remove=False)
+        docker_args = self.setup_environment(args, client, config, environment, image)
+        container = client.containers.run(**docker_args)
         self.execute_container(container, message, queue_url, sqs, args, environment)
 
     def execute_container(self, container, message, queue_url, sqs, args, environment):
@@ -207,9 +207,19 @@ class NodeEvaluator(Evaluator):
         if args['log'] is True:
             # run image
             for line in container.logs(stream=True):
-                print(str(line.strip()))
+                print(str(line.decode("utf-8").strip()))
 
+        print("storing log file...")
+
+        if not os.path.exists("logs"):
+            os.makedirs("logs")
+
+        with open(f"logs/{container.name}_{time.time()}.txt", "w") as file:
+            for line in container.logs(stream=True):
+                file.write(line.decode("utf-8").strip())
+                file.write("\n")
         print(f"waiting for shutdown of container now: {container}")
+
         result = container.wait()
 
         statusCode = result['StatusCode']
@@ -240,7 +250,11 @@ class NodeEvaluator(Evaluator):
 
         if args['keep'] is False:
             print(f"cleaning up container with id {container.id}")
-            container.remove()
+            try:
+                container.remove()
+            except Exception as e:
+                print("observed error during removal of container, ignoring it...")
+                pass
 
     @staticmethod
     def optimize_profiles(args, config: Optional[dict] = {}):
@@ -262,6 +276,10 @@ class NodeEvaluator(Evaluator):
 
         parser.add_argument("-s", "--single", help="runs a single node", action="store_true",
                             required=True)
+
+        parser.add_argument("-o", "--once", help="processes one message and shutdown", action="store_true",
+                            required=False, default=False)
+
         parser.add_argument("-r", "--remove",
                             help="remove a profile from instructions. In case we don't want to use it right now",
                             action="append",
