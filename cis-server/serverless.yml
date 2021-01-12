@@ -74,7 +74,7 @@ custom:
   domains:
     prod: api.metabolomics.us
     test: test-api.metabolomics.us
-    dev:  dev-api.metabolomics.us
+    dev: dev-api.metabolomics.us
 
   customDomain:
     basePath: "cis"
@@ -203,15 +203,16 @@ functions:
                 splash: true
                 identifiedBy: true
                 name: true
-  compoundSetAdduct:
-    handler: cis/compounds.register_adduct
+
+  compoundDeleteName:
+    handler: cis/compounds.delete_name
     events:
       - http:
-          path: compound/adduct/{library}/{splash}/{identifiedBy}/{name}
-          method: post
+          path: compound/identify/{library}/{splash}/{identifiedBy}/{name}
+          method: delete
           cors: true
           documentation:
-            summary: returns if the given compound exists in the given library
+            summary: returns if the delete of the deletion is ok
           request:
             parameter:
               paths:
@@ -219,6 +220,23 @@ functions:
                 splash: true
                 identifiedBy: true
                 name: true
+
+    compoundSetAdduct:
+      handler: cis/compounds.register_adduct
+      events:
+        - http:
+            path: compound/adduct/{library}/{splash}/{identifiedBy}/{name}
+            method: post
+            cors: true
+            documentation:
+              summary: returns if the given compound exists in the given library
+            request:
+              parameter:
+                paths:
+                  library: true
+                  splash: true
+                  identifiedBy: true
+                  name: true
 
   compoundSetComment:
     handler: cis/compounds.register_comment

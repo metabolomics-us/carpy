@@ -126,7 +126,6 @@ def test_get_specific_compound(requireMocking, splash_test_name_with_members):
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
 
-
     print(json.dumps(result, indent=4))
     assert result['method'] == splash_test_name_with_members[1]
     assert result['splash'] == splash_test_name_with_members[0]
@@ -394,6 +393,76 @@ def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_
     assert result['associated_adducts'][0]['comment'] == 'gaga'
 
 
+def test_compound_delete_name(requireMocking, splash_test_name_with_members):
+    from cis import compounds
+
+    compounds.delete_names(
+        {'pathParameters': {
+            "library": splash_test_name_with_members[1],
+            "splash": "{}".format(splash_test_name_with_members[0]),
+        }
+
+        }, {}
+
+    )
+
+    response = compounds.register_name(
+        {'pathParameters': {
+            "library": splash_test_name_with_members[1],
+            "splash": "{}".format(splash_test_name_with_members[0]),
+            "identifiedBy": "test",
+            "name": "test1"
+        },
+
+        }, {}
+
+    )
+
+    assert response['statusCode'] == 200
+    response = compounds.get({'pathParameters': {
+        "library": splash_test_name_with_members[1],
+        "splash": splash_test_name_with_members[0]
+    }
+
+    }, {})
+
+    assert response['statusCode'] == 200
+    result = json.loads(response['body'])[0]
+    print(result)
+
+    assert len(result['associated_names']) == 1
+    assert result['associated_names'][0]['name'] == 'test1'
+    assert result['associated_names'][0]['identifiedBy'] == 'test'
+    assert result['associated_names'][0]['comment'] == ''
+
+    response = compounds.delete_name(
+        {'pathParameters': {
+            "library": splash_test_name_with_members[1],
+            "splash": "{}".format(splash_test_name_with_members[0]),
+            "identifiedBy": "test",
+            "name": "test1"
+        },
+
+        }, {}
+
+    )
+
+    print(response)
+    assert response['statusCode'] == 200
+    response = compounds.get({'pathParameters': {
+        "library": splash_test_name_with_members[1],
+        "splash": splash_test_name_with_members[0]
+    }
+
+    }, {})
+
+    assert response['statusCode'] == 200
+    result = json.loads(response['body'])[0]
+    print(result)
+
+    assert len(result['associated_names']) == 0
+
+
 def test_compound_register_name(requireMocking, splash_test_name_with_members):
     from cis import compounds
 
@@ -605,7 +674,6 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_members):
         }, {}
 
     )
-
 
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
