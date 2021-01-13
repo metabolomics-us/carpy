@@ -302,7 +302,10 @@ def delete_name(events, context):
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "library": library,
-                "splash": splash
+                "splash": splash,
+                "name": name,
+                "identifiedBy": identifiedBy,
+                "reason": "we did not find a name with the given properties"
             })
         }
 

@@ -6,8 +6,8 @@ from cisclient.client import CISClient
 
 
 def pytest_generate_tests(metafunc):
-    os.environ['CIS_URL'] = 'https://dev-api.metabolomics.us/cis'
-    os.environ['CIS_API_TOKEN'] = 'rDJfRW6ilG2WooOR72AaE3NqL4m23WvY6ub4FEoS'
+    os.environ['CIS_URL'] = 'https://test-api.metabolomics.us/cis'
+    os.environ['CIS_API_TOKEN'] = 'aidfca01Xe9sBdS8LnVv9NPJQA1WVZU58gD8Dmm2'
 
 
 @pytest.fixture()
@@ -25,7 +25,7 @@ def cis_cli():
 
 @pytest.fixture()
 def library_test_name():
-    return "soqe[M-H] | QExactive | test | negative"
+    return "soqtof[M-H] | 6530a | c18 | negative"
 
 
 @pytest.fixture()
