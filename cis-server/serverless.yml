@@ -315,6 +315,22 @@ functions:
                 library: true
                 splash: true
 
+  compoundMakeNamePrimary:
+    handler: cis/compounds.make_name_primary
+    events:
+      - http:
+          path: compound/{library}/{splash}/{name}
+          method: put
+          cors: true
+          documentation:
+            summary: updates the primary name of a compound
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                name: true
+
   compoundDelete:
     handler: cis/compounds.delete
     events:

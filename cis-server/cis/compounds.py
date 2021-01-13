@@ -65,6 +65,7 @@ def register_comment(events, context):
         })
     }
 
+
 def delete_comments(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -188,7 +189,6 @@ def delete_names(events, context):
         }
 
 
-
 def register_adduct(events, context):
     """
     registers a new adduct for a given target
@@ -200,7 +200,7 @@ def register_adduct(events, context):
     library = urllib.parse.unquote(events['pathParameters']['library'])
     identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
     name = urllib.parse.unquote(events['pathParameters']['name'])
-    comment = events.get('body','')
+    comment = events.get('body', '')
 
     print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
@@ -263,6 +263,63 @@ def register_adduct(events, context):
     }
 
 
+def make_name_primary(events, context):
+    if 'pathParameters' in events:
+        if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
+            method_name = urllib.parse.unquote(events['pathParameters']['library'])
+            splash = urllib.parse.unquote(events['pathParameters']['splash'])
+            name = urllib.parse.unquote(events['pathParameters']['name'])
+
+            result = database.query(
+                "SELECT exists (SELECT 1 FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype = 'PgInternalTarget' LIMIT 1)",
+                conn, [method_name, splash])
+
+            if result[0][0] == 0:
+                return {
+                    "statusCode": 404,
+                }
+            else:
+                try:
+                    database.query(
+                        "update pg_target pt set target_name = (%s) where  \"method_id\" = (%s) and \"splash\" = (%s) ",
+                        conn, [name, method_name, splash])
+                    # create a response
+                    return {
+                        "statusCode": 200,
+                        "headers": headers.__HTTP_HEADERS__,
+                        "body": json.dumps({
+                            "library": method_name,
+                            "splash": splash
+                        })
+                    }
+                except Exception as e:
+                    traceback.print_exc()
+                    return {
+                        "statusCode": 500,
+                        "headers": headers.__HTTP_HEADERS__,
+                        "body": json.dumps({
+                            "error": str(e),
+                            "library": method_name
+                        })
+                    }
+        else:
+            return {
+                "statusCode": 500,
+                "headers": headers.__HTTP_HEADERS__,
+                "body": json.dumps({
+                    "error": "you need to provide a 'library' name and a splash"
+                })
+            }
+    else:
+        return {
+            "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "error": "missing path parameters"
+            })
+        }
+
+
 def register_name(events, context):
     """
     registers a new name for a given target
@@ -274,7 +331,7 @@ def register_name(events, context):
     library = urllib.parse.unquote(events['pathParameters']['library'])
     identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
     name = urllib.parse.unquote(events['pathParameters']['name'])
-    comment = events.get('body',"")
+    comment = events.get('body', "")
 
     print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
@@ -500,16 +557,11 @@ def all(events, context):
         }
 
 
-def delete(events, context):
-    pass
-
-
 def get(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             splash = urllib.parse.unquote(events['pathParameters']['splash'])
-
 
             def generate_metas_list(x):
                 names = database.query(
@@ -521,7 +573,8 @@ def get(events, context):
                     return []
                 else:
                     return list(
-                        map(lambda y: {'identifiedBy': y[0], 'name':y[1], 'value': y[2], 'comment': y[3]}, names))
+                        map(lambda y: {'identifiedBy': y[0], 'name': y[1], 'value': y[2], 'comment': y[3]}, names))
+
             def generate_comments_list(x):
                 names = database.query(
                     "select pn.identified_by , pn.\"comment\" from pgtarget p , pgtarget_comment pn, pgtarget_comments pn2 where p.id = pn2.pg_internal_target_id and pn2.comments_id  = pn.id and p.id = %s",
@@ -666,6 +719,7 @@ def exists(events, context):
             })
         }
 
+
 def register_meta(events, context):
     """
     registers a new adduct for a given target
@@ -679,7 +733,7 @@ def register_meta(events, context):
     name = urllib.parse.unquote(events['pathParameters']['name'])
     value = urllib.parse.unquote(events['pathParameters']['value'])
 
-    comment = events.get('body','')
+    comment = events.get('body', '')
 
     print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
@@ -741,6 +795,7 @@ def register_meta(events, context):
         })
     }
 
+
 def delete_meta(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -780,4 +835,3 @@ def delete_meta(events, context):
                 "splash": splash
             })
         }
-
