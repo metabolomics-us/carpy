@@ -310,6 +310,63 @@ def delete_name(events, context):
         }
 
 
+def make_name_primary(events, context):
+    if 'pathParameters' in events:
+        if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
+            method_name = urllib.parse.unquote(events['pathParameters']['library'])
+            splash = urllib.parse.unquote(events['pathParameters']['splash'])
+            name = urllib.parse.unquote(events['pathParameters']['name'])
+
+            result = database.query(
+                "SELECT exists (SELECT 1 FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype = 'PgInternalTarget' LIMIT 1)",
+                conn, [method_name, splash])
+
+            if result[0][0] == 0:
+                return {
+                    "statusCode": 404,
+                }
+            else:
+                try:
+                    database.query(
+                        "update pgtarget pt set target_name = (%s) where  \"method_id\" = (%s) and \"splash\" = (%s) ",
+                        conn, [name, method_name, splash])
+                    # create a response
+                    return {
+                        "statusCode": 200,
+                        "headers": headers.__HTTP_HEADERS__,
+                        "body": json.dumps({
+                            "library": method_name,
+                            "splash": splash
+                        })
+                    }
+                except Exception as e:
+                    traceback.print_exc()
+                    return {
+                        "statusCode": 500,
+                        "headers": headers.__HTTP_HEADERS__,
+                        "body": json.dumps({
+                            "error": str(e),
+                            "library": method_name
+                        })
+                    }
+        else:
+            return {
+                "statusCode": 500,
+                "headers": headers.__HTTP_HEADERS__,
+                "body": json.dumps({
+                    "error": "you need to provide a 'library' name and a splash"
+                })
+            }
+    else:
+        return {
+            "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "error": "missing path parameters"
+            })
+        }
+
+
 def register_name(events, context):
     """
     registers a new name for a given target
@@ -545,10 +602,6 @@ def all(events, context):
 
             })
         }
-
-
-def delete(events, context):
-    pass
 
 
 def get(events, context):

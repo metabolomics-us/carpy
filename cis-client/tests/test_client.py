@@ -1,3 +1,6 @@
+from time import time
+
+
 def test_get_libraries(cis_cli):
     result = cis_cli.get_libraries()
     assert len(result) > 0
@@ -35,6 +38,13 @@ def test_exists_compound(cis_cli, splash_test_name):
 
 def test_get_compound(cis_cli, splash_test_name):
     result = cis_cli.get_compound(library=splash_test_name[1], splash=splash_test_name[0])
+    assert len(result) > 0
+
+def test_set_compound_primary_name(cis_cli, splash_test_name):
+    name = f"test-{time()}"
+    result = cis_cli.set_compound_primary_name(library=splash_test_name[1], splash=splash_test_name[0], name=name)
+
+    assert result['preferred_name'] == name
     assert len(result) > 0
 
 

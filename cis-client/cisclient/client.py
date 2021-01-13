@@ -184,6 +184,14 @@ class CISClient:
         if result.status_code != 200:
             raise Exception(result)
 
+    def set_compound_primary_name(self, library: str, splash: str, name:str) -> dict:
+        result = self.http.put(f"{self._url}/compound/{library}/{splash}/{name}", headers=self._header)
+
+        if result.status_code == 200:
+            return self.get_compound(library,splash)
+        else:
+            raise Exception(result)
+
     def get_compound(self, library: str, splash: str) -> dict:
         result = self.http.get(f"{self._url}/compound/{library}/{splash}", headers=self._header)
 
