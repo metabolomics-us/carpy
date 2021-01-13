@@ -16,6 +16,10 @@ provider:
   apiKeys:
     - "cis-${self:custom.stage}"
 
+  tracing:
+    lambda: true
+    apiGateway: true
+
   #required permissions
   iamRoleStatements:
     - Effect: Allow
@@ -74,7 +78,7 @@ custom:
   domains:
     prod: api.metabolomics.us
     test: test-api.metabolomics.us
-    dev:  dev-api.metabolomics.us
+    dev: dev-api.metabolomics.us
 
   customDomain:
     basePath: "cis"
@@ -122,6 +126,7 @@ functions:
     handler: cis/libraries.exists
     events:
       - http:
+          private: true
           path: libraries/{library}
           method: head
           cors: true
@@ -136,6 +141,7 @@ functions:
     handler: cis/libraries.size
     events:
       - http:
+          private: true
           path: libraries/{library}
           method: get
           cors: true
@@ -149,6 +155,7 @@ functions:
     handler: cis/libraries.delete
     events:
       - http:
+          private: true
           path: libraries/{library}
           method: delete
           cors: true
@@ -163,6 +170,7 @@ functions:
     handler: cis/compounds.all
     events:
       - http:
+          private: true
           path: compounds/{library}/{limit}/{offset}
           method: get
           cors: true
@@ -176,6 +184,7 @@ functions:
                 offset: true
 
       - http:
+          private: true
           path: compounds/{library}/{limit}/{offset}/{type}
           method: get
           cors: true
@@ -191,6 +200,7 @@ functions:
     handler: cis/compounds.register_name
     events:
       - http:
+          private: true
           path: compound/identify/{library}/{splash}/{identifiedBy}/{name}
           method: post
           cors: true
@@ -203,15 +213,17 @@ functions:
                 splash: true
                 identifiedBy: true
                 name: true
-  compoundSetAdduct:
-    handler: cis/compounds.register_adduct
+
+  compoundDeleteName:
+    handler: cis/compounds.delete_name
     events:
       - http:
-          path: compound/adduct/{library}/{splash}/{identifiedBy}/{name}
-          method: post
+          private: true
+          path: compound/identify/{library}/{splash}/{identifiedBy}/{name}
+          method: delete
           cors: true
           documentation:
-            summary: returns if the given compound exists in the given library
+            summary: returns if the delete of the deletion is ok
           request:
             parameter:
               paths:
@@ -220,10 +232,29 @@ functions:
                 identifiedBy: true
                 name: true
 
+    compoundSetAdduct:
+      handler: cis/compounds.register_adduct
+      events:
+        - http:
+            private: true
+            path: compound/adduct/{library}/{splash}/{identifiedBy}/{name}
+            method: post
+            cors: true
+            documentation:
+              summary: returns if the given compound exists in the given library
+            request:
+              parameter:
+                paths:
+                  library: true
+                  splash: true
+                  identifiedBy: true
+                  name: true
+
   compoundSetComment:
     handler: cis/compounds.register_comment
     events:
       - http:
+          private: true
           path: compound/comment/{library}/{splash}/{identifiedBy}
           method: post
           cors: true
@@ -240,6 +271,7 @@ functions:
     handler: cis/compounds.register_meta
     events:
       - http:
+          private: true
           path: compound/meta/{library}/{splash}/{identifiedBy}/{name}/{value}
           method: post
           cors: true
@@ -259,6 +291,7 @@ functions:
     handler: cis/compounds.get
     events:
       - http:
+          private: true
           path: compound/{library}/{splash}
           method: get
           cors: true
@@ -274,6 +307,7 @@ functions:
     handler: cis/compounds.get_members
     events:
       - http:
+          private: true
           path: compound/members/{library}/{splash}/{limit}/{offset}
           method: get
           cors: true
@@ -290,6 +324,7 @@ functions:
     handler: cis/compounds.has_members
     events:
       - http:
+          private: true
           path: compound/members/{library}/{splash}
           method: head
           cors: true
@@ -304,6 +339,7 @@ functions:
     handler: cis/compounds.exists
     events:
       - http:
+          private: true
           path: compound/{library}/{splash}
           method: head
           cors: true
@@ -319,6 +355,7 @@ functions:
     handler: cis/compounds.make_name_primary
     events:
       - http:
+          private: true
           path: compound/{library}/{splash}/{name}
           method: put
           cors: true
@@ -335,6 +372,7 @@ functions:
     handler: cis/compounds.delete
     events:
       - http:
+          private: true
           path: compound/{library}/{splash}
           method: delete
           cors: true

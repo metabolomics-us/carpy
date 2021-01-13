@@ -7,7 +7,7 @@ SECURE_CARROT_STEAC = 'secure-carrot-steac'
 ##
 # these are tasks which can run in paralell
 MAX_FARGATE_TASKS_BY_SERVICE = {
-    SECURE_CARROT_RUNNER: 40,
+    SECURE_CARROT_RUNNER: 20,
     SECURE_CARROT_AGGREGATOR: 2
 }
 

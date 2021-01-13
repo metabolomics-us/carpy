@@ -41,10 +41,10 @@ def test_get_compound(cis_cli, splash_test_name):
     assert len(result) > 0
 
 def test_set_compound_primary_name(cis_cli, splash_test_name):
-    result = cis_cli.set_compound_primary_name(library=splash_test_name[1], splash=splash_test_name[0], name=f"test-{time()}")
+    name = f"test-{time()}"
+    result = cis_cli.set_compound_primary_name(library=splash_test_name[1], splash=splash_test_name[0], name=name)
 
-
-    result = cis_cli.get_compound(library=splash_test_name[1], splash=splash_test_name[0])
+    assert result['preferred_name'] == name
     assert len(result) > 0
 
 
@@ -60,6 +60,22 @@ def test_name_compound(cis_cli, splash_test_name):
             if name['identifiedBy'] == 'tester':
                 success = True
 
+    assert success
+
+
+def test_delete_name_compound(cis_cli, splash_test_name):
+    cis_cli.name_compound(library=splash_test_name[1], splash=splash_test_name[0], name="test", identifiedBy="tester",
+                          comment="")
+    result = cis_cli.get_compound(library=splash_test_name[1], splash=splash_test_name[0])
+
+    success = False
+
+    for name in result['associated_names']:
+        if name['name'] == 'test':
+            if name['identifiedBy'] == 'tester':
+                success = True
+    cis_cli.delete_name_compound(library=splash_test_name[1], splash=splash_test_name[0], name="test",
+                                 identifiedBy="tester")
     assert success
 
 

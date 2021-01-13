@@ -263,6 +263,53 @@ def register_adduct(events, context):
     }
 
 
+def delete_name(events, context):
+    """
+
+    :param events:
+    :param context:
+    :return:
+    """
+
+    splash = urllib.parse.unquote(events['pathParameters']['splash'])
+    library = urllib.parse.unquote(events['pathParameters']['library'])
+    identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
+    name = urllib.parse.unquote(events['pathParameters']['name'])
+
+    result = database.query(
+        "select pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        conn, [splash, library, name, identifiedBy])
+
+    if result is not None:
+        for row in result:
+            name_id = row
+
+            data = database.query(
+                "delete from pgtarget_names  where names_id  = %s", conn, [name_id])
+
+        return {
+            "statusCode": 200,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash
+            })
+        }
+
+    else:
+        return {
+            "statusCode": 404,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash,
+                "name": name,
+                "identifiedBy": identifiedBy,
+                "reason": "we did not find a name with the given properties"
+            })
+        }
+
+
 def make_name_primary(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -281,7 +328,7 @@ def make_name_primary(events, context):
             else:
                 try:
                     database.query(
-                        "update pg_target pt set target_name = (%s) where  \"method_id\" = (%s) and \"splash\" = (%s) ",
+                        "update pgtarget pt set target_name = (%s) where  \"method_id\" = (%s) and \"splash\" = (%s) ",
                         conn, [name, method_name, splash])
                     # create a response
                     return {
