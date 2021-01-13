@@ -177,6 +177,13 @@ class CISClient:
         if result.status_code != 200:
             raise Exception(result)
 
+    def delete_name_compound(self, library: str, splash: str, name: str, identifiedBy: str):
+        result = self.http.delete(f"{self._url}/compound/identify/{library}/{splash}/{identifiedBy}/{name}",
+                                  headers=self._header)
+
+        if result.status_code != 200:
+            raise Exception(result)
+
     def get_compound(self, library: str, splash: str) -> dict:
         result = self.http.get(f"{self._url}/compound/{library}/{splash}", headers=self._header)
 
