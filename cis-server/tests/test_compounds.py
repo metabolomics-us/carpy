@@ -113,12 +113,12 @@ def test_getall(requireMocking, library_test_name):
     assert len(body) == 5
 
 
-def test_get_specific_compound(requireMocking, splash_test_name_with_members):
+def test_get_specific_compound(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -127,16 +127,16 @@ def test_get_specific_compound(requireMocking, splash_test_name_with_members):
     result = json.loads(response['body'])[0]
 
     print(json.dumps(result, indent=4))
-    assert result['method'] == splash_test_name_with_members[1]
-    assert result['splash'] == splash_test_name_with_members[0]
+    assert result['method'] == splash_test_name_with_no_members[1]
+    assert result['splash'] == splash_test_name_with_no_members[0]
 
 
-def test_get_specific_compound_doesnt_exist(requireMocking, splash_test_name_with_members):
+def test_get_specific_compound_doesnt_exist(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     response = compounds.get({'pathParameters': {
-        "library": "{}_not_real".format(splash_test_name_with_members[1]),
-        "splash": splash_test_name_with_members[0]
+        "library": "{}_not_real".format(splash_test_name_with_no_members[1]),
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -144,12 +144,12 @@ def test_get_specific_compound_doesnt_exist(requireMocking, splash_test_name_wit
     assert response['statusCode'] == 404
 
 
-def test_exist_specific_compound_false(requireMocking, splash_test_name_with_members):
+def test_exist_specific_compound_false(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     response = compounds.exists({'pathParameters': {
-        "library": "{}_not real".format(splash_test_name_with_members[1]),
-        "splash": splash_test_name_with_members[0]
+        "library": "{}_not real".format(splash_test_name_with_no_members[1]),
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -157,20 +157,20 @@ def test_exist_specific_compound_false(requireMocking, splash_test_name_with_mem
     assert response['statusCode'] == 404
 
 
-def test_exist_specific_compound(requireMocking, splash_test_name_with_members):
+def test_exist_specific_compound(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     response = compounds.exists({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
 
     assert response['statusCode'] == 200
     assert json.loads(response['body'])['exists'] == True
-    assert json.loads(response['body'])['library'] == splash_test_name_with_members[1]
-    assert json.loads(response['body'])['splash'] == splash_test_name_with_members[0]
+    assert json.loads(response['body'])['library'] == splash_test_name_with_no_members[1]
+    assert json.loads(response['body'])['splash'] == splash_test_name_with_no_members[0]
 
 
 def test_compound_has_members(requireMocking, splash_test_name_with_members):
@@ -239,13 +239,13 @@ def test_edit_specific_compound(requireMocking, library_test_name):
     fail()
 
 
-def test_compound_no_registered_names(requireMocking, splash_test_name_with_members):
+def test_compound_no_registered_names(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     compounds.delete_names(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
 
         }, {}
@@ -253,8 +253,8 @@ def test_compound_no_registered_names(requireMocking, splash_test_name_with_memb
     )
 
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -262,15 +262,15 @@ def test_compound_no_registered_names(requireMocking, splash_test_name_with_memb
     assert response['statusCode'] == 200
 
 
-def test_compound_register_comment(requireMocking, splash_test_name_with_members):
+def test_compound_register_comment(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     comments = ''.join(random.choice(string.ascii_lowercase) for x in range(1000))
 
     compounds.delete_comments(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
         }, {}
 
@@ -278,8 +278,8 @@ def test_compound_register_comment(requireMocking, splash_test_name_with_members
 
     response = compounds.register_comment(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test"
         },
 
@@ -291,8 +291,8 @@ def test_compound_register_comment(requireMocking, splash_test_name_with_members
 
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -306,13 +306,13 @@ def test_compound_register_comment(requireMocking, splash_test_name_with_members
     assert result['associated_comments'][0]['comment'] == comments
 
 
-def test_compound_register_adduct(requireMocking, splash_test_name_with_members):
+def test_compound_register_adduct(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     compounds.delete_adducts(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
 
         }, {}
@@ -321,8 +321,8 @@ def test_compound_register_adduct(requireMocking, splash_test_name_with_members)
 
     response = compounds.register_adduct(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "Na+"
         }
@@ -333,8 +333,8 @@ def test_compound_register_adduct(requireMocking, splash_test_name_with_members)
 
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -349,13 +349,13 @@ def test_compound_register_adduct(requireMocking, splash_test_name_with_members)
     assert result['associated_adducts'][0]['comment'] == ''
 
 
-def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_with_members):
+def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     compounds.delete_adducts(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
 
         }, {}
@@ -364,8 +364,8 @@ def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_
 
     response = compounds.register_adduct(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "Na+"
         },
@@ -377,8 +377,8 @@ def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_
 
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -393,13 +393,13 @@ def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_
     assert result['associated_adducts'][0]['comment'] == 'gaga'
 
 
-def test_compound_delete_name(requireMocking, splash_test_name_with_members):
+def test_compound_delete_name(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     compounds.delete_names(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
 
         }, {}
@@ -408,8 +408,8 @@ def test_compound_delete_name(requireMocking, splash_test_name_with_members):
 
     response = compounds.register_name(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "test1"
         },
@@ -420,8 +420,8 @@ def test_compound_delete_name(requireMocking, splash_test_name_with_members):
 
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -437,8 +437,8 @@ def test_compound_delete_name(requireMocking, splash_test_name_with_members):
 
     response = compounds.delete_name(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "test1"
         },
@@ -450,8 +450,8 @@ def test_compound_delete_name(requireMocking, splash_test_name_with_members):
     print(response)
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -463,13 +463,13 @@ def test_compound_delete_name(requireMocking, splash_test_name_with_members):
     assert len(result['associated_names']) == 0
 
 
-def test_compound_register_name(requireMocking, splash_test_name_with_members):
+def test_compound_register_name(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     compounds.delete_names(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
 
         }, {}
@@ -478,8 +478,8 @@ def test_compound_register_name(requireMocking, splash_test_name_with_members):
 
     response = compounds.register_name(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "test1"
         },
@@ -490,8 +490,8 @@ def test_compound_register_name(requireMocking, splash_test_name_with_members):
 
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -506,13 +506,13 @@ def test_compound_register_name(requireMocking, splash_test_name_with_members):
     assert result['associated_names'][0]['comment'] == ''
 
 
-def test_compound_register_name_with_comment(requireMocking, splash_test_name_with_members):
+def test_compound_register_name_with_comment(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     compounds.delete_names(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
 
         }, {}
@@ -521,8 +521,8 @@ def test_compound_register_name_with_comment(requireMocking, splash_test_name_wi
 
     response = compounds.register_name(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "test1"
         },
@@ -533,8 +533,8 @@ def test_compound_register_name_with_comment(requireMocking, splash_test_name_wi
 
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -549,13 +549,13 @@ def test_compound_register_name_with_comment(requireMocking, splash_test_name_wi
     assert result['associated_names'][0]['comment'] == 'blah blah'
 
 
-def test_compound_register_names(requireMocking, splash_test_name_with_members):
+def test_compound_register_names(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     compounds.delete_names(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
 
         }, {}
@@ -564,8 +564,8 @@ def test_compound_register_names(requireMocking, splash_test_name_with_members):
 
     response = compounds.register_name(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "test1"
         }
@@ -577,8 +577,8 @@ def test_compound_register_names(requireMocking, splash_test_name_with_members):
     assert response['statusCode'] == 200
     response = compounds.register_name(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "testA",
             "name": "test2"
         }
@@ -590,8 +590,8 @@ def test_compound_register_names(requireMocking, splash_test_name_with_members):
     assert response['statusCode'] == 200
 
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})
@@ -611,13 +611,13 @@ def test_compound_register_names(requireMocking, splash_test_name_with_members):
     assert result['associated_names'][1]['comment'] == ''
 
 
-def test_compound_register_meta(requireMocking, splash_test_name_with_members):
+def test_compound_register_meta(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
     compounds.delete_meta(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
         }
 
         }, {}
@@ -626,8 +626,8 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_members):
 
     response = compounds.register_meta(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "CID",
             "value": "1"
@@ -639,8 +639,8 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_members):
 
     response = compounds.register_meta(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "KEGG",
             "value": "C0002"
@@ -651,8 +651,8 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_members):
     )
     response = compounds.register_meta(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "KEGG",
             "value": "C0002"
@@ -664,8 +664,8 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_members):
 
     response = compounds.register_meta(
         {'pathParameters': {
-            "library": splash_test_name_with_members[1],
-            "splash": "{}".format(splash_test_name_with_members[0]),
+            "library": splash_test_name_with_no_members[1],
+            "splash": "{}".format(splash_test_name_with_no_members[0]),
             "identifiedBy": "test",
             "name": "KEGG",
             "value": "C0001"
@@ -677,8 +677,8 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_members):
 
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
-        "library": splash_test_name_with_members[1],
-        "splash": splash_test_name_with_members[0]
+        "library": splash_test_name_with_no_members[1],
+        "splash": splash_test_name_with_no_members[0]
     }
 
     }, {})

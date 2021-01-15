@@ -11,21 +11,21 @@ def test_libraries(requireMocking):
     assert len(body) > 0
 
 
-def test_delete_library(requireMocking, library_test_name):
-    from cis import libraries
-    response = libraries.delete({'pathParameters': {
-        "library": library_test_name
-    }}, {})
+#def test_delete_library(requireMocking, library_test_name):
+#   from cis import libraries
+#   response = libraries.delete({'pathParameters': {
+#       "library": library_test_name
+#   }}, {})
 
-    assert response['statusCode'] == 200
+#   assert response['statusCode'] == 200
 
-    response = libraries.exists({'pathParameters': {
-        "library": library_test_name
-    }}, {})
+#   response = libraries.exists({'pathParameters': {
+#       "library": library_test_name
+#   }}, {})
 
-    assert response['statusCode'] == 404
-    body = json.loads(response['body'])
-    assert body['exists'] is False
+#   assert response['statusCode'] == 404
+#   body = json.loads(response['body'])
+#   assert body['exists'] is False
 
 
 def test_exist_true(requireMocking, library_test_name):

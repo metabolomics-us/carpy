@@ -19,7 +19,7 @@ def requireMocking():
     lamb.start()
 
     os.environ["current_stage"] = "test"
-    os.environ["carrot_database"] = "carrot-dev"
+    os.environ["carrot_database"] = "carrot-test"
     os.environ["carrot_username"] = "postgres"
     os.environ["carrot_password"] = "Fiehnlab2020"
     os.environ["carrot_host"] = "lc-binbase-dev.czbqhgrlaqbf.us-west-2.rds.amazonaws.com"
@@ -33,7 +33,7 @@ def requireMocking():
 
 @pytest.fixture()
 def library_test_name() -> str:
-    return "soqe[M+H][M+NH4] | QExactive | test | positive"
+    return "soqtof[M-H] | 6530a | c18 | negative"
 
 
 @pytest.fixture()
@@ -58,3 +58,26 @@ def splash_test_name_with_members(library_test_name, request):
             return result
 
     raise Exception(f"did not find a standard with members in {library_test_name}")
+
+@pytest.fixture()
+def splash_test_name_with_no_members(library_test_name, request):
+    from cis import compounds
+    result = request.config.cache.get("cis/no_members", None)
+
+    if result is not None:
+        print(f"using cached object: {result}")
+        return result
+    else:
+        print("loading all, takes forever and should be cached instead...")
+        data = json.loads(
+            compounds.all({'pathParameters': {'library': library_test_name, 'limit': 100000}}, {})['body'])
+
+    for num, splash in enumerate(data):
+        response = compounds.get_members({'pathParameters': {'library': library_test_name, 'splash': splash}}, {})
+        if response['statusCode'] == 404:
+            result = (data[num], library_test_name)
+
+            request.config.cache.set("cis/no_members", result)
+            return result
+
+    raise Exception(f"did not find a standard with no_members in {library_test_name}")

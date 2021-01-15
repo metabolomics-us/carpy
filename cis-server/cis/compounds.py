@@ -22,7 +22,7 @@ def register_comment(events, context):
     print(f"{splash} - {library} - {identifiedBy} - {comment}")
     # load compound to get the correct id
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_comment pn, pgtarget_comments pn2 where p.id = pn2.pg_internal_target_id and pn2.comments_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and \"identified_by\" = %s",
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_comment pn where p.id = pn.target_id  and splash = (%s) and \"method_id\" = (%s) and \"identified_by\" = %s",
         conn, [splash, library, identifiedBy])
 
     if result is None:
@@ -49,11 +49,8 @@ def register_comment(events, context):
     newNameId = result[0][0]
 
     result = database.query(
-        "insert into pgtarget_comment(\"id\",\"identified_by\",\"comment\") values(%s,%s,%s)",
-        conn, [newNameId, identifiedBy, comment])
-    result = database.query("insert into pgtarget_comments(\"comments_id\",\"pg_internal_target_id\") values(%s,%s)",
-                            conn,
-                            [newNameId, id])
+        "insert into pgtarget_comment(\"id\",\"identified_by\",\"comment\",\"target_id\") values(%s,%s,%s,%s)",
+        conn, [newNameId, identifiedBy, comment, id])
     # create a response
     return {
         "statusCode": 200,
@@ -71,22 +68,15 @@ def delete_comments(events, context):
     library = events['pathParameters']['library']
 
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_comment pn, pgtarget_comments pn2 where p.id = pn2.pg_internal_target_id and pn2.comments_id  = pn.id and splash = (%s) and \"method_id\" = (%s)",
+        "select distinct p.id from pgtarget p , pgtarget_comment pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s)",
         conn, [splash, library])
 
     if result is not None:
 
         for row in result:
-            name_id = row[1]
-
-            # drop references with this id = name + identifier
-
-            database.query(
-                "delete from pgtarget_comments  where comments_id  = %s",
-                conn, [name_id])
             database.query(
                 "delete from pgtarget_comment  where id  = %s",
-                conn, [name_id])
+                conn, [row[0]])
 
         return {
             "statusCode": 200,
@@ -112,22 +102,15 @@ def delete_adducts(events, context):
     library = events['pathParameters']['library']
 
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_adduct pn, pgtarget_adducts pn2 where p.id = pn2.pg_internal_target_id and pn2.adducts_id  = pn.id and splash = (%s) and \"method_id\" = (%s)",
+        "select distinct p.id from pgtarget p , pgtarget_adduct pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s)",
         conn, [splash, library])
 
     if result is not None:
 
         for row in result:
-            name_id = row[1]
-
-            # drop references with this id = name + identifier
-
-            database.query(
-                "delete from pgtarget_adducts  where adducts_id  = %s",
-                conn, [name_id])
             database.query(
                 "delete from pgtarget_adduct  where id  = %s",
-                conn, [name_id])
+                conn, [row[0]])
 
         return {
             "statusCode": 200,
@@ -153,22 +136,15 @@ def delete_names(events, context):
     library = events['pathParameters']['library']
 
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method_id\" = (%s)",
+        "select distinct p.id from pgtarget p , pgtarget_name pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s)",
         conn, [splash, library])
 
     if result is not None:
 
         for row in result:
-            name_id = row[1]
-
-            # drop references with this id = name + identifier
-
             database.query(
-                "delete from pgtarget_names  where names_id  = %s",
-                conn, [name_id])
-            database.query(
-                "delete from pgtarget_name  where id  = %s",
-                conn, [name_id])
+                "delete from pgtarget_name  where target_id  = %s",
+                conn, [row[0]])
 
         return {
             "statusCode": 200,
@@ -205,7 +181,7 @@ def register_adduct(events, context):
     print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_adduct pn, pgtarget_adducts pn2 where p.id = pn2.pg_internal_target_id and pn2.adducts_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_adduct pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
         conn, [splash, library, name, identifiedBy])
 
     if result is None:
@@ -230,11 +206,6 @@ def register_adduct(events, context):
         for row in result:
             name_id = row[1]
 
-            # drop references with this id = name + identifier
-
-            result = database.query(
-                "delete from pgtarget_adducts  where adducts_id  = %s",
-                conn, [name_id])
             result = database.query(
                 "delete from pgtarget_adduct  where id  = %s",
                 conn, [name_id])
@@ -246,11 +217,8 @@ def register_adduct(events, context):
     newNameId = result[0][0]
 
     result = database.query(
-        "insert into pgtarget_adduct(\"id\",\"name\",\"identified_by\",\"comment\") values(%s,%s,%s,%s)",
-        conn, [newNameId, name, identifiedBy, comment])
-    result = database.query("insert into pgtarget_adducts(\"adducts_id\",\"pg_internal_target_id\") values(%s,%s)",
-                            conn,
-                            [newNameId, id])
+        "insert into pgtarget_adduct(\"id\",\"name\",\"identified_by\",\"comment\",\"target_id\") values(%s,%s,%s,%s,%s)",
+        conn, [newNameId, name, identifiedBy, comment,id])
     # create a response
     return {
         "statusCode": 200,
@@ -277,7 +245,7 @@ def delete_name(events, context):
     name = urllib.parse.unquote(events['pathParameters']['name'])
 
     result = database.query(
-        "select pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        "select distinct p.id from pgtarget p , pgtarget_name pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
         conn, [splash, library, name, identifiedBy])
 
     if result is not None:
@@ -285,7 +253,7 @@ def delete_name(events, context):
             name_id = row
 
             data = database.query(
-                "delete from pgtarget_names  where names_id  = %s", conn, [name_id])
+                "delete from pgtarget_name where target_id  = %s", conn, [name_id])
 
         return {
             "statusCode": 200,
@@ -383,7 +351,7 @@ def register_name(events, context):
     print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
         conn, [splash, library, name, identifiedBy])
 
     if result is None:
@@ -408,11 +376,6 @@ def register_name(events, context):
         for row in result:
             name_id = row[1]
 
-            # drop references with this id = name + identifier
-
-            result = database.query(
-                "delete from pgtarget_names  where names_id  = %s",
-                conn, [name_id])
             result = database.query(
                 "delete from pgtarget_name  where id  = %s",
                 conn, [name_id])
@@ -424,11 +387,8 @@ def register_name(events, context):
     newNameId = result[0][0]
 
     result = database.query(
-        "insert into pgtarget_name(\"id\",\"name\",\"identified_by\",\"comment\") values(%s,%s,%s,%s)",
-        conn, [newNameId, name, identifiedBy, comment])
-    result = database.query("insert into pgtarget_names(\"names_id\",\"pg_internal_target_id\") values(%s,%s)",
-                            conn,
-                            [newNameId, id])
+        "insert into pgtarget_name(\"id\",\"name\",\"identified_by\",\"comment\",\"target_id\") values(%s,%s,%s,%s,%s)",
+        conn, [newNameId, name, identifiedBy, comment,id])
     # create a response
     return {
         "statusCode": 200,
@@ -612,7 +572,7 @@ def get(events, context):
 
             def generate_metas_list(x):
                 names = database.query(
-                    "select pn.identified_by, pn.name, pn.value , pn.\"comment\" from pgtarget p , pgtarget_meta pn, pgtarget_metas pn2 where p.id = pn2.pg_internal_target_id and pn2.metas_id  = pn.id and p.id = %s",
+                    "select pn.identified_by, pn.name, pn.value , pn.\"comment\" from pgtarget p , pgtarget_meta pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
                 print("received comments: {}".format(names))
@@ -624,7 +584,7 @@ def get(events, context):
 
             def generate_comments_list(x):
                 names = database.query(
-                    "select pn.identified_by , pn.\"comment\" from pgtarget p , pgtarget_comment pn, pgtarget_comments pn2 where p.id = pn2.pg_internal_target_id and pn2.comments_id  = pn.id and p.id = %s",
+                    "select pn.identified_by , pn.\"comment\" from pgtarget p , pgtarget_comment pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
                 print("received comments: {}".format(names))
@@ -636,7 +596,7 @@ def get(events, context):
 
             def generate_adducts_list(x):
                 names = database.query(
-                    "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_adduct pn, pgtarget_adducts pn2 where p.id = pn2.pg_internal_target_id and pn2.adducts_id  = pn.id and p.id = %s",
+                    "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_adduct pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
                 print("received adducts: {}".format(names))
@@ -648,7 +608,7 @@ def get(events, context):
 
             def generate_name_list(x):
                 names = database.query(
-                    "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn, pgtarget_names pn2 where p.id = pn2.pg_internal_target_id and pn2.names_id  = pn.id and p.id = %s",
+                    "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
                 print("received: {}".format(names))
@@ -785,7 +745,7 @@ def register_meta(events, context):
     print(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_meta pn, pgtarget_metas pn2 where p.id = pn2.pg_internal_target_id and pn2.metas_id  = pn.id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s and pn.\"value\" = %s",
+        "select p.id, pn.id  from pgtarget p , pgtarget_meta pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s and pn.\"value\" = %s",
         conn, [splash, library, name, identifiedBy, value])
 
     if result is None:
@@ -809,12 +769,6 @@ def register_meta(events, context):
 
         for row in result:
             name_id = row[1]
-
-            # drop references with this id = name + identifier
-
-            result = database.query(
-                "delete from pgtarget_metas  where metas_id  = %s",
-                conn, [name_id])
             result = database.query(
                 "delete from pgtarget_meta  where id  = %s",
                 conn, [name_id])
@@ -826,11 +780,8 @@ def register_meta(events, context):
     newNameId = result[0][0]
 
     result = database.query(
-        "insert into pgtarget_meta(\"id\",\"name\",\"value\",\"identified_by\",\"comment\") values(%s,%s,%s,%s,%s)",
-        conn, [newNameId, name, value, identifiedBy, comment])
-    result = database.query("insert into pgtarget_metas(\"metas_id\",\"pg_internal_target_id\") values(%s,%s)",
-                            conn,
-                            [newNameId, id])
+        "insert into pgtarget_meta(\"id\",\"name\",\"value\",\"identified_by\",\"comment\",\"target_id\") values(%s,%s,%s,%s,%s,%s)",
+        conn, [newNameId, name, value, identifiedBy, comment, id])
     # create a response
     return {
         "statusCode": 200,
@@ -848,21 +799,16 @@ def delete_meta(events, context):
     library = events['pathParameters']['library']
 
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_meta pn, pgtarget_metas pn2 where p.id = pn2.pg_internal_target_id and pn2.metas_id  = pn.id and splash = (%s) and \"method_id\" = (%s)",
+        "select DISTINCT p.id from pgtarget p , pgtarget_meta pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s)",
         conn, [splash, library])
 
     if result is not None:
 
         for row in result:
-            name_id = row[1]
-
-            # drop references with this id = name + identifier
+            name_id = row[0]
 
             database.query(
-                "delete from pgtarget_metas  where metas_id  = %s",
-                conn, [name_id])
-            database.query(
-                "delete from pgtarget_meta  where id  = %s",
+                "delete from pgtarget_meta  where target_id  = %s",
                 conn, [name_id])
 
         return {
