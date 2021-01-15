@@ -1,9 +1,9 @@
-from time import time, sleep
+from time import sleep
 
 import boto3
 
 
-def test_schedule_steac(stasis_cli, node_evaluator):
+def test_schedule_steac(stasis_cli, node_evaluator, drop_schema):
     sqs = boto3.client('sqs')
 
     queue_url = stasis_cli.schedule_queue()
