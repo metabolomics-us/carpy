@@ -79,6 +79,7 @@ custom:
     prod: api.metabolomics.us
     test: test-api.metabolomics.us
     dev: dev-api.metabolomics.us
+    splashone: splashone.metabolomics.us
 
   customDomain:
     basePath: "cis"
