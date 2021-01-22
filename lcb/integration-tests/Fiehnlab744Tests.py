@@ -139,11 +139,10 @@ def process_run(job, log, node_evaluator, profiles, stasis_cli, test_id):
             "keep": False,
             "log": log
         })
-    for sample in job['samples']:
+        sleep(15)
+        print(f"evaluating sample state for ${sample}")
         state = stasis_cli.sample_state(sample, True)
-        assert len(state['status']) == 11
-    # check the state for all samples
-    sleep(15)
+#        assert len(state['status']) == 11
     result = stasis_cli.load_job_state(job_id=test_id)
     assert result['job_state'] == 'aggregating_scheduled'
     # there should be one aggregation schedule, process this one

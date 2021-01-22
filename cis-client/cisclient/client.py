@@ -170,6 +170,20 @@ class CISClient:
         else:
             raise Exception(result)
 
+    def compound_add_adduct(self, library: str, splash: str, name: str, identifiedBy: str, comment: str):
+        result = self.http.post(f"{self._url}/compound/adduct/{library}/{splash}/{identifiedBy}/{name}",
+                                headers=self._header, data=comment)
+
+        if result.status_code != 200:
+            raise Exception(result)
+
+    def compound_delete_adduct(self, library: str, splash: str, name: str, identifiedBy: str):
+        result = self.http.delete(f"{self._url}/compound/adduct/{library}/{splash}/{identifiedBy}/{name}",
+                                  headers=self._header)
+
+        if result.status_code != 200:
+            raise Exception(result)
+
     def name_compound(self, library: str, splash: str, name: str, identifiedBy: str, comment: str):
         result = self.http.post(f"{self._url}/compound/identify/{library}/{splash}/{identifiedBy}/{name}",
                                 headers=self._header, data=comment)

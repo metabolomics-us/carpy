@@ -48,6 +48,21 @@ def test_set_compound_primary_name(cis_cli, splash_test_name):
     assert len(result) > 0
 
 
+def test_add_adduct(cis_cli, splash_test_name):
+    test = f"test-{time()}"
+    cis_cli.compound_add_adduct(library=splash_test_name[1], splash=splash_test_name[0], name=test, identifiedBy="tester",
+                          comment="")
+    result = cis_cli.get_compound(library=splash_test_name[1], splash=splash_test_name[0])
+
+    success = False
+
+    for name in result['associated_adducts']:
+        if name['name'] == test:
+            if name['identifiedBy'] == 'tester':
+                success = True
+
+    assert success
+
 def test_name_compound(cis_cli, splash_test_name):
     cis_cli.name_compound(library=splash_test_name[1], splash=splash_test_name[0], name="test", identifiedBy="tester",
                           comment="")
