@@ -230,6 +230,52 @@ def register_adduct(events, context):
         })
     }
 
+def delete_adduct(events, context):
+    """
+
+    :param events:
+    :param context:
+    :return:
+    """
+
+    splash = urllib.parse.unquote(events['pathParameters']['splash'])
+    library = urllib.parse.unquote(events['pathParameters']['library'])
+    identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
+    name = urllib.parse.unquote(events['pathParameters']['name'])
+
+    result = database.query(
+        "select distinct pn.id from pgtarget p , pgtarget_adduct pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        conn, [splash, library, name, identifiedBy])
+
+    if result is not None:
+        for row in result:
+            name_id = row
+
+            data = database.query(
+                "delete from pgtarget_adduct where id  = %s", conn, [name_id])
+
+        return {
+            "statusCode": 200,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash
+            })
+        }
+
+    else:
+        return {
+            "statusCode": 404,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "library": library,
+                "splash": splash,
+                "name": name,
+                "identifiedBy": identifiedBy,
+                "reason": "we did not find a name with the given properties"
+            })
+        }
+
 
 def delete_name(events, context):
     """
@@ -245,7 +291,7 @@ def delete_name(events, context):
     name = urllib.parse.unquote(events['pathParameters']['name'])
 
     result = database.query(
-        "select distinct p.id from pgtarget p , pgtarget_name pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
+        "select distinct pn.id from pgtarget p , pgtarget_name pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
         conn, [splash, library, name, identifiedBy])
 
     if result is not None:
@@ -253,7 +299,7 @@ def delete_name(events, context):
             name_id = row
 
             data = database.query(
-                "delete from pgtarget_name where target_id  = %s", conn, [name_id])
+                "delete from pgtarget_name where id  = %s", conn, [name_id])
 
         return {
             "statusCode": 200,
