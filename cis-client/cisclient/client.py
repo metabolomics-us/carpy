@@ -177,6 +177,12 @@ class CISClient:
         if result.status_code != 200:
             raise Exception(result)
 
+    def compound_remove_adduct(self, library: str, splash: str, name: str, identifiedBy: str) -> bool:
+        result = self.http.delete(f"{self._url}/compound/adduct/{library}/{splash}/{identifiedBy}/{name}",
+                                  headers=self._header)
+
+        return result.status_code == 200
+
     def compound_delete_adduct(self, library: str, splash: str, name: str, identifiedBy: str):
         result = self.http.delete(f"{self._url}/compound/adduct/{library}/{splash}/{identifiedBy}/{name}",
                                   headers=self._header)
@@ -198,11 +204,11 @@ class CISClient:
         if result.status_code != 200:
             raise Exception(result)
 
-    def set_compound_primary_name(self, library: str, splash: str, name:str) -> dict:
+    def set_compound_primary_name(self, library: str, splash: str, name: str) -> dict:
         result = self.http.put(f"{self._url}/compound/{library}/{splash}/{name}", headers=self._header)
 
         if result.status_code == 200:
-            return self.get_compound(library,splash)
+            return self.get_compound(library, splash)
         else:
             raise Exception(result)
 
