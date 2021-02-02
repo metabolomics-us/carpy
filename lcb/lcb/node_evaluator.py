@@ -285,7 +285,7 @@ class NodeEvaluator(Evaluator):
                             action="append",
                             required=False, default=[])
         parser.add_argument("-a", "--add", help="add a profile to the calculation instructions", action="append",
-                            required=False, default=['awsdev'])
+                            required=False, default=[])
 
         parser.add_argument("-k", "--keep", help="keep the executed docker container and logs for diagnostics",
                             action="store_true",
