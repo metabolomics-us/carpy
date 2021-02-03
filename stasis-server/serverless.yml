@@ -6,7 +6,7 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
-#  - serverless-plugin-split-stacks
+  - serverless-plugin-split-stacks
 provider:
   name: aws
   runtime: python3.7
@@ -846,19 +846,17 @@ functions:
 # why can't aws/sls just skip them if they already exist.
 resources:
   Resources:
-#   MyQueue:
-#     Type: "AWS::SQS::Queue"
-#     Properties:
-#       QueueName: ${self:custom.jobQueue}
+   JobQueue:
+     Type: "AWS::SQS::Queue"
+     Properties:
+       QueueName: ${self:custom.jobQueue}
+       VisibilityTimeout: 900
+   SyncQueue:
+     Type: "AWS::SQS::Queue"
+     Properties:
+       QueueName: ${self:custom.syncQueue}
+       VisibilityTimeout: 900
 
-#   S3BucketJSonBucket:
-#     Type: AWS::S3::Bucket
-#     Properties:
-#       BucketName: ${self:custom.dataJSONBucketName}
 
-#   S3BucketZipBucket:
-#     Type: AWS::S3::Bucket
-#     Properties:
-#       BucketName: ${self:custom.dataZipBucketName}
 
 
