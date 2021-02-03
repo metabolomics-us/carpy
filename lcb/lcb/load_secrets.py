@@ -1,11 +1,35 @@
 import os
 import json
+from pathlib import Path
 
+import yaml
 from boto3 import Session, setup_default_session
 from get_docker_secret import get_docker_secret
 
+ROOT_DIR = Path(__file__).parent.parent  # This is your Project Root
+
 
 class Secrets:
+
+    def __init__(self, config: str = None):
+
+        self.config = os.environ
+
+        if config is not None:
+            # load file and overwrite local config
+            p = ROOT_DIR.joinpath(config)
+            if p.exists():
+                with open(p) as f:
+                    try:
+                        data = yaml.load(f, Loader=yaml.FullLoader)
+                    except AttributeError:
+                        data = yaml.load(f)
+
+                    for x in data:
+                        self.config[x] = data[x]
+            else:
+                raise Exception(f"specified environment not found: {p.absolute()}")
+
     """
     helper class to provides us with a dict of all the system wide secrets, depending if it runs inside of docker
     or inside the os
@@ -18,7 +42,7 @@ class Secrets:
         if s is None:
             secrets = dict(os.environ)
         else:
-            secrets = json.loads(s)
+            secrets = self.config.copy()
 
         try:
             session = Session()

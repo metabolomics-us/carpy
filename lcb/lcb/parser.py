@@ -6,6 +6,7 @@ from stasis_client.client import StasisClient
 from lcb.aggregate_evaluator import AggregateEvaluator
 from lcb.compound_evaluator import SteacEvaluator
 from lcb.job_evaluator import JobEvaluator
+from lcb.load_secrets import Secrets
 from lcb.node_evaluator import NodeEvaluator
 from lcb.sample_evaluator import SampleEvaluator
 
@@ -18,21 +19,21 @@ class Parser:
     def __init__(self, mapping: dict = None):
 
         parser = argparse.ArgumentParser(prog="lcb")
-        parser.add_argument("--json", action="store_true", help="try to print everything as JSON")
-
+        parser.add_argument("--config",
+                            help="specifies your configuration to be used and override env variabls. Needs to be a *.yml file.",
+                            required=False, default="env-default.yml",type=str)
         sub = parser.add_subparsers(help="this contains all the different scopes, available to LCB")
 
         if mapping is None:
             # registers the default mapping
             mapping = {
-                'sample': SampleEvaluator().evaluate,
-                'job': JobEvaluator().evaluate,
-                'aggregate': AggregateEvaluator().evaluate,
-                'node': NodeEvaluator().evaluate,
-                'steac': SteacEvaluator().evaluate
+                'sample': SampleEvaluator().evaluate_command,
+                'job': JobEvaluator().evaluate_command,
+                'aggregate': AggregateEvaluator().evaluate_command,
+                'node': NodeEvaluator().evaluate_command,
+                'steac': SteacEvaluator().evaluate_command
             }
 
-        # TODO this needs to be more dynamic done over all the mappings
         jobs = JobEvaluator.configure_jobs(main_parser=parser, sub_parser=sub)
         self.configure(jobs, mapping)
 
@@ -72,11 +73,12 @@ class Parser:
 
         result = vars(self.parser.parse_args(args))
 
+        secret = Secrets(config=result['config'])
         print(f"parsed: {result}")
-        if len(result) == 1:
+        if len(result) == 0:
             self.parser.print_usage()
         elif 'func' in result:
-            result['func'](result)
+            result['func'](secret, result)
         else:
             raise KeyError("you need to make sure that a 'func' is registered when you create the parser!")
 
@@ -85,5 +87,3 @@ class Parser:
         """
         configures a monitor to track the state of calculations
         """
-
-

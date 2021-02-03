@@ -18,8 +18,7 @@ class NodeEvaluator(Evaluator):
     provides a simple node for running calculation tasks for us
     """
 
-    def __init__(self, secret: Optional[Secrets] = None):
-        super().__init__(secret)
+    def __init__(self):
 
         self.registry = "702514165722.dkr.ecr.us-west-2.amazonaws.com"
 
