@@ -34,7 +34,7 @@ provider:
     - Effect: Allow
       Action:
         - sqs:*
-      Resource: { "Fn::Join": [":", ["arn:aws:sqs:${self:custom.region}",  "*:*" ] ]  }
+      Resource: { "Fn::Join": [ ":", [ "arn:aws:sqs:${self:custom.region}",  "*:*" ] ] }
 
     - Effect: Allow
       Action:
@@ -144,8 +144,8 @@ custom:
   domains:
     prod: api.metabolomics.us
     test: test-api.metabolomics.us
-    dev:  dev-api.metabolomics.us
-    splashone:  splashone.metabolomics.us
+    dev: dev-api.metabolomics.us
+    splashone: splashone.metabolomics.us
 
   customDomain:
     basePath: "stasis"
@@ -840,3 +840,25 @@ functions:
     timeout: 900
     environment:
       dataBucket: ${self:custom.dataJSONBucketName}
+
+###
+# these broken resources are so annyoing and error prone
+# why can't aws/sls just skip them if they already exist.
+resources:
+  Resources:
+#   MyQueue:
+#     Type: "AWS::SQS::Queue"
+#     Properties:
+#       QueueName: ${self:custom.jobQueue}
+
+#   S3BucketJSonBucket:
+#     Type: AWS::S3::Bucket
+#     Properties:
+#       BucketName: ${self:custom.dataJSONBucketName}
+
+#   S3BucketZipBucket:
+#     Type: AWS::S3::Bucket
+#     Properties:
+#       BucketName: ${self:custom.dataZipBucketName}
+
+
