@@ -209,7 +209,7 @@ def test_schedule_job_sizes(sample_count, stasis_cli):
 
     stored_samples = stasis_cli.store_job(job, enable_progress_bar=True)
 
-    assert stored_samples == 6
+    assert stored_samples == sample_count
     stasis_cli.schedule_job(job['id'])
 
     print("requesting job to be scheduled")

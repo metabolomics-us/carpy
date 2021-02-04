@@ -380,6 +380,7 @@ class StasisClient:
 
         samples = job.pop('samples')
 
+        job['state'] = 'register'
         self.drop_job_samples(job['id'], enable_progress_bar=enable_progress_bar)
         response = self.http.post(f"{self._url}/job/store", json=job, headers=self._header)
 
@@ -417,6 +418,9 @@ class StasisClient:
                     finished = finished + 1
                     sleep(1000)
 
+        job['state'] = 'entered'
+
+        response = self.http.post(f"{self._url}/job/store", json=job, headers=self._header)
         return stored_samples
 
     def compute_sample_classes(self, classes) -> dict:
