@@ -392,10 +392,6 @@ def watch_job_schedule_queue():
 
         if 'Messages' in message:
             for m in message['Messages']:
-                client.delete_message(
-                    QueueUrl=arn,
-                    ReceiptHandle=m['ReceiptHandle']
-                )
                 schedule_job_from_queue({'Records': [
                     {
                         'body': m['Body']

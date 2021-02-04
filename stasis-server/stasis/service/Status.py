@@ -38,6 +38,7 @@ ACQUIRED = 'acquired'
 
 ENTERED = 'entered'
 
+REGISTERING = 'register'
 
 class States:
     """

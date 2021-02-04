@@ -262,4 +262,6 @@ def test_sync_failed(requireMocking,mocked_10_sample_job):
 
     calculate_job_state(job="12345")
 
-    assert all(value == str(FAILED) for value in load_job_samples_with_states("12345").values())
+    values = load_job_samples_with_states("12345").values()
+
+    assert all(value == str(FAILED) for value in values)

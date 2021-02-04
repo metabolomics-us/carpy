@@ -224,11 +224,13 @@ def store_job(event, context):
     try:
         # store actual job in the job table with state scheduled
         set_job_state(job=job_id, method=method, profile=profile,
-                      state=ENTERED, resource=resource)
+                      state=body.get('state', ENTERED
+                                     ), resource=resource)
 
+        result = get_job_config(job_id)
         return {
 
-            'body': json.dumps({'state': str(ENTERED), 'job': job_id}),
+            'body': json.dumps({'state': str(result['state']), 'job': job_id}),
 
             'statusCode': 200,
 
@@ -341,6 +343,19 @@ def schedule_job(event, context):
             'body': json.dumps({'error': 'this job has not been stored yet!', 'job': job_id}),
 
             'statusCode': 404,
+
+            'isBase64Encoded': False,
+
+            'headers': __HTTP_HEADERS__
+
+        }
+
+    if details['state'] == REGISTERING:
+        return {
+
+            'body': json.dumps({'error': 'job is currently in state registering and waiting for more samples. It cannot be scheduled yet!', 'job': job_id}),
+
+            'statusCode': 425,
 
             'isBase64Encoded': False,
 

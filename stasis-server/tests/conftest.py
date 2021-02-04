@@ -8,6 +8,7 @@ import simplejson as json
 
 from stasis.jobs.schedule import store_job, store_sample_for_job
 from stasis.schedule.backend import Backend
+from stasis.service.Status import REGISTERING, ENTERED
 from stasis.tables import get_job_config
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
@@ -149,12 +150,13 @@ def backend(request):
 
 
 @pytest.fixture()
-def mocked_10_sample_job(backend):
+def mocked_10_sample_job_registered_only(backend):
     job = {
         "id": "12345",
         "method": "test",
 
         "profile": "lcms",
+        "state": REGISTERING,
         "resource": backend.value
     }
 
@@ -201,6 +203,73 @@ def mocked_10_sample_job(backend):
         }, {})
 
         assert result['statusCode'] == 200
+
+    return get_job_config("12345")
+
+@pytest.fixture()
+def mocked_10_sample_job(backend):
+    job = {
+        "id": "12345",
+        "method": "test",
+
+        "profile": "lcms",
+        "state": REGISTERING,
+        "resource": backend.value
+    }
+
+    result = store_job({'body': json.dumps(job)}, {})
+
+    assert result['statusCode'] == 200
+
+    samples = [
+        "abc_0",
+        "abc_1",
+        "abc_2",
+        "abc_3",
+        "abc_4",
+        "abc_5",
+        "abc_6",
+        "abc_7",
+        "abc_8",
+        "abc_9",
+    ]
+
+    for sample in samples:
+        result = store_sample_for_job({
+            'body': json.dumps({
+                'job': "12345",
+                'sample': sample,
+                'meta': {
+                    "tracking": [
+                        {
+                            "state": "entered"
+                        },
+                        {
+                            "state": "acquired",
+                            "extension": "d"
+                        },
+                        {
+                            "state": "converted",
+                            "extension": "mzml"
+                        }
+                    ]
+
+                }
+            }
+            )
+        }, {})
+
+        assert result['statusCode'] == 200
+    job = {
+        "id": "12345",
+        "method": "test",
+
+        "profile": "lcms",
+        "state": ENTERED,
+        "resource": backend.value
+    }
+
+    result = store_job({'body': json.dumps(job)}, {})
 
     return get_job_config("12345")
 
