@@ -21,6 +21,7 @@ def send_to_fargate(overrides, task_name):
     :param task_name:
     :return:
     """
+    print("scheduling task: {}".format(task_name))
     # fire AWS fargate instance now
     import boto3
     client = boto3.client('ecs')
@@ -91,8 +92,8 @@ def schedule_steac_to_fargate(event, context):
             'statusCode': 200,
             'isBase64Encoded': False,
             'headers': __HTTP_HEADERS__,
-            'body' : {
-                "message" : "scheduled a steac aggregation"
+            'body': {
+                "message": "scheduled a steac aggregation"
             }
         }
 

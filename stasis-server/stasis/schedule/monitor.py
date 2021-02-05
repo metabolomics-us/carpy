@@ -21,6 +21,7 @@ def monitor_queue(event, context):
     """
 
     if ENABLE_AUTOMATIC_SCHEDULING is False:
+        print("automatic scheduling is disabled!")
         return {
             'statusCode': 200,
             'headers': __HTTP_HEADERS__,
@@ -79,7 +80,7 @@ def monitor_queue(event, context):
     )
 
     if 'Messages' not in message:
-        print("no messages received: {}".format(message))
+        print("no messages received in queue {}".format(arn))
         return {
             'statusCode': 200,
             'isBase64Encoded': False,
@@ -89,7 +90,7 @@ def monitor_queue(event, context):
     messages = message['Messages']
 
     if len(messages) > 0:
-        # print("received {} messages".format(len(messages)))
+        print("received {} messages".format(len(messages)))
         result = []
         # print(messages)
         for message in messages:

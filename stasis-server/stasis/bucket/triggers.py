@@ -10,6 +10,7 @@ def bucket_json(event, context):
     :return:
     """
 
+    print(f"bucket json got trigger: {event}")
     for record in event['Records']:
         o = record['s3']['object']
         k = str(o['key'])
