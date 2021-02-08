@@ -51,7 +51,9 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "StasisSyncQueue-${self:custom.stage}"
+        VisibilityTimeout: 900
     jobscheduleqeue:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "StasisJobQueue-${self:custom.stage}"
+        VisibilityTimeout: 900

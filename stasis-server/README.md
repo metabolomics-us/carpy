@@ -13,6 +13,16 @@ sls plugin install -n serverless-plugin-split-stacks
 
 ```
 
+## Delete Log groups
+
+```
+export AWS_DEFAULT_REGION=us-west-2
+aws logs describe-log-groups --query 'logGroups[*].logGroupName' --output table | \
+awk '{print $2}' | grep ^/aws/lambda | while read x; do  echo "deleting $x" ; aws logs delete-log-group --log-group-name $x; done
+```
+
+shamelessly liberated from the internet
+
 ## Running integration tests
 
 These tests require the `STASIS_API_TOKEN` environmental variable to be set or, alternatively, to be defined in a `test.env` file in the project root.

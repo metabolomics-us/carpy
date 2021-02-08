@@ -27,7 +27,7 @@ def triggerEvent(data):
         sample=data['sample'],
         state=data['status'],
         fileHandle=data.get('fileHandle', None),
-        reason=data.get('failed', None)
+        reason=data.get('reason', data.get('failed',None))
 
     )
 
