@@ -43,6 +43,7 @@ class StasisClient:
         if self._url is None:
             raise Exception("you need to provide a url in the env variable 'STASIS_API_URL'")
 
+        self._schedule_url = self._url.replace('/stasis','/scheduler')
         self._header = {
             'Content-type': 'application/json',
             'Accept': 'application/json',
@@ -63,7 +64,7 @@ class StasisClient:
         """
         schedules a sample for dataprocessing
         """
-        result = self.http.post(f"{self._url}/schedule",
+        result = self.http.post(f"{self._schedule_url}/schedule",
                                 json={'sample': sample_name, 'method': method, 'profile': profile,
                                       'resource': resource, 'secured': True}, headers=self._header)
 
@@ -459,7 +460,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        response = self.http.get(f"{self._url}/schedule/queue", headers=self._header)
+        response = self.http.get(f"{self._schedule_url}/schedule/queue", headers=self._header)
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason}")
@@ -472,7 +473,7 @@ class StasisClient:
         :param job_id:
         :return:
         """
-        response = self.http.put(f"{self._url}/job/schedule/{job_id}", headers=self._header)
+        response = self.http.put(f"{self._schedule_url}/job/schedule/{job_id}", headers=self._header)
         if response.status_code != 200:
             raise Exception(
                 f"we observed an error. Status code was {response.status_code} and error was {response.reason} for {job_id}")
