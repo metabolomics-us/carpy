@@ -1,0 +1,352 @@
+service: scheduler
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+plugins:
+  - serverless-domain-manager
+  - serverless-python-requirements
+  - serverless-aws-documentation
+provider:
+  name: aws
+  runtime: python3.7
+  region: us-west-2
+  tags:
+    service: binbase
+    scope: ${self:custom.stage}
+
+  # simple security based on stages and api keys
+  # one fits all for production
+  apiKeys:
+    - "stasis-schedule-${self:custom.stage}"
+
+  #required permissions
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+      Resource: "*"
+
+    - Effect: Allow
+      Action:
+        - sqs:*
+      Resource: { "Fn::Join": [ ":", [ "arn:aws:sqs:${self:custom.region}",  "*:*" ] ] }
+
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource: "arn:aws:s3:::*"
+
+    - Effect: "Allow"
+      Action:
+        - ecs:RunTask
+        - ecs:ListTasks
+        - ecs:DescribeTasks
+      Resource: "*"
+
+    - Effect: Allow
+      Action:
+        - iam:PassRole
+      Resource: "*"
+
+    - Effect: Allow
+      Action:
+        - xray:PutTraceSegment
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+      Resource: "*"
+  memorySize: 128
+  timeout: 30
+  versionFunctions: false
+
+  logRetentionInDays: 3
+
+  #where to store out data, needs to be manually created!
+  deploymentBucket:
+    name: "lambdas-schedule"
+
+  ##
+  # defines all generat environment variables for lambdas
+  environment:
+    current_stage: ${self:custom.stage}
+    schedule_queue: ${self:custom.scheduleQueue}
+    sample_sync_queue: ${self:custom.syncQueue}
+    trackingTable: ${self:custom.trackingTable}
+    ecsTable: ${self:custom.ecsTable}
+    acquisitionTable: ${self:custom.acquisitionTable}
+    aggregation_queue: ${self:custom.aggregationQueue}
+    jobStateTable: ${self:custom.jobStateTable}
+    jobTrackingTable: ${self:custom.jobTrackingTable}
+    resultTable: ${self:custom.resultTable}
+    dataBucket: ${self:custom.dataJSONBucketName}
+    jobQueue: ${self:custom.jobQueue}
+
+############################################################################################
+#custom configuration settings
+############################################################################################
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+  ###
+  # Stasis resources definitions
+  ###
+  trackingTable: "StasisTrackingTable-${self:custom.stage}"
+  acquisitionTable: "StasisMetaDataTable-${self:custom.stage}"
+  jobStateTable: "StasisJobStateTable-${self:custom.stage}"
+  jobTrackingTable: "StasisJobTrackingTable-${self:custom.stage}"
+  resultTable: "wcmc-data-stasis-result-${self:custom.stage}"
+  ecsTable: "wcmc-data-stasis-ecs-${self:custom.stage}"
+
+  ###
+  # Carrot resources definition
+  ###
+  targetTable: "CarrotTargetTable-${self:custom.stage}"
+  # spectra bucket S3 or cheaper version
+
+  ###
+  # Carrot bucket definition. This contains all the rawdata in carrot
+  ###
+  dataRawBucketName: "wcmc-data-stasis-raw-${self:custom.stage}"
+
+  ###
+  # Carrot bucket to store aggregated results
+  ###
+  dataZipBucketName: "wcmc-data-stasis-agg-${self:custom.stage}"
+
+  ###
+  # Carrot bucket containing all the json results
+  dataJSONBucketName: "wcmc-data-stasis-result-${self:custom.stage}"
+
+  ###
+  # Queues
+  ###
+  scheduleQueue: "StasisScheduleQueue-${self:custom.stage}"
+
+  ###
+  # used for synchronization of sample states
+  # and associated job states
+  syncQueue: "StasisSyncQueue-${self:custom.stage}"
+
+  ###
+  # used for processing of scheduled jobs in the system
+  jobQueue: "StasisJobQueue-${self:custom.stage}"
+
+  ###
+  # this queue will take care of holding all pending aggregation tasks
+  aggregationQueue: "JobsAggregationQueue-${self:custom.stage}"
+
+  ###
+  # custom domain management
+  ###
+
+  domains:
+    prod: api.metabolomics.us
+    test: test-api.metabolomics.us
+    dev: dev-api.metabolomics.us
+    splashone: splashone.metabolomics.us
+
+  customDomain:
+    basePath: "scheduler"
+    domainName: ${self:custom.domains.${self:custom.stage}}
+    stage: "${self:custom.stage}"
+    createRoute53Record: true
+
+  pythonRequirements:
+    dockerizePip: true
+    slim: false
+    noDeploy:
+      - "boto3"
+      - "botocore"
+      - "moto"
+      - "pytest"
+
+
+############################################################################################
+# this section defines what to include and exclud when packaging artifacts
+############################################################################################
+package:
+  exclude:
+    - .git/**
+    - .venv/**
+    - .idea/**
+    - .pytest_cache/**
+    - venv/**
+    - test/**
+    - tests/**
+    - node_modules/**
+    - integrationTests/**
+
+############################################################################################
+# this section defines all lambda function and triggers
+############################################################################################
+functions:
+
+  # logs fargate events for us
+  fargatestatechange:
+    handler: stasis/schedule/tracking.ecs
+    events:
+      - cloudwatchEvent:
+          event:
+            source:
+              - aws.ecs
+            detail-type:
+              - ECS Task State Change
+            detail:
+              lastStatus:
+                - STOPPED
+  fargatecount:
+    handler: stasis/schedule/schedule.scheduled_task_size
+    events:
+      - http:
+          path: schedule/cluster/count
+          method: get
+          cors: true
+          documentation:
+            summary: returns the current scheduled tasks size
+    environment:
+      current_stage: ${self:custom.stage}
+
+  fargateprocessingmonitor:
+    handler: stasis/schedule/monitor.monitor_queue
+    events:
+      - schedule:
+          rate: rate(1 minute)
+          documentation:
+            summary: monitors the scheduling queue and ensures correct quantity of scheduled tasks. This has to be driven over cron right now
+
+  # fetches the list of tracking statuses
+  schedule_queue:
+    handler: stasis/schedule/schedule.schedule_queue
+    events:
+      - http:
+          path: schedule/queue
+          method: get
+          private: true
+          cors: true
+          documentation:
+            summary: returns the queue used for scheduling
+
+  #schedule data to stasis, for handling the processing on the backend
+  schedule:
+    handler: stasis/schedule/schedule.schedule
+    events:
+      - http:
+          path: schedule
+          method: post
+          private: true
+          cors: true
+          documentation:
+            summary: schedules a new processing tasks to the queue
+
+
+  steacschedule:
+    handler: stasis/steac/schedule.schedule
+    events:
+      - http:
+          path: schedule/steac/{method}
+          method: post
+          private: true
+          cors: true
+          documentation:
+            summary: schedules a steac method for processing
+
+          request:
+            parameter:
+              paths:
+                method: true
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  jobschedule:
+    handler: stasis/jobs/schedule.schedule_job
+    events:
+      - http:
+          path: job/schedule/{job}
+          method: put
+          private: true
+          cors: true
+          documentation:
+            summary: schedules a job to be computed to the backend queue
+
+          request:
+            parameter:
+              paths:
+                job: true
+    #defines to which topic we want to connect
+    environment:
+
+      ##
+      # contains scheduling events
+      schedule_queue: ${self:custom.scheduleQueue}
+
+      ##
+      # contains aggregation events
+      aggregation_queue: ${self:custom.aggregationQueue}
+      jobStateTable: ${self:custom.jobStateTable}
+      jobTrackingTable: ${self:custom.jobTrackingTable}
+      trackingTable: ${self:custom.trackingTable}
+      acquisitionTable: ${self:custom.acquisitionTable}
+
+  ##
+  # handles requests in the job queue and executes them in background
+  # required to support longter job calulcato
+  jobschedulehandler:
+    handler: stasis/jobs/schedule.schedule_job_from_queue
+    events:
+      - sqs:
+          batchSize: 1
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn
+                - aws
+                - sqs
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - ${self:custom.jobQueue}
+    timeout: 900
+
+  zipbuckettriggers:
+    handler: stasis/bucket/triggers.bucket_zip
+    events:
+      - s3:
+          bucket: ${self:custom.dataZipBucketName}
+          events:
+            - s3:ObjectCreated:*
+
+          existing: true
+          documentation:
+            summary: triggers the function, when an object was uploaded to this. This basically is used to keep jobs in sync
+
+    environment:
+      dataBucket: ${self:custom.dataZipBucketName}
+
+
+  jsonbuckettriggers:
+    events:
+      - s3:
+          bucket: ${self:custom.dataJSONBucketName}
+          events:
+            - s3:ObjectCreated:*
+          existing: true
+          documentation:
+            summary: triggers the function, when an objectwas created to speed up synchronization
+
+    handler: stasis/bucket/triggers.bucket_json
+
+    timeout: 900
+    environment:
+      dataBucket: ${self:custom.dataJSONBucketName}
+
