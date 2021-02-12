@@ -446,7 +446,7 @@ class StasisClient:
         return sample_meta
 
     def schedule_steac(self, method: str):
-        response = self.http.post(f"{self._url}/schedule/steac/{method}", json={"method": method},
+        response = self.http.post(f"{self._schedule_url}/schedule/steac/{method}", json={"method": method},
                                   headers=self._header)
         if response.status_code != 200:
             raise Exception(

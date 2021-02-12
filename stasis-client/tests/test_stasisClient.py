@@ -290,6 +290,9 @@ def test_get_states(stasis_cli):
     assert 'failed' in result
 
 
+def test_schedule_steac(stasis_cli):
+    result = stasis_cli.schedule_steac("test")
+
 def test_sample_schedule(stasis_cli):
     result = stasis_cli.schedule_sample_for_computation(
         sample_name='lgvty_cells_pilot_2_NEG_50K_BR_01.json',
