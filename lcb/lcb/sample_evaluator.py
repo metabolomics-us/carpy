@@ -64,12 +64,13 @@ class SampleEvaluator(Evaluator):
 
         result = self.stasisClient.sample_state(sample_name=id, full_response=True)
 
+        final_states: List = []
         for x in result['status']:
             timestamp = datetime.fromtimestamp(x['time'] / 1000)
             x['date'] = timestamp.strftime("%m/%d/%Y, %H:%M:%S")
-
+            final[x['fileHandle']] = x['value']
         print(json.dumps(result, indent=4))
-
+        print(json.dumps(final_states, indent=4))
         return result
 
     def download(self, id, args):

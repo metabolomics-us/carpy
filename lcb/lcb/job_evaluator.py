@@ -88,13 +88,21 @@ class JobEvaluator(Evaluator):
         print(json.dumps(job, indent=4))
 
         samples = []
+        final_state_sample = {}
+        failures = {}
         for sample in tqdm(job, desc="loading details for all samples"):
-            samples.append(self.stasisClient.sample_state(sample['sample'], full_response=True))
+            sample_state = self.stasisClient.sample_state(sample['sample'], full_response=True)
+            samples.append(sample_state)
+            final_state_sample[sample['sample']] = sample_state['status'][-1]
+            if sample_state['status'][-1]['value'] == 'failed':
+                failures[sample['sample']] = sample_state['status'][-1]
+
         result = {
             'job': job_state,
             'samples':
-                samples
-
+                samples,
+            'final_sample_state': final_state_sample,
+            "failed": failures
         }
 
         print("details are")

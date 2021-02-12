@@ -49,3 +49,6 @@ class JobAggregator(Aggregator):
 
             print(self.stasis_cli.load_job_state(job))
             return False
+        except Exception as e:
+            self.stasis_cli.set_job_state(job, "failed", str(e))
+            return False
