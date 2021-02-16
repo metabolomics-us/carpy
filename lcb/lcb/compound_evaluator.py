@@ -35,6 +35,7 @@ class SteacEvaluator(Evaluator):
             methods = self.cisClient.get_libraries()
 
         for method in methods:
+            print(f"scheduling {method} for remote processing, this might take a while until you see results!")
             self.stasisClient.schedule_steac(method)
 
     def local(self, args):
@@ -55,10 +56,7 @@ class SteacEvaluator(Evaluator):
             start local processing
             """
             pass
-            elevator = NodeEvaluator(self._secret)
-
-            env = elevator.get_aws_env()
-
+            elevator = NodeEvaluator()
             springProfiles = elevator.optimize_profiles(args)
 
             print(f"generated spring profiles to activate: {springProfiles}")
