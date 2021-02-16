@@ -12,14 +12,16 @@ class Evaluator:
     """
 
     def evaluate_command(self, secret: Secrets, args):
+        self.setup(secret)
+
+        self.evaluate(args)
+
+    def setup(self, secret):
         self._secret = secret
         self._secret_config = secret.load()
-
         self.stasisClient = StasisClient(url=self._secret_config['STASIS_URL'],
                                          token=self._secret_config['STASIS_TOKEN'])
         self.cisClient = CISClient(url=self._secret_config['CIS_URL'], token=self._secret_config['CIS_TOKEN'])
-
-        self.evaluate(args)
 
     @abstractmethod
     def evaluate(self, args: dict):

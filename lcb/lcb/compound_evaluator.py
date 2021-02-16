@@ -1,10 +1,8 @@
 import os
 from time import sleep
 
-from cisclient.client import CISClient
-from stasis_client.client import StasisClient
-
 from lcb.evaluator import Evaluator
+from lcb.load_secrets import Secrets
 from lcb.node_evaluator import NodeEvaluator
 
 
@@ -55,10 +53,12 @@ class SteacEvaluator(Evaluator):
             """
             start local processing
             """
-            pass
+            secret = Secrets(config=args['config'])
             elevator = NodeEvaluator()
+            elevator.setup(secret=secret)
             springProfiles = elevator.optimize_profiles(args)
 
+            env = {}
             print(f"generated spring profiles to activate: {springProfiles}")
             env['SPRING_PROFILES_ACTIVE'] = springProfiles
 
@@ -72,7 +72,7 @@ class SteacEvaluator(Evaluator):
                 message=None,
                 queue_url=None,
                 sqs=None,
-                args=None
+                args={'config':args['config']}
             )
 
     @staticmethod

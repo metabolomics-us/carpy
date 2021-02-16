@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import List
 
 from lcb.evaluator import Evaluator
 
@@ -68,7 +69,7 @@ class SampleEvaluator(Evaluator):
         for x in result['status']:
             timestamp = datetime.fromtimestamp(x['time'] / 1000)
             x['date'] = timestamp.strftime("%m/%d/%Y, %H:%M:%S")
-            final[x['fileHandle']] = x['value']
+            final_states[x['fileHandle']] = x['value']
         print(json.dumps(result, indent=4))
         print(json.dumps(final_states, indent=4))
         return result
