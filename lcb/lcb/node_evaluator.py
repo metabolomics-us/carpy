@@ -1,16 +1,15 @@
 import base64
 import json
 import os
+import time
 import traceback
 from time import sleep
-import time
 from typing import Optional
 
 import boto3
 import docker
 
 from lcb.evaluator import Evaluator
-from lcb.load_secrets import Secrets
 
 
 class NodeEvaluator(Evaluator):
@@ -261,11 +260,13 @@ class NodeEvaluator(Evaluator):
         optimizes the profiles to be activate or deactivated in the processor
         """
         springProfiles = config['profile'].split(",") if "profile" in config else []
-        for add in args['add']:
-            springProfiles.append(add)
-        for remove in args.get('remove'):
-            if remove in springProfiles:
-                springProfiles.remove(remove)
+
+        if args is not None:
+            for add in args.get('add', []):
+                springProfiles.append(add)
+            for remove in args.get('remove'):
+                if remove in springProfiles:
+                    springProfiles.remove(remove)
         return ",".join(springProfiles).strip()
 
     @staticmethod

@@ -6,7 +6,7 @@ from stasis.config import SECURE_CARROT_STEAC
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.backend import Backend
 from stasis.schedule.schedule import schedule_to_queue
-from stasis.service.Status import SCHEDULING
+from stasis.service.Status import SCHEDULING, FAILED
 
 
 def schedule(event, context):
