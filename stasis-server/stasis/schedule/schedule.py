@@ -90,7 +90,7 @@ def schedule_to_queue(body, service: Optional[str], resource: Backend, queue_nam
     """
     body['secured'] = True
 
-    print(body)
+    print(f"scheduling {body} to queue {queue_name}")
     if service is not None:
         body[SERVICE] = service
 
@@ -101,6 +101,7 @@ def schedule_to_queue(body, service: Optional[str], resource: Backend, queue_nam
     arn = _get_queue(client, resource=resource, queue_name=queue_name)
     serialized = json.dumps(body, use_decimal=True)
     # submit item to queue for routing to the correct persistence
+    print(f"arn is {arn}")
     result = client.send_message(
         QueueUrl=arn,
         MessageBody=json.dumps({'default': serialized}),

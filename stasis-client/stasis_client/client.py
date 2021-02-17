@@ -2,7 +2,6 @@ import os
 import shutil
 from time import sleep
 from typing import Optional, List
-from urllib.parse import urlencode
 
 import boto3
 import boto3.s3
@@ -43,7 +42,7 @@ class StasisClient:
         if self._url is None:
             raise Exception("you need to provide a url in the env variable 'STASIS_API_URL'")
 
-        self._schedule_url = self._url.replace('/stasis','/scheduler')
+        self._schedule_url = self._url.replace('/stasis', '/scheduler')
         self._header = {
             'Content-type': 'application/json',
             'Accept': 'application/json',
@@ -446,7 +445,10 @@ class StasisClient:
         return sample_meta
 
     def schedule_steac(self, method: str):
-        response = self.http.post(f"{self._schedule_url}/schedule/steac/{method}", json={"method": method},
+
+        import urllib.parse
+        response = self.http.post(f"{self._schedule_url}/schedule/steac/{urllib.parse.quote(method)}",
+                                  json={"method": method},
                                   headers=self._header)
         if response.status_code != 200:
             raise Exception(
