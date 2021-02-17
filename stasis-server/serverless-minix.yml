@@ -37,7 +37,7 @@ provider:
 
   #where to store out data, needs to be manually created!
   deploymentBucket:
-    name: "lambdas-schedule"
+    name: "lambdas-minix"
 
   ##
   # defines all generat environment variables for lambdas
