@@ -4,10 +4,10 @@ import simplejson as json
 
 from stasis.headers import __HTTP_HEADERS__
 from stasis.schedule.fargate import schedule_processing_to_fargate, schedule_aggregation_to_fargate, _current_tasks, \
-    _free_task_count
+    _free_task_count, schedule_steac_to_fargate
 from stasis.schedule.schedule import _get_queue
 from stasis.config import SERVICE, MESSAGE_BUFFER, SECURE_CARROT_RUNNER, SECURE_CARROT_AGGREGATOR, \
-    SINGULAR_FARGATE_SERVICES, ENABLE_AUTOMATIC_SCHEDULING
+    SINGULAR_FARGATE_SERVICES, ENABLE_AUTOMATIC_SCHEDULING, SECURE_CARROT_STEAC
 
 
 def monitor_queue(event, context):
@@ -106,6 +106,8 @@ def monitor_queue(event, context):
                         result.append(schedule_processing_to_fargate({'body': json.dumps(body)}, {}))
                     elif body[SERVICE] == SECURE_CARROT_AGGREGATOR:
                         result.append(schedule_aggregation_to_fargate({'body': json.dumps(body)}, {}))
+                    elif body[SERVICE] == SECURE_CARROT_STEAC:
+                        result.append(schedule_steac_to_fargate({'body': json.dumps(body)}, {}))
                     else:
                         raise Exception("unknown service specified: {}".format(body[SERVICE]))
 
