@@ -11,10 +11,12 @@ sls create_domain --config serverless-stasis.yml --stage $1
 #sls remove --config serverless-schedule.yml --stage $1
 #sls remove --config serverless-stasis.yml --stage $1
 #sls remove --config serverless-resources.yml --stage $1
+#sls remove --config serverless-minix.yml --stage $1
 
 sls deploy --config serverless-resources.yml --stage $1
 sls deploy --config serverless-stasis.yml --stage $1
 sls deploy --config serverless-schedule.yml --stage $1
+sls deploy --config serverless-minix.yml --stage $1
 
 
 
