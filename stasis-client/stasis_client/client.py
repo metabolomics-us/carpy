@@ -43,6 +43,7 @@ class StasisClient:
             raise Exception("you need to provide a url in the env variable 'STASIS_API_URL'")
 
         self._schedule_url = self._url.replace('/stasis', '/scheduler')
+        self._minix_url = self._url.replace('/stasis', '/minix')
         self._header = {
             'Content-type': 'application/json',
             'Accept': 'application/json',
@@ -57,6 +58,12 @@ class StasisClient:
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.http = requests.Session()
+
+    def get_minix_experiment(self, minix: str) -> dict:
+        result = self.http.get(f'{self._minix_url}/experiment/{minix}', headers=self._header)
+        if result.status_code != 200: raise Exception(
+            f"we observed an error. Status code was {result.status_code} and error was {result.reason} for id {minix}")
+        return result.json()
 
     def schedule_sample_for_computation(self, sample_name: str, method: str, profile: str,
                                         resource: str = "FARGATE") -> dict:

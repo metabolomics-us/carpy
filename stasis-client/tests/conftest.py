@@ -1,6 +1,5 @@
 import os
 import uuid
-from datetime import time
 
 import pytest
 
@@ -11,7 +10,7 @@ SAMPLE_UUID = uuid.uuid1()
 
 def pytest_generate_tests(metafunc):
     os.environ['STASIS_URL'] = 'https://test-api.metabolomics.us/stasis'
-    os.environ['STASIS_API_TOKEN'] = '9MjbJRbAtj8spCJJVTPbP3YWc4wjlW0c7AP47Pmi'
+    os.environ['STASIS_API_TOKEN'] = 'lcb-master-293fef66165126eb11f38459da38b291'
 
 
 @pytest.fixture

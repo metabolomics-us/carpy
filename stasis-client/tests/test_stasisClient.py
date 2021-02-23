@@ -5,6 +5,12 @@ import requests
 from pytest import fail
 
 
+def test_get_minix_id(stasis_cli):
+    result = stasis_cli.get_minix_experiment("493881")
+    print(result)
+    assert result is not None
+
+
 @pytest.mark.parametrize("sample_count", [5, 10, 50])
 def test_store_job_sizes(sample_count, stasis_cli):
     test_id = "test_job_{}".format(time())
@@ -181,8 +187,6 @@ def test_overwrite_job_sizes(sample_count, stasis_cli):
 
 
 def test_schedule_queue(stasis_cli):
-
-
     queue = stasis_cli.schedule_queue()
 
     assert 'StasisScheduleQueue-test_FARGATE' in queue
@@ -292,6 +296,7 @@ def test_get_states(stasis_cli):
 
 def test_schedule_steac(stasis_cli):
     result = stasis_cli.schedule_steac("test")
+
 
 def test_sample_schedule(stasis_cli):
     result = stasis_cli.schedule_sample_for_computation(
