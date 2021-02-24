@@ -59,7 +59,7 @@ class Aggregator:
 
         """
         try:
-            if not value['replaced'] or (value['replaced'] and self.args.get('zero_replacement', False)):
+            if not value['replaced'] or (value['replaced'] and not self.args.get('exclude_replacement', False)):
                 return round(value['intensity'])
             else:
                 return 0
@@ -139,10 +139,10 @@ class Aggregator:
         else:
             suffix = 'results'
 
-        if self.args.get("zero_replacement", False):
-            suffix += '-repl'
-        else:
+        if self.args.get('exclude_replacement', False):
             suffix += '-norepl'
+        else:
+            suffix += '-repl'
 
         separator = '' if file.endswith("/") else '/'
         output_name = f'{file}{separator}{type.lower().replace(" ", "_")}-{suffix}.xlsx'
@@ -385,12 +385,13 @@ class Aggregator:
 
         # creating spreadsheets
         intensity = self.build_worksheet(targets, upb=self.disable_progress_bar, label='intensity matrix')
-        mass = self.build_worksheet(targets, upb=self.disable_progress_bar, label='mass matrix')
-        rt = self.build_worksheet(targets, upb=self.disable_progress_bar, label='RI matrix')
-        origrt = self.build_worksheet(targets, upb=self.disable_progress_bar, label='RT matrix')
-        curve = self.build_worksheet(targets, upb=self.disable_progress_bar, label='curve data')
-        replaced = self.build_worksheet(targets, upb=self.disable_progress_bar, label='replacement matrix')
-        msms = self.build_worksheet(targets, upb=self.disable_progress_bar, label='MSMS Spectra')
+        if self.args.get('extra_files', False):
+            mass = self.build_worksheet(targets, upb=self.disable_progress_bar, label='mass matrix')
+            rt = self.build_worksheet(targets, upb=self.disable_progress_bar, label='RI matrix')
+            origrt = self.build_worksheet(targets, upb=self.disable_progress_bar, label='RT matrix')
+            curve = self.build_worksheet(targets, upb=self.disable_progress_bar, label='curve data')
+            replaced = self.build_worksheet(targets, upb=self.disable_progress_bar, label='replacement matrix')
+            msms = self.build_worksheet(targets, upb=self.disable_progress_bar, label='MSMS Spectra')
 
         # populating spreadsheets
         for data in tqdm.tqdm(results, desc='Formatting results', unit=' samples', disable=self.disable_progress_bar):
@@ -400,23 +401,25 @@ class Aggregator:
                 formatted = self.format_sample(data)
 
                 intensity[sample] = pd.DataFrame(formatted[1])
-                mass[sample] = pd.DataFrame(formatted[2])
-                rt[sample] = pd.DataFrame(formatted[3])
-                origrt[sample] = pd.DataFrame(formatted[4])
-                curve[sample] = pd.DataFrame(formatted[5])
-                replaced[sample] = pd.DataFrame(formatted[6])
-                msms[sample] = pd.DataFrame(formatted[7])
+                if self.args.get('extra_files', False):
+                    mass[sample] = pd.DataFrame(formatted[2])
+                    rt[sample] = pd.DataFrame(formatted[3])
+                    origrt[sample] = pd.DataFrame(formatted[4])
+                    curve[sample] = pd.DataFrame(formatted[5])
+                    replaced[sample] = pd.DataFrame(formatted[6])
+                    msms[sample] = pd.DataFrame(formatted[7])
             else:
                 sbar.write('Error in data')
                 intensity[sample] = np.nan
-                mass[sample] = np.nan
-                rt[sample] = np.nan
-                origrt[sample] = np.nan
-                curve[sample] = np.nan
-                replaced[sample] = np.nan
-                msms[sample] = np.nan
+                if self.args.get('extra_files', False):
+                    mass[sample] = np.nan
+                    rt[sample] = np.nan
+                    origrt[sample] = np.nan
+                    curve[sample] = np.nan
+                    replaced[sample] = np.nan
+                    msms[sample] = np.nan
 
-        if not self.args.get('keep_msms'):
+        if not self.args.get('keep_msms') and self.args.get('extra_files', False):
             self.filter_msms(msms, intensity)
 
         # biorecs = [br for br in intensity.columns if 'biorec' in str(br).lower() or 'qc' in str(br).lower()]
@@ -435,20 +438,28 @@ class Aggregator:
         intensity = pd.concat([md, intensity], sort=False).reset_index(drop=True)
 
         sheet_names['intensity'].append(intensity)
-        sheet_names['mass'].append(mass)
-        sheet_names['ri'].append(origrt)
-        sheet_names['rt'].append(rt)
-        sheet_names['repl'].append(replaced)
-        sheet_names['curve'].append(curve)
-        sheet_names['msms'].append(msms)
+        if self.args.get('extra_files', False):
+            sheet_names['mass'].append(mass)
+            sheet_names['ri'].append(origrt)
+            sheet_names['rt'].append(rt)
+            sheet_names['repl'].append(replaced)
+            sheet_names['curve'].append(curve)
+            sheet_names['msms'].append(msms)
 
         print(f'\nSaving results to {destination}')
 
-        for t in [sheet_names[k] for k in sheet_names.keys()]:
+        if self.args.get('extra_files', False):
+            for t in [sheet_names[k] for k in sheet_names.keys()]:
+                print(t)
+                try:
+                    self.export_excel(t[1], t[0], destination)
+                except Exception as exerr:
+                    print(f'Error creating excel file for {t}')
+                    print(str(exerr))
+        else:
             try:
-                self.export_excel(t[1], t[0], destination)
+                self.export_excel(sheet_names['intensity'][1], sheet_names['intensity'][0], destination)
             except Exception as exerr:
-                print(f'Error creating excel file for {t}')
                 print(str(exerr))
 
     def filter_msms(self, msms, intensity):

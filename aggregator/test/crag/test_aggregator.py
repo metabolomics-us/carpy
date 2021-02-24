@@ -53,12 +53,12 @@ def test_find_intensity(stasis):
 
     # test find_intensity on zero replaced data not requesting replaced data
     value = {'intensity': 2, 'replaced': True}
-    assert 0 == aggregator.find_intensity(value)
+    assert 2 == aggregator.find_intensity(value)
 
     # test find_intensity on zero replaced data requesting replaced data
-    aggregator = Aggregator({'infiles': 'filename', 'zero_replacement': True}, stasis)
+    aggregator = Aggregator({'infiles': 'filename', 'zero_replacement': False}, stasis)
     value = {'intensity': 2, 'replaced': True}
-    assert 2 == aggregator.find_intensity(value)
+    assert 0 == aggregator.find_intensity(value)
 
 
 def test_find_replaced():
@@ -136,6 +136,18 @@ def _build_result(stasis, locsamples):
 
 def test_aggregate(stasis):
     aggregator = Aggregator({'infiles': [f'{parent}/../test.txt'], 'dir': f'{parent}/../data'}, stasis)
+    aggregator.aggregate()
+
+
+def test_aggregate_norepl(stasis):
+    aggregator = Aggregator({'infiles': [f'{parent}/../test.txt'], 'dir': f'{parent}/../data',
+                             'exclude_replacement': True}, stasis)
+    aggregator.aggregate()
+
+
+def test_aggregate_extra_files(stasis):
+    aggregator = Aggregator({'infiles': [f'{parent}/../test.txt'], 'dir': f'{parent}/../data',
+                             'extra_files': True}, stasis)
     aggregator.aggregate()
 
 
