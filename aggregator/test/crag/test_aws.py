@@ -8,11 +8,11 @@ def test_aggregate_success(api_token, stasis):
 
     job = {
         "id": test_id,
-        "method": "teddy | 6530 | test | positive",
+        "method": "soqtof[M+H][M+NH4] | 6530a | c18 | positive",
         "samples": [
-            "B2a_TEDDYLipids_Neg_NIST001",
-            "B10A_SA8931_TeddyLipids_Pos_14TCZ",
-            "B10A_SA8922_TeddyLipids_Pos_122WP"
+            "SOP_Plasma_PoolMSMS_001_MX524916_negCSH_60_700",
+            "SOP_Plasma_PoolMSMS_002_MX524916_negCSH_700_800",
+            "SOP_Plasma_PoolMSMS_003_MX524916_negCSH_800_880"
         ],
         "profile": "carrot.lcms",
     }
