@@ -1,2 +1,2 @@
-B13A_TeddyLipids_Pos_QC002
-B13A_SA11890_TeddyLipids_Pos_24G4N
+PlasmaPoolQC001_MX524916_posCSH_preSOP001
+PlasmaPoolQC002_MX524916_posCSH_postSOP010
