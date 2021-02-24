@@ -241,7 +241,7 @@ class Aggregator:
 
         def debug(value, type):
             if isinstance(value, type) is False:
-                raise Exception("tinvalid type: {} - {}".format(value, type))
+                raise Exception(f'invalid type: {value} - {type}')
             return value
 
         for k, v in sample['injections'].items():
@@ -311,7 +311,7 @@ class Aggregator:
         # creating target list
         results = []
 
-        os.makedirs("{}/json".format(destination), exist_ok=True)
+        os.makedirs(f'{destination}/json', exist_ok=True)
 
         dir = self.args.get('dir', '/tmp')
 
@@ -372,8 +372,7 @@ class Aggregator:
                     f'the result received for {sample} was empty. This is not acceptable!!! Designated local file is {result_file} located at {dir}')
             elif resdata and resdata.get('Error') is None:
                 results.append(resdata)
-                with bz2.BZ2File("{}/json/{}.mzml.json.bz2".format(destination, sample), 'w',
-                                 compresslevel=9) as outfile:
+                with bz2.BZ2File(f'{destination}/json/{sample}.mzml.json.bz2', 'w', compresslevel=9) as outfile:
                     d = json.dumps(resdata, indent=4)
                     outfile.write(d.encode())
             else:

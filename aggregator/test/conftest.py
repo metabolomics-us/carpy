@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import pytest
 from stasis_client.client import StasisClient
@@ -19,13 +20,16 @@ def stasis():
         mocking this method out to provide standardized access to the json data
         in a versioned scope
         """
-        print("mocking call by loading from file directly: {}".format(sample_name))
+        parent = Path(__file__).resolve().parent
+
+        print(f'mocking call by loading from file directly: {sample_name}')
         try:
             if 'mzml.json' not in sample_name:
-                sample_name = "{}.mzml.json".format(sample_name)
-            with open("test/data/{}".format(sample_name), 'r') as f:
+                sample_name = f'{sample_name}.mzml.json'
+            with open(f'{parent}/data/{sample_name}', 'r') as f:
                 return json.load(f)
         except FileNotFoundError:
+            print(f'File {parent}/data/{sample_name} not found')
             return None
 
     client.sample_result_as_json = mock_sample_as_json
