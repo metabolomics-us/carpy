@@ -158,4 +158,4 @@ def test_aggregate_no_args(stasis):
 def test_aggregate_sample_only(stasis):
     aggregator = Aggregator(args=parser.parse_args(['--dir', './test/data']), stasis=stasis)
 
-    aggregator.aggregate_samples(samples=samples)
+    aggregator.aggregate_samples(samples=samples, destination="./")
