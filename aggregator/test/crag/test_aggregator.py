@@ -56,7 +56,7 @@ def test_find_intensity(stasis):
     assert 2 == aggregator.find_intensity(value)
 
     # test find_intensity on zero replaced data requesting replaced data
-    aggregator = Aggregator({'infiles': 'filename', 'zero_replacement': False}, stasis)
+    aggregator = Aggregator({'infiles': 'filename', 'exclude_replacement': True}, stasis)
     value = {'intensity': 2, 'replaced': True}
     assert 0 == aggregator.find_intensity(value)
 
