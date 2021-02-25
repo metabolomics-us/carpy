@@ -1,18 +1,21 @@
+from pathlib import Path
 from time import time
 
 from crag.aws import JobAggregator
 
+parent = Path(__file__).resolve().parent
+
 
 def test_aggregate_success(api_token, stasis):
-    test_id = "test_job_{}".format(time())
+    test_id = "test_job_{}".format(int(time()))
 
     job = {
         "id": test_id,
         "method": "soqtof[M+H][M+NH4] | 6530a | c18 | positive",
         "samples": [
-            "SOP_Plasma_PoolMSMS_001_MX524916_negCSH_60_700",
             "SOP_Plasma_PoolMSMS_002_MX524916_negCSH_700_800",
-            "SOP_Plasma_PoolMSMS_003_MX524916_negCSH_800_880"
+            "SOP_Plasma_PoolMSMS_003_MX524916_negCSH_800_880",
+            "SOP_Plasma_PoolMSMS_004_MX524916_negCSH_880_1700"
         ],
         "profile": "carrot.lcms",
     }
@@ -25,7 +28,7 @@ def test_aggregate_success(api_token, stasis):
 
 
 def test_aggregate_false(api_token, stasis):
-    test_id = "test_job_{}".format(time())
+    test_id = "test_job_{}".format(int(time()))
 
     job = {
         "id": test_id,

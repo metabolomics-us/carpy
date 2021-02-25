@@ -13,7 +13,7 @@ def create_parser():
                         default=os.getenv('CARROT_JOB'))
     parser.add_argument('--key', type=str, help='This is your api key for stasis', default=os.getenv('STASIS_API_KEY'))
     parser.add_argument('--url', type=str, help='This is your url for stasis', default=os.getenv('STASIS_API_URL'))
-    parser.add_argument('-zr', '--zero-replacement', help='Include replaced intensity values', action='store_true',
+    parser.add_argument('-zr', '--zero-replacement', help='Include replaced intensity values', action='store_false',
                         default=True)
     parser.add_argument('-u', '--upload', help='uploads results to S3',
                         action='store_true', default=True)
