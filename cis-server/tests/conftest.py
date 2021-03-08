@@ -59,6 +59,7 @@ def splash_test_name_with_members(library_test_name, request):
 
     raise Exception(f"did not find a standard with members in {library_test_name}")
 
+
 @pytest.fixture()
 def splash_test_name_with_no_members(library_test_name, request):
     from cis import compounds

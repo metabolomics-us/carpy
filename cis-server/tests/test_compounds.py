@@ -359,6 +359,7 @@ def test_compound_register_adduct(requireMocking, splash_test_name_with_no_membe
         }, {}
     )
 
+
 def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
