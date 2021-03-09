@@ -26,7 +26,7 @@ def connect():
         conn.set_session(readonly=False, autocommit=True)
 
         return conn
-    except  Exception as e:
+    except Exception as e:
         logger.error("ERROR: Unexpected error: Could not connect to database instance.")
         logger.error(e)
 

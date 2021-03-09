@@ -29,7 +29,17 @@ def library_test_name():
 
 
 @pytest.fixture()
-def splash_test_name(cis_cli,library_test_name):
-    result = cis_cli.get_compounds(library=library_test_name,autopage=False)
+def splash_test_name(cis_cli, library_test_name):
+    result = cis_cli.get_compounds(library=library_test_name, autopage=False)
 
-    return (result[0],library_test_name)
+    return (result[0], library_test_name)
+
+
+@pytest.fixture()
+def target_id():
+    return '361'
+
+
+@pytest.fixture()
+def sample_id():
+    return 'PlasmaBiorec002_MX524916_negCSH_postSOP010'
