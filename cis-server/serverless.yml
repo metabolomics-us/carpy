@@ -406,7 +406,23 @@ functions:
                 splash: true
 
   configProfile:
-    handler: cis/configurations.profile
+    handler: cis/configurations.profiles
+    events:
+      - http:
+          private: true
+          path: profiles/{method}/{value}
+          method: get
+          cors: true
+          documentation:
+            summary: returns the list of profiles used to process the object defined in method, either 'target' or 'sample'
+          request:
+            parameter:
+              paths:
+                method: true
+                value: true
+
+  configConfiguration:
+    handler: cis/configurations.configs
     events:
       - http:
           private: true
@@ -414,7 +430,7 @@ functions:
           method: get
           cors: true
           documentation:
-            summary: returns the list of profiles used to process the object defined in method, either 'target' or 'sample'
+            summary: returns the list of configurations used to process the object defined in method, either 'target' or 'sample'
           request:
             parameter:
               paths:
