@@ -20,14 +20,17 @@ def register_comment(events, context):
     comment = events['body']
 
     print(f"{splash} - {library} - {identifiedBy} - {comment}")
-    # load compound to get the correct id
+
+    # load compound AND comments to get the correct id
     result = database.query(
-        "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_comment pn where p.id = pn.target_id  and splash = (%s) and \"method_id\" = (%s) and \"identified_by\" = %s",
+        'select p.id as "target_id", pn.id as "name_id" from pgtarget p, pgtarget_comment pn '
+        'where p.id = pn.target_id and splash = %s and "method_id" = %s and "identified_by" = %s',
         conn, [splash, library, identifiedBy])
 
+    # no compound with comments, find just compound
     if result is None:
         result = database.query(
-            "select p.id from pgtarget p where splash = (%s) and \"method_id\" = (%s)",
+            'select p.id from pgtarget p where splash = %s and "method_id" = %s',
             conn, [splash, library])
 
         if result is not None and len(result) > 0:
@@ -41,6 +44,8 @@ def register_comment(events, context):
                     "splash": splash
                 })
             }
+    else:
+        id = result[0][0]
 
     # now register the given name and associated information
     # 1. get new sequence number
@@ -49,8 +54,9 @@ def register_comment(events, context):
     newNameId = result[0][0]
 
     result = database.query(
-        "insert into pgtarget_comment(\"id\",\"identified_by\",\"comment\",\"target_id\") values(%s,%s,%s,%s)",
+        'insert into pgtarget_comment("id","identified_by","comment","target_id") values(%s,%s,%s,%s)',
         conn, [newNameId, identifiedBy, comment, id])
+
     # create a response
     return {
         "statusCode": 200,
@@ -434,7 +440,7 @@ def register_name(events, context):
 
     result = database.query(
         "insert into pgtarget_name(\"id\",\"name\",\"identified_by\",\"comment\",\"target_id\") values(%s,%s,%s,%s,%s)",
-        conn, [newNameId, name, identifiedBy, comment,id])
+        conn, [newNameId, name, identifiedBy, comment, id])
     # create a response
     return {
         "statusCode": 200,
@@ -464,8 +470,7 @@ def has_members(events, context):
                 conn, [splash, method_name])
 
             try:
-                if result[0][0] > 0:
-                    # create a response
+                if result[0][0] > 0:    # target has members
                     return {
                         "statusCode": 200,
                         "headers": headers.__HTTP_HEADERS__,
@@ -476,9 +481,9 @@ def has_members(events, context):
                             "splash": splash
                         })
                     }
-                else:
+                else:   # target doesnt have members
                     return {
-                        "statusCode": 404,
+                        "statusCode": 200,
                         "headers": headers.__HTTP_HEADERS__,
                         "body": json.dumps({
                             "members": False,
