@@ -137,3 +137,33 @@ def test_get_members(cis_cli, splash_test_name):
 
     for x in result:
         print(x)
+
+
+def test_get_target_profiles(cis_cli, target_id):
+    result = cis_cli.get_profiles('target', target_id)
+    assert len(result['profiles']) > 0
+
+    assert [363, 'carrot.filters.similarity'] in result['profiles']
+
+
+def test_get_target_configs(cis_cli, target_id):
+    result = cis_cli.get_configs('target', target_id)
+    assert len(result['configs']) > 0
+
+    assert [362, 'CARROT_METHOD', 'soqtof[M-H] | 6530a | c18 | negative', 'java.lang.String', ''] in result['configs']
+
+
+def test_get_sample_profiles(cis_cli, sample_id):
+    result = cis_cli.get_profiles('sample', sample_id)
+    assert len(result['profiles']) > 0
+
+    assert [8395, 'carrot.filters.similarity'] in result['profiles']
+
+
+def test_get_sample_configs(cis_cli, sample_id):
+    result = cis_cli.get_configs('sample', sample_id)
+    assert len(result['configs']) > 0
+
+    assert [8302, 'wcmc.workflow.replacement.enabled', 'true', 'java.lang.Boolean',
+            'edu.ucdavis.fiehnlab.ms.carrot.core.workflow.sample.postprocessing.ZeroReplacementProperties'] \
+           in result['configs']

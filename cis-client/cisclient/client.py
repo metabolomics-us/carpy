@@ -219,3 +219,25 @@ class CISClient:
             return result.json()[0]
         else:
             raise Exception(result)
+
+    def get_profiles(self, object_type, object_id):
+        if object_type not in ['target', 'sample']:
+            raise Exception('object_type should be "target" or "sample"')
+
+        result = self.http.get(f'{self._url}/profiles/{object_type}/{object_id}', headers=self._header)
+
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
+
+    def get_configs(self, object_type, object_id):
+        if object_type not in ['target', 'sample']:
+            raise Exception('object_type should be "target" or "sample"')
+
+        result = self.http.get(f'{self._url}/configurations/{object_type}/{object_id}', headers=self._header)
+
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
