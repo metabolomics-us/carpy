@@ -36,6 +36,11 @@ def splash_test_name(cis_cli, library_test_name):
 
 
 @pytest.fixture()
+def splash_test_name_with_members(cis_cli, library_test_name):
+    return ("splash10-test-1000000000-00000000000000000001", library_test_name)
+
+
+@pytest.fixture()
 def target_id():
     return '361'
 
