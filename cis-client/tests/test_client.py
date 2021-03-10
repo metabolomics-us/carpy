@@ -70,6 +70,7 @@ def test_add_adduct_and_remove(cis_cli, splash_test_name):
     test = f"test-{time()}"
 
     result = cis_cli.get_compound(library=splash_test_name[1], splash=splash_test_name[0])
+    print(result)
     for name in result['associated_adducts']:
         cis_cli.compound_remove_adduct(library=splash_test_name[1], splash=splash_test_name[0], name=name['name'],
                                        identifiedBy=name['identifiedBy'])
@@ -131,8 +132,8 @@ def test_get_members_false(cis_cli, splash_test_name):
     assert len(result) == 0
 
 
-def test_get_members(cis_cli, splash_test_name):
-    result = cis_cli.get_members(library=splash_test_name[1], splash=splash_test_name[0])
+def test_get_members(cis_cli, splash_test_name_with_members):
+    result = cis_cli.get_members(library=splash_test_name_with_members[1], splash=splash_test_name_with_members[0])
     assert len(result) > 0
 
     for x in result:
