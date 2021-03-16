@@ -220,7 +220,7 @@ class CISClient:
         else:
             raise Exception(result)
 
-    def get_profiles(self, object_type, object_id):
+    def get_profiles(self, object_type: str, object_id: str):
         if object_type not in ['target', 'sample']:
             raise Exception('object_type should be "target" or "sample"')
 
@@ -231,11 +231,24 @@ class CISClient:
         else:
             raise Exception(result)
 
-    def get_configs(self, object_type, object_id):
+    def get_configs(self, object_type: str, object_id: str):
         if object_type not in ['target', 'sample']:
             raise Exception('object_type should be "target" or "sample"')
 
         result = self.http.get(f'{self._url}/configurations/{object_type}/{object_id}', headers=self._header)
+
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
+
+    def get_sorted_compounds(self, library: str, tgt_type: str, limit: int, offset: int, order_by: str, direction: str):
+        if tgt_type is None or tgt_type.strip() == "":
+            tgt_type = 'confirmed'
+
+        result = self.http.get(f'{self._url}/compoundsorted/{library}/{tgt_type}'
+                               f'?limit={limit}&offset={offset}&order_by={order_by}&direction={direction}',
+                               headers=self._header)
 
         if result.status_code == 200:
             return result.json()

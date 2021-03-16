@@ -25,7 +25,7 @@ def cis_cli():
 
 @pytest.fixture()
 def library_test_name():
-    return "soqtof[M-H] | 6530a | c18 | negative"
+    return "soqe[M+H][M+NH4] | QExactive | test | positive"
 
 
 @pytest.fixture()
@@ -37,14 +37,14 @@ def splash_test_name(cis_cli, library_test_name):
 
 @pytest.fixture()
 def splash_test_name_with_members(cis_cli, library_test_name):
-    return ("splash10-test-1000000000-00000000000000000001", library_test_name)
+    return ("splash10-001i-1900000000-3b9584bc9a188a381979", library_test_name)
 
 
 @pytest.fixture()
 def target_id():
-    return '361'
+    return '199'
 
 
 @pytest.fixture()
 def sample_id():
-    return 'PlasmaBiorec002_MX524916_negCSH_postSOP010'
+    return 'NIH_Lip_Std_CSH_POS_Brain_01'
