@@ -1,6 +1,8 @@
 import json
 import random
 import string
+import urllib.parse
+from pprint import pprint
 
 from pytest import fail
 
@@ -785,3 +787,162 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_no_members
     print(json.dumps(result, indent=4))
 
     assert len(result['associated_meta']) == 3
+
+
+def test_get_sorted_defaults(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'queryStringParameters': {
+            'limit': 10,
+            'offset': 0,
+            'order_by': 'ri',
+            'direction': 'asc'
+        }
+    }, {})
+
+    assert response['statusCode'] == 200
+
+    compounds = json.loads(response['body'])['compounds']
+    assert len(compounds) == 10
+
+
+def test_get_sorted_queryString_none(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'queryStringParameters': None
+    }, {})
+
+    print(response)
+
+    assert response['statusCode'] == 200
+    compounds = json.loads(response['body'])['compounds']
+    assert len(compounds) == 10
+
+
+def test_get_sorted_big_page(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'queryStringParameters': {'limit': 100}
+    }, {})
+
+    assert response['statusCode'] == 200
+
+    compounds = json.loads(response['body'])['compounds']
+    assert len(compounds) == 100
+
+
+def test_get_sorted_wrong_path(requireMocking, library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({}, {})
+
+    assert response['statusCode'] == 400
+    assert json.loads(response['body'])['error'] == 'missing path parameters'
+
+
+def test_get_sorted_no_library(requireMocking, library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {},
+        'queryStringParameters': {'limit': 10}
+    }, {})
+
+    assert response['statusCode'] == 400
+    assert json.loads(response['body'])['error'] == "you need to provide a 'library' name"
+
+
+def test_get_sorted_alt_type(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name),
+                           'tgt_type': 'is_member'},
+        'queryStringParameters': {'limit': 10}
+    }, {})
+
+    assert response['statusCode'] == 200
+
+    cmp_types = []
+    [cmp_types.append(c[13]) for c in json.loads(response['body'])['compounds'] if c[13] not in cmp_types]
+
+    assert len(cmp_types) == 1
+    assert cmp_types[0] == 'IS_MEMBER'
+
+
+def test_get_sorted_second_page(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    first = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {'limit': 10, 'offset': 0}
+    }, {})
+
+    second = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {'limit': 10, 'offset': 10}
+    }, {})
+
+    assert first['statusCode'] == 200
+    assert second['statusCode'] == 200
+
+    assert json.loads(first['body'])['compounds'] != json.loads(second['body'])['compounds']
+
+
+def test_get_sorted_compare_sorts(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    id = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {'limit': 10, 'order_by': 'id'}
+    }, {})
+
+    ri = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {'limit': 10, 'order_by': 'ri'}
+    }, {})
+
+    pmz = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {'limit': 10, 'order_by': 'pmz'}
+    }, {})
+
+    name = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {'limit': 10, 'order_by': 'name'}
+    }, {})
+
+    adduct = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {'limit': 10, 'order_by': 'adduct'}
+    }, {})
+
+    assert id['statusCode'] == 200
+    assert ri['statusCode'] == 200
+    assert pmz['statusCode'] == 200
+    assert name['statusCode'] == 200
+    assert adduct['statusCode'] == 200
+
+    print('------------------------------------------------')
+    print([c[1] for c in json.loads(id['body'])['compounds']])
+    print('------------------------------------------------')
+    print([(c[1], c[9]) for c in json.loads(ri['body'])['compounds']])
+    print('------------------------------------------------')
+    print([(c[1], c[6]) for c in json.loads(pmz['body'])['compounds']])
+    print('------------------------------------------------')
+    print([(c[1], c[12]) for c in json.loads(name['body'])['compounds']])
+    print('------------------------------------------------')
+    print([(c[1], c[3]) for c in json.loads(adduct['body'])['compounds']])
+    print('------------------------------------------------')

@@ -1,4 +1,5 @@
-import json
+# import json
+import simplejson as json
 import traceback
 import urllib.parse
 
@@ -224,7 +225,7 @@ def register_adduct(events, context):
 
     result = database.query(
         "insert into pgtarget_adduct(\"id\",\"name\",\"identified_by\",\"comment\",\"target_id\") values(%s,%s,%s,%s,%s)",
-        conn, [newNameId, name, identifiedBy, comment,id])
+        conn, [newNameId, name, identifiedBy, comment, id])
     # create a response
     return {
         "statusCode": 200,
@@ -235,6 +236,7 @@ def register_adduct(events, context):
             "splash": splash
         })
     }
+
 
 def delete_adduct(events, context):
     """
@@ -470,7 +472,7 @@ def has_members(events, context):
                 conn, [splash, method_name])
 
             try:
-                if result[0][0] > 0:    # target has members
+                if result[0][0] > 0:  # target has members
                     return {
                         "statusCode": 200,
                         "headers": headers.__HTTP_HEADERS__,
@@ -481,7 +483,7 @@ def has_members(events, context):
                             "splash": splash
                         })
                     }
-                else:   # target doesnt have members
+                else:  # target doesnt have members
                     return {
                         "statusCode": 200,
                         "headers": headers.__HTTP_HEADERS__,
@@ -879,3 +881,113 @@ def delete_meta(events, context):
                 "splash": splash
             })
         }
+
+
+def get_sorted(events, context):
+    types_list = ['unconfirmed', 'is_member', 'consensus', 'confirmed']
+
+    if 'pathParameters' not in events:
+        return {
+            "statusCode": 400,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({"error": "missing path parameters"})
+        }
+
+    if 'library' not in events['pathParameters']:
+        return {
+            "statusCode": 400,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({"error": "you need to provide a 'library' name"})
+        }
+    else:
+        method_name = urllib.parse.unquote(events['pathParameters']['library'])
+
+    if 'tgt_type' not in events['pathParameters'] or events['pathParameters']['tgt_type'] not in types_list:
+        tgt_type = "confirmed"
+    else:
+        tgt_type = urllib.parse.unquote(events['pathParameters']['tgt_type'])
+
+    column_dict = {
+        'id': 'id',
+        'ri': 'retention_index',
+        'pmz': 'precursor_mass',
+        'name': 'target_name',
+        'adduct': 'adduct_name'
+    }
+    directions = ['asc', 'desc']
+
+    try:
+        if 'queryStringParameters' not in events or events['queryStringParameters'] is None:
+            limit = 10
+            offset = 0
+            order_by = 'id'
+            direction = 'asc'
+        else:
+            if 'limit' in events['queryStringParameters'] and \
+                    type(events['queryStringParameters']['limit']) == int:
+                limit = events['queryStringParameters']['limit']
+            else:
+                limit = 10
+
+            if 'offset' in events['queryStringParameters'] and \
+                    type(events['queryStringParameters']['offset']) == int:
+                offset = events['queryStringParameters']['offset']
+            else:
+                offset = 0
+
+            if 'order_by' in events['queryStringParameters'] and \
+                    events['queryStringParameters']['order_by'] in column_dict.keys():
+                order_by = events['queryStringParameters']['order_by']
+            else:
+                order_by = 'ri'
+
+            if 'direction' in events['queryStringParameters'] and \
+                    events['queryStringParameters']['direction'].lower() in directions:
+                direction = events['queryStringParameters']['direction']
+            else:
+                direction = 'asc'
+    except Exception as ex:
+        print(ex)
+        return {
+            "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "error": str(ex),
+                "path": events['path'],
+                "pathParameters": events['pathParameters'],
+                "queryStringParameters": events['queryStringParameters'],
+                "multiValueQueryStringParameters": events['multiValueQueryStringParameters']
+            })
+        }
+
+    query = 'SELECT * FROM pgtarget ' \
+            f'WHERE "method_id" = %s ' \
+            f'  AND "target_type" = UPPER(%s) ' \
+            f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
+
+    try:
+        result = database.query(query, conn, [method_name, tgt_type, limit, offset])
+        if result is None:
+            result = []
+    except Exception as ex:
+        print(str(ex))
+        return {
+            "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({"error": str(ex)})
+        }
+
+    return {
+        "statusCode": 200,
+        "headers": headers.__HTTP_HEADERS__,
+        "body": json.dumps({
+            "library": method_name,
+            "tgt_type": tgt_type,
+            "query": query,
+            "order_by": order_by,
+            "direction": direction,
+            "limit": limit,
+            "offset": offset,
+            "compounds": result
+        }, use_decimal=True)
+    }

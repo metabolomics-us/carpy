@@ -37,6 +37,11 @@ def library_test_name() -> str:
 
 
 @pytest.fixture()
+def pos_library_test_name() -> str:
+    return "soqe[M+H][M+NH4] | QExactive | test | positive"
+
+
+@pytest.fixture()
 def splash_test_name_with_members(library_test_name, request):
     from cis import compounds
     result = request.config.cache.get("cis/members", None)
