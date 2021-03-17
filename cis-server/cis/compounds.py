@@ -923,7 +923,7 @@ def get_sorted(events, context):
             order_by = 'id'
             direction = 'asc'
             value = 0.0
-            accuracy = 0.0
+            accuracy = 0.01
         else:
             if 'limit' in events['queryStringParameters'] and \
                     type(events['queryStringParameters']['limit']) == int:
@@ -953,9 +953,11 @@ def get_sorted(events, context):
                 value = float(events['queryStringParameters']['value'])
                 if 'accuracy' in events['queryStringParameters']:
                     accuracy = float(events['queryStringParameters']['accuracy'])
+                else:
+                    accuracy = 0.01
             else:
                 value = 0
-                accuracy = 0.0
+                accuracy = 0.01
 
     except Exception as ex:
         print(ex)

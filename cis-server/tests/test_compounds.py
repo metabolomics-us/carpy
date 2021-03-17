@@ -961,3 +961,34 @@ def test_get_sorted_with_range(requireMocking, pos_library_test_name, range_sear
     assert comps_obj[0][6] - comps_obj[-1][6] < 0
 
     pprint(comps_obj)
+
+
+def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'path': 'something to shut-up pytest\'s KeyError',
+        'multiValueQueryStringParameters': 'something to shut-up pytest\'s KeyError',
+        'queryStringParameters': {
+            'value': 'boom'
+        }
+    }, {})
+
+    assert response['statusCode'] == 500
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'path': 'something to shut-up pytest\'s KeyError',
+        'multiValueQueryStringParameters': 'something to shut-up pytest\'s KeyError',
+        'queryStringParameters': {
+            'value': 200,
+            'accuracy': 'hacked'
+        }
+    }, {})
+
+    assert response['statusCode'] == 500
