@@ -218,6 +218,8 @@ functions:
                 direction: false
                 limit: false
                 offset: false
+                value: false
+                accuracy: false
 
   compoundSetName:
     handler: cis/compounds.register_name

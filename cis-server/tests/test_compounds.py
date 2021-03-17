@@ -817,6 +817,8 @@ def test_get_sorted_queryString_none(requireMocking, pos_library_test_name):
         'pathParameters': {
             'library': urllib.parse.quote(pos_library_test_name)
         },
+        'path': 'something to shut-up pytest\'s KeyError',
+        'multiValueQueryStringParameters': 'something to shut-up pytest\'s KeyError',
         'queryStringParameters': None
     }, {})
 
@@ -904,7 +906,7 @@ def test_get_sorted_second_page(requireMocking, pos_library_test_name):
 def test_get_sorted_compare_sorts(requireMocking, pos_library_test_name):
     from cis import compounds
 
-    id = compounds.get_sorted({
+    cid = compounds.get_sorted({
         'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
         'queryStringParameters': {'limit': 10, 'order_by': 'id'}
     }, {})
@@ -929,20 +931,33 @@ def test_get_sorted_compare_sorts(requireMocking, pos_library_test_name):
         'queryStringParameters': {'limit': 10, 'order_by': 'adduct'}
     }, {})
 
-    assert id['statusCode'] == 200
+    assert cid['statusCode'] == 200
     assert ri['statusCode'] == 200
     assert pmz['statusCode'] == 200
     assert name['statusCode'] == 200
     assert adduct['statusCode'] == 200
 
-    print('------------------------------------------------')
-    print([c[1] for c in json.loads(id['body'])['compounds']])
-    print('------------------------------------------------')
-    print([(c[1], c[9]) for c in json.loads(ri['body'])['compounds']])
-    print('------------------------------------------------')
-    print([(c[1], c[6]) for c in json.loads(pmz['body'])['compounds']])
-    print('------------------------------------------------')
-    print([(c[1], c[12]) for c in json.loads(name['body'])['compounds']])
-    print('------------------------------------------------')
-    print([(c[1], c[3]) for c in json.loads(adduct['body'])['compounds']])
-    print('------------------------------------------------')
+
+def test_get_sorted_with_range(requireMocking, pos_library_test_name, range_search):
+    from cis import compounds
+
+    comps = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {
+            'limit': 10,
+            'order_by': 'pmz',
+            'value': range_search[0],
+            'accuracy': range_search[1]
+        }
+    }, {})
+
+    assert comps['statusCode'] == 200
+    comps_obj = json.loads(comps['body'])['compounds']
+    assert len(comps_obj) > 0
+
+    assert comps_obj[0][6] >= range_search[0] - range_search[1]
+    assert comps_obj[-1][6] <= range_search[0] + range_search[1]
+    assert [comps_obj[x][6] < comps_obj[x+1][6] for x in range(0, len(comps_obj)-1)]
+    assert comps_obj[0][6] - comps_obj[-1][6] < 0
+
+    pprint(comps_obj)

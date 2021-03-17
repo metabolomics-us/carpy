@@ -115,3 +115,8 @@ def target_id():
 @pytest.fixture()
 def sample_name():
     return 'NIH_Lip_Std_CSH_POS_Brain_01'
+
+
+@pytest.fixture()
+def range_search():
+    return 227.21, 0.01

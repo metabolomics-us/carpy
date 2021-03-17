@@ -922,6 +922,8 @@ def get_sorted(events, context):
             offset = 0
             order_by = 'id'
             direction = 'asc'
+            value = 0.0
+            accuracy = 0.0
         else:
             if 'limit' in events['queryStringParameters'] and \
                     type(events['queryStringParameters']['limit']) == int:
@@ -946,6 +948,15 @@ def get_sorted(events, context):
                 direction = events['queryStringParameters']['direction']
             else:
                 direction = 'asc'
+
+            if 'value' in events['queryStringParameters']:
+                value = float(events['queryStringParameters']['value'])
+                if 'accuracy' in events['queryStringParameters']:
+                    accuracy = float(events['queryStringParameters']['accuracy'])
+            else:
+                value = 0
+                accuracy = 0.0
+
     except Exception as ex:
         print(ex)
         return {
@@ -955,18 +966,26 @@ def get_sorted(events, context):
                 "error": str(ex),
                 "path": events['path'],
                 "pathParameters": events['pathParameters'],
-                "queryStringParameters": events['queryStringParameters'],
-                "multiValueQueryStringParameters": events['multiValueQueryStringParameters']
+                "queryStringParameters": events['queryStringParameters']
             })
         }
 
-    query = 'SELECT * FROM pgtarget ' \
+    if value > 0:
+        query = 'SELECT * FROM pgtarget ' \
+            f'WHERE "method_id" = %s ' \
+            f'  AND "target_type" = UPPER(%s) ' \
+            f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s' \
+            f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
+        params = [method_name, tgt_type, (value - accuracy), (value + accuracy), limit, offset]
+    else:
+        query = 'SELECT * FROM pgtarget ' \
             f'WHERE "method_id" = %s ' \
             f'  AND "target_type" = UPPER(%s) ' \
             f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
+        params = [method_name, tgt_type, limit, offset]
 
     try:
-        result = database.query(query, conn, [method_name, tgt_type, limit, offset])
+        result = database.query(query, conn, params)
         if result is None:
             result = []
     except Exception as ex:
@@ -988,6 +1007,8 @@ def get_sorted(events, context):
             "direction": direction,
             "limit": limit,
             "offset": offset,
+            "value": value,
+            "accuracy": accuracy,
             "compounds": result
         }, use_decimal=True)
     }
