@@ -61,12 +61,12 @@ def test_profiles_without_id(requireMocking):
     assert 'missing target_id' in body['error']
 
 
-def test_target_profiles(requireMocking):
+def test_target_profiles(requireMocking, target_id):
     from cis import configurations
 
     response = configurations.profiles({'pathParameters': {
         'method': 'target',
-        'value': '361'
+        'value': target_id
     }}, {})
     print(response)
 
@@ -79,12 +79,12 @@ def test_target_profiles(requireMocking):
     assert len(body['profiles']) > 0
 
 
-def test_sample_profiles(requireMocking):
+def test_sample_profiles(requireMocking, sample_name):
     from cis import configurations
 
     response = configurations.profiles({'pathParameters': {
         'method': 'sample',
-        'value': 'PlasmaBiorec002_MX524916_negCSH_postSOP010'
+        'value': sample_name
     }}, {})
 
     assert response['statusCode'] == 200
@@ -155,12 +155,12 @@ def test_configs_without_id(requireMocking):
     assert 'missing target_id' in body['error']
 
 
-def test_target_config(requireMocking):
+def test_target_config(requireMocking, target_id):
     from cis import configurations
 
     response = configurations.configs({'pathParameters': {
         'method': 'target',
-        'value': '361'
+        'value': target_id
     }}, {})
     print(response)
 
@@ -173,12 +173,12 @@ def test_target_config(requireMocking):
     assert len(body['configs']) > 0
 
 
-def test_sample_config(requireMocking):
+def test_sample_config(requireMocking, sample_name):
     from cis import configurations
 
     response = configurations.configs({'pathParameters': {
         'method': 'sample',
-        'value': 'PlasmaBiorec002_MX524916_negCSH_postSOP010'
+        'value': sample_name
     }}, {})
 
     assert response['statusCode'] == 200

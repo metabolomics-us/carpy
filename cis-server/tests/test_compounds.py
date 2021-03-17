@@ -7,7 +7,7 @@ from pprint import pprint
 from pytest import fail
 
 
-def test_getall_full_pagination(requireMocking, library_test_name):
+def test_getall_full_pagination(requireMocking, pos_library_test_name):
     from cis import compounds
 
     more = True
@@ -15,7 +15,7 @@ def test_getall_full_pagination(requireMocking, library_test_name):
     while more:
         temp = json.loads(
             compounds.all({'pathParameters': {
-                "library": library_test_name,
+                "library": pos_library_test_name,
                 "offset": len(data),
                 "limit": 10,
             }
@@ -32,14 +32,14 @@ def test_getall_full_pagination(requireMocking, library_test_name):
     assert len(data) > 10
 
 
-def test_getall_by_type_unconfirmed(requireMocking, library_test_name):
+def test_getall_by_type_is_member(requireMocking, pos_library_test_name):
     from cis import compounds
 
     response = compounds.all({'pathParameters': {
-        "library": library_test_name,
+        "library": pos_library_test_name,
         "offset": 0,
         "limit": 10,
-        "type": 'UNCONFIRMED'
+        "type": 'IS_MEMBER'
     }
 
     }, {})
@@ -49,7 +49,7 @@ def test_getall_by_type_unconfirmed(requireMocking, library_test_name):
     assert len(body) > 0
 
     response = compounds.all({'pathParameters': {
-        "library": library_test_name,
+        "library": pos_library_test_name,
         "offset": 10,
         "limit": 5
     }
@@ -60,11 +60,11 @@ def test_getall_by_type_unconfirmed(requireMocking, library_test_name):
     assert len(body) == 5
 
 
-def test_getall_by_type_unconfirmed_consensus(requireMocking, library_test_name):
+def test_getall_by_type_unconfirmed_consensus(requireMocking, pos_library_test_name):
     from cis import compounds
 
     response = compounds.all({'pathParameters': {
-        "library": library_test_name,
+        "library": pos_library_test_name,
         "offset": 0,
         "limit": 10,
         "type": 'UNCONFIRMED_CONSENSUS'
@@ -77,7 +77,7 @@ def test_getall_by_type_unconfirmed_consensus(requireMocking, library_test_name)
     assert len(body) == 10
 
     response = compounds.all({'pathParameters': {
-        "library": library_test_name,
+        "library": pos_library_test_name,
         "offset": 10,
         "limit": 5
     }
@@ -88,11 +88,11 @@ def test_getall_by_type_unconfirmed_consensus(requireMocking, library_test_name)
     assert len(body) == 5
 
 
-def test_getall(requireMocking, library_test_name):
+def test_getall(requireMocking, pos_library_test_name):
     from cis import compounds
 
     response = compounds.all({'pathParameters': {
-        "library": library_test_name,
+        "library": pos_library_test_name,
         "offset": 0,
         "limit": 10
     }
@@ -104,7 +104,7 @@ def test_getall(requireMocking, library_test_name):
     assert len(body) == 10
 
     response = compounds.all({'pathParameters': {
-        "library": library_test_name,
+        "library": pos_library_test_name,
         "offset": 10,
         "limit": 5
     }
@@ -237,7 +237,7 @@ def test_compound_get_members_none(requireMocking, splash_test_name_with_members
     assert response['statusCode'] == 404
 
 
-def test_edit_specific_compound(requireMocking, library_test_name):
+def test_edit_specific_compound(requireMocking, pos_library_test_name):
     fail('Not implemented')
 
 

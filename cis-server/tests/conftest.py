@@ -19,7 +19,7 @@ def requireMocking():
     lamb.start()
 
     os.environ["current_stage"] = "test"
-    os.environ["carrot_database"] = "carrot-test"
+    os.environ["carrot_database"] = "cis-test"
     os.environ["carrot_username"] = "postgres"
     os.environ["carrot_password"] = "Fiehnlab2020"
     os.environ["carrot_host"] = "lc-binbase-dev.czbqhgrlaqbf.us-west-2.rds.amazonaws.com"
@@ -42,7 +42,7 @@ def pos_library_test_name() -> str:
 
 
 @pytest.fixture()
-def splash_test_name_with_members(library_test_name, request):
+def splash_test_name_with_members(pos_library_test_name, request):
     from cis import compounds
     result = request.config.cache.get("cis/members", None)
 
@@ -50,10 +50,10 @@ def splash_test_name_with_members(library_test_name, request):
         print(f"using cached object: {result}")
         return result
     else:
-        return __create_compound_with_member(compounds, library_test_name)
+        return __create_compound_with_member(compounds, pos_library_test_name)
 
 
-def __create_compound_with_member(compounds, library_test_name):
+def __create_compound_with_member(compounds, pos_library_test_name):
     db = compounds.database
     new_id = db.query("select nextval('hibernate_sequence')", compounds.conn)[0][0]
     new_member_id = new_id + 1
@@ -70,21 +70,21 @@ def __create_compound_with_member(compounds, library_test_name):
                  "50.1:100 60.20:200", False,
                  583.787, "50.1:100 60.20:200", splash_parent, "test-parent-target", "UNCONFIRMED", 0,
                  "FIEHNLAB-809", "1f18173f91cb2b0e2fb2496d6855ad47ab5395ba", 2, 580.234, 10000.11, 860,
-                 "blanksoqtof[M-H] | 6530a | c18 | negative", library_test_name,
+                 f"blank{pos_library_test_name}", pos_library_test_name,
                  "PgInternalTarget", new_member_id, 341.70, None, None, "negative", 341.70,
                  "50.2:100 60.21:210", False,
                  585.580, "50.2:100 60.21:210", splash_member,
                  "test-member-target",
                  "IS_MEMBER", 0, "FIEHNLAB-809", "1f18173f91cb2b0e2fb2496d6855ad47ab5395ba", 2, 582.234,
-                 10000.11, 860, "blanksoqtof[M-H] | 6530a | c18 | negative", library_test_name))
+                 10000.11, 860, f"blank{pos_library_test_name}", pos_library_test_name))
 
     # add association
     cur.execute('insert into pg_internal_target_members values (%s, %s)', [new_id, splash_member])
-    return splash_parent, library_test_name
+    return splash_parent, pos_library_test_name
 
 
 @pytest.fixture()
-def splash_test_name_with_no_members(library_test_name, request):
+def splash_test_name_with_no_members(pos_library_test_name, request):
     from cis import compounds
     result = request.config.cache.get("cis/no_members", None)
 
@@ -94,14 +94,24 @@ def splash_test_name_with_no_members(library_test_name, request):
     else:
         print("loading all, takes forever and should be cached instead...")
         data = json.loads(
-            compounds.all({'pathParameters': {'library': library_test_name, 'limit': 100000}}, {})['body'])
+            compounds.all({'pathParameters': {'library': pos_library_test_name, 'limit': 10000}}, {})['body'])
 
     for num, splash in enumerate(data):
-        response = compounds.get_members({'pathParameters': {'library': library_test_name, 'splash': splash}}, {})
+        response = compounds.get_members({'pathParameters': {'library': pos_library_test_name, 'splash': splash}}, {})
         if response['statusCode'] == 404:
-            result = (data[num], library_test_name)
+            result = (data[num], pos_library_test_name)
 
             request.config.cache.set("cis/no_members", result)
             return result
 
-    raise Exception(f"did not find a standard with no_members in {library_test_name}")
+    raise Exception(f"did not find a standard with no_members in {pos_library_test_name}")
+
+
+@pytest.fixture()
+def target_id():
+    return '199'
+
+
+@pytest.fixture()
+def sample_name():
+    return 'NIH_Lip_Std_CSH_POS_Brain_01'
