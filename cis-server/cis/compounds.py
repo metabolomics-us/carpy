@@ -976,8 +976,8 @@ def get_sorted(events, context):
         query = 'SELECT * FROM pgtarget ' \
             f'WHERE "method_id" = %s ' \
             f'  AND "target_type" = UPPER(%s) ' \
-            f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s' \
-            f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
+            f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s ' \
+            f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s '
         params = [method_name, tgt_type, (value - accuracy), (value + accuracy), limit, offset]
     else:
         query = 'SELECT * FROM pgtarget ' \

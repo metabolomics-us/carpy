@@ -986,6 +986,21 @@ def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
         'path': 'something to shut-up pytest\'s KeyError',
         'multiValueQueryStringParameters': 'something to shut-up pytest\'s KeyError',
         'queryStringParameters': {
+            'value': 199,
+            'accuracy': 1
+        }
+    }, {})
+
+    assert response['statusCode'] == 200
+    pprint(response)
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'path': 'something to shut-up pytest\'s KeyError',
+        'multiValueQueryStringParameters': 'something to shut-up pytest\'s KeyError',
+        'queryStringParameters': {
             'value': 200,
             'accuracy': 'hacked'
         }
