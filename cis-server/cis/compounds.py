@@ -973,23 +973,23 @@ def get_sorted(events, context):
         }
 
     if value > 0:
-        query = 'SELECT * FROM pgtarget ' \
-            f'WHERE "method_id" = %s ' \
-            f'  AND "target_type" = UPPER(%s) ' \
-            f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s ' \
-            f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s '
+        query = 'SELECT splash FROM pgtarget ' \
+                f'WHERE "method_id" = %s ' \
+                f'  AND "target_type" = UPPER(%s) ' \
+                f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s ' \
+                f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s '
         params = [method_name, tgt_type, (value - accuracy), (value + accuracy), limit, offset]
     else:
-        query = 'SELECT * FROM pgtarget ' \
-            f'WHERE "method_id" = %s ' \
-            f'  AND "target_type" = UPPER(%s) ' \
-            f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
+        query = 'SELECT splash FROM pgtarget ' \
+                f'WHERE "method_id" = %s ' \
+                f'  AND "target_type" = UPPER(%s) ' \
+                f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
         params = [method_name, tgt_type, limit, offset]
 
     try:
-        result = database.query(query, conn, params)
-        if result is None:
-            result = []
+        transform = lambda x: x[0]
+        result = database.html_response_query(query, conn, params, transform)
+        return result
     except Exception as ex:
         print(str(ex))
         return {
@@ -997,20 +997,3 @@ def get_sorted(events, context):
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({"error": str(ex)})
         }
-
-    return {
-        "statusCode": 200,
-        "headers": headers.__HTTP_HEADERS__,
-        "body": json.dumps({
-            "library": method_name,
-            "tgt_type": tgt_type,
-            "query": query,
-            "order_by": order_by,
-            "direction": direction,
-            "limit": limit,
-            "offset": offset,
-            "value": value,
-            "accuracy": accuracy,
-            "compounds": result
-        }, use_decimal=True)
-    }

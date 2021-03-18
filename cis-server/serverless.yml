@@ -167,12 +167,12 @@ functions:
               paths:
                 library: true
 
-  compounds:
+  compoundsOld:
     handler: cis/compounds.all
     events:
       - http:
           private: true
-          path: compounds/{library}/{limit}/{offset}
+          path: oldcompounds/{library}/{limit}/{offset}
           method: get
           cors: true
           documentation:
@@ -186,7 +186,7 @@ functions:
 
       - http:
           private: true
-          path: compounds/{library}/{limit}/{offset}/{type}
+          path: oldcompounds/{library}/{limit}/{offset}/{type}
           method: get
           cors: true
           documentation:
@@ -198,16 +198,16 @@ functions:
                 type: true
                 limit: true
 
-  compoundSorted:
+  compounds:
     handler: cis/compounds.get_sorted
     events:
       - http:
           private: true
-          path: compoundsorted/{library}/{tgt_type}
+          path: compounds/{library}/{tgt_type}
           method: get
           cors: true
           documentation:
-            summary: returns all the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'
+            summary: returns the splash for all the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'
           request:
             parameter:
               paths:
