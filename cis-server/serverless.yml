@@ -203,6 +203,24 @@ functions:
     events:
       - http:
           private: true
+          path: compounds/{library}
+          method: get
+          cors: true
+          documentation:
+            summary: returns the splash for all the confirmed compounds of the given library sorted by 'order_by' and limited to 'limit' starting at 'offset'
+          request:
+            parameter:
+              paths:
+                library: true
+              querystrings:
+                order_by: false
+                direction: false
+                limit: false
+                offset: false
+                value: false
+                accuracy: false
+      - http:
+          private: true
           path: compounds/{library}/{tgt_type}
           method: get
           cors: true
