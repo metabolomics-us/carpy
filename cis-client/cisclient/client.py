@@ -252,7 +252,6 @@ class CISClient:
             url_path = url_path + f'/{tgt_type}'
 
         url_query_string = f'limit={limit}&offset={offset}&order_by={order_by}&direction={direction}'
-        print(f"URL={url_path}?{url_query_string}")
 
         result = self.http.get(f'{url_path}?{url_query_string}', headers=self._header)
 

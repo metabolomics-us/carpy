@@ -628,7 +628,7 @@ def get(events, context):
                     "select pn.identified_by, pn.name, pn.value , pn.\"comment\" from pgtarget p , pgtarget_meta pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
-                print("received comments: {}".format(names))
+                print("received metadata: {}".format(names))
                 if names is None:
                     return []
                 else:
@@ -664,7 +664,7 @@ def get(events, context):
                     "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
-                print("received: {}".format(names))
+                print("received names: {}".format(names))
                 if names is None:
                     return []
                 else:
@@ -676,7 +676,7 @@ def get(events, context):
                     "select distinct file_name from pgtarget p , pgtarget_samples ps , pgsample p2 where p.id = ps.targets_id and p2.id = ps.samples_id and splash = %s and method_id = %s",
                     conn, [splash, method])
 
-                print("received: {}".format(samples))
+                print("received samples: {}".format(samples))
                 if samples is None:
                     return []
                 else:
@@ -705,7 +705,10 @@ def get(events, context):
                 'samples': generate_samples_list(x[10], x[4])
             }
             result = database.html_response_query(
-                "SELECT id, accurate_mass, target_type, inchi_key, \"method_id\", ms_level, raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
+                "SELECT id, accurate_mass, target_type, inchi_key, \"method_id\", ms_level, "
+                "raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, "
+                "unique_mass, precursor_mass, adduct_name "
+                "FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
                 conn, [method_name, splash], transform=transform)
 
             return result

@@ -1,3 +1,6 @@
+from pprint import pprint
+
+import simplejson as json
 from time import time
 
 
@@ -162,7 +165,7 @@ def test_get_sample_configs(cis_cli, sample_id):
 
 def test_sorted_compounds(cis_cli, library_test_name):
     try:
-        result = cis_cli.get_sorted_compounds(library_test_name, None, 10, 0, 'ri', 'desc')
+        result = cis_cli.get_sorted_compounds(library_test_name, None, 10, 0, 'tgt_ri', 'desc')
         assert len(result) > 0
     except Exception as ex:
         print(str(ex))
@@ -170,3 +173,14 @@ def test_sorted_compounds(cis_cli, library_test_name):
 
     result = cis_cli.get_sorted_compounds(library=library_test_name, limit=100)
     assert len(result) == 100
+
+
+def test_correct_order(cis_cli, library_test_name):
+    splashes = cis_cli.get_sorted_compounds(library=library_test_name, limit=15, order_by='pmz', direction='desc')
+    assert len(splashes) == 15
+    compounds = [cis_cli.get_compound(library_test_name, s) for s in splashes]
+
+    masses = [c['precursor_mass'] for c in compounds]
+
+    assert all(masses[i] >= masses[i+1] for i in range(len(masses)-1))
+
