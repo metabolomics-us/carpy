@@ -77,7 +77,8 @@ class CISClient:
     def get_compounds_by_type(self, library: str, target_type: str, offset: int = 0, autopage: bool = True) -> List[
         dict]:
         limit = 10
-        result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}/{target_type}", headers=self._header)
+        result = self.http.get(f"{self._url}/oldcompounds/{library}/{limit}/{offset}/{target_type}",
+                               headers=self._header)
 
         if result.status_code == 200:
             result: List = result.json()
@@ -103,7 +104,7 @@ class CISClient:
 
     def get_compounds(self, library: str, offset: int = 0, autopage: bool = True) -> List[dict]:
         limit = 10
-        result = self.http.get(f"{self._url}/compounds/{library}/{limit}/{offset}", headers=self._header)
+        result = self.http.get(f"{self._url}/oldcompounds/{library}/{limit}/{offset}", headers=self._header)
 
         if result.status_code == 200:
             result: List = result.json()
@@ -242,13 +243,18 @@ class CISClient:
         else:
             raise Exception(result)
 
-    def get_sorted_compounds(self, library: str, tgt_type: str, limit: int, offset: int, order_by: str, direction: str):
-        if tgt_type is None or tgt_type.strip() == "":
-            tgt_type = 'confirmed'
+    def get_sorted_compounds(self, library: str, tgt_type: str = None, limit: int = 10, offset: int = 0,
+                             order_by: str = id, direction: str = 'asc'):
 
-        result = self.http.get(f'{self._url}/compoundsorted/{library}/{tgt_type}'
-                               f'?limit={limit}&offset={offset}&order_by={order_by}&direction={direction}',
-                               headers=self._header)
+        url_path = f'{self._url}/compounds/{library}'
+
+        if tgt_type is not None and tgt_type.strip() != "":
+            url_path = url_path + f'/{tgt_type}'
+
+        url_query_string = f'limit={limit}&offset={offset}&order_by={order_by}&direction={direction}'
+        print(f"URL={url_path}?{url_query_string}")
+
+        result = self.http.get(f'{url_path}?{url_query_string}', headers=self._header)
 
         if result.status_code == 200:
             return result.json()

@@ -163,8 +163,10 @@ def test_get_sample_configs(cis_cli, sample_id):
 def test_sorted_compounds(cis_cli, library_test_name):
     try:
         result = cis_cli.get_sorted_compounds(library_test_name, None, 10, 0, 'ri', 'desc')
-        assert len(result['compounds']) > 0
+        assert len(result) > 0
     except Exception as ex:
         print(str(ex))
         assert False
 
+    result = cis_cli.get_sorted_compounds(library=library_test_name, limit=100)
+    assert len(result) == 100

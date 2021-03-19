@@ -1,7 +1,7 @@
-# import json
-import simplejson as json
 import traceback
 import urllib.parse
+
+import simplejson as json
 
 from cis import database, headers
 
@@ -903,13 +903,13 @@ def get_sorted(events, context):
         method_name = urllib.parse.unquote(events['pathParameters']['library'])
 
     if 'tgt_type' not in events['pathParameters'] or events['pathParameters']['tgt_type'] not in types_list:
-        tgt_type = "confirmed"
+        tgt_type = 'confirmed'
     else:
         tgt_type = urllib.parse.unquote(events['pathParameters']['tgt_type'])
 
     column_dict = {
-        'id': 'id',
-        'ri': 'retention_index',
+        'tgt_id': 'id',
+        'tgt_ri': 'retention_index',
         'pmz': 'precursor_mass',
         'name': 'target_name',
         'adduct': 'adduct_name'
@@ -918,13 +918,16 @@ def get_sorted(events, context):
 
     try:
         if 'queryStringParameters' not in events or events['queryStringParameters'] is None:
+            print("WARN: using defaults")
             limit = 10
             offset = 0
-            order_by = 'id'
-            direction = 'asc'
+            order_by = "tgt_id"
+            direction = "asc"
             value = 0.0
             accuracy = 0.01
         else:
+            print(events['queryStringParameters'])
+
             if 'limit' in events['queryStringParameters'] and \
                     type(events['queryStringParameters']['limit']) == int:
                 limit = events['queryStringParameters']['limit']
@@ -938,14 +941,14 @@ def get_sorted(events, context):
                 offset = 0
 
             if 'order_by' in events['queryStringParameters'] and \
-                    events['queryStringParameters']['order_by'] in column_dict.keys():
-                order_by = events['queryStringParameters']['order_by']
+                    events['queryStringParameters']['order_by'].lower() in column_dict.keys():
+                order_by = urllib.parse.unquote(['queryStringParameters']['order_by'])
             else:
-                order_by = 'ri'
+                order_by = 'tgt_id'
 
             if 'direction' in events['queryStringParameters'] and \
                     events['queryStringParameters']['direction'].lower() in directions:
-                direction = events['queryStringParameters']['direction']
+                direction = urllib.parse.unquote(events['queryStringParameters']['direction'])
             else:
                 direction = 'asc'
 
@@ -959,6 +962,26 @@ def get_sorted(events, context):
                 value = 0
                 accuracy = 0.01
 
+        if value > 0:
+            query = 'SELECT splash FROM pgtarget ' \
+                    f'WHERE "method_id" = %s ' \
+                    f'  AND "target_type" = UPPER(%s) ' \
+                    f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s ' \
+                    f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s '
+            params = [method_name, tgt_type, (value - accuracy), (value + accuracy), limit, offset]
+        else:
+            query = 'SELECT splash FROM pgtarget ' \
+                    f'WHERE "method_id" = %s ' \
+                    f'  AND "target_type" = UPPER(%s) ' \
+                    f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
+            params = [method_name, tgt_type, limit, offset]
+
+        transform = lambda x: x[0]
+        result = database.html_response_query(query, conn, params, transform)
+
+        print(f"Requested {limit} results, returning {len(json.loads(result['body']))}")
+        return result
+
     except Exception as ex:
         print(ex)
         return {
@@ -970,30 +993,4 @@ def get_sorted(events, context):
                 "pathParameters": events['pathParameters'],
                 "queryStringParameters": events['queryStringParameters']
             })
-        }
-
-    if value > 0:
-        query = 'SELECT splash FROM pgtarget ' \
-                f'WHERE "method_id" = %s ' \
-                f'  AND "target_type" = UPPER(%s) ' \
-                f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s ' \
-                f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s '
-        params = [method_name, tgt_type, (value - accuracy), (value + accuracy), limit, offset]
-    else:
-        query = 'SELECT splash FROM pgtarget ' \
-                f'WHERE "method_id" = %s ' \
-                f'  AND "target_type" = UPPER(%s) ' \
-                f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
-        params = [method_name, tgt_type, limit, offset]
-
-    try:
-        transform = lambda x: x[0]
-        result = database.html_response_query(query, conn, params, transform)
-        return result
-    except Exception as ex:
-        print(str(ex))
-        return {
-            "statusCode": 500,
-            "headers": headers.__HTTP_HEADERS__,
-            "body": json.dumps({"error": str(ex)})
         }

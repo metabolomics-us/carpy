@@ -2,7 +2,6 @@ import json
 import random
 import string
 import urllib.parse
-from pprint import pprint
 
 from pytest import fail
 
@@ -836,7 +835,7 @@ def test_get_sorted_big_page(requireMocking, pos_library_test_name):
         'pathParameters': {
             'library': urllib.parse.quote(pos_library_test_name)
         },
-        'queryStringParameters': {'limit': 100}
+        'queryStringParameters': {'limit': '100'}
     }, {})
 
     assert response['statusCode'] == 200
@@ -882,7 +881,8 @@ def test_get_sorted_alt_type(requireMocking, splash_test_name_with_members):
     }, {})['body']
 
     types = [json.loads(compounds.get({'pathParameters': {'library': splash_test_name_with_members[1],
-                                               'splash': s}}, {})['body'])[0]['target_type'] for s in json.loads(splashes)]
+                                                          'splash': s}}, {})['body'])[0]['target_type'] for s in
+             json.loads(splashes)]
 
     assert list(dict.fromkeys(types))[0] == 'IS_MEMBER'
 
@@ -903,9 +903,6 @@ def test_get_sorted_second_page(requireMocking, pos_library_test_name):
     assert first['statusCode'] == 200
     assert second['statusCode'] == 200
 
-    pprint(json.loads(first['body']))
-    pprint(json.loads(second['body']))
-
     assert json.loads(first['body']) != json.loads(second['body'])
 
 
@@ -914,12 +911,12 @@ def test_get_sorted_compare_sorts(requireMocking, pos_library_test_name):
 
     cid = compounds.get_sorted({
         'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
-        'queryStringParameters': {'limit': 10, 'order_by': 'id'}
+        'queryStringParameters': {'limit': 10, 'order_by': 'tgt_id'}
     }, {})
 
     ri = compounds.get_sorted({
         'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
-        'queryStringParameters': {'limit': 10, 'order_by': 'ri'}
+        'queryStringParameters': {'limit': 10, 'order_by': 'tgt_ri'}
     }, {})
 
     pmz = compounds.get_sorted({
@@ -964,8 +961,6 @@ def test_get_sorted_with_range(requireMocking, pos_library_test_name, range_sear
     }, {})['body'])[0] for c in json.loads(splashes['body'])]
     assert len(comps_obj) > 0
 
-    pprint(comps_obj)
-
     assert comps_obj[0]['precursor_mass'] >= range_search[0] - range_search[1]
     assert comps_obj[-1]['precursor_mass'] <= range_search[0] + range_search[1]
     assert [comps_obj[x]['precursor_mass'] < comps_obj[x + 1]['precursor_mass'] for x in range(0, len(comps_obj) - 1)]
@@ -1001,7 +996,6 @@ def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
     }, {})
 
     assert response['statusCode'] == 200
-    pprint(response)
 
     response = compounds.get_sorted({
         'pathParameters': {
