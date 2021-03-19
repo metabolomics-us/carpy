@@ -928,15 +928,13 @@ def get_sorted(events, context):
         else:
             print(events['queryStringParameters'])
 
-            if 'limit' in events['queryStringParameters'] and \
-                    type(events['queryStringParameters']['limit']) == int:
-                limit = events['queryStringParameters']['limit']
+            if 'limit' in events['queryStringParameters']:
+                limit = int(events['queryStringParameters']['limit'])
             else:
                 limit = 10
 
-            if 'offset' in events['queryStringParameters'] and \
-                    type(events['queryStringParameters']['offset']) == int:
-                offset = events['queryStringParameters']['offset']
+            if 'offset' in events['queryStringParameters']:
+                offset = int(events['queryStringParameters']['offset'])
             else:
                 offset = 0
 
