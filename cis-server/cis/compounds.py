@@ -696,6 +696,7 @@ def get(events, context):
                 'spectrum': x[9],
                 'splash': x[10],
                 'preferred_name': x[11],
+                'preferred_adduct': x[14],
                 'associated_names': generate_name_list(x[0]),
                 'associated_adducts': generate_adducts_list(x[0]),
                 'associated_comments': generate_comments_list(x[0]),
