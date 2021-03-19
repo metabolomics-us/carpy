@@ -940,13 +940,13 @@ def get_sorted(events, context):
 
             if 'order_by' in events['queryStringParameters'] and \
                     events['queryStringParameters']['order_by'].lower() in column_dict.keys():
-                order_by = urllib.parse.unquote(['queryStringParameters']['order_by'])
+                order_by = events['queryStringParameters']['order_by']
             else:
                 order_by = 'tgt_id'
 
             if 'direction' in events['queryStringParameters'] and \
                     events['queryStringParameters']['direction'].lower() in directions:
-                direction = urllib.parse.unquote(events['queryStringParameters']['direction'])
+                direction = events['queryStringParameters']['direction']
             else:
                 direction = 'asc'
 
