@@ -28,10 +28,10 @@ def test_libraries(requireMocking):
 #   assert body['exists'] is False
 
 
-def test_exist_true(requireMocking, library_test_name):
+def test_exist_true(requireMocking, pos_library_test_name):
     from cis import libraries
     response = libraries.exists({'pathParameters': {
-        "library": library_test_name
+        "library": pos_library_test_name
     }}, {})
 
     assert response['statusCode'] == 200
@@ -39,10 +39,10 @@ def test_exist_true(requireMocking, library_test_name):
     assert body['exists']
 
 
-def test_size(requireMocking, library_test_name):
+def test_size(requireMocking, pos_library_test_name):
     from cis import libraries
     response = libraries.size({'pathParameters': {
-        "library": library_test_name
+        "library": pos_library_test_name
     }}, {})
 
     print(response)
@@ -53,10 +53,10 @@ def test_size(requireMocking, library_test_name):
     assert len(body) > 0
 
 
-def test_exist_false(requireMocking, library_test_name):
+def test_exist_false(requireMocking, pos_library_test_name):
     from cis import libraries
     response = libraries.exists({'pathParameters': {
-        "library": library_test_name + "fasfdsfda"
+        "library": pos_library_test_name + "fasfdsfda"
     }}, {})
 
     assert response['statusCode'] == 200

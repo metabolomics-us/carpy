@@ -167,12 +167,12 @@ functions:
               paths:
                 library: true
 
-  compounds:
+  compoundsOld:
     handler: cis/compounds.all
     events:
       - http:
           private: true
-          path: compounds/{library}/{limit}/{offset}
+          path: oldcompounds/{library}/{limit}/{offset}
           method: get
           cors: true
           documentation:
@@ -186,7 +186,7 @@ functions:
 
       - http:
           private: true
-          path: compounds/{library}/{limit}/{offset}/{type}
+          path: oldcompounds/{library}/{limit}/{offset}/{type}
           method: get
           cors: true
           documentation:
@@ -197,6 +197,47 @@ functions:
                 library: true
                 type: true
                 limit: true
+
+  compounds:
+    handler: cis/compounds.get_sorted
+    events:
+      - http:
+          private: true
+          path: compounds/{library}
+          method: get
+          cors: true
+          documentation:
+            summary: returns the splash for all the confirmed compounds of the given library sorted by 'order_by' and limited to 'limit' starting at 'offset'
+          request:
+            parameter:
+              paths:
+                library: true
+              querystrings:
+                order_by: false
+                direction: false
+                limit: false
+                offset: false
+                value: false
+                accuracy: false
+      - http:
+          private: true
+          path: compounds/{library}/{tgt_type}
+          method: get
+          cors: true
+          documentation:
+            summary: returns the splash for all the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'
+          request:
+            parameter:
+              paths:
+                library: true
+                tgt_type: true
+              querystrings:
+                order_by: false
+                direction: false
+                limit: false
+                offset: false
+                value: false
+                accuracy: false
 
   compoundSetName:
     handler: cis/compounds.register_name
@@ -436,4 +477,3 @@ functions:
               paths:
                 method: true
                 value: true
-

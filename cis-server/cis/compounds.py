@@ -1,6 +1,7 @@
-import json
 import traceback
 import urllib.parse
+
+import simplejson as json
 
 from cis import database, headers
 
@@ -224,7 +225,7 @@ def register_adduct(events, context):
 
     result = database.query(
         "insert into pgtarget_adduct(\"id\",\"name\",\"identified_by\",\"comment\",\"target_id\") values(%s,%s,%s,%s,%s)",
-        conn, [newNameId, name, identifiedBy, comment,id])
+        conn, [newNameId, name, identifiedBy, comment, id])
     # create a response
     return {
         "statusCode": 200,
@@ -235,6 +236,7 @@ def register_adduct(events, context):
             "splash": splash
         })
     }
+
 
 def delete_adduct(events, context):
     """
@@ -470,7 +472,7 @@ def has_members(events, context):
                 conn, [splash, method_name])
 
             try:
-                if result[0][0] > 0:    # target has members
+                if result[0][0] > 0:  # target has members
                     return {
                         "statusCode": 200,
                         "headers": headers.__HTTP_HEADERS__,
@@ -481,7 +483,7 @@ def has_members(events, context):
                             "splash": splash
                         })
                     }
-                else:   # target doesnt have members
+                else:  # target doesnt have members
                     return {
                         "statusCode": 200,
                         "headers": headers.__HTTP_HEADERS__,
@@ -626,7 +628,7 @@ def get(events, context):
                     "select pn.identified_by, pn.name, pn.value , pn.\"comment\" from pgtarget p , pgtarget_meta pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
-                print("received comments: {}".format(names))
+                print("received metadata: {}".format(names))
                 if names is None:
                     return []
                 else:
@@ -662,7 +664,7 @@ def get(events, context):
                     "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
-                print("received: {}".format(names))
+                print("received names: {}".format(names))
                 if names is None:
                     return []
                 else:
@@ -674,7 +676,7 @@ def get(events, context):
                     "select distinct file_name from pgtarget p , pgtarget_samples ps , pgsample p2 where p.id = ps.targets_id and p2.id = ps.samples_id and splash = %s and method_id = %s",
                     conn, [splash, method])
 
-                print("received: {}".format(samples))
+                print("received samples: {}".format(samples))
                 if samples is None:
                     return []
                 else:
@@ -694,6 +696,7 @@ def get(events, context):
                 'spectrum': x[9],
                 'splash': x[10],
                 'preferred_name': x[11],
+                'preferred_adduct': x[14],
                 'associated_names': generate_name_list(x[0]),
                 'associated_adducts': generate_adducts_list(x[0]),
                 'associated_comments': generate_comments_list(x[0]),
@@ -703,7 +706,10 @@ def get(events, context):
                 'samples': generate_samples_list(x[10], x[4])
             }
             result = database.html_response_query(
-                "SELECT id, accurate_mass, target_type, inchi_key, \"method_id\", ms_level, raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, unique_mass, precursor_mass FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
+                "SELECT id, accurate_mass, target_type, inchi_key, \"method_id\", ms_level, "
+                "raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, "
+                "unique_mass, precursor_mass, adduct_name "
+                "FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
                 conn, [method_name, splash], transform=transform)
 
             return result
@@ -877,5 +883,116 @@ def delete_meta(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
+            })
+        }
+
+
+def get_sorted(events, context):
+    types_list = ['unconfirmed', 'is_member', 'consensus', 'confirmed']
+
+    if 'pathParameters' not in events:
+        return {
+            "statusCode": 400,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({"error": "missing path parameters"})
+        }
+
+    if 'library' not in events['pathParameters']:
+        return {
+            "statusCode": 400,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({"error": "you need to provide a 'library' name"})
+        }
+    else:
+        method_name = urllib.parse.unquote(events['pathParameters']['library'])
+
+    if 'tgt_type' not in events['pathParameters'] or events['pathParameters']['tgt_type'] not in types_list:
+        tgt_type = 'confirmed'
+    else:
+        tgt_type = urllib.parse.unquote(events['pathParameters']['tgt_type'])
+
+    column_dict = {
+        'tgt_id': 'id',
+        'tgt_ri': 'retention_index',
+        'pmz': 'precursor_mass',
+        'name': 'target_name',
+        'adduct': 'adduct_name'
+    }
+    directions = ['asc', 'desc']
+
+    try:
+        if 'queryStringParameters' not in events or events['queryStringParameters'] is None:
+            print("WARN: using defaults")
+            limit = 10
+            offset = 0
+            order_by = "tgt_id"
+            direction = "asc"
+            value = 0.0
+            accuracy = 0.01
+        else:
+            print(events['queryStringParameters'])
+
+            if 'limit' in events['queryStringParameters']:
+                limit = int(events['queryStringParameters']['limit'])
+            else:
+                limit = 10
+
+            if 'offset' in events['queryStringParameters']:
+                offset = int(events['queryStringParameters']['offset'])
+            else:
+                offset = 0
+
+            if 'order_by' in events['queryStringParameters'] and \
+                    events['queryStringParameters']['order_by'].lower() in column_dict.keys():
+                order_by = events['queryStringParameters']['order_by']
+            else:
+                order_by = 'tgt_id'
+
+            if 'direction' in events['queryStringParameters'] and \
+                    events['queryStringParameters']['direction'].lower() in directions:
+                direction = events['queryStringParameters']['direction']
+            else:
+                direction = 'asc'
+
+            if 'value' in events['queryStringParameters']:
+                value = float(events['queryStringParameters']['value'])
+                if 'accuracy' in events['queryStringParameters']:
+                    accuracy = float(events['queryStringParameters']['accuracy'])
+                else:
+                    accuracy = 0.01
+            else:
+                value = 0
+                accuracy = 0.01
+
+        if value > 0:
+            query = 'SELECT splash FROM pgtarget ' \
+                    f'WHERE "method_id" = %s ' \
+                    f'  AND "target_type" = UPPER(%s) ' \
+                    f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s ' \
+                    f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s '
+            params = [method_name, tgt_type, (value - accuracy), (value + accuracy), limit, offset]
+        else:
+            query = 'SELECT splash FROM pgtarget ' \
+                    f'WHERE "method_id" = %s ' \
+                    f'  AND "target_type" = UPPER(%s) ' \
+                    f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
+            params = [method_name, tgt_type, limit, offset]
+
+        transform = lambda x: x[0]
+        result = database.html_response_query(query, conn, params, transform)
+
+        print(f"Requested {limit} results, returning {len(json.loads(result['body']))}")
+        return result
+
+    except Exception as ex:
+        print(ex)
+        return {
+            "statusCode": 500,
+            "headers": headers.__HTTP_HEADERS__,
+            "body": json.dumps({
+                "error": str(ex),
+                "path": events['path'],
+                "pathParameters": events['pathParameters'],
+                "queryStringParameters": events['queryStringParameters']
             })
         }

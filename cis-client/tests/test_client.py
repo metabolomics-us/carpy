@@ -1,3 +1,6 @@
+from pprint import pprint
+
+import simplejson as json
 from time import time
 
 
@@ -22,7 +25,7 @@ def test_get_compounds(cis_cli, splash_test_name):
 
 
 def test_get_compounds_by_target_type(cis_cli, splash_test_name):
-    result = cis_cli.get_compounds_by_type(splash_test_name[1], target_type="UNCONFIRMED")
+    result = cis_cli.get_compounds_by_type(splash_test_name[1], target_type="CONFIRMED")
     assert len(result) > 0
 
 
@@ -144,27 +147,40 @@ def test_get_target_profiles(cis_cli, target_id):
     result = cis_cli.get_profiles('target', target_id)
     assert len(result['profiles']) > 0
 
-    assert [363, 'carrot.filters.similarity'] in result['profiles']
 
-
-def test_get_target_configs(cis_cli, target_id):
+def test_get_target_configs(cis_cli, target_id, library_test_name):
     result = cis_cli.get_configs('target', target_id)
     assert len(result['configs']) > 0
-
-    assert [362, 'CARROT_METHOD', 'soqtof[M-H] | 6530a | c18 | negative', 'java.lang.String', ''] in result['configs']
 
 
 def test_get_sample_profiles(cis_cli, sample_id):
     result = cis_cli.get_profiles('sample', sample_id)
     assert len(result['profiles']) > 0
 
-    assert [8395, 'carrot.filters.similarity'] in result['profiles']
-
 
 def test_get_sample_configs(cis_cli, sample_id):
     result = cis_cli.get_configs('sample', sample_id)
     assert len(result['configs']) > 0
 
-    assert [8302, 'wcmc.workflow.replacement.enabled', 'true', 'java.lang.Boolean',
-            'edu.ucdavis.fiehnlab.ms.carrot.core.workflow.sample.postprocessing.ZeroReplacementProperties'] \
-           in result['configs']
+
+def test_sorted_compounds(cis_cli, library_test_name):
+    try:
+        result = cis_cli.get_sorted_compounds(library_test_name, None, 10, 0, 'tgt_ri', 'desc')
+        assert len(result) > 0
+    except Exception as ex:
+        print(str(ex))
+        assert False
+
+    result = cis_cli.get_sorted_compounds(library=library_test_name, limit=100)
+    assert len(result) == 100
+
+
+def test_correct_order(cis_cli, library_test_name):
+    splashes = cis_cli.get_sorted_compounds(library=library_test_name, limit=15, order_by='pmz', direction='desc')
+    assert len(splashes) == 15
+    compounds = [cis_cli.get_compound(library_test_name, s) for s in splashes]
+
+    masses = [c['precursor_mass'] for c in compounds]
+
+    assert all(masses[i] >= masses[i+1] for i in range(len(masses)-1))
+
