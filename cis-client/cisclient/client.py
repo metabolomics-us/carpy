@@ -1,8 +1,14 @@
 import os
+import sys
 from typing import Optional, List
 
 import requests
+from loguru import logger
 from requests.adapters import HTTPAdapter, Retry
+
+# initialize the loguru logger
+logger.add(sys.stdout, format="{time} {level} {message}", filter="cisclient", level="INFO", backtrace=True,
+           diagnose=True)
 
 
 class CISClient:
@@ -50,6 +56,7 @@ class CISClient:
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.http = requests.Session()
 
+    @logger.catch
     def get_libraries(self) -> List[str]:
         result: requests.Response = self.http.get(f"{self._url}/libraries", headers=self._header)
         if result.status_code == 200:
@@ -57,6 +64,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def size_library(self, library) -> List[str]:
         result: requests.Response = self.http.get(f"{self._url}/libraries/{library}", headers=self._header)
         if result.status_code == 200:
@@ -64,6 +72,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def exists_library(self, library: str) -> bool:
         result = self.http.head(f"{self._url}/libraries/{library}", headers=self._header)
 
@@ -74,6 +83,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def get_compounds_by_type(self, library: str, target_type: str, offset: int = 0, autopage: bool = True) -> List[
         dict]:
         limit = 10
@@ -102,6 +112,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def get_compounds(self, library: str, offset: int = 0, autopage: bool = True) -> List[dict]:
         limit = 10
         result = self.http.get(f"{self._url}/oldcompounds/{library}/{limit}/{offset}", headers=self._header)
@@ -127,6 +138,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def get_members(self, library: str, splash: str, offset: int = 0, autopage: bool = True) -> List[dict]:
         limit = 10
         result = self.http.get(f"{self._url}/compound/members/{library}/{splash}/{limit}/{offset}",
@@ -145,6 +157,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def has_members(self, splash: str, library: str):
         """
         returns all members of a consensus spectra
@@ -161,6 +174,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def exists_compound(self, library: str, splash: str) -> bool:
         result = self.http.head(f"{self._url}/compound/{library}/{splash}", headers=self._header)
 
@@ -171,6 +185,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def compound_add_adduct(self, library: str, splash: str, name: str, identifiedBy: str, comment: str):
         result = self.http.post(f"{self._url}/compound/adduct/{library}/{splash}/{identifiedBy}/{name}",
                                 headers=self._header, data=comment)
@@ -178,12 +193,14 @@ class CISClient:
         if result.status_code != 200:
             raise Exception(result)
 
+    @logger.catch
     def compound_remove_adduct(self, library: str, splash: str, name: str, identifiedBy: str) -> bool:
         result = self.http.delete(f"{self._url}/compound/adduct/{library}/{splash}/{identifiedBy}/{name}",
                                   headers=self._header)
 
         return result.status_code == 200
 
+    @logger.catch
     def compound_delete_adduct(self, library: str, splash: str, name: str, identifiedBy: str):
         result = self.http.delete(f"{self._url}/compound/adduct/{library}/{splash}/{identifiedBy}/{name}",
                                   headers=self._header)
@@ -191,6 +208,7 @@ class CISClient:
         if result.status_code != 200:
             raise Exception(result)
 
+    @logger.catch
     def name_compound(self, library: str, splash: str, name: str, identifiedBy: str, comment: str):
         result = self.http.post(f"{self._url}/compound/identify/{library}/{splash}/{identifiedBy}/{name}",
                                 headers=self._header, data=comment)
@@ -198,6 +216,7 @@ class CISClient:
         if result.status_code != 200:
             raise Exception(result)
 
+    @logger.catch
     def delete_name_compound(self, library: str, splash: str, name: str, identifiedBy: str):
         result = self.http.delete(f"{self._url}/compound/identify/{library}/{splash}/{identifiedBy}/{name}",
                                   headers=self._header)
@@ -205,6 +224,7 @@ class CISClient:
         if result.status_code != 200:
             raise Exception(result)
 
+    @logger.catch
     def set_compound_primary_name(self, library: str, splash: str, name: str) -> dict:
         result = self.http.put(f"{self._url}/compound/{library}/{splash}/{name}", headers=self._header)
 
@@ -213,6 +233,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def get_compound(self, library: str, splash: str) -> dict:
         result = self.http.get(f"{self._url}/compound/{library}/{splash}", headers=self._header)
 
@@ -221,6 +242,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def get_profiles(self, object_type: str, object_id: str):
         if object_type not in ['target', 'sample']:
             raise Exception('object_type should be "target" or "sample"')
@@ -232,6 +254,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def get_configs(self, object_type: str, object_id: str):
         if object_type not in ['target', 'sample']:
             raise Exception('object_type should be "target" or "sample"')
@@ -243,6 +266,7 @@ class CISClient:
         else:
             raise Exception(result)
 
+    @logger.catch
     def get_sorted_compounds(self, library: str, tgt_type: str = None, limit: int = 10, offset: int = 0,
                              order_by: str = id, direction: str = 'asc'):
 

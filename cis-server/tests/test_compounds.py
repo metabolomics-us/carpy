@@ -1,11 +1,18 @@
 import json
 import random
 import string
+import sys
 import urllib.parse
 
 from pytest import fail
+from loguru import logger
+
+# initialize the loguru logger
+logger.add(sys.stdout, format="{time} {level} {message}", filter="test_compound", level="INFO", backtrace=True,
+           diagnose=True)
 
 
+@logger.catch
 def test_getall_full_pagination(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -26,11 +33,12 @@ def test_getall_full_pagination(requireMocking, pos_library_test_name):
         for x in temp:
             data.append(x)
 
-        print(len(data))
-    print(len(data))
+        logger.info(len(data))
+    logger.info(len(data))
     assert len(data) > 10
 
 
+@logger.catch
 def test_getall_by_type_is_member(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -59,6 +67,7 @@ def test_getall_by_type_is_member(requireMocking, pos_library_test_name):
     assert len(body) == 5
 
 
+@logger.catch
 def test_getall_by_type_unconfirmed_consensus(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -87,6 +96,7 @@ def test_getall_by_type_unconfirmed_consensus(requireMocking, pos_library_test_n
     assert len(body) == 5
 
 
+@logger.catch
 def test_getall(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -114,6 +124,7 @@ def test_getall(requireMocking, pos_library_test_name):
     assert len(body) == 5
 
 
+@logger.catch
 def test_get_specific_compound(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -127,11 +138,12 @@ def test_get_specific_compound(requireMocking, splash_test_name_with_no_members)
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
 
-    print(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4))
     assert result['method'] == splash_test_name_with_no_members[1]
     assert result['splash'] == splash_test_name_with_no_members[0]
 
 
+@logger.catch
 def test_get_specific_compound_doesnt_exist(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -145,6 +157,7 @@ def test_get_specific_compound_doesnt_exist(requireMocking, splash_test_name_wit
     assert response['statusCode'] == 404
 
 
+@logger.catch
 def test_exist_specific_compound_false(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -158,6 +171,7 @@ def test_exist_specific_compound_false(requireMocking, splash_test_name_with_no_
     assert response['statusCode'] == 404
 
 
+@logger.catch
 def test_exist_specific_compound(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -174,6 +188,7 @@ def test_exist_specific_compound(requireMocking, splash_test_name_with_no_member
     assert json.loads(response['body'])['splash'] == splash_test_name_with_no_members[0]
 
 
+@logger.catch
 def test_compound_has_members(requireMocking, splash_test_name_with_members):
     """
     tests if a compound has more than 1 member
@@ -195,6 +210,7 @@ def test_compound_has_members(requireMocking, splash_test_name_with_members):
     assert json.loads(response['body'])['count'] > 0
 
 
+@logger.catch
 def test_compound_get_members(requireMocking, splash_test_name_with_members):
     """
     tests if pagination works to load all members or a compound
@@ -216,6 +232,7 @@ def test_compound_get_members(requireMocking, splash_test_name_with_members):
     assert len(json.loads(response['body'])) > 0
 
 
+@logger.catch
 def test_compound_get_members_none(requireMocking, splash_test_name_with_members):
     """
     tests if pagination works to load all members or a compound
@@ -236,10 +253,12 @@ def test_compound_get_members_none(requireMocking, splash_test_name_with_members
     assert response['statusCode'] == 404
 
 
+@logger.catch
 def test_edit_specific_compound(requireMocking, pos_library_test_name):
     fail('Not implemented')
 
 
+@logger.catch
 def test_compound_no_registered_names(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -263,6 +282,7 @@ def test_compound_no_registered_names(requireMocking, splash_test_name_with_no_m
     assert response['statusCode'] == 200
 
 
+@logger.catch
 def test_compound_register_comment(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -298,7 +318,7 @@ def test_compound_register_comment(requireMocking, splash_test_name_with_no_memb
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4))
 
     # the target might have more than 1 comment
     assert len(result['associated_comments']) > 0
@@ -307,6 +327,7 @@ def test_compound_register_comment(requireMocking, splash_test_name_with_no_memb
     assert result['associated_comments'][-1]['comment'] == comments
 
 
+@logger.catch
 def test_compound_register_adduct(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -342,7 +363,7 @@ def test_compound_register_adduct(requireMocking, splash_test_name_with_no_membe
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4))
 
     assert len(result['associated_adducts']) > 0
     assert result['associated_adducts'][-1]['name'] == 'Na+'
@@ -361,6 +382,7 @@ def test_compound_register_adduct(requireMocking, splash_test_name_with_no_membe
     )
 
 
+@logger.catch
 def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -397,7 +419,7 @@ def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4))
 
     assert len(result['associated_adducts']) > 0
     assert result['associated_adducts'][-1]['name'] == 'Na+'
@@ -450,6 +472,7 @@ def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_
     assert len(result['associated_adducts']) == pre_count - 1
 
 
+@logger.catch
 def test_compound_delete_name(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -485,7 +508,7 @@ def test_compound_delete_name(requireMocking, splash_test_name_with_no_members):
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(result)
+    logger.info(result)
 
     assert len(result['associated_names']) == 1
     assert result['associated_names'][0]['name'] == 'test1'
@@ -504,7 +527,7 @@ def test_compound_delete_name(requireMocking, splash_test_name_with_no_members):
 
     )
 
-    print(response)
+    logger.info(response)
     assert response['statusCode'] == 200
     response = compounds.get({'pathParameters': {
         "library": splash_test_name_with_no_members[1],
@@ -515,11 +538,12 @@ def test_compound_delete_name(requireMocking, splash_test_name_with_no_members):
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(result)
+    logger.info(result)
 
     assert len(result['associated_names']) == 0
 
 
+@logger.catch
 def test_compound_register_name(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -555,7 +579,7 @@ def test_compound_register_name(requireMocking, splash_test_name_with_no_members
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(result)
+    logger.info(result)
 
     assert len(result['associated_names']) == 1
     assert result['associated_names'][0]['name'] == 'test1'
@@ -563,6 +587,7 @@ def test_compound_register_name(requireMocking, splash_test_name_with_no_members
     assert result['associated_names'][0]['comment'] == ''
 
 
+@logger.catch
 def test_compound_register_name_with_comment(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -598,7 +623,7 @@ def test_compound_register_name_with_comment(requireMocking, splash_test_name_wi
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(result)
+    logger.info(result)
 
     assert len(result['associated_names']) == 1
     assert result['associated_names'][0]['name'] == 'test1'
@@ -639,7 +664,7 @@ def test_compound_register_name_with_comment(requireMocking, splash_test_name_wi
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(result)
+    logger.info(result)
 
     assert len(result['associated_names']) == 1
     assert result['associated_names'][0]['name'] == 'test2'
@@ -647,6 +672,7 @@ def test_compound_register_name_with_comment(requireMocking, splash_test_name_wi
     assert result['associated_names'][0]['comment'] == 'blah blah'
 
 
+@logger.catch
 def test_compound_register_names(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -696,7 +722,7 @@ def test_compound_register_names(requireMocking, splash_test_name_with_no_member
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(result)
+    logger.info(result)
 
     assert len(result['associated_names']) == 2
 
@@ -709,6 +735,7 @@ def test_compound_register_names(requireMocking, splash_test_name_with_no_member
     assert result['associated_names'][1]['comment'] == ''
 
 
+@logger.catch
 def test_compound_register_meta(requireMocking, splash_test_name_with_no_members):
     from cis import compounds
 
@@ -783,11 +810,12 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_no_members
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    print(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4))
 
     assert len(result['associated_meta']) == 3
 
 
+@logger.catch
 def test_get_sorted_defaults(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -809,6 +837,7 @@ def test_get_sorted_defaults(requireMocking, pos_library_test_name):
     assert len(compounds) == 10
 
 
+@logger.catch
 def test_get_sorted_queryString_none(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -821,13 +850,14 @@ def test_get_sorted_queryString_none(requireMocking, pos_library_test_name):
         'queryStringParameters': None
     }, {})
 
-    print(response)
+    logger.info(response)
 
     assert response['statusCode'] == 200
     compounds = json.loads(response['body'])
     assert len(compounds) == 10
 
 
+@logger.catch
 def test_get_sorted_big_page(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -844,6 +874,7 @@ def test_get_sorted_big_page(requireMocking, pos_library_test_name):
     assert len(compounds) == 100
 
 
+@logger.catch
 def test_get_sorted_wrong_path(requireMocking, library_test_name):
     from cis import compounds
 
@@ -853,6 +884,7 @@ def test_get_sorted_wrong_path(requireMocking, library_test_name):
     assert json.loads(response['body'])['error'] == 'missing path parameters'
 
 
+@logger.catch
 def test_get_sorted_no_library(requireMocking, library_test_name):
     from cis import compounds
 
@@ -865,6 +897,7 @@ def test_get_sorted_no_library(requireMocking, library_test_name):
     assert json.loads(response['body'])['error'] == "you need to provide a 'library' name"
 
 
+@logger.catch
 def test_get_sorted_alt_type(requireMocking, splash_test_name_with_members):
     from cis import compounds
 
@@ -887,6 +920,7 @@ def test_get_sorted_alt_type(requireMocking, splash_test_name_with_members):
     assert list(dict.fromkeys(types))[0] == 'IS_MEMBER'
 
 
+@logger.catch
 def test_get_sorted_second_page(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -906,6 +940,7 @@ def test_get_sorted_second_page(requireMocking, pos_library_test_name):
     assert json.loads(first['body']) != json.loads(second['body'])
 
 
+@logger.catch
 def test_get_sorted_compare_sorts(requireMocking, pos_library_test_name):
     from cis import compounds
 
@@ -941,6 +976,7 @@ def test_get_sorted_compare_sorts(requireMocking, pos_library_test_name):
     assert adduct['statusCode'] == 200
 
 
+@logger.catch
 def test_get_sorted_with_range(requireMocking, pos_library_test_name, range_search):
     from cis import compounds
 
@@ -967,6 +1003,7 @@ def test_get_sorted_with_range(requireMocking, pos_library_test_name, range_sear
     assert comps_obj[0]['precursor_mass'] - comps_obj[-1]['precursor_mass'] < 0
 
 
+@logger.catch
 def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
     from cis import compounds
 

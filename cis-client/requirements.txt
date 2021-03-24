@@ -1,3 +1,4 @@
+loguru
 boto3
 botocore
 requests

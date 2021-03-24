@@ -1,13 +1,21 @@
+import sys
 import traceback
 import urllib.parse
 
+
 import simplejson as json
 
+from loguru import logger
 from cis import database, headers
 
 conn = database.connect()
 
+# initialize the loguru logger
+logger.add(sys.stdout, format="{time} {level} {message}", filter="compounds", level="INFO", backtrace=True,
+           diagnose=True)
 
+
+@logger.catch
 def register_comment(events, context):
     """
     registers a new comment for a given target
@@ -20,7 +28,7 @@ def register_comment(events, context):
     identifiedBy = urllib.parse.unquote(events['pathParameters']['identifiedBy'])
     comment = events['body']
 
-    print(f"{splash} - {library} - {identifiedBy} - {comment}")
+    logger.info(f"{splash} - {library} - {identifiedBy} - {comment}")
 
     # load compound AND comments to get the correct id
     result = database.query(
@@ -70,6 +78,7 @@ def register_comment(events, context):
     }
 
 
+@logger.catch
 def delete_comments(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -104,6 +113,7 @@ def delete_comments(events, context):
         }
 
 
+@logger.catch
 def delete_adducts(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -138,6 +148,7 @@ def delete_adducts(events, context):
         }
 
 
+@logger.catch
 def delete_names(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -172,6 +183,7 @@ def delete_names(events, context):
         }
 
 
+@logger.catch
 def register_adduct(events, context):
     """
     registers a new adduct for a given target
@@ -185,7 +197,7 @@ def register_adduct(events, context):
     name = urllib.parse.unquote(events['pathParameters']['name'])
     comment = events.get('body', '')
 
-    print(f"{splash} - {library} - {identifiedBy} - {name}")
+    logger.info(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
     result = database.query(
         "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_adduct pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
@@ -238,6 +250,7 @@ def register_adduct(events, context):
     }
 
 
+@logger.catch
 def delete_adduct(events, context):
     """
 
@@ -285,6 +298,7 @@ def delete_adduct(events, context):
         }
 
 
+@logger.catch
 def delete_name(events, context):
     """
 
@@ -332,6 +346,7 @@ def delete_name(events, context):
         }
 
 
+@logger.catch
 def make_name_primary(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -389,6 +404,7 @@ def make_name_primary(events, context):
         }
 
 
+@logger.catch
 def register_name(events, context):
     """
     registers a new name for a given target
@@ -402,7 +418,7 @@ def register_name(events, context):
     name = urllib.parse.unquote(events['pathParameters']['name'])
     comment = events.get('body', "")
 
-    print(f"{splash} - {library} - {identifiedBy} - {name}")
+    logger.info(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
     result = database.query(
         "select p.id as \"target_id\", pn.id as \"name_id\" from pgtarget p , pgtarget_name pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s",
@@ -455,6 +471,7 @@ def register_name(events, context):
     }
 
 
+@logger.catch
 def has_members(events, context):
     """
     does this given bin has several members
@@ -522,6 +539,7 @@ def has_members(events, context):
         }
 
 
+@logger.catch
 def get_members(events, context):
     """
     return all members for this given bin
@@ -543,7 +561,7 @@ def get_members(events, context):
 
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
             splash = urllib.parse.unquote(events['pathParameters']['splash'])
-            # print(f"loading all compounds for: {method_name} and splash {splash} limit {limit} and offset {offset}")
+            # logger.info(f"loading all compounds for: {method_name} and splash {splash} limit {limit} and offset {offset}")
             transform = lambda x: x[0]
             sql = "SELECT members FROM public.pgtarget a, pg_internal_target_members b where a.id = b.pg_internal_target_id and  \"method_id\" = %s and splash = %s limit %s offset %s  "
 
@@ -569,6 +587,7 @@ def get_members(events, context):
         }
 
 
+@logger.catch
 def all(events, context):
     if 'pathParameters' in events:
         if 'offset' in events['pathParameters']:
@@ -583,7 +602,7 @@ def all(events, context):
         if 'library' in events['pathParameters']:
 
             method_name = urllib.parse.unquote(events['pathParameters']['library'])
-            print(f"loading all compounds for: {method_name} limit {limit} and offset {offset}")
+            logger.info(f"loading all compounds for: {method_name} limit {limit} and offset {offset}")
             transform = lambda x: x[0]
 
             if 'type' in events['pathParameters']:
@@ -617,6 +636,7 @@ def all(events, context):
         }
 
 
+@logger.catch
 def get(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -628,7 +648,7 @@ def get(events, context):
                     "select pn.identified_by, pn.name, pn.value , pn.\"comment\" from pgtarget p , pgtarget_meta pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
-                print("received metadata: {}".format(names))
+                logger.info("received metadata: {}".format(names))
                 if names is None:
                     return []
                 else:
@@ -640,7 +660,7 @@ def get(events, context):
                     "select pn.identified_by , pn.\"comment\" from pgtarget p , pgtarget_comment pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
-                print("received comments: {}".format(names))
+                logger.info("received comments: {}".format(names))
                 if names is None:
                     return []
                 else:
@@ -652,7 +672,7 @@ def get(events, context):
                     "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_adduct pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
-                print("received adducts: {}".format(names))
+                logger.info("received adducts: {}".format(names))
                 if names is None:
                     return []
                 else:
@@ -664,7 +684,7 @@ def get(events, context):
                     "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
-                print("received names: {}".format(names))
+                logger.info("received names: {}".format(names))
                 if names is None:
                     return []
                 else:
@@ -676,7 +696,7 @@ def get(events, context):
                     "select distinct file_name from pgtarget p , pgtarget_samples ps , pgsample p2 where p.id = ps.targets_id and p2.id = ps.samples_id and splash = %s and method_id = %s",
                     conn, [splash, method])
 
-                print("received samples: {}".format(samples))
+                logger.info("received samples: {}".format(samples))
                 if samples is None:
                     return []
                 else:
@@ -731,6 +751,7 @@ def get(events, context):
         }
 
 
+@logger.catch
 def exists(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -784,6 +805,7 @@ def exists(events, context):
         }
 
 
+@logger.catch
 def register_meta(events, context):
     """
     registers a new adduct for a given target
@@ -799,7 +821,7 @@ def register_meta(events, context):
 
     comment = events.get('body', '')
 
-    print(f"{splash} - {library} - {identifiedBy} - {name}")
+    logger.info(f"{splash} - {library} - {identifiedBy} - {name}")
     # load compound to get the correct id
     result = database.query(
         "select p.id, pn.id  from pgtarget p , pgtarget_meta pn where p.id = pn.target_id and splash = (%s) and \"method_id\" = (%s) and pn.\"name\"=%s and \"identified_by\" = %s and pn.\"value\" = %s",
@@ -851,6 +873,7 @@ def register_meta(events, context):
     }
 
 
+@logger.catch
 def delete_meta(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -887,6 +910,7 @@ def delete_meta(events, context):
         }
 
 
+@logger.catch
 def get_sorted(events, context):
     types_list = ['unconfirmed', 'is_member', 'consensus', 'confirmed']
 
@@ -922,7 +946,7 @@ def get_sorted(events, context):
 
     try:
         if 'queryStringParameters' not in events or events['queryStringParameters'] is None:
-            print("WARN: using defaults")
+            logger.info("WARN: using defaults")
             limit = 10
             offset = 0
             order_by = "tgt_id"
@@ -930,7 +954,7 @@ def get_sorted(events, context):
             value = 0.0
             accuracy = 0.01
         else:
-            print(events['queryStringParameters'])
+            logger.info(events['queryStringParameters'])
 
             if 'limit' in events['queryStringParameters']:
                 limit = int(events['queryStringParameters']['limit'])
@@ -981,11 +1005,11 @@ def get_sorted(events, context):
         transform = lambda x: x[0]
         result = database.html_response_query(query, conn, params, transform)
 
-        print(f"Requested {limit} results, returning {len(json.loads(result['body']))}")
+        logger.info(f"Requested {limit} results, returning {len(json.loads(result['body']))}")
         return result
 
     except Exception as ex:
-        print(ex)
+        logger.info(ex)
         return {
             "statusCode": 500,
             "headers": headers.__HTTP_HEADERS__,
