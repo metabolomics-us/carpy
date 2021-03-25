@@ -8,7 +8,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="test_cofigurat
            diagnose=True)
 
 
-@logger.catch
 def test_profiles_without_params(requireMocking):
     from cis import configurations
 
@@ -22,7 +21,6 @@ def test_profiles_without_params(requireMocking):
     assert 'missing path parameters' in body['error']
 
 
-@logger.catch
 def test_profiles_without_method(requireMocking):
     from cis import configurations
 
@@ -37,7 +35,6 @@ def test_profiles_without_method(requireMocking):
     assert 'missing object type to query <target|sample>' in body['error']
 
 
-@logger.catch
 def test_profiles_with_wrong_method(requireMocking):
     from cis import configurations
 
@@ -54,7 +51,6 @@ def test_profiles_with_wrong_method(requireMocking):
     assert 'invalid object type, it should be <target|sample>' in body['error']
 
 
-@logger.catch
 def test_profiles_without_id(requireMocking):
     from cis import configurations
 
@@ -71,7 +67,6 @@ def test_profiles_without_id(requireMocking):
     assert 'missing target_id' in body['error']
 
 
-@logger.catch
 def test_target_profiles(requireMocking, target_id):
     from cis import configurations
 
@@ -90,7 +85,6 @@ def test_target_profiles(requireMocking, target_id):
     assert len(body['profiles']) > 0
 
 
-@logger.catch
 def test_sample_profiles(requireMocking, sample_name):
     from cis import configurations
 
@@ -108,7 +102,6 @@ def test_sample_profiles(requireMocking, sample_name):
     assert len(body['profiles']) > 0
 
 
-@logger.catch
 def test_configs_without_params(requireMocking):
     from cis import configurations
 
@@ -122,7 +115,6 @@ def test_configs_without_params(requireMocking):
     assert 'missing path parameters' in body['error']
 
 
-@logger.catch
 def test_configs_without_method(requireMocking):
     from cis import configurations
 
@@ -137,7 +129,6 @@ def test_configs_without_method(requireMocking):
     assert 'missing object type to query <target|sample>' in body['error']
 
 
-@logger.catch
 def test_configs_with_wrong_method(requireMocking):
     from cis import configurations
 
@@ -154,7 +145,6 @@ def test_configs_with_wrong_method(requireMocking):
     assert 'invalid object type, it should be <target|sample>' in body['error']
 
 
-@logger.catch
 def test_configs_without_id(requireMocking):
     from cis import configurations
 
@@ -171,7 +161,6 @@ def test_configs_without_id(requireMocking):
     assert 'missing target_id' in body['error']
 
 
-@logger.catch
 def test_target_config(requireMocking, target_id):
     from cis import configurations
 
@@ -190,7 +179,6 @@ def test_target_config(requireMocking, target_id):
     assert len(body['configs']) > 0
 
 
-@logger.catch
 def test_sample_config(requireMocking, sample_name):
     from cis import configurations
 

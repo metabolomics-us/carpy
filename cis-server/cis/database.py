@@ -14,7 +14,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="database", lev
            diagnose=True)
 
 
-@logger.catch
 def connect():
     """
     connects to the centrally configured database
@@ -34,7 +33,6 @@ def connect():
         logger.error(e)
 
 
-@logger.catch
 def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]:
     """
 
@@ -64,7 +62,6 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
         raise error
 
 
-@logger.catch
 def html_response_query(sql: str, connection, params: Optional[List] = None, transform: Optional = None,
                         return_404_on_empty=True) -> Optional[List]:
     """

@@ -14,7 +14,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="annotations", 
            diagnose=False)
 
 
-# @logger.catch()
 def get_all(events, context):
     """
     queries the database for a paged list of annotations associated with a target.

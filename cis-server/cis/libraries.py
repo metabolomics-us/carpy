@@ -13,7 +13,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="libraries", le
            diagnose=True)
 
 
-@logger.catch
 def libraries(event, context):
     transform = lambda x: x[0]
 
@@ -21,7 +20,6 @@ def libraries(event, context):
     return database.html_response_query(sql=sql, connection=conn, transform=transform)
 
 
-@logger.catch
 def delete(event, context):
     if 'pathParameters' in event:
         if 'library' in event['pathParameters']:
@@ -67,7 +65,6 @@ def delete(event, context):
         }
 
 
-@logger.catch
 def size(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters']:
@@ -109,7 +106,6 @@ def size(events, context):
         }
 
 
-@logger.catch
 def exists(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters']:

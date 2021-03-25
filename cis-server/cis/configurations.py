@@ -14,7 +14,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="configurations
            diagnose=True)
 
 
-@logger.catch
 def create_server_error(method, value, msg):
     return {
         "statusCode": 500,
@@ -27,7 +26,6 @@ def create_server_error(method, value, msg):
     }
 
 
-@logger.catch
 def create_not_found(msg):
     return {
         "statusCode": 404,
@@ -38,20 +36,17 @@ def create_not_found(msg):
     }
 
 
-@logger.catch
 def profiles(events, context):
     query = 'SELECT "id", "name" FROM public.pgprofile WHERE @filter_field@ = %s'
     return process_event(events, query)
 
 
-@logger.catch
 def configs(events, context):
     query = 'SELECT "id", "name", "value", "data_type", "declared_in" ' \
             'FROM public.pgconfiguration WHERE @filter_field@ = %s'
     return process_event(events, query)
 
 
-@logger.catch
 def process_event(events, query_str):
     logger.info(f'EVENT: {events}')
     if 'pathParameters' in events:

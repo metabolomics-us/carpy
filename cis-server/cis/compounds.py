@@ -15,7 +15,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="compounds", le
            diagnose=True)
 
 
-@logger.catch
 def register_comment(events, context):
     """
     registers a new comment for a given target.
@@ -78,7 +77,6 @@ def register_comment(events, context):
     }
 
 
-@logger.catch
 def delete_comments(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -113,7 +111,6 @@ def delete_comments(events, context):
         }
 
 
-@logger.catch
 def delete_adducts(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -148,7 +145,6 @@ def delete_adducts(events, context):
         }
 
 
-@logger.catch
 def delete_names(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -183,7 +179,6 @@ def delete_names(events, context):
         }
 
 
-@logger.catch
 def register_adduct(events, context):
     """
     registers a new adduct for a given target
@@ -250,7 +245,6 @@ def register_adduct(events, context):
     }
 
 
-@logger.catch
 def delete_adduct(events, context):
     """
 
@@ -298,7 +292,6 @@ def delete_adduct(events, context):
         }
 
 
-@logger.catch
 def delete_name(events, context):
     """
 
@@ -346,7 +339,6 @@ def delete_name(events, context):
         }
 
 
-@logger.catch
 def make_name_primary(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -404,7 +396,6 @@ def make_name_primary(events, context):
         }
 
 
-@logger.catch
 def register_name(events, context):
     """
     registers a new name for a given target
@@ -471,7 +462,6 @@ def register_name(events, context):
     }
 
 
-@logger.catch
 def has_members(events, context):
     """
     does this given bin has several members
@@ -539,7 +529,6 @@ def has_members(events, context):
         }
 
 
-@logger.catch
 def get_members(events, context):
     """
     return all members for this given bin
@@ -587,7 +576,6 @@ def get_members(events, context):
         }
 
 
-@logger.catch
 def all(events, context):
     if 'pathParameters' in events:
         if 'offset' in events['pathParameters']:
@@ -636,7 +624,6 @@ def all(events, context):
         }
 
 
-@logger.catch
 def get(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -751,7 +738,6 @@ def get(events, context):
         }
 
 
-@logger.catch
 def exists(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -805,7 +791,6 @@ def exists(events, context):
         }
 
 
-@logger.catch
 def register_meta(events, context):
     """
     registers a new adduct for a given target
@@ -873,7 +858,6 @@ def register_meta(events, context):
     }
 
 
-@logger.catch
 def delete_meta(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -910,7 +894,6 @@ def delete_meta(events, context):
         }
 
 
-@logger.catch
 def get_sorted(events, context):
     types_list = ['unconfirmed', 'is_member', 'consensus', 'confirmed']
 
