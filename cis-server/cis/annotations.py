@@ -71,6 +71,9 @@ def get_all(events, context):
                         f'LIMIT {limit} OFFSET {offset}',
                         conn, [tgtid], transform)
 
+                    if response['statusCode'] != 200:
+                        return response
+
                     result = json.loads(response['body'])
 
                     # create a response

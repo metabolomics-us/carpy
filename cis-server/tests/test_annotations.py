@@ -20,6 +20,7 @@ def test_get_all(requireMocking, annotated_target):
             "offset": 0
         }
     }, {})
+    logger.info(response)
 
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
@@ -27,7 +28,7 @@ def test_get_all(requireMocking, annotated_target):
     assert len(body['annotations']) == 2
     assert body['total_count'] == annotated_target['count']
 
-    second = annotations.get_all({
+    response = annotations.get_all({
         "pathParameters": {
             "splash": annotated_target['splash']
         },
@@ -36,6 +37,7 @@ def test_get_all(requireMocking, annotated_target):
             "offset": 2
         }
     }, {})
-    body = json.loads(second['body'])
+    logger.info(response)
+    body = json.loads(response['body'])
 
     assert len(body['annotations']) == 1
