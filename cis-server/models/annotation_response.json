@@ -14,7 +14,45 @@
 			"items": {
 				"type": "object",
 				"properties": {
-
+					"id": {
+						"type": "integer"
+					},
+					"accurate_mass": {
+						"type": "number"
+					},
+					"ion_mode": {
+						"type": "string"
+					},
+					"ms_level": {
+						"type": "integer"
+					},
+					"original_retention_time": {
+						"type": "number"
+					},
+					"precursor_mass": {
+						"type": "number"
+					},
+					"raw_spectrum": {
+						"type": "string"
+					},
+					"replaced": {
+						"type": "boolean"
+					},
+					"retention_index": {
+						"type": "number"
+					},
+					"spectrum": {
+						"type": "string"
+					},
+					"splash": {
+						"type": "string"
+					},
+					"sample_id": {
+						"type": "string"
+					},
+					"target_id": {
+						"type": "integer"
+					}
 				}
 			}
 		}
