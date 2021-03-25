@@ -98,7 +98,7 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
                 )
             }
     except Exception as e:
-        traceback.print_exc()
+        # traceback.print_exc()
         return {
             "statusCode": 500,
             "headers": headers.__HTTP_HEADERS__,

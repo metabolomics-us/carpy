@@ -107,18 +107,20 @@ def splash_test_name_with_no_members(pos_library_test_name, request):
 
 
 @pytest.fixture()
-@logger.catch
 def target_id():
     return '199'
 
 
 @pytest.fixture()
-@logger.catch
 def sample_name():
     return 'NIH_Lip_Std_CSH_POS_Brain_01'
 
 
 @pytest.fixture()
-@logger.catch
 def range_search():
     return 227.21, 0.01
+
+
+@pytest.fixture()
+def annotated_target():
+    return {"id": 40285, "splash": "splash10-0002-5410090000-af60d3205786a584beac", "count": 3}

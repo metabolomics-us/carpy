@@ -18,7 +18,7 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="compounds", le
 @logger.catch
 def register_comment(events, context):
     """
-    registers a new comment for a given target
+    registers a new comment for a given target.
     :param events:
     :param context:
     :return:
