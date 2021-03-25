@@ -27,7 +27,7 @@ def get_all(events, context):
 
     limit = 50
     offset = 0
-    if 'queryStringParameters' in events:
+    if 'queryStringParameters' in events and events['queryStringParameters'] is not None:
         if 'limit' in events['queryStringParameters']:
             limit = int(events['queryStringParameters']['limit'])
         if 'offset' in events['queryStringParameters']:
