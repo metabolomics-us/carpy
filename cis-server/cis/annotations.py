@@ -25,10 +25,9 @@ def get_all(events, context):
     """
     logger.info(f'EVENTS: {events}')
 
-    if not 'queryStringParameters' in events:
-        limit = 50
-        offset = 0
-    else:
+    limit = 50
+    offset = 0
+    if 'queryStringParameters' in events:
         if 'limit' in events['queryStringParameters']:
             limit = int(events['queryStringParameters']['limit'])
         if 'offset' in events['queryStringParameters']:

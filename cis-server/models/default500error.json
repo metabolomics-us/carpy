@@ -1,6 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Default500Error",
-  "type": "array",
-  "items": {}
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string"
+    }
+  }
 }
