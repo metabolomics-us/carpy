@@ -17,7 +17,6 @@ os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
 
 
 @pytest.fixture
-@logger.catch
 def requireMocking():
     """
     method which should be called before all other methods in tests. It basically configures our
@@ -41,19 +40,16 @@ def requireMocking():
 
 
 @pytest.fixture()
-@logger.catch
 def library_test_name() -> str:
     return "soqtof[M-H] | 6530a | c18 | negative"
 
 
 @pytest.fixture()
-@logger.catch
 def pos_library_test_name() -> str:
     return "soqe[M+H][M+NH4] | QExactive | test | positive"
 
 
 @pytest.fixture()
-@logger.catch
 def splash_test_name_with_members(pos_library_test_name, request):
     from cis import compounds
     result = request.config.cache.get("cis/members", None)
@@ -80,7 +76,6 @@ def splash_test_name_with_members(pos_library_test_name, request):
 
 
 @pytest.fixture()
-@logger.catch
 def splash_test_name_with_no_members(pos_library_test_name, request):
     from cis import compounds
     result = request.config.cache.get("cis/no_members", None)
@@ -107,18 +102,20 @@ def splash_test_name_with_no_members(pos_library_test_name, request):
 
 
 @pytest.fixture()
-@logger.catch
 def target_id():
     return '199'
 
 
 @pytest.fixture()
-@logger.catch
 def sample_name():
     return 'NIH_Lip_Std_CSH_POS_Brain_01'
 
 
 @pytest.fixture()
-@logger.catch
 def range_search():
     return 227.21, 0.01
+
+
+@pytest.fixture()
+def annotated_target():
+    return {"id": 40285, "splash": "splash10-0002-5410090000-af60d3205786a584beac", "count": 3}

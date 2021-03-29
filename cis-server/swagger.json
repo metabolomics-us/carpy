@@ -1,0 +1,810 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "REST API for accessing lc-binbase data",
+    "version" : "2021-03-25T19:56:01Z",
+    "title" : "test-cis"
+  },
+  "host" : "test-api.metabolomics.us",
+  "basePath" : "/cis",
+  "schemes" : [ "https" ],
+  "paths" : {
+    "/annotations/{splash}" : {
+      "get" : {
+        "summary" : "returns a paged list and the total number of annotations for the given compound",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "number of items in the result. Default: 50",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "x-api-key",
+          "in" : "header",
+          "description" : "AWS generated api key for the respective stage",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "splash",
+          "in" : "path",
+          "description" : "splash key of the target to check",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "index of the first row to put in the result",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "schema" : {
+              "$ref" : "#/definitions/AnnotationResponse"
+            }
+          },
+          "500" : {
+            "description" : "500 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default500Error"
+            }
+          },
+          "404" : {
+            "description" : "404 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default404Response"
+            }
+          }
+        },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compound/adduct/{library}/{splash}/{identifiedBy}/{name}" : {
+      "post" : {
+        "summary" : "returns if the given compound exists in the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "delete" : {
+        "summary" : "returns if the given compound exists in the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compound/comment/{library}/{splash}/{identifiedBy}" : {
+      "post" : {
+        "summary" : "returns if the given compound exists in the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compound/identify/{library}/{splash}/{identifiedBy}/{name}" : {
+      "post" : {
+        "summary" : "returns if the given compound exists in the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "delete" : {
+        "summary" : "returns if the delete of the deletion is ok",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compound/members/{library}/{splash}" : {
+      "head" : {
+        "summary" : "returns if the given compound has any associated splashes in this library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compound/members/{library}/{splash}/{limit}/{offset}" : {
+      "get" : {
+        "summary" : "returns the members of the given compounds",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compound/meta/{library}/{splash}/{identifiedBy}/{name}/{value}" : {
+      "post" : {
+        "summary" : "returns if the given compound exists in the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compound/{library}/{splash}" : {
+      "get" : {
+        "summary" : "returns if the given compound exists in the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "head" : {
+        "summary" : "returns if the given compound exists in the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "delete" : {
+        "summary" : "delete the given bin from the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compound/{library}/{splash}/{name}" : {
+      "put" : {
+        "summary" : "updates the primary name of a compound",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compounds/{library}" : {
+      "get" : {
+        "summary" : "returns the splash for all the confirmed compounds of the given library sorted by 'order_by' and limited to 'limit' starting at 'offset'",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "library",
+          "in" : "path",
+          "description" : "name of the library/method to check",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "number of items in the result. Default: 10",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "value",
+          "in" : "query",
+          "description" : "value to use as the center of the range filter. Default: 0 (no filtering)",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "x-api-key",
+          "in" : "header",
+          "description" : "AWS generated api key for the respective stage",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "accuracy",
+          "in" : "query",
+          "description" : "value to use ad the limits of the range filter. Default: 0.1 (only used if 'value' > 0)",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "index of the first item in the result (zero-based). Default: 0",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "order_by",
+          "in" : "query",
+          "description" : "column to order results. Valid values: [tgt_id, tgt_ri, pmz, name, adduct], default: 'tgt_id'",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "direction",
+          "in" : "query",
+          "description" : "sort order. Valid values: [asc, desc], default 'asc'",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "schema" : {
+              "$ref" : "#/definitions/SplashList"
+            }
+          },
+          "500" : {
+            "description" : "500 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default500Error"
+            }
+          },
+          "404" : {
+            "description" : "404 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default404Response"
+            }
+          }
+        },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compounds/{library}/{tgt_type}" : {
+      "get" : {
+        "summary" : "returns the splash for all the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configurations/{method}/{value}" : {
+      "get" : {
+        "summary" : "returns the list of configurations used to process the object defined in method, either 'target' or 'sample'",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/libraries" : {
+      "get" : {
+        "summary" : "returns all the libraries in the system",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "x-api-key",
+          "in" : "header",
+          "description" : "AWS generated api key for the respective stage",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "schema" : {
+              "$ref" : "#/definitions/LibraryList"
+            }
+          },
+          "500" : {
+            "description" : "500 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default500Error"
+            }
+          },
+          "404" : {
+            "description" : "404 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default404Response"
+            }
+          }
+        }
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/libraries/{library}" : {
+      "get" : {
+        "summary" : "returns the count in compounds of a library by type",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "x-api-key",
+          "in" : "header",
+          "description" : "AWS generated api key for the respective stage",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "library",
+          "in" : "path",
+          "description" : "name of the library/method to check",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "schema" : {
+              "$ref" : "#/definitions/LibraryExists"
+            }
+          },
+          "500" : {
+            "description" : "500 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default500Error"
+            }
+          },
+          "404" : {
+            "description" : "404 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default404Response"
+            }
+          }
+        },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "head" : {
+        "summary" : "returns if the given library exist",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "x-api-key",
+          "in" : "header",
+          "description" : "AWS generated api key for the respective stage",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "library",
+          "in" : "path",
+          "description" : "name of the library/method to check",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "schema" : {
+              "$ref" : "#/definitions/LibraryExists"
+            }
+          },
+          "500" : {
+            "description" : "500 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default500Error"
+            }
+          },
+          "404" : {
+            "description" : "404 response",
+            "schema" : {
+              "$ref" : "#/definitions/Default404Response"
+            }
+          }
+        },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "delete" : {
+        "summary" : "delete the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oldcompounds/{library}/{limit}/{offset}" : {
+      "get" : {
+        "summary" : "returns all the compounds of the given library",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oldcompounds/{library}/{limit}/{offset}/{type}" : {
+      "get" : {
+        "summary" : "returns all the compounds of the given library and type",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profiles/{method}/{value}" : {
+      "get" : {
+        "summary" : "returns the list of profiles used to process the object defined in method, either 'target' or 'sample'",
+        "responses" : { },
+        "security" : [ {
+          "api_key" : [ ]
+        } ]
+      },
+      "options" : {
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "200 response",
+            "headers" : {
+              "Access-Control-Allow-Origin" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Methods" : {
+                "type" : "string"
+              },
+              "Access-Control-Allow-Headers" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions" : {
+    "api_key" : {
+      "type" : "apiKey",
+      "name" : "x-api-key",
+      "in" : "header"
+    }
+  },
+  "definitions" : {
+    "Default500Error" : {
+      "title" : "Default500Error",
+      "type" : "array",
+      "description" : "default error response"
+    },
+    "Default404Response" : {
+      "type" : "object",
+      "properties" : {
+        "body" : {
+          "type" : "array"
+        },
+        "statusCode" : {
+          "type" : "integer"
+        }
+      },
+      "title" : "Default404Response",
+      "description" : "404 error response"
+    },
+    "LibraryExists" : {
+      "title" : "LibraryExists",
+      "type" : "array",
+      "description" : "library existence check",
+      "items" : {
+        "type" : "array"
+      }
+    },
+    "SplashList" : {
+      "type" : "array",
+      "description" : "List of splashes found for the given library"
+    },
+    "LibraryList" : {
+      "type" : "array",
+      "description" : "List of libraries in the system"
+    },
+    "AnnotationResponse" : {
+      "type" : "object",
+      "properties" : {
+        "total_count" : {
+          "type" : "integer"
+        },
+        "annotations" : {
+          "type" : "array"
+        },
+        "splash" : {
+          "type" : "string"
+        }
+      },
+      "title" : "AnnotationResponse"
+    }
+  }
+}

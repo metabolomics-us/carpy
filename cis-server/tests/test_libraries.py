@@ -1,5 +1,4 @@
 import json
-
 import sys
 
 from loguru import logger
@@ -9,18 +8,16 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="test_libraries
            diagnose=True)
 
 
-@logger.catch
 def test_libraries(requireMocking):
     from cis import libraries
     response = libraries.libraries({}, {})
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
 
-#@logger.catch
 #def test_delete_library(requireMocking, library_test_name):
 #   from cis import libraries
 #   response = libraries.delete({'pathParameters': {
@@ -38,7 +35,6 @@ def test_libraries(requireMocking):
 #   assert body['exists'] is False
 
 
-@logger.catch
 def test_exist_true(requireMocking, pos_library_test_name):
     from cis import libraries
     response = libraries.exists({'pathParameters': {
@@ -50,7 +46,6 @@ def test_exist_true(requireMocking, pos_library_test_name):
     assert body['exists']
 
 
-@logger.catch
 def test_size(requireMocking, pos_library_test_name):
     from cis import libraries
     response = libraries.size({'pathParameters': {
@@ -65,7 +60,6 @@ def test_size(requireMocking, pos_library_test_name):
     assert len(body) > 0
 
 
-@logger.catch
 def test_exist_false(requireMocking, pos_library_test_name):
     from cis import libraries
     response = libraries.exists({'pathParameters': {

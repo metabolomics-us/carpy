@@ -1,12 +1,11 @@
-import json
 import os
 import sys
-import traceback
 from typing import Optional, List
 
 import psycopg2
-
+import simplejson as json
 from loguru import logger
+
 from cis import headers
 
 # initialize the loguru logger
@@ -14,7 +13,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="database", lev
            diagnose=True)
 
 
-@logger.catch
 def connect():
     """
     connects to the centrally configured database
@@ -34,7 +32,6 @@ def connect():
         logger.error(e)
 
 
-@logger.catch
 def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]:
     """
 
@@ -64,7 +61,6 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
         raise error
 
 
-@logger.catch
 def html_response_query(sql: str, connection, params: Optional[List] = None, transform: Optional = None,
                         return_404_on_empty=True) -> Optional[List]:
     """
@@ -89,20 +85,18 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
             }
         else:
             if transform is not None:
-                result = list(map(transform, result))
+                result = json.dumps(list(map(transform, result)), use_decimal=True)
             return {
                 "statusCode": 200,
                 "headers": headers.__HTTP_HEADERS__,
-                "body": json.dumps(
-                    result
-                )
+                "body": result
             }
     except Exception as e:
-        traceback.print_exc()
+        # traceback.print_exc()
         return {
             "statusCode": 500,
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": str(e),
-            })
+            }, use_decimal=True)
         }

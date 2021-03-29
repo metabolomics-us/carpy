@@ -1,10 +1,11 @@
 import inspect
-import json
 import sys
 import traceback
 import urllib.parse
 
+import simplejson as json
 from loguru import logger
+
 from cis import database, headers
 
 conn = database.connect()
@@ -14,7 +15,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="configurations
            diagnose=True)
 
 
-@logger.catch
 def create_server_error(method, value, msg):
     return {
         "statusCode": 500,
@@ -23,35 +23,31 @@ def create_server_error(method, value, msg):
             "error": msg,
             "method": method,
             "value": value
-        })
+        }, use_decimal=True)
     }
 
 
-@logger.catch
 def create_not_found(msg):
     return {
         "statusCode": 404,
         "headers": headers.__HTTP_HEADERS__,
         "body": json.dumps({
             "error": msg
-        })
+        }, use_decimal=True)
     }
 
 
-@logger.catch
 def profiles(events, context):
     query = 'SELECT "id", "name" FROM public.pgprofile WHERE @filter_field@ = %s'
     return process_event(events, query)
 
 
-@logger.catch
 def configs(events, context):
     query = 'SELECT "id", "name", "value", "data_type", "declared_in" ' \
             'FROM public.pgconfiguration WHERE @filter_field@ = %s'
     return process_event(events, query)
 
 
-@logger.catch
 def process_event(events, query_str):
     logger.info(f'EVENT: {events}')
     if 'pathParameters' in events:
@@ -79,7 +75,7 @@ def process_event(events, query_str):
                             caller: result,
                             "method": method,
                             "value": value
-                        })
+                        }, use_decimal=True)
                     }
                 except Exception as ex:
                     traceback.print_exc()

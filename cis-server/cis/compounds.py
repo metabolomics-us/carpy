@@ -2,10 +2,9 @@ import sys
 import traceback
 import urllib.parse
 
-
 import simplejson as json
-
 from loguru import logger
+
 from cis import database, headers
 
 conn = database.connect()
@@ -15,10 +14,9 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="compounds", le
            diagnose=True)
 
 
-@logger.catch
 def register_comment(events, context):
     """
-    registers a new comment for a given target
+    registers a new comment for a given target.
     :param events:
     :param context:
     :return:
@@ -51,7 +49,7 @@ def register_comment(events, context):
                 "body": json.dumps({
                     "library": library,
                     "splash": splash
-                })
+                }, use_decimal=True)
             }
     else:
         id = result[0][0]
@@ -74,11 +72,10 @@ def register_comment(events, context):
             "members": True,
             "library": library,
             "splash": splash
-        })
+        }, use_decimal=True)
     }
 
 
-@logger.catch
 def delete_comments(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -100,7 +97,7 @@ def delete_comments(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
     else:
         return {
@@ -109,11 +106,10 @@ def delete_comments(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def delete_adducts(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -135,7 +131,7 @@ def delete_adducts(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
     else:
         return {
@@ -144,11 +140,10 @@ def delete_adducts(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def delete_names(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -170,7 +165,7 @@ def delete_names(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
     else:
         return {
@@ -179,11 +174,10 @@ def delete_names(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def register_adduct(events, context):
     """
     registers a new adduct for a given target
@@ -217,7 +211,7 @@ def register_adduct(events, context):
                 "body": json.dumps({
                     "library": library,
                     "splash": splash
-                })
+                }, use_decimal=True)
             }
     elif len(result) > 0:
         id = result[0][0]
@@ -246,11 +240,10 @@ def register_adduct(events, context):
             "members": True,
             "library": library,
             "splash": splash
-        })
+        }, use_decimal=True)
     }
 
 
-@logger.catch
 def delete_adduct(events, context):
     """
 
@@ -281,7 +274,7 @@ def delete_adduct(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
 
     else:
@@ -294,11 +287,10 @@ def delete_adduct(events, context):
                 "name": name,
                 "identifiedBy": identifiedBy,
                 "reason": "we did not find a name with the given properties"
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def delete_name(events, context):
     """
 
@@ -329,7 +321,7 @@ def delete_name(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
 
     else:
@@ -342,11 +334,10 @@ def delete_name(events, context):
                 "name": name,
                 "identifiedBy": identifiedBy,
                 "reason": "we did not find a name with the given properties"
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def make_name_primary(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -374,7 +365,7 @@ def make_name_primary(events, context):
                         "body": json.dumps({
                             "library": method_name,
                             "splash": splash
-                        })
+                        }, use_decimal=True)
                     }
                 except Exception as e:
                     traceback.print_exc()
@@ -384,7 +375,7 @@ def make_name_primary(events, context):
                         "body": json.dumps({
                             "error": str(e),
                             "library": method_name
-                        })
+                        }, use_decimal=True)
                     }
         else:
             return {
@@ -392,7 +383,7 @@ def make_name_primary(events, context):
                 "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
                     "error": "you need to provide a 'library' name and a splash"
-                })
+                }, use_decimal=True)
             }
     else:
         return {
@@ -400,11 +391,10 @@ def make_name_primary(events, context):
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": "missing path parameters"
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def register_name(events, context):
     """
     registers a new name for a given target
@@ -438,7 +428,7 @@ def register_name(events, context):
                 "body": json.dumps({
                     "library": library,
                     "splash": splash
-                })
+                }, use_decimal=True)
             }
     elif len(result) > 0:
         id = result[0][0]
@@ -467,11 +457,10 @@ def register_name(events, context):
             "members": True,
             "library": library,
             "splash": splash
-        })
+        }, use_decimal=True)
     }
 
 
-@logger.catch
 def has_members(events, context):
     """
     does this given bin has several members
@@ -498,7 +487,7 @@ def has_members(events, context):
                             "count": result[0][0],
                             "library": method_name,
                             "splash": splash
-                        })
+                        }, use_decimal=True)
                     }
                 else:  # target doesnt have members
                     return {
@@ -509,7 +498,7 @@ def has_members(events, context):
                             "count": result[0][0],
                             "library": method_name,
                             "splash": splash
-                        })
+                        }, use_decimal=True)
                     }
             except Exception as e:
                 traceback.print_exc()
@@ -519,7 +508,7 @@ def has_members(events, context):
                     "body": json.dumps({
                         "error": str(e),
                         "library": method_name
-                    })
+                    }, use_decimal=True)
                 }
         else:
             return {
@@ -527,7 +516,7 @@ def has_members(events, context):
                 "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
                     "error": "you need to provide a 'library' name and a splash"
-                })
+                }, use_decimal=True)
             }
     else:
         return {
@@ -535,11 +524,10 @@ def has_members(events, context):
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": "missing path parameters"
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def get_members(events, context):
     """
     return all members for this given bin
@@ -574,7 +562,7 @@ def get_members(events, context):
                 "body": json.dumps({
                     "error": "you need to provide a 'library' name",
 
-                })
+                }, use_decimal=True)
             }
     else:
         return {
@@ -583,11 +571,10 @@ def get_members(events, context):
             "body": json.dumps({
                 "error": "missing path parameters",
 
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def all(events, context):
     if 'pathParameters' in events:
         if 'offset' in events['pathParameters']:
@@ -623,7 +610,7 @@ def all(events, context):
                 "body": json.dumps({
                     "error": "you need to provide a 'library' name",
 
-                })
+                }, use_decimal=True)
             }
     else:
         return {
@@ -632,11 +619,10 @@ def all(events, context):
             "body": json.dumps({
                 "error": "missing path parameters",
 
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def get(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -739,7 +725,7 @@ def get(events, context):
                 "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
                     "error": "you need to provide a 'library' name and a splash"
-                })
+                }, use_decimal=True)
             }
     else:
         return {
@@ -747,11 +733,10 @@ def get(events, context):
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": "missing path parameters"
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def exists(events, context):
     if 'pathParameters' in events:
         if 'library' in events['pathParameters'] and 'splash' in events['pathParameters']:
@@ -775,7 +760,7 @@ def exists(events, context):
                             "exists": result[0][0],
                             "library": method_name,
                             "splash": splash
-                        })
+                        }, use_decimal=True)
                     }
                 except Exception as e:
                     traceback.print_exc()
@@ -785,7 +770,7 @@ def exists(events, context):
                         "body": json.dumps({
                             "error": str(e),
                             "library": method_name
-                        })
+                        }, use_decimal=True)
                     }
         else:
             return {
@@ -793,7 +778,7 @@ def exists(events, context):
                 "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
                     "error": "you need to provide a 'library' name and a splash"
-                })
+                }, use_decimal=True)
             }
     else:
         return {
@@ -801,11 +786,10 @@ def exists(events, context):
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": "missing path parameters"
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def register_meta(events, context):
     """
     registers a new adduct for a given target
@@ -841,7 +825,7 @@ def register_meta(events, context):
                 "body": json.dumps({
                     "library": library,
                     "splash": splash
-                })
+                }, use_decimal=True)
             }
     elif len(result) > 0:
         id = result[0][0]
@@ -869,11 +853,10 @@ def register_meta(events, context):
             "members": True,
             "library": library,
             "splash": splash
-        })
+        }, use_decimal=True)
     }
 
 
-@logger.catch
 def delete_meta(events, context):
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
@@ -897,7 +880,7 @@ def delete_meta(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
     else:
         return {
@@ -906,11 +889,10 @@ def delete_meta(events, context):
             "body": json.dumps({
                 "library": library,
                 "splash": splash
-            })
+            }, use_decimal=True)
         }
 
 
-@logger.catch
 def get_sorted(events, context):
     types_list = ['unconfirmed', 'is_member', 'consensus', 'confirmed']
 
@@ -918,14 +900,14 @@ def get_sorted(events, context):
         return {
             "statusCode": 400,
             "headers": headers.__HTTP_HEADERS__,
-            "body": json.dumps({"error": "missing path parameters"})
+            "body": json.dumps({"error": "missing path parameters"}, use_decimal=True)
         }
 
     if 'library' not in events['pathParameters']:
         return {
             "statusCode": 400,
             "headers": headers.__HTTP_HEADERS__,
-            "body": json.dumps({"error": "you need to provide a 'library' name"})
+            "body": json.dumps({"error": "you need to provide a 'library' name"}, use_decimal=True)
         }
     else:
         method_name = urllib.parse.unquote(events['pathParameters']['library'])
@@ -1018,5 +1000,5 @@ def get_sorted(events, context):
                 "path": events['path'],
                 "pathParameters": events['pathParameters'],
                 "queryStringParameters": events['queryStringParameters']
-            })
+            }, use_decimal=True)
         }

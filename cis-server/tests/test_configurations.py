@@ -8,7 +8,6 @@ logger.add(sys.stdout, format="{time} {level} {message}", filter="test_cofigurat
            diagnose=True)
 
 
-@logger.catch
 def test_profiles_without_params(requireMocking):
     from cis import configurations
 
@@ -16,13 +15,12 @@ def test_profiles_without_params(requireMocking):
     assert response['statusCode'] == 500
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert 'missing path parameters' in body['error']
 
 
-@logger.catch
 def test_profiles_without_method(requireMocking):
     from cis import configurations
 
@@ -31,13 +29,12 @@ def test_profiles_without_method(requireMocking):
     assert response['statusCode'] == 500
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert 'missing object type to query <target|sample>' in body['error']
 
 
-@logger.catch
 def test_profiles_with_wrong_method(requireMocking):
     from cis import configurations
 
@@ -48,13 +45,12 @@ def test_profiles_with_wrong_method(requireMocking):
     assert response['statusCode'] == 500
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert 'invalid object type, it should be <target|sample>' in body['error']
 
 
-@logger.catch
 def test_profiles_without_id(requireMocking):
     from cis import configurations
 
@@ -65,13 +61,12 @@ def test_profiles_without_id(requireMocking):
     assert response['statusCode'] == 500
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert 'missing target_id' in body['error']
 
 
-@logger.catch
 def test_target_profiles(requireMocking, target_id):
     from cis import configurations
 
@@ -84,13 +79,12 @@ def test_target_profiles(requireMocking, target_id):
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert len(body['profiles']) > 0
 
 
-@logger.catch
 def test_sample_profiles(requireMocking, sample_name):
     from cis import configurations
 
@@ -102,13 +96,12 @@ def test_sample_profiles(requireMocking, sample_name):
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert len(body['profiles']) > 0
 
 
-@logger.catch
 def test_configs_without_params(requireMocking):
     from cis import configurations
 
@@ -116,13 +109,12 @@ def test_configs_without_params(requireMocking):
     assert response['statusCode'] == 500
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert 'missing path parameters' in body['error']
 
 
-@logger.catch
 def test_configs_without_method(requireMocking):
     from cis import configurations
 
@@ -131,13 +123,12 @@ def test_configs_without_method(requireMocking):
     assert response['statusCode'] == 500
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert 'missing object type to query <target|sample>' in body['error']
 
 
-@logger.catch
 def test_configs_with_wrong_method(requireMocking):
     from cis import configurations
 
@@ -148,13 +139,12 @@ def test_configs_with_wrong_method(requireMocking):
     assert response['statusCode'] == 500
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert 'invalid object type, it should be <target|sample>' in body['error']
 
 
-@logger.catch
 def test_configs_without_id(requireMocking):
     from cis import configurations
 
@@ -165,13 +155,12 @@ def test_configs_without_id(requireMocking):
     assert response['statusCode'] == 500
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert 'missing target_id' in body['error']
 
 
-@logger.catch
 def test_target_config(requireMocking, target_id):
     from cis import configurations
 
@@ -184,13 +173,12 @@ def test_target_config(requireMocking, target_id):
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert len(body['configs']) > 0
 
 
-@logger.catch
 def test_sample_config(requireMocking, sample_name):
     from cis import configurations
 
@@ -202,7 +190,7 @@ def test_sample_config(requireMocking, sample_name):
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
     assert len(body['configs']) > 0
