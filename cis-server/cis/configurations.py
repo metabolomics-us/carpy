@@ -1,10 +1,11 @@
 import inspect
-import json
 import sys
 import traceback
 import urllib.parse
 
+import simplejson as json
 from loguru import logger
+
 from cis import database, headers
 
 conn = database.connect()
@@ -22,7 +23,7 @@ def create_server_error(method, value, msg):
             "error": msg,
             "method": method,
             "value": value
-        })
+        }, use_decimal=True)
     }
 
 
@@ -32,7 +33,7 @@ def create_not_found(msg):
         "headers": headers.__HTTP_HEADERS__,
         "body": json.dumps({
             "error": msg
-        })
+        }, use_decimal=True)
     }
 
 
@@ -74,7 +75,7 @@ def process_event(events, query_str):
                             caller: result,
                             "method": method,
                             "value": value
-                        })
+                        }, use_decimal=True)
                     }
                 except Exception as ex:
                     traceback.print_exc()

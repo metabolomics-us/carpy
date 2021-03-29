@@ -1,10 +1,9 @@
 import sys
-import traceback
 import urllib.parse
 
 import simplejson as json
-
 from loguru import logger
+
 from cis import database, headers
 
 conn = database.connect()
@@ -95,7 +94,7 @@ def get_all(events, context):
                         "body": json.dumps({
                             "error": str(e),
                             "splash": splash
-                        })
+                        }, use_decimal=True)
                     }
         else:
             return {
@@ -103,7 +102,7 @@ def get_all(events, context):
                 "headers": headers.__HTTP_HEADERS__,
                 "body": json.dumps({
                     "error": "you need to provide a target's splash"
-                })
+                }, use_decimal=True)
             }
     else:
         return {
@@ -111,5 +110,5 @@ def get_all(events, context):
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": "missing path parameters"
-            })
+            }, use_decimal=True)
         }

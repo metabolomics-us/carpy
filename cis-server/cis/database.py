@@ -1,12 +1,11 @@
-import simplejson as json
 import os
 import sys
-import traceback
 from typing import Optional, List
 
 import psycopg2
-
+import simplejson as json
 from loguru import logger
+
 from cis import headers
 
 # initialize the loguru logger
@@ -99,5 +98,5 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
                 "error": str(e),
-            })
+            }, use_decimal=True)
         }

@@ -1,5 +1,4 @@
 import json
-
 import sys
 
 from loguru import logger
@@ -15,7 +14,7 @@ def test_libraries(requireMocking):
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4))
+    logger.info(json.dumps(body, indent=4, use_decimal=True))
     assert len(body) > 0
 
 

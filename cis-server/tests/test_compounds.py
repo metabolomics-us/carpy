@@ -4,8 +4,8 @@ import string
 import sys
 import urllib.parse
 
-from pytest import fail
 from loguru import logger
+from pytest import fail
 
 # initialize the loguru logger
 logger.add(sys.stdout, format="{time} {level} {message}", filter="test_compound", level="INFO", backtrace=True,
@@ -133,7 +133,7 @@ def test_get_specific_compound(requireMocking, splash_test_name_with_no_members)
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
 
-    logger.info(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4, use_decimal=True))
     assert result['method'] == splash_test_name_with_no_members[1]
     assert result['splash'] == splash_test_name_with_no_members[0]
 
@@ -304,7 +304,7 @@ def test_compound_register_comment(requireMocking, splash_test_name_with_no_memb
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    logger.info(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4, use_decimal=True))
 
     # the target might have more than 1 comment
     assert len(result['associated_comments']) > 0
@@ -348,7 +348,7 @@ def test_compound_register_adduct(requireMocking, splash_test_name_with_no_membe
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    logger.info(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4, use_decimal=True))
 
     assert len(result['associated_adducts']) > 0
     assert result['associated_adducts'][-1]['name'] == 'Na+'
@@ -403,7 +403,7 @@ def test_compound_register_adduct_with_comment(requireMocking, splash_test_name_
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    logger.info(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4, use_decimal=True))
 
     assert len(result['associated_adducts']) > 0
     assert result['associated_adducts'][-1]['name'] == 'Na+'
@@ -789,7 +789,7 @@ def test_compound_register_meta(requireMocking, splash_test_name_with_no_members
 
     assert response['statusCode'] == 200
     result = json.loads(response['body'])[0]
-    logger.info(json.dumps(result, indent=4))
+    logger.info(json.dumps(result, indent=4, use_decimal=True))
 
     assert len(result['associated_meta']) == 3
 
