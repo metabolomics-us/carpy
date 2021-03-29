@@ -1016,3 +1016,27 @@ def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
     }, {})
 
     assert response['statusCode'] == 500
+
+
+def test_identified_names(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'multiValueQueryStringParameters': '',
+        'queryStringParameters': {
+            'identified': True
+        }
+    }, {})
+
+    assert response['statusCode'] == 200
+    splashes = json.loads(response['body'])
+
+    cpds = [json.loads(compounds.get({'pathParameters': {
+        'library': urllib.parse.quote(pos_library_test_name),
+        'splash': x
+    }}, {})['body'])[0] for x in splashes]
+
+    assert all([x['preferred_name'].startswith('unknown') is False for x in cpds])

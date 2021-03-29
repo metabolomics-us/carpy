@@ -631,7 +631,9 @@ def get(events, context):
 
             def generate_metas_list(x):
                 names = database.query(
-                    "select pn.identified_by, pn.name, pn.value , pn.\"comment\" from pgtarget p , pgtarget_meta pn where p.id = pn.target_id and p.id = %s",
+                    "select pn.identified_by, pn.name, pn.value, pn.\"comment\" "
+                    "from pgtarget p, pgtarget_meta pn "
+                    "where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
                 logger.info("received metadata: {}".format(names))
@@ -643,7 +645,9 @@ def get(events, context):
 
             def generate_comments_list(x):
                 names = database.query(
-                    "select pn.identified_by , pn.\"comment\" from pgtarget p , pgtarget_comment pn where p.id = pn.target_id and p.id = %s",
+                    "select pn.identified_by, pn.\"comment\" "
+                    "from pgtarget p, pgtarget_comment pn "
+                    "where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
                 logger.info("received comments: {}".format(names))
@@ -655,7 +659,9 @@ def get(events, context):
 
             def generate_adducts_list(x):
                 names = database.query(
-                    "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_adduct pn where p.id = pn.target_id and p.id = %s",
+                    "select pn.identified_by, pn.\"name\", pn.\"comment\" "
+                    "from pgtarget p, pgtarget_adduct pn "
+                    "where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
                 logger.info("received adducts: {}".format(names))
@@ -667,7 +673,9 @@ def get(events, context):
 
             def generate_name_list(x):
                 names = database.query(
-                    "select pn.identified_by , pn.\"name\" , pn.\"comment\" from pgtarget p , pgtarget_name pn where p.id = pn.target_id and p.id = %s",
+                    "select pn.identified_by, pn.\"name\", pn.\"comment\" "
+                    "from pgtarget p, pgtarget_name pn "
+                    "where p.id = pn.target_id and p.id = %s",
                     conn, [x])
 
                 logger.info("received names: {}".format(names))
@@ -679,7 +687,9 @@ def get(events, context):
 
             def generate_samples_list(splash, method):
                 samples = database.query(
-                    "select distinct file_name from pgtarget p , pgtarget_samples ps , pgsample p2 where p.id = ps.targets_id and p2.id = ps.samples_id and splash = %s and method_id = %s",
+                    "select distinct file_name "
+                    "from pgtarget p, pgtarget_samples ps, pgsample p2 "
+                    "where p.id = ps.targets_id and p2.id = ps.samples_id and splash = %s and method_id = %s",
                     conn, [splash, method])
 
                 logger.info("received samples: {}".format(samples))
@@ -715,7 +725,8 @@ def get(events, context):
                 "SELECT id, accurate_mass, target_type, inchi_key, \"method_id\", ms_level, "
                 "raw_spectrum, required_for_correction, retention_index, spectrum, splash, target_name, "
                 "unique_mass, precursor_mass, adduct_name "
-                "FROM pgtarget pt WHERE \"method_id\" = (%s) and \"splash\" = (%s) and dtype='PgInternalTarget'",
+                "FROM pgtarget pt "
+                "WHERE \"method_id\" = %s and \"splash\" = %s and dtype='PgInternalTarget'",
                 conn, [method_name, splash], transform=transform)
 
             return result
@@ -935,6 +946,7 @@ def get_sorted(events, context):
             direction = "asc"
             value = 0.0
             accuracy = 0.01
+            identified = False
         else:
             logger.info(events['queryStringParameters'])
 
@@ -970,22 +982,28 @@ def get_sorted(events, context):
                 value = 0
                 accuracy = 0.01
 
+            if 'identified' in events['queryStringParameters']:
+                identified = bool(events['queryStringParameters']['identified'])
+            else:
+                identified = False
+
+        query_base = "SELECT splash FROM public.pgtarget"
+        query_filter = "WHERE method_id = %s AND target_type = %s AND dtype = 'PgInternalTarget'"
+        query_order = f"ORDER BY \"{column_dict[order_by]}\" {direction.upper()}"
+        query_limit = "LIMIT %s OFFSET %s"
+        query_params = [method_name, tgt_type.upper(), limit, offset]
+
+        if identified:
+            query_filter = f"{query_filter} AND position('unknown' in target_name) IN (0, null)"
+
         if value > 0:
-            query = 'SELECT splash FROM pgtarget ' \
-                    f'WHERE "method_id" = %s ' \
-                    f'  AND "target_type" = UPPER(%s) ' \
-                    f'  AND "{column_dict[order_by]}" BETWEEN %s AND %s ' \
-                    f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s '
-            params = [method_name, tgt_type, (value - accuracy), (value + accuracy), limit, offset]
-        else:
-            query = 'SELECT splash FROM pgtarget ' \
-                    f'WHERE "method_id" = %s ' \
-                    f'  AND "target_type" = UPPER(%s) ' \
-                    f'ORDER BY "{column_dict[order_by]}" {direction.upper()} LIMIT %s OFFSET %s'
-            params = [method_name, tgt_type, limit, offset]
+            query_filter = f'{query_filter} AND "{column_dict[order_by]}" BETWEEN %s AND %s'
+            query_params = [method_name, tgt_type.upper(), (value - accuracy), (value + accuracy), limit, offset]
+
+        query = f'{query_base} {query_filter} {query_order} {query_limit}'
 
         transform = lambda x: x[0]
-        result = database.html_response_query(query, conn, params, transform)
+        result = database.html_response_query(query, conn, params=query_params, transform=transform)
 
         logger.info(f"Requested {limit} results, returning {len(json.loads(result['body']))}")
         return result
