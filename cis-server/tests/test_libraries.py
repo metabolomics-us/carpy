@@ -14,7 +14,7 @@ def test_libraries(requireMocking):
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(json.dumps(body, indent=4, use_decimal=True))
+    logger.info(body)
     assert len(body) > 0
 
 
@@ -46,6 +46,17 @@ def test_exist_true(requireMocking, pos_library_test_name):
     assert body['exists']
 
 
+def test_exist_false(requireMocking, pos_library_test_name):
+    from cis import libraries
+    response = libraries.exists({'pathParameters': {
+        "library": pos_library_test_name + "fasfdsfda"
+    }}, {})
+
+    assert response['statusCode'] == 200
+    body = json.loads(response['body'])
+    assert body['exists'] is False
+
+
 def test_size(requireMocking, pos_library_test_name):
     from cis import libraries
     response = libraries.size({'pathParameters': {
@@ -58,14 +69,3 @@ def test_size(requireMocking, pos_library_test_name):
 
     logger.info(body)
     assert len(body) > 0
-
-
-def test_exist_false(requireMocking, pos_library_test_name):
-    from cis import libraries
-    response = libraries.exists({'pathParameters': {
-        "library": pos_library_test_name + "fasfdsfda"
-    }}, {})
-
-    assert response['statusCode'] == 200
-    body = json.loads(response['body'])
-    assert body['exists'] is False
