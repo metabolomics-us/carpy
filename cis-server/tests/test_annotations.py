@@ -1,6 +1,6 @@
-import json
 import sys
 
+import simplejson as json
 from loguru import logger
 
 # initialize the loguru logger

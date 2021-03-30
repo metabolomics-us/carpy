@@ -45,7 +45,7 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
         if params is None:
             cur.execute(sql)
         else:
-            logger.warning(f'SQL: {sql}')
+            logger.debug(f'SQL: {sql}')
             cur.execute(sql, params)
         if cur.rowcount == 0 or cur.description is None:
             return None
@@ -85,11 +85,11 @@ def html_response_query(sql: str, connection, params: Optional[List] = None, tra
             }
         else:
             if transform is not None:
-                result = json.dumps(list(map(transform, result)), use_decimal=True)
+                result = list(map(transform, result))
             return {
                 "statusCode": 200,
                 "headers": headers.__HTTP_HEADERS__,
-                "body": result
+                "body": json.dumps(result, use_decimal=True)
             }
     except Exception as e:
         # traceback.print_exc()
