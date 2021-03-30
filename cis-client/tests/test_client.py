@@ -188,11 +188,6 @@ def test_correct_order(cis_cli, library_test_name):
 
     assert all(masses[i] >= masses[i+1] for i in range(len(masses)-1))
 
-@logger.catch
-def test_get_annotations_given_splash(cis_cli, splash_test_name_with_members):
-
-    #It is (probably) worth noting that using splash_test_name[0] FAILS the test. I do not know if that is because
-    #the call is supposed to return an empty list or there is some greater problem.
-    result=cis_cli.get_annotations_given_splash(splash=splash_test_name_with_members[0], limit=10, offset=0)
-
+def test_get_annotations_given_splash(cis_cli, splash_test_name):
+    result=cis_cli.get_annotations_given_splash(splash=splash_test_name[0], limit=10, offset=0)
     assert len(result['annotations']) > 0
