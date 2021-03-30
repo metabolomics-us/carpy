@@ -1,0 +1,35 @@
+{
+  "resource": "/cis/spectrum/{tgt_id}",
+  "path": "/cis/spectrum/199",
+  "httpMethod": "GET",
+  "headers": {
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Cache-Control": "no-cache",
+    "CloudFront-Forwarded-Proto": "https",
+    "CloudFront-Is-Desktop-Viewer": "true",
+    "CloudFront-Is-Mobile-Viewer": "false",
+    "CloudFront-Is-SmartTV-Viewer": "false",
+    "CloudFront-Is-Tablet-Viewer": "false",
+    "CloudFront-Viewer-Country": "US",
+    "Host": "test-api.metabolomics.us",
+    "Postman-Token": "ac290b18-4d80-455a-a2c2-3e7ff8354345",
+    "User-Agent": "PostmanRuntime/7.26.10",
+    "Via": "1.1 2c6b5dd77f1abe60653ce0454f344b64.cloudfront.net (CloudFront)",
+    "X-Amz-Cf-Id": "L2WzSGS0A2nTYfM5hkxKZRUUdWmVJ6Nn_wxylBPGUitwAxM6ttVX9Q==",
+    "X-Amzn-Trace-Id": "Root=1-60638681-0fc163744c5a57c576a50fd7",
+    "x-api-key": "aidfca01Xe9sBdS8LnVv9NPJQA1WVZU58gD8Dmm2",
+    "X-Forwarded-For": "128.120.143.36, 130.176.162.69",
+    "X-Forwarded-Port": "443",
+    "X-Forwarded-Proto": "https"
+  },
+  "stageVariables": {},
+  "body": {},
+  "isBase64Encoded": false,
+  "pathParameters": {
+    "tgt_id": "199"
+  },
+  "queryStringParameters": {
+    "clean": true
+  }
+}

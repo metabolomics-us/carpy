@@ -1,0 +1,14 @@
+{
+  "resource": "/cis/spectrum/{tgt_id}",
+  "path": "/cis/spectrum/199",
+  "httpMethod": "GET",
+  "body": {},
+  "isBase64Encoded": false,
+  "pathParameters": {
+    "tgt_id": "199"
+  },
+  "queryStringParameters": {
+    "clean": true,
+    "identifiedBy": "diego-test"
+  }
+}

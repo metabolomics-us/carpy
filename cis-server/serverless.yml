@@ -624,3 +624,108 @@ functions:
               querystrings:
                 limit: false
                 offset: false
+
+  spectrumGetStatus:
+    handler: cis/spectrum.get_status
+    events:
+      - http:
+          private: true
+          path: spectrum/{tgt_id}
+          method: get
+          cors: true
+          documentation:
+            summary: Returns the status of a spectrum as being Clean or Dirty (True or False)
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            queryParams:
+              - name: "identified_by"
+                description: "user that is changing the flag"
+            pathParams:
+              - name: "tgt_id"
+                description: "id of the target to mark"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+              - statusCode: "200"
+          request:
+            parameter:
+              paths:
+                tgt_id: true
+              querystrings:
+                identifiedBy: true
+
+  spectrumMarkStatus:
+    handler: cis/spectrum.register_status
+    events:
+      - http:
+          private: true
+          path: spectrum/{tgt_id}
+          method: get
+          cors: true
+          documentation:
+            summary: Marks a spectrum as being Clean or Dirty (True or False) for a user
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            queryParams:
+              - name: "clean"
+                description: "value of the flag. Values: True or False"
+              - name: "identified_by"
+                description: "user that is changing the flag"
+            pathParams:
+              - name: "tgt_id"
+                description: "id of the target to mark"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+              - statusCode: "204"
+                responseModels:
+                  "application/json":
+                    - name: EmptyResponse
+                      contentType: "application/json"
+                      schema:
+                        body: ""
+          request:
+            parameter:
+              paths:
+                tgt_id: true
+              querystrings:
+                clean: true
+                identifiedBy: true
+
+  spectrumDeleteStatus:
+    handler: cis/spectrum.delete_status
+    events:
+      - http:
+          private: true
+          path: spectrum/{tgt_id}
+          method: delete
+          cors: true
+          documentation:
+            summary: Deletes the spectrum's Clean or Dirty flag for a user
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            queryParams:
+              - name: "identified_by"
+                description: "user that is changing the flag"
+            pathParams:
+              - name: "tgt_id"
+                description: "id of the target to mark"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+              - statusCode: "204"
+                responseModels:
+                  "application/json":
+                    - name: EmptyResponse
+                      contentType: "application/json"
+                      schema:
+                        body: { }
+          request:
+            parameter:
+              paths:
+                tgt_id: true
+              querystrings:
+                identifiedBy: true
