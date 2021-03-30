@@ -188,3 +188,6 @@ def test_correct_order(cis_cli, library_test_name):
 
     assert all(masses[i] >= masses[i+1] for i in range(len(masses)-1))
 
+def test_get_annotations_given_splash(cis_cli, splash_test_name):
+    result=cis_cli.get_annotations_given_splash(splash=splash_test_name[0], limit=10, offset=0)
+    assert len(result['annotations']) > 0
