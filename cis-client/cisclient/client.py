@@ -283,3 +283,20 @@ class CISClient:
             return result.json()
         else:
             raise Exception(result)
+
+    #opted to make limit a positional argument. dont think it should be hardcoded
+    @logger.catch
+    def get_annotations_given_splash(self, splash: str, limit: int = 10, offset: int = 0):
+        
+        url_path=f'{self._url}/annotations/{splash}'
+
+        #we do not accept a null value for int and offset (althought the server does not complain per postmates get)
+        #instead we suppose the defaults
+        url_query_string = f'limit={limit}&offset={offset}'
+
+        result = self.http.get(f'{url_path}?{url_query_string}', headers=self._header)
+
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
