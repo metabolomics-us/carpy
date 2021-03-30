@@ -1,6 +1,6 @@
-import json
 import sys
 
+import simplejson as json
 from loguru import logger
 
 # initialize the loguru logger
@@ -14,11 +14,10 @@ def test_libraries(requireMocking):
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(body)
     assert len(body) > 0
 
 
-#def test_delete_library(requireMocking, library_test_name):
+# def test_delete_library(requireMocking, library_test_name):
 #   from cis import libraries
 #   response = libraries.delete({'pathParameters': {
 #       "library": library_test_name
@@ -63,9 +62,7 @@ def test_size(requireMocking, pos_library_test_name):
         "library": pos_library_test_name
     }}, {})
 
-    logger.info(response)
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
 
-    logger.info(body)
     assert len(body) > 0

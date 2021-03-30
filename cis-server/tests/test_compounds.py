@@ -1,9 +1,9 @@
-import json
 import random
 import string
 import sys
 import urllib.parse
 
+import simplejson as json
 from loguru import logger
 from pytest import fail
 

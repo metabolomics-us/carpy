@@ -49,7 +49,6 @@ def configs(events, context):
 
 
 def process_event(events, query_str):
-    logger.info(f'EVENT: {events}')
     if 'pathParameters' in events:
         if 'method' in events['pathParameters']:
             method = events['pathParameters']['method']

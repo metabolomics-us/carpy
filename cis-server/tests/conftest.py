@@ -1,12 +1,11 @@
 # Set AWS environment variables if they don't exist before importing moto/boto3
-import json
 import os
 import sys
 import urllib.parse
 
 import moto
 import pytest
-
+import simplejson as json
 from loguru import logger
 
 # initialize the loguru logger
