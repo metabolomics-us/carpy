@@ -906,6 +906,7 @@ def delete_meta(events, context):
 
 def get_sorted(events, context):
     types_list = ['unconfirmed', 'is_member', 'consensus', 'confirmed']
+    bool_map = {'true': True, 'false': False}
 
     if 'pathParameters' not in events:
         return {
@@ -948,8 +949,6 @@ def get_sorted(events, context):
             accuracy = 0.01
             identified = False
         else:
-            logger.info(events['queryStringParameters'])
-
             if 'limit' in events['queryStringParameters']:
                 limit = int(events['queryStringParameters']['limit'])
             else:
@@ -983,7 +982,10 @@ def get_sorted(events, context):
                 accuracy = 0.01
 
             if 'identified' in events['queryStringParameters']:
-                identified = bool(events['queryStringParameters']['identified'])
+                if events['queryStringParameters']['identified'] in bool_map.keys():
+                    identified = bool_map[events['queryStringParameters']['identified']]
+                else:
+                    raise Exception("Invalid value for queryString 'identified'. Please use 'true' or 'false'.")
             else:
                 identified = False
 
@@ -1009,14 +1011,11 @@ def get_sorted(events, context):
         return result
 
     except Exception as ex:
-        logger.info(ex)
+        # logger.error(ex)
         return {
             "statusCode": 500,
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
-                "error": str(ex),
-                "path": events['path'],
-                "pathParameters": events['pathParameters'],
-                "queryStringParameters": events['queryStringParameters']
+                "error": str(ex)
             }, use_decimal=True)
         }

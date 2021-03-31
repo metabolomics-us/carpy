@@ -1025,9 +1025,8 @@ def test_identified_names(requireMocking, pos_library_test_name):
         'pathParameters': {
             'library': urllib.parse.quote(pos_library_test_name)
         },
-        'multiValueQueryStringParameters': '',
         'queryStringParameters': {
-            'identified': True
+            'identified': 'true'
         }
     }, {})
 
@@ -1040,3 +1039,43 @@ def test_identified_names(requireMocking, pos_library_test_name):
     }}, {})['body'])[0] for x in splashes]
 
     assert all([x['preferred_name'].startswith('unknown') is False for x in cpds])
+
+
+def test_identified_names_false(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'queryStringParameters': {
+            'identified': 'false'
+        }
+    }, {})
+
+    assert response['statusCode'] == 200
+    splashes = json.loads(response['body'])
+
+    cpds = [json.loads(compounds.get({'pathParameters': {
+        'library': urllib.parse.quote(pos_library_test_name),
+        'splash': x
+    }}, {})['body'])[0] for x in splashes]
+
+    assert any([x['preferred_name'].startswith('unknown') is True for x in cpds])
+
+
+def test_invalid_identified_names(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    response = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'queryStringParameters': {
+            'identified': 'blah'
+        }
+    }, {})
+
+    assert response['statusCode'] == 500
+    assert json.loads(response['body'])[
+               'error'] == "Invalid value for queryString 'identified'. Please use 'true' or 'false'."
