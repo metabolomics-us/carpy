@@ -700,6 +700,22 @@ def get(events, context):
                         map(lambda y: {'name': y[0]}, samples)
                     )
 
+            def generate_status_list(splash):
+                print(f"splash: {splash}")
+                statuses = database.query(
+                    "select distinct clean, identified_by "
+                    "from pgtarget_status ps "
+                    "where ps.target_id = %s",
+                    conn, [splash])
+
+                logger.info("received statuses: {}".format(statuses))
+                if statuses is None:
+                    return []
+                else:
+                    return list(
+                        map(lambda y: {'status': y[0], 'identifiedBy': y[1]}, statuses)
+                    )
+
             transform = lambda x: {
                 'id': x[0],
                 'accurate_mass': x[1],
@@ -717,6 +733,7 @@ def get(events, context):
                 'associated_adducts': generate_adducts_list(x[0]),
                 'associated_comments': generate_comments_list(x[0]),
                 'associated_meta': generate_metas_list(x[0]),
+                'associated_statuses': generate_status_list(x[0]),
                 'unique_mass': x[12],
                 'precursor_mass': x[13],
                 'samples': generate_samples_list(x[10], x[4])

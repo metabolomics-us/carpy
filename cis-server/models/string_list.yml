@@ -1,0 +1,4 @@
+title: StringList
+type: array
+items:
+- type: string

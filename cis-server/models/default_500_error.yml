@@ -1,0 +1,5 @@
+title: Default500Error
+type: object
+properties:
+  error:
+    type: string

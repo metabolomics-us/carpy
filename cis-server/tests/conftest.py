@@ -106,6 +106,11 @@ def target_id():
 
 
 @pytest.fixture()
+def user_id():
+    return 'test_user'
+
+
+@pytest.fixture()
 def sample_name():
     return 'NIH_Lip_Std_CSH_POS_Brain_01'
 
