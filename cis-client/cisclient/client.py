@@ -1,5 +1,6 @@
 import os
 import sys
+from pprint import pprint
 from typing import Optional, List
 
 import requests
@@ -287,17 +288,42 @@ class CISClient:
     
     @logger.catch
     def get_annotations_given_splash(self, splash: str, limit: int = 10, offset: int = 0):
-        '''
+        """
         Opted to make limit a positional argument. dont think it should be hardcoded.
-        We do not accept a null value for int and offset (althought the server does not complain per postmates get)
+        We do not accept a null value for limit and offset (althought the server does not complain per postmates get)
         instead we suppose the defaults.
-        '''
-        url_path=f'{self._url}/annotations/{splash}'
+        :param splash:
+        :param limit:
+        :param offset:
+        :return:
+        """
+        url_path = f'{self._url}/annotations/{splash}'
 
         url_query_string = f'limit={limit}&offset={offset}'
 
         result = self.http.get(f'{url_path}?{url_query_string}', headers=self._header)
 
+        if result.status_code == 200:
+            return result.json()
+        else:
+            raise Exception(result)
+
+    @logger.catch
+    def get_spectrum_status(self, target_id: int, limit: int = 10, offset: int = 0):
+        """
+        Get the 'clean or dirty' status for a target
+        :param target_id: Target id (not splash)
+        :param limit: number of results to be returned (used on paging)
+        :param offset: start collecting results from this row number (used on paging)
+        :return:
+        """
+        url_path = f'{self._url}/spectrum/{target_id}'
+
+        url_query_string = f'limit={limit}&offset={offset}'
+
+        result = self.http.get(f'{url_path}?{url_query_string}', headers=self._header)
+
+        pprint(result)
         if result.status_code == 200:
             return result.json()
         else:
