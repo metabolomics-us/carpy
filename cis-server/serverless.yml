@@ -109,44 +109,40 @@ custom:
       - name: "Default500Error"
         description: "default error response"
         contentType: "application/json"
-        schema: ${file(models/default500error.json)}
+        schema: ${file(models/default_500_error.yml)}
       - name: "Default404Response"
         description: "404 error response"
         contentType: "application/json"
-        schema: ${file(models/default404response.json)}
+        schema: ${file(models/default_404_response.yml)}
       - name: "LibraryList"
         description: "List of libraries in the system"
         contentType: "application/json"
-        schema: ${file(models/stringlist.json)}
-      - name: "LibraryExists"
-        description: "library existence check"
-        contentType: "application/json"
-        schema: ${file(models/libraryexists.json)}
+        schema: ${file(models/string_list.yml)}
       - name: "LibrarySize"
         description: "library existence check"
         contentType: "application/json"
-        schema: ${file(models/libraryexists.json)}
+        schema: ${file(models/library_size.yml)}
       - name: "SplashList"
         description: "List of splashes found for the given library"
         contentType: "application/json"
-        schema: ${file(models/stringlist.json)}
+        schema: ${file(models/string_list.yml)}
       - name: "CompoundResponse"
         contentType: "application/json"
-        schema: ${file(models/compound_response.json)}
+        schema: ${file(models/compound_response.yml)}
       - name: "AnnotationResponse"
         contentType: "application/json"
-        schema: ${file(models/annotation_response.json)}
+        schema: ${file(models/annotation_response.yml)}
 
   commonModelSchemaFragments:
-    MethodResponse404Json:
+    MethodResponse404:
       statusCode: "404"
       responseModels:
-        "application/json": Default404Response
+        "application/json": "Default404Response"
 
-    MethodResponse500Json:
+    MethodResponse500:
       statusCode: "500"
       responseModels:
-        "application/json": Default500Error
+        "application/json": "Default500Error"
 
 
 ############################################################################################
@@ -179,8 +175,8 @@ functions:
               - name: "x-api-key"
                 description: "AWS generated api key for the respective stage"
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
               - statusCode: "200"
                 responseModels:
                   "application/json": "LibraryList"
@@ -202,11 +198,10 @@ functions:
               - name: "library"
                 description: "name of the library/method to check"
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
               - statusCode: "200"
-                responseModels:
-                  "application/json": "LibraryExists"
+
           request:
             parameter:
               paths:
@@ -229,11 +224,11 @@ functions:
               - name: "library"
                 description: "name of the library/method to check"
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
               - statusCode: "200"
                 responseModels:
-                  "application/json": "LibraryExists"
+                  "application/json": "LibrarySize"
           request:
             parameter:
               paths:
@@ -315,8 +310,8 @@ functions:
               - name: "library"
                 description: "name of the library/method to check"
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
               - statusCode: "200"
                 responseModels:
                   "application/json": "SplashList"
@@ -612,8 +607,8 @@ functions:
               - name: "splash"
                 description: "splash key of the target to check"
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
               - statusCode: "200"
                 responseModels:
                   "application/json": AnnotationResponse
@@ -624,3 +619,55 @@ functions:
               querystrings:
                 limit: false
                 offset: false
+
+  spectrumGetStatus:
+    handler: cis/spectrum.get_status
+    events:
+      - http:
+          private: true
+          path: spectrum/{tgt_id}
+          method: get
+          cors: true
+          documentation:
+            summary: Returns the status of a spectrum as being Clean or Dirty (True or False)
+          request:
+            parameter:
+              paths:
+                tgt_id: true
+              querystrings:
+                identifiedBy: true
+
+  spectrumMarkStatus:
+    handler: cis/spectrum.register_status
+    events:
+      - http:
+          private: true
+          path: spectrum/{tgt_id}
+          method: post
+          cors: true
+          documentation:
+            summary: Marks a spectrum as being Clean or Dirty (True or False) for a user
+          request:
+            parameter:
+              paths:
+                tgt_id: true
+              querystrings:
+                clean: true
+                identifiedBy: true
+
+  spectrumDeleteStatus:
+    handler: cis/spectrum.delete_status
+    events:
+      - http:
+          private: true
+          path: spectrum/{tgt_id}
+          method: delete
+          cors: true
+          documentation:
+            summary: Deletes the spectrum's Clean or Dirty flag for a user
+          request:
+            parameter:
+              paths:
+                tgt_id: true
+              querystrings:
+                identifiedBy: true

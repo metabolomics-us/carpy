@@ -1,0 +1,7 @@
+title: LibraryExists
+type: array
+items:
+  type: array
+  items:
+  - type: integer
+  - type: string
