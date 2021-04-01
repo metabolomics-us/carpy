@@ -41,8 +41,11 @@ def get_status(events, context):
         # check if the user already marked this spectrum, possibly updating the 'clean' value
         query = "SELECT * FROM pgtarget_status " \
                 "WHERE \"target_id\" = %s"
+        params = [tgt_id]
+
         if identified_by is not None:
             query = query + " AND \"identified_by\" = %s"
+            params = [tgt_id, identified_by]
 
         transform = lambda x: {
             "id": x[0],
@@ -51,7 +54,7 @@ def get_status(events, context):
             "identifiedBy": x[3]
         }
 
-        return database.html_response_query(query, conn, [tgt_id, identified_by], transform)
+        return database.html_response_query(query, conn, params, transform)
     except Exception as ex:
         logger.error(str(ex))
         response = {
