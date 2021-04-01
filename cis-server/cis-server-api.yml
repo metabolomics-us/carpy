@@ -1,0 +1,363 @@
+openapi: 3.0.0
+info:
+  version: '1.0'
+  title: CIS-Server
+
+servers:
+  - url: 'https://api.memtabolomics.us'
+    description: production server instance
+    variables:
+      basePath:
+        default: cis
+  - url: 'https://dev-api.memtabolomics.us'
+    description: development server instance
+    variables:
+      basePath:
+        default: cis
+  - url: 'https://test-api.memtabolomics.us'
+    description: test server instance
+    variables:
+      basePath:
+        default: cis
+  - url: 'https://splashone.memtabolomics.us'
+    description: special instance for compound id proect
+    variables:
+      basePath:
+        default: splashone
+
+paths:
+  /libraries:
+    get:
+      summary: returns a list of libraries/methods in the system
+      operationId: libraries.libraries
+      responses:
+          '404':
+            $ref: '#/components/schemas/MethodResponse404'
+          '500' :
+            $ref: '#/components/schemas/MethodResponse500'
+          '200':
+            $ref: '#/components/schemas/LibraryList'
+
+  /libraries/{library}:
+    get:
+      summary: returns the list of splashes belonging to the library/method
+      operationId: libraries.libraries
+      parameters:
+        - name: library
+          in: path
+          description: 'name of the library/method to check'
+          required: true
+          schema:
+            type: string
+      responses:
+        '404':
+          $ref: '#/components/schemas/MethodResponse404'
+        '500':
+          $ref: '#/components/schemas/MethodResponse500'
+        '200':
+          $ref: '#/components/schemas/LibraryExists'
+    head:
+      summary: returns if the given library exist
+      operationId: libraries.exists
+      security:
+        - apiKey: []
+      parameters:
+        - name: library
+          in: path
+          required: true
+          description: "name of the library/method to check"
+          schema:
+            type: string
+      responses:
+          '404':
+            $ref: '#/components/schemas/MethodResponse404'
+          '500':
+            $ref: '#/components/schemas/MethodResponse500'
+          '200':
+            $ref: "#/components/schemas/LibraryExists"
+    delete:
+      summary: "delete the given library"
+      security:
+        - apiKey: []
+      parameters:
+        - name: library
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '404':
+          $ref: '#/components/schemas/MethodResponse404'
+        '500':
+          $ref: '#/components/schemas/MethodResponse500'
+        '204':
+          description: 'Deleted'
+
+  /compounds/{library}:
+    get:
+      summary: "returns the splash for all the confirmed compounds of the given library sorted by 'order_by' and limited to 'limit' starting at 'offset'"
+      parameters:
+        - name: "library"
+          in: path
+          required: true
+          description: "name of the library/method to check"
+          schema:
+            type: string
+        - name: "order_by"
+          in: query
+          description: "column to order results. Valid values: [tgt_id, tgt_ri, pmz, name, adduct], default: 'tgt_id'"
+        - name: "direction"
+          in: query
+          description: "sort order. Valid values: [asc, desc], default 'asc'"
+        - name: "limit"
+          in: query
+          description: "number of items in the result. Default: 10"
+        - name: "offset"
+          in: query
+          description: "index of the first item in the result (zero-based). Default: 0"
+        - name: "value"
+          in: query
+          description: "value to use as the center of the range filter. Default: 0 (no filtering)"
+        - name: "accuracy"
+          in: query
+          description: "value to use ad the limits of the range filter. Default: 0.1 (only used if 'value' > 0)"
+        - name: "identified"
+          in: query
+          description: "flag to return known compounds only (target_name != 'unknown_*'). Default 'false'"
+          schema:
+            enum:
+              - 'true'
+              - 'false'
+      responses:
+        '404':
+          $ref: '#/components/schemas/MethodResponse404'
+        '500':
+          $ref: '#/components/schemas/MethodResponse500'
+        '200':
+          $ref: '#/components/schemas/SplashList'
+
+  /compounds/{library}/{tgt_type}:
+    get:
+      summary: returns the splash for all the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'
+      parameters:
+        - $ref: '#components/parameters/LibraryParam'
+        - name: "tgt_type"
+          in: path
+          required: true
+          description: "target type to return"
+          schema:
+            type: string
+
+        order_by: false
+        direction: false
+        limit: false
+        offset: false
+        value: false
+        accuracy: false
+
+  /compound/identify/{library}/{splash}/{identifiedBy}/{name}:
+    post:
+        summary: returns if the given compound exists in the given library
+        parameter:
+            library: true
+            splash: true
+            identifiedBy: true
+            name: true
+
+  /compound/identify/{library}/{splash}/{identifiedBy}/{name}:
+    delete:
+        summary: returns if the delete of the deletion is ok
+            parameter:
+                library: true
+                splash: true
+                identifiedBy: true
+                name: true
+
+  /compound/adduct/{library}/{splash}/{identifiedBy}/{name}:
+    post:
+        summary: returns if the given compound exists in the given library
+        parameter:
+            library: true
+            splash: true
+            identifiedBy: true
+            name: true
+
+  /compound/adduct/{library}/{splash}/{identifiedBy}/{name}:
+    delete:
+        summary: returns if the given compound exists in the given library
+            parameter:
+                library: true
+                splash: true
+                identifiedBy: true
+                name: true
+
+  /compound/comment/{library}/{splash}/{identifiedBy}:
+    post:
+        summary: returns if the given compound exists in the given library
+        parameter:
+            library: true
+            splash: true
+            identifiedBy: true
+
+  /compound/meta/{library}/{splash}/{identifiedBy}/{name}/{value}:
+    post:
+        summary: returns if the given compound exists in the given library
+        parameter:
+            library: true
+            splash: true
+            identifiedBy: true
+            name: true
+            value: true
+
+  /compound/{library}/{splash}:
+    get:
+        summary: returns if the given compound exists in the given library
+        parameter:
+            library: true
+            splash: true
+
+  /compound/members/{library}/{splash}/{limit}/{offset}:
+    get:
+        summary: returns the members of the given compounds
+        parameter:
+            library: true
+            splash: true
+            limit: true
+            offset: true
+
+  /compound/members/{library}/{splash}:
+    head:
+        summary: returns if the given compound has any associated splashes in this library
+        parameter:
+            library: true
+            splash: true
+
+  /compound/{library}/{splash}:
+    head:
+        summary: returns if the given compound exists in the given library
+            parameter:
+                library: true
+                splash: true
+
+  /compound/{library}/{splash}/{name}:
+    put:
+        summary: updates the primary name of a compound
+            parameter:
+                library: true
+                splash: true
+                name: true
+
+  /compound/{library}/{splash}:
+    delete:
+          cors: true
+          documentation:
+            summary: delete the given bin from the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+
+  /profiles/{method}/{value}:
+    get:
+        summary: returns the list of profiles used to process the object defined in method, either 'target' or 'sample'
+        parameter:
+            method: true
+            value: true
+
+  /configurations/{method}/{value}:
+    get:
+        summary: returns the list of configurations used to process the object defined in method, either 'target' or 'sample'
+        parameter:
+            method: true
+            value: true
+
+  /annotations/{splash}:
+    get:
+      summary: returns a paged list and the total number of annotations for the given compound
+      request:
+    headers:
+          - name: "x-api-key"
+            description: "AWS generated api key for the respective stage"
+      queryParams:
+        - name: "limit"
+          description: "number of items in the result. Default: 50"
+        - name: "offset"
+          description: "index of the first row to put in the result"
+      parameters:
+          - name: "splash"
+          description: "splash key of the target to check"
+      responses:
+          - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
+          - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
+          '200':
+          response:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnotationResponse'
+      request:
+      parameter:
+          paths:
+          splash: true
+          querystrings:
+          limit: false
+          offset: false
+
+
+  /oldcompounds/{library}/{limit}/{offset}:
+    get:
+      summary: returns all the compounds of the given library
+      deprecated: true
+      parameter:
+        library: true
+        limit: true
+        offset: true
+  /oldcompounds/{library}/{limit}/{offset}/{type}:
+    get:
+      summary: returns all the compounds of the given library and type
+      deprecated: true
+      parameter:
+        library: true
+        type: true
+        limit: true
+
+
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: x-api-key
+      in: header
+  parameters:
+    LibraryParam:
+      name: "library"
+      in: path
+      required: true
+      description: "name of the library/method to check"
+      schema:
+        type: string
+  schemas:
+    MethodResponse404:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        body:
+          type: array
+          items: []
+    MethodResponse500:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        body:
+          type: object
+          properties:
+            error:
+              type: string
+    LibraryExists:
+      type: object
+    SplashList:
+      type: object
+    AnnotationResponse:
+      type: object
