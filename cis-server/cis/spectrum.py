@@ -49,8 +49,8 @@ def get_status(events, context):
 
         transform = lambda x: {
             "id": x[0],
-            "tgt_id": x[2],
             "clean": x[1],
+            "target_id": x[2],
             "identifiedBy": x[3]
         }
 
@@ -105,8 +105,6 @@ def register_status(events, context):
     clean = bool(events['queryStringParameters']['clean'])
     identified_by = urllib.parse.unquote(events['queryStringParameters']['identifiedBy'])
 
-    logger.info(f"library - {tgt_id} - {clean} - {identified_by}")
-
     try:
         # check if the user already marked this spectrum, possibly updating the 'clean' value
         query = "SELECT * FROM pgtarget_status " \
@@ -118,9 +116,11 @@ def register_status(events, context):
             # 1. get new sequence number
             result = database.query("SELECT nextval('hibernate_sequence')", conn)
             new_status_id = result[0][0]
+            # 2a. add record if user didn't mark this target
             query = "INSERT INTO pgtarget_status(\"clean\", \"id\", \"target_id\", \"identified_by\") " \
                     "VALUES (%s, %s, %s, %s)"
         else:
+            # 2b. update record if user marked this target
             new_status_id = exists[0][0]
             query = "UPDATE pgtarget_status SET \"clean\" = %s " \
                     "WHERE \"id\" = %s AND \"target_id\" = %s AND \"identified_by\" = %s"
@@ -132,7 +132,6 @@ def register_status(events, context):
             "statusCode": 200,
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
-                # "library": library,
                 "target_id": tgt_id,
                 "clean": clean
             }, use_decimal=True)
