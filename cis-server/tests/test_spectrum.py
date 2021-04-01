@@ -136,3 +136,12 @@ def test_get_status(requireMocking, target_id, user_id):
 
     assert response['statusCode'] == 404
     assert len(json.loads(response['body'])) == 0
+    response = spectrum.get_status({
+        "pathParameters": {
+            "tgt_id": target_id
+        },
+        "queryStringParameters": None
+    }, {})
+
+    assert response['statusCode'] == 404
+    assert len(json.loads(response['body'])) == 0

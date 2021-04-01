@@ -31,20 +31,19 @@ def get_status(events, context):
     else:
         tgt_id = urllib.parse.unquote(events['pathParameters']['tgt_id'])
 
-    if 'queryStringParameters' not in events or 'identifiedBy' not in events['queryStringParameters']:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({
-                "error": "Missing query string parameter 'identifiedBy'"
-            })
-        }
-    else:
+    if 'queryStringParameters' in events and events['queryStringParameters'] is not None \
+            and 'identifiedBy' in events['queryStringParameters']:
         identified_by = urllib.parse.unquote(events['queryStringParameters']['identifiedBy'])
+    else:
+        identified_by = None
 
     try:
         # check if the user already marked this spectrum, possibly updating the 'clean' value
         query = "SELECT * FROM pgtarget_status " \
-                "WHERE \"target_id\" = %s AND \"identified_by\" = %s"
+                "WHERE \"target_id\" = %s"
+        if identified_by is not None:
+            query = query + " AND \"identified_by\" = %s"
+
         transform = lambda x: {
             "id": x[0],
             "tqarget_idd": x[2],
