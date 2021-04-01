@@ -109,33 +109,33 @@ custom:
       - name: "Default500Error"
         description: "default error response"
         contentType: "application/json"
-        schema: ${file(models/default500error.json)}
+        schema: ${file(models/default500error.yml)}
       - name: "Default404Response"
         description: "404 error response"
         contentType: "application/json"
-        schema: ${file(models/default404response.json)}
+        schema: ${file(models/default404response.yml)}
       - name: "LibraryList"
         description: "List of libraries in the system"
         contentType: "application/json"
-        schema: ${file(models/stringlist.json)}
+        schema: ${file(models/stringlist.yml)}
       - name: "LibraryExists"
         description: "library existence check"
         contentType: "application/json"
-        schema: ${file(models/libraryexists.json)}
+        schema: ${file(models/libraryexists.yml)}
       - name: "LibrarySize"
         description: "library existence check"
         contentType: "application/json"
-        schema: ${file(models/libraryexists.json)}
+        schema: ${file(models/libraryexists.yml)}
       - name: "SplashList"
         description: "List of splashes found for the given library"
         contentType: "application/json"
-        schema: ${file(models/stringlist.json)}
+        schema: ${file(models/stringlist.yml)}
       - name: "CompoundResponse"
         contentType: "application/json"
-        schema: ${file(models/compound_response.json)}
+        schema: ${file(models/compound_response.yml)}
       - name: "AnnotationResponse"
         contentType: "application/json"
-        schema: ${file(models/annotation_response.json)}
+        schema: ${file(models/annotation_response.yml)}
 
   commonModelSchemaFragments:
     MethodResponse404Json:
