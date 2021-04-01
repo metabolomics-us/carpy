@@ -1,6 +1,5 @@
 import os
 import sys
-from pprint import pprint
 from typing import Optional, List
 
 import requests
@@ -323,7 +322,6 @@ class CISClient:
 
         result = self.http.get(f'{url_path}?{url_query_string}', headers=self._header)
 
-        pprint(result)
         if result.status_code == 200:
             return result.json()
         else:

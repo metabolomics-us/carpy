@@ -25,7 +25,7 @@ def get_status(events, context):
         return {
             "statusCode": 500,
             "body": json.dumps({
-                "error": "Missing path parameters 'target_id'"
+                "error": "Missing path parameters 'tgt_id'"
             })
         }
     else:
@@ -49,7 +49,7 @@ def get_status(events, context):
 
         transform = lambda x: {
             "id": x[0],
-            "tqarget_idd": x[2],
+            "tgt_id": x[2],
             "clean": x[1],
             "identifiedBy": x[3]
         }
@@ -80,7 +80,7 @@ def register_status(events, context):
         return {
             "statusCode": 500,
             "body": json.dumps({
-                "error": "Missing path parameters 'target_id'"
+                "error": "Missing path parameters 'tgt_id'"
             })
         }
     else:
@@ -161,7 +161,7 @@ def delete_status(events, context):
         return {
             "statusCode": 500,
             "body": json.dumps({
-                "error": "Missing path parameters 'target_id'"
+                "error": "Missing path parameters 'tgt_id'"
             })
         }
     else:

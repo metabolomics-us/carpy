@@ -1,5 +1,4 @@
 import sys
-from pprint import pprint
 from time import time
 
 from loguru import logger
@@ -197,5 +196,4 @@ def test_get_annotations_given_splash(cis_cli, splash_test_name):
 
 def test_get_spectrum_status(cis_cli, target_id):
     result = cis_cli.get_spectrum_status(target_id)
-    pprint(result)
     assert result['statusCode'] == 200
