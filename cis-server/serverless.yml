@@ -454,6 +454,44 @@ functions:
                 name: true
                 value: true
 
+  compoundSetMeta:
+    handler: cis/compounds.register_meta
+    events:
+      - http:
+          private: true
+          path: compound/meta/{library}/{splash}/{identifiedBy}/{name}/{value}
+          method: post
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                identifiedBy: true
+                name: true
+                value: true
+
+  compoundDeleteMeta:
+    handler: cis/compounds.delete_meta
+    events:
+      - http:
+          private: true
+          path: compound/meta/{library}/{splash}/{identifiedBy}/{name}/{value}
+          method: post
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                identifiedBy: true
+                name: true
+                value: true
+
   compoundGet:
     handler: cis/compounds.get
     events:

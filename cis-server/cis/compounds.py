@@ -220,7 +220,7 @@ def register_adduct(events, context):
             name_id = row[1]
 
             result = database.query(
-                "delete from pgtarget_adduct  where id  = %s",
+                "delete from pgtarget_adduct  where id = %s",
                 conn, [name_id])
 
     # now register the given name and associated information
@@ -352,6 +352,8 @@ def make_name_primary(events, context):
             if result[0][0] == 0:
                 return {
                     "statusCode": 404,
+                    "headers": headers.__HTTP_HEADERS__,
+                    "body": ""
                 }
             else:
                 try:
@@ -437,7 +439,7 @@ def register_name(events, context):
             name_id = row[1]
 
             result = database.query(
-                "delete from pgtarget_name  where id  = %s",
+                "delete from pgtarget_name where id = %s",
                 conn, [name_id])
 
     # now register the given name and associated information
@@ -713,7 +715,7 @@ def get(events, context):
                     return []
                 else:
                     return list(
-                        map(lambda y: {'status': y[0], 'identifiedBy': y[1]}, statuses)
+                        map(lambda y: {'clean': y[0], 'identifiedBy': y[1]}, statuses)
                     )
 
             transform = lambda x: {
@@ -886,6 +888,9 @@ def register_meta(events, context):
 
 
 def delete_meta(events, context):
+    """
+    TODO: REVISE ME - delete query has wrong arguments
+    """
     splash = events['pathParameters']['splash']
     library = events['pathParameters']['library']
 
@@ -899,7 +904,7 @@ def delete_meta(events, context):
             name_id = row[0]
 
             database.query(
-                "delete from pgtarget_meta  where target_id  = %s",
+                "delete from pgtarget_meta where target_id  = %s",
                 conn, [name_id])
 
         return {

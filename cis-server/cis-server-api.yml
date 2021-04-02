@@ -1,29 +1,25 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
+  title: CIS-Server API
+  description: Specification for the current version of CIS lambdas exposed as REST services\
+  termsOfService: AsIs
+  contact:
+    name: Fiehnlab IT Team
+    url: https://fiehnlab.ucdavis.edu
+  license:
+    name: CDDL-1.0
+    url: https://opensource.org/licenses/CDDL-1.0
   version: '1.0'
-  title: CIS-Server
 
 servers:
-  - url: 'https://api.memtabolomics.us'
+  - url: https://api.metabolomics.us/cis
     description: production server instance
-    variables:
-      basePath:
-        default: cis
-  - url: 'https://dev-api.memtabolomics.us'
+  - url: https://dev-api.metabolomics.us/cis
     description: development server instance
-    variables:
-      basePath:
-        default: cis
-  - url: 'https://test-api.memtabolomics.us'
+  - url: https://test-api.metabolomics.us/cis
     description: test server instance
-    variables:
-      basePath:
-        default: cis
-  - url: 'https://splashone.memtabolomics.us'
-    description: special instance for compound id proect
-    variables:
-      basePath:
-        default: splashone
+  - url: https://splashone.metabolomics.us/splashone
+    description: special instance for compound id project
 
 paths:
   /libraries:
@@ -31,296 +27,723 @@ paths:
       summary: returns a list of libraries/methods in the system
       operationId: libraries.libraries
       responses:
-          '404':
-            $ref: '#/components/schemas/MethodResponse404'
-          '500' :
-            $ref: '#/components/schemas/MethodResponse500'
-          '200':
-            $ref: '#/components/schemas/LibraryList'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/LibraryListResponse'
 
   /libraries/{library}:
     get:
-      summary: returns the list of splashes belonging to the library/method
-      operationId: libraries.libraries
+      summary: returns the count of targets of each type
+      operationId: libraries.size
+      security:
+        - apiKey: [ ]
       parameters:
-        - name: library
-          in: path
-          description: 'name of the library/method to check'
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/LibraryPathParam'
       responses:
-        '404':
-          $ref: '#/components/schemas/MethodResponse404'
-        '500':
-          $ref: '#/components/schemas/MethodResponse500'
-        '200':
-          $ref: '#/components/schemas/LibraryExists'
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/SplashListResponse'
     head:
       summary: returns if the given library exist
       operationId: libraries.exists
       security:
         - apiKey: []
       parameters:
-        - name: library
-          in: path
-          required: true
-          description: "name of the library/method to check"
-          schema:
-            type: string
+        - $ref: '#/components/parameters/LibraryPathParam'
       responses:
-          '404':
-            $ref: '#/components/schemas/MethodResponse404'
-          '500':
-            $ref: '#/components/schemas/MethodResponse500'
-          '200':
-            $ref: "#/components/schemas/LibraryExists"
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: "#/components/responses/Response204"
     delete:
       summary: "delete the given library"
+      operationId: libraries.delete
       security:
         - apiKey: []
       parameters:
-        - name: library
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/LibraryPathParam'
       responses:
-        '404':
-          $ref: '#/components/schemas/MethodResponse404'
-        '500':
-          $ref: '#/components/schemas/MethodResponse500'
-        '204':
-          description: 'Deleted'
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        204:
+          $ref: '#/components/responses/Response204'
 
   /compounds/{library}:
     get:
       summary: "returns the splash for all the confirmed compounds of the given library sorted by 'order_by' and limited to 'limit' starting at 'offset'"
+      operationId: compounds.get_sorted
+      security:
+        - apiKey: [ ]
       parameters:
-        - name: "library"
-          in: path
-          required: true
-          description: "name of the library/method to check"
-          schema:
-            type: string
-        - name: "order_by"
-          in: query
-          description: "column to order results. Valid values: [tgt_id, tgt_ri, pmz, name, adduct], default: 'tgt_id'"
-        - name: "direction"
-          in: query
-          description: "sort order. Valid values: [asc, desc], default 'asc'"
-        - name: "limit"
-          in: query
-          description: "number of items in the result. Default: 10"
-        - name: "offset"
-          in: query
-          description: "index of the first item in the result (zero-based). Default: 0"
-        - name: "value"
-          in: query
-          description: "value to use as the center of the range filter. Default: 0 (no filtering)"
-        - name: "accuracy"
-          in: query
-          description: "value to use ad the limits of the range filter. Default: 0.1 (only used if 'value' > 0)"
-        - name: "identified"
-          in: query
-          description: "flag to return known compounds only (target_name != 'unknown_*'). Default 'false'"
-          schema:
-            enum:
-              - 'true'
-              - 'false'
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/LimitQueryParam'
+        - $ref: '#/components/parameters/OffsetQueryParam'
+        - $ref: '#/components/parameters/OrderByQueryParam'
+        - $ref: '#/components/parameters/DirectionQueryParam'
+        - $ref: '#/components/parameters/ValueQueryParam'
+        - $ref: '#/components/parameters/AccuracyQueryParam'
+        - $ref: '#/components/parameters/IdentifiedQueryParam'
       responses:
-        '404':
-          $ref: '#/components/schemas/MethodResponse404'
-        '500':
-          $ref: '#/components/schemas/MethodResponse500'
-        '200':
-          $ref: '#/components/schemas/SplashList'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/SplashListResponse'
 
-  /compounds/{library}/{tgt_type}:
+  /compounds/{library}/{type}:
     get:
-      summary: returns the splash for all the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'
+      summary: returns a list of splash keys for the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'
+      operationId: compounds.get_sorted
+      security:
+        - apiKey: [ ]
       parameters:
-        - $ref: '#components/parameters/LibraryParam'
-        - name: "tgt_type"
-          in: path
-          required: true
-          description: "target type to return"
-          schema:
-            type: string
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/TypePathParam'
+        - $ref: '#/components/parameters/LimitQueryParam'
+        - $ref: '#/components/parameters/OffsetQueryParam'
+        - $ref: '#/components/parameters/OrderByQueryParam'
+        - $ref: '#/components/parameters/DirectionQueryParam'
+        - $ref: '#/components/parameters/ValueQueryParam'
+        - $ref: '#/components/parameters/AccuracyQueryParam'
+        - $ref: '#/components/parameters/IdentifiedQueryParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/SplashListResponse'
 
-        order_by: false
-        direction: false
-        limit: false
-        offset: false
-        value: false
-        accuracy: false
+  /compound/{library}/{splash}:
+    get:
+      summary: returns a compound from the given library
+      operationId: compound.get
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/CompoundResponse'
+    head:
+      summary: returns if the given compound exists in the given library
+      operationId: compound.exists
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        204:
+          $ref: '#/components/responses/Response204'
+  #    delete:
+  #      summary: delete the compound from the given library
+  #      operationId: compound.delete
+  #      parameters:
+  #        - $ref: '#/components/parameters/LibraryPathParam'
+  #        - $ref: '#/components/parameters/SplashPathParam'
+  #      responses:
+  #        400:
+  #          $ref: '#/components/responses/MethodResponse400'
+  #        500:
+  #          $ref: '#/components/responses/MethodResponse500'
+  #        204:
+  #          $ref: '#/components/responses/Response204'
 
   /compound/identify/{library}/{splash}/{identifiedBy}/{name}:
     post:
-        summary: returns if the given compound exists in the given library
-        parameter:
-            library: true
-            splash: true
-            identifiedBy: true
-            name: true
-
-  /compound/identify/{library}/{splash}/{identifiedBy}/{name}:
+      summary: Adds a name to the given compound
+      operationId: compounds.register_name
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/UserPathParam'
+        - $ref: '#/components/parameters/NamePathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: 'Success'
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      members:
+                        type: boolean
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
     delete:
-        summary: returns if the delete of the deletion is ok
-            parameter:
-                library: true
-                splash: true
-                identifiedBy: true
-                name: true
+      summary: delete a name fromm a compound
+      operationId: compound.delete_name
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/UserPathParam'
+        - $ref: '#/components/parameters/NamePathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: 'Deleted'
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
 
   /compound/adduct/{library}/{splash}/{identifiedBy}/{name}:
     post:
-        summary: returns if the given compound exists in the given library
-        parameter:
-            library: true
-            splash: true
-            identifiedBy: true
-            name: true
-
-  /compound/adduct/{library}/{splash}/{identifiedBy}/{name}:
+      summary: adds an adducts to a compound
+      operationId: compound.register_adduct
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/UserPathParam'
+        - $ref: '#/components/parameters/NamePathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: 'Success'
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      members:
+                        type: boolean
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
     delete:
-        summary: returns if the given compound exists in the given library
-            parameter:
-                library: true
-                splash: true
-                identifiedBy: true
-                name: true
+      summary: deletes an adduct from the given compound
+      operationId: compound.delete_adduct
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/UserPathParam'
+        - $ref: '#/components/parameters/NamePathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: 'Success'
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
 
   /compound/comment/{library}/{splash}/{identifiedBy}:
     post:
-        summary: returns if the given compound exists in the given library
-        parameter:
-            library: true
-            splash: true
-            identifiedBy: true
+      summary: adds a comment to the given compound
+      operationId: compounds.register_comment
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/UserPathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: 'Success'
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      members:
+                        type: boolean
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
 
   /compound/meta/{library}/{splash}/{identifiedBy}/{name}/{value}:
     post:
-        summary: returns if the given compound exists in the given library
-        parameter:
-            library: true
-            splash: true
-            identifiedBy: true
-            name: true
-            value: true
+      summary: adds metadata for the given compound
+      operationId: compounds.register_meta
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/UserPathParam'
+        - $ref: '#/components/parameters/KeyPathParam'
+        - $ref: '#/components/parameters/ValuePathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: 'Success'
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      members:
+                        type: boolean
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
 
-  /compound/{library}/{splash}:
-    get:
-        summary: returns if the given compound exists in the given library
-        parameter:
-            library: true
-            splash: true
-
-  /compound/members/{library}/{splash}/{limit}/{offset}:
-    get:
-        summary: returns the members of the given compounds
-        parameter:
-            library: true
-            splash: true
-            limit: true
-            offset: true
+  /compound/meta/{library}/{splash}/{name}:
+    delete:
+      summary: deletes metadata for the given compound
+      operationId: compounds.delete_meta
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        #        - $ref: '#/components/parameters/UserPathParam'
+        - $ref: '#/components/parameters/KeyPathParam'
+      #        - $ref: '#/components/parameters/ValuePathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: 'Success'
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      members:
+                        type: boolean
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
 
   /compound/members/{library}/{splash}:
     head:
-        summary: returns if the given compound has any associated splashes in this library
-        parameter:
-            library: true
-            splash: true
+      summary: returns if the given compound has any associated splashes in this library
+      operationId: compounds.has_members
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: Success
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  boddy:
+                    type: object
+                    properties:
+                      members:
+                        type: boolean
+                      count:
+                        type: integer
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
 
-  /compound/{library}/{splash}:
-    head:
-        summary: returns if the given compound exists in the given library
-            parameter:
-                library: true
-                splash: true
+  /compound/members/{library}/{splash}/{limit}/{offset}:
+    get:
+      summary: returns the members of the given compounds
+      operationId: compounds.get_members
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/LimitPathParam'
+        - $ref: '#/components/parameters/OffsetPathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: Success
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      members:
+                        type: boolean
+                      count:
+                        type: integer
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
 
   /compound/{library}/{splash}/{name}:
     put:
-        summary: updates the primary name of a compound
-            parameter:
-                library: true
-                splash: true
-                name: true
-
-  /compound/{library}/{splash}:
-    delete:
-          cors: true
-          documentation:
-            summary: delete the given bin from the given library
-          request:
-            parameter:
-              paths:
-                library: true
-                splash: true
+      summary: updates the primary name of a compound
+      operationId: compounds.make_name_primary
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/NamePathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          description: Updated
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                  body:
+                    type: object
+                    properties:
+                      library:
+                        $ref: '#/components/schemas/LibraryName'
+                      splash:
+                        $ref: '#/components/schemas/Splash'
 
   /profiles/{method}/{value}:
     get:
-        summary: returns the list of profiles used to process the object defined in method, either 'target' or 'sample'
-        parameter:
-            method: true
-            value: true
+      summary: returns the list of profiles used to process the object defined in method
+      operationId: configurations.profiles
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/ObjectPathParam'
+        - $ref: '#/components/parameters/ObjectIdPathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/ProfileListResponse'
 
   /configurations/{method}/{value}:
     get:
-        summary: returns the list of configurations used to process the object defined in method, either 'target' or 'sample'
-        parameter:
-            method: true
-            value: true
+      summary: returns the list of configurations used to process the object defined in method
+      operationId: configurations.configs
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/ObjectPathParam'
+        - $ref: '#/components/parameters/ObjectIdPathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/ConfigListResponse'
 
   /annotations/{splash}:
     get:
       summary: returns a paged list and the total number of annotations for the given compound
-      request:
-    headers:
-          - name: "x-api-key"
-            description: "AWS generated api key for the respective stage"
-      queryParams:
-        - name: "limit"
-          description: "number of items in the result. Default: 50"
-        - name: "offset"
-          description: "index of the first row to put in the result"
+      security:
+        - apiKey: [ ]
       parameters:
-          - name: "splash"
-          description: "splash key of the target to check"
+        - $ref: '#/components/parameters/SplashPathParam'
+        - $ref: '#/components/parameters/LimitQueryParam'
+        - $ref: '#/components/parameters/OffsetQueryParam'
       responses:
-          - ${self:custom.commonModelSchemaFragments.MethodResponse404Json}
-          - ${self:custom.commonModelSchemaFragments.MethodResponse500Json}
-          '200':
-          response:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnnotationResponse'
-      request:
-      parameter:
-          paths:
-          splash: true
-          querystrings:
-          limit: false
-          offset: false
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/AnnotationsResponse'
 
+  /spectrum/{tgt_id}:
+    get:
+      summary: Returns the status of a spectrum
+      operationId: spectrum.get_status
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/TargetIdPathParam'
+        - $ref: '#/components/parameters/LimitQueryParam'
+        - $ref: '#/components/parameters/OffsetQueryParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/StatusResponse'
+    post:
+      summary: Returns the status of a spectrum
+      operationId: spectrum.register_status
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/TargetIdPathParam'
+        - $ref: '#/components/parameters/StatusQueryParam'
+        - $ref: '#/components/parameters/UserQueryParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/StatusResponse'
+    delete:
+      summary: Returns the status of a spectrum
+      operationId: spectrum.delete_status
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/TargetIdPathParam'
+        - $ref: '#/components/parameters/UserQueryParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        204:
+          $ref: '#/components/responses/Response204'
 
   /oldcompounds/{library}/{limit}/{offset}:
     get:
-      summary: returns all the compounds of the given library
+      summary: returns the splash keys of all the compounds of the given library
+      operationId: compounds.all
       deprecated: true
-      parameter:
-        library: true
-        limit: true
-        offset: true
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/LimitPathParam'
+        - $ref: '#/components/parameters/OffsetPathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/SplashListResponse'
+
   /oldcompounds/{library}/{limit}/{offset}/{type}:
     get:
       summary: returns all the compounds of the given library and type
+      operationId: compounds.all
       deprecated: true
-      parameter:
-        library: true
-        type: true
-        limit: true
-
+      security:
+        - apiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/LibraryPathParam'
+        - $ref: '#/components/parameters/LimitPathParam'
+        - $ref: '#/components/parameters/OffsetPathParam'
+        - $ref: '#/components/parameters/OldTypePathParam'
+      responses:
+        400:
+          $ref: '#/components/responses/MethodResponse400'
+        403:
+          $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
+        500:
+          $ref: '#/components/responses/MethodResponse500'
+        200:
+          $ref: '#/components/responses/SplashListResponse'
 
 components:
   securitySchemes:
@@ -328,24 +751,325 @@ components:
       type: apiKey
       name: x-api-key
       in: header
+
   parameters:
-    LibraryParam:
-      name: "library"
+    LibraryPathParam:
+      name: library
       in: path
       required: true
-      description: "name of the library/method to check"
+      description: name of the library/method to check
+      schema:
+        $ref: '#/components/schemas/LibraryName'
+    SplashPathParam:
+      name: splash
+      in: path
+      required: true
+      description: splash key
+      schema:
+        $ref: '#/components/schemas/Splash'
+    LimitPathParam:
+      name: limit
+      in: path
+      required: true
+      description: number of items to return
+      schema:
+        type: integer
+        default: 10
+    OffsetPathParam:
+      name: offset
+      in: path
+      required: true
+      description: index of the first query row to return
+      schema:
+        type: integer
+        default: 0
+    TypePathParam:
+      name: type
+      in: path
+      required: true
+      description: Target Type
+      schema:
+        $ref: '#/components/schemas/LowercaseTargetTypes'
+    OldTypePathParam:
+      name: type
+      in: path
+      required: true
+      description: Target Type
+      schema:
+        $ref: '#/components/schemas/UppercaseTargetTypes'
+    NamePathParam:
+      name: name
+      description: New name for the target/compound
+      in: path
+      required: true
       schema:
         type: string
-  schemas:
+    KeyPathParam:
+      name: name
+      description: Name of the metadata entry
+      in: path
+      required: true
+      schema:
+        type: string
+    ValuePathParam:
+      name: value
+      description: Value of the metadata entry
+      in: path
+      required: true
+      schema:
+        type: string
+    UserPathParam:
+      name: identifiedBy
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UserName'
+    ObjectPathParam:
+      name: method
+      in: path
+      required: true
+      schema:
+        enum:
+          - target
+          - sample
+    ObjectIdPathParam:
+      name: value
+      in: path
+      required: true
+      schema:
+        type: object
+    TargetIdPathParam:
+      name: tgt_id
+      in: path
+      description: Target id
+      required: true
+      schema:
+        type: integer
+    LimitQueryParam:
+      name: limit
+      in: query
+      required: true
+      description: number of items to return
+      schema:
+        type: integer
+        default: 10
+    OffsetQueryParam:
+      name: offset
+      in: query
+      required: true
+      description: index of the first query row to return
+      schema:
+        type: integer
+        default: 0
+    OrderByQueryParam:
+      name: order_by
+      in: query
+      required: true
+      description: column to order results.
+      schema:
+        $ref: '#/components/schemas/SortableColumns'
+    DirectionQueryParam:
+      name: direction
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/SortDirection'
+    ValueQueryParam:
+      name: value
+      in: query
+      description: Value to use as the center of the range filter. A value of 0 means no filter
+      required: false
+      schema:
+        type: number
+        default: 0
+    AccuracyQueryParam:
+      name: accuracy
+      in: query
+      description: value to use ad the limits of the range filter. Only used if 'value' > 0
+      required: false
+      schema:
+        type: number
+        default: 0.1
+    IdentifiedQueryParam:
+      name: identified
+      in: query
+      description: flag to return known compounds only, where target_name != 'unknown_*'
+      required: false
+      schema:
+        type: boolean
+        default: false
+    UserQueryParam:
+      name: identifiedBy
+      in: query
+      description: Username associated with this object
+      required: true
+      schema:
+        $ref: '#/components/schemas/UserName'
+    StatusQueryParam:
+      name: clean
+      in: query
+      description: Is spectrum clean (true) or not (false)
+      required: true
+      schema:
+        type: boolean
+        default: false
+
+  responses:
+    Response204:
+      description: Success empty
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/EmptyBody204'
+    MethodResponse400:
+      description: Invalid Request
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/EmptyBody400'
+    Forbidden403:
+      description: Not Found
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/Forbidden403'
     MethodResponse404:
+      description: Not Found
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/EmptyBody404'
+    MethodResponse500:
+      description: Server Error
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/Error'
+    LibraryListResponse:
+      description: List of library/method names
+      content:
+        'application/json':
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/LibraryName'
+    SplashListResponse:
+      description: List of splash keys
+      content:
+        'application/json':
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Splash'
+    ConfigListResponse:
+      description: List of configurations
+      content:
+        'application/json':
+          schema:
+            type: object
+            properties:
+              configs:
+                type: array
+                items:
+                  oneOf:
+                    - type: integer
+                    - type: string
+              method:
+                type: string
+              value:
+                type: string
+    ProfileListResponse:
+      description: List of profiles
+      content:
+        'application/json':
+          schema:
+            type: object
+            properties:
+              profiles:
+                type: array
+                items:
+                  oneOf:
+                    - type: integer
+                    - type: string
+              method:
+                type: string
+              value:
+                type: string
+    AnnotationsResponse:
+      description: Success
+      content:
+        'appication/json':
+          schema:
+            $ref: '#/components/schemas/AnnotationsList'
+    StatusResponse:
+      description: Success
+      content:
+        'application/json':
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: integer
+                default: 200
+              body:
+                type: object
+                properties:
+                  clean:
+                    type: boolean
+                  identifiedBy:
+                    $ref: '#/components/schemas/UserName'
+    CompoundResponse:
+      description: Success
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/Compound'
+
+  schemas:
+    LibraryName:
+      pattern: '^.* \| .* \| .* \| (?:positive|negative)$'
+      example: 'lcms | QExcative | c18 | positive'
+    EmptyBody204:
       type: object
       properties:
         statusCode:
           type: integer
+          default: 204
+        body:
+          nullable: true
+    EmptyBody400:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          default: 400
+        body:
+          items:
+            nullable: true
+          default: [ ]
+    Forbidden403:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          default: 403
+        body:
+          type: object
+          properties:
+            message:
+              type: string
+    EmptyBody404:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          default: 404
         body:
           type: array
-          items: []
-    MethodResponse500:
+          items:
+            nullable: true
+          default: [ ]
+    Error:
       type: object
       properties:
         statusCode:
@@ -355,9 +1079,174 @@ components:
           properties:
             error:
               type: string
-    LibraryExists:
+    Splash:
+      pattern: '^splash\d{2}-[0-9a-z]{4}-[0-9a-z]{10}-[0-9a-z]{20}$'
+      example: 'splash10-001i-0900000000-e8f8990bb55851ffc9f1'
+    IonModes:
+      enum:
+        - positive
+        - negative
+    SortableColumns:
+      enum:
+        - tgt_id
+        - tgt_ri
+        - pmz
+        - name
+        - adduct
+      default: tgt_id
+    SortDirection:
       type: object
-    SplashList:
+      properties:
+        direction:
+          description: Sort order
+          default: asc
+          enum:
+            - asc
+            - desc
+    AnnotationsList:
       type: object
-    AnnotationResponse:
+      properties:
+        splash:
+          $ref: '#/components/schemas/Splash'
+        total_count:
+          description: Total number of annotations for this target
+          type: integer
+        annotations:
+          description: List of annotations in the current page (defined by limit and offset).
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotationObj'
+    AnnotationObj:
       type: object
+      description: Annotation object
+      properties:
+        id:
+          type: integer
+          example: 127850
+        accurate_mass:
+          type: number
+          example: 675.545654296875
+        ion_mode:
+          $ref: '#/components/schemas/IonModes'
+        ms_level:
+          type: integer
+          example: 2
+        original_retention_time:
+          type: number
+          example: 247.95
+        precursor_mass:
+          type: number
+          example: 675.545654296875
+        raw_spectrum:
+          $ref: '#/components/schemas/Spectrum'
+        replaced:
+          type: boolean
+        retention_index:
+          type: number
+          example: 259.190495161425
+        spectrum:
+          $ref: '#/components/schemas/Spectrum'
+        splash:
+          $ref: '#/components/schemas/Splash'
+        sample_id:
+          type: string
+          example: NIH_Lip_Std_CSH_POS_TissuePool_01
+        target_id:
+          type: integer
+          example: 110854
+    LowercaseTargetTypes:
+      description: Target types lowercased
+      enum:
+        - confirmed
+        - unconfirmed
+        - uncoinfirmed_consensus
+        - is_member
+      default: confirmed
+    UppercaseTargetTypes:
+      description: Target types uppercased
+      enum:
+        - CONFIRMED
+        - UNCONFIRMED
+        - UNCONFIRMED_CONSENSUS
+        - IS_MEMBER
+      default: CONFIRMED
+    InchiKey:
+      pattern: '[A-Z]{14}-[A-Z]{10}-[A-Z]{1}'
+    Spectrum:
+      type: string
+      description: Spectrum string definition
+      example: '86.096703:69919.89 88.363396:3119.44 104.107262:11991.60 114.199013:3147.53 675.543945:6875.87'
+    Compound:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 199
+        accurate_mass:
+          type: number
+          example: 818.596801757812
+        target_type:
+          $ref: '#/components/schemas/UppercaseTargetTypes'
+        inchi_key:
+          $ref: '#/components/schemas/InchiKey'
+        method:
+          $ref: '#/components/schemas/LibraryName'
+        ms_level:
+          type: integer
+        required_for_correction:
+          type: boolean
+        retention_index:
+          type: number
+          example: 368.360069774002
+        spectrum:
+          $ref: '#/components/schemas/Spectrum'
+        splash:
+          $ref: '#/components/schemas/Splash'
+        preferred_name:
+          type: string
+          nullable: true
+          example:
+            - unknown_818.5968_368.3601
+            - PC (26:0)
+        preferred_adduct:
+          type: string
+          nullable: true
+          example: [ M+H ]
+        associated_names:
+          type: array
+          items:
+            type: string
+        associated_adducts:
+          type: array
+          items:
+            type: string
+        associated_comments:
+          type: array
+          items:
+            type: string
+        associated_meta:
+          type: array
+          items:
+            type: string
+        associated_statuses:
+          type: array
+          items:
+            $ref: '#/components/schemas/TargetStatus'
+        unique_mass:
+          type: number
+        precursor_mass:
+          type: number
+          example: 818.596801757812
+        samples:
+          type: array
+          items:
+            type: string
+    TargetStatus:
+      type: object
+      properties:
+        clean:
+          type: boolean
+        identifiedBy:
+          $ref: '#/components/schemas/UserName'
+    UserName:
+      type: string
