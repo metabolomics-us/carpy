@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
   title: CIS-Server API
-  description: Specification for the current version of CIS lambdas exposed as REST services\
+  description: <h2>Specification for the current version of CIS lambdas exposed as REST services</h2>
   termsOfService: AsIs
   contact:
     name: Fiehnlab IT Team
-    url: https://fiehnlab.ucdavis.edu
+    url: https://fiehnlab.ucdavis.edu/staff#it
   license:
     name: CDDL-1.0
     url: https://opensource.org/licenses/CDDL-1.0
@@ -27,10 +27,12 @@ paths:
       summary: returns a list of libraries/methods in the system
       operationId: libraries.libraries
       responses:
-        404:
-          $ref: '#/components/responses/MethodResponse404'
+        400:
+          $ref: '#/components/responses/MethodResponse400'
         403:
           $ref: '#/components/responses/Forbidden403'
+        404:
+          $ref: '#/components/responses/MethodResponse404'
         500:
           $ref: '#/components/responses/MethodResponse500'
         200:
@@ -38,10 +40,10 @@ paths:
 
   /libraries/{library}:
     get:
-      summary: returns the count of targets of each type
-      operationId: libraries.size
+      summary: returns the list of splashes belonging to the library/method
+      operationId: libraries.get
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
       responses:
@@ -59,7 +61,7 @@ paths:
       summary: returns if the given library exist
       operationId: libraries.exists
       security:
-        - apiKey: []
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
       responses:
@@ -72,10 +74,9 @@ paths:
         200:
           $ref: "#/components/responses/Response204"
     delete:
-      summary: "delete the given library"
-      operationId: libraries.delete
+      summary: delete the given library
       security:
-        - apiKey: []
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
       responses:
@@ -95,7 +96,7 @@ paths:
       summary: "returns the splash for all the confirmed compounds of the given library sorted by 'order_by' and limited to 'limit' starting at 'offset'"
       operationId: compounds.get_sorted
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/LimitQueryParam'
@@ -120,7 +121,7 @@ paths:
       summary: returns a list of splash keys for the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'
       operationId: compounds.get_sorted
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/TypePathParam'
@@ -148,7 +149,7 @@ paths:
       summary: returns a compound from the given library
       operationId: compound.get
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -167,7 +168,7 @@ paths:
       summary: returns if the given compound exists in the given library
       operationId: compound.exists
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -199,7 +200,7 @@ paths:
       summary: Adds a name to the given compound
       operationId: compounds.register_name
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -235,7 +236,7 @@ paths:
       summary: delete a name fromm a compound
       operationId: compound.delete_name
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -271,7 +272,7 @@ paths:
       summary: adds an adducts to a compound
       operationId: compound.register_adduct
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -309,7 +310,7 @@ paths:
       summary: deletes an adduct from the given compound
       operationId: compound.delete_adduct
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -347,7 +348,7 @@ paths:
       summary: adds a comment to the given compound
       operationId: compounds.register_comment
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -386,7 +387,7 @@ paths:
       summary: adds metadata for the given compound
       operationId: compounds.register_meta
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -427,7 +428,7 @@ paths:
       summary: deletes metadata for the given compound
       operationId: compounds.delete_meta
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -468,7 +469,7 @@ paths:
       summary: returns if the given compound has any associated splashes in this library
       operationId: compounds.has_members
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -506,7 +507,7 @@ paths:
       summary: returns the members of the given compounds
       operationId: compounds.get_members
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -548,7 +549,7 @@ paths:
       summary: updates the primary name of a compound
       operationId: compounds.make_name_primary
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/SplashPathParam'
@@ -585,7 +586,7 @@ paths:
       summary: returns the list of profiles used to process the object defined in method
       operationId: configurations.profiles
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/ObjectPathParam'
         - $ref: '#/components/parameters/ObjectIdPathParam'
@@ -604,7 +605,7 @@ paths:
       summary: returns the list of configurations used to process the object defined in method
       operationId: configurations.configs
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/ObjectPathParam'
         - $ref: '#/components/parameters/ObjectIdPathParam'
@@ -622,7 +623,7 @@ paths:
     get:
       summary: returns a paged list and the total number of annotations for the given compound
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/SplashPathParam'
         - $ref: '#/components/parameters/LimitQueryParam'
@@ -642,7 +643,7 @@ paths:
       summary: Returns the status of a spectrum
       operationId: spectrum.get_status
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/TargetIdPathParam'
         - $ref: '#/components/parameters/LimitQueryParam'
@@ -662,7 +663,7 @@ paths:
       summary: Returns the status of a spectrum
       operationId: spectrum.register_status
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/TargetIdPathParam'
         - $ref: '#/components/parameters/StatusQueryParam'
@@ -682,7 +683,7 @@ paths:
       summary: Returns the status of a spectrum
       operationId: spectrum.delete_status
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/TargetIdPathParam'
         - $ref: '#/components/parameters/UserQueryParam'
@@ -704,7 +705,7 @@ paths:
       operationId: compounds.all
       deprecated: true
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/LimitPathParam'
@@ -727,7 +728,7 @@ paths:
       operationId: compounds.all
       deprecated: true
       security:
-        - apiKey: [ ]
+        - api_key: [ ]
       parameters:
         - $ref: '#/components/parameters/LibraryPathParam'
         - $ref: '#/components/parameters/LimitPathParam'
@@ -928,7 +929,7 @@ components:
           schema:
             $ref: '#/components/schemas/EmptyBody400'
     Forbidden403:
-      description: Not Found
+      description: Forbidden
       content:
         'application/json':
           schema:
