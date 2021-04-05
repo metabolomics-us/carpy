@@ -96,55 +96,6 @@ custom:
       - "moto"
       - "pytest"
 
-  ###
-  # documentation
-  ###
-  documentation:
-    api:
-      info:
-        version: "1"
-        title: "CIS-Server"
-        description: "REST API for accessing lc-binbase data"
-    models:
-      - name: "Default500Error"
-        description: "default error response"
-        contentType: "application/json"
-        schema: ${file(models/default_500_error.yml)}
-      - name: "Default404Response"
-        description: "404 error response"
-        contentType: "application/json"
-        schema: ${file(models/default_404_response.yml)}
-      - name: "LibraryList"
-        description: "List of libraries in the system"
-        contentType: "application/json"
-        schema: ${file(models/string_list.yml)}
-      - name: "LibrarySize"
-        description: "library existence check"
-        contentType: "application/json"
-        schema: ${file(models/library_size.yml)}
-      - name: "SplashList"
-        description: "List of splashes found for the given library"
-        contentType: "application/json"
-        schema: ${file(models/string_list.yml)}
-      - name: "CompoundResponse"
-        contentType: "application/json"
-        schema: ${file(models/compound_response.yml)}
-      - name: "AnnotationResponse"
-        contentType: "application/json"
-        schema: ${file(models/annotation_response.yml)}
-
-  commonModelSchemaFragments:
-    MethodResponse404:
-      statusCode: "404"
-      responseModels:
-        "application/json": "Default404Response"
-
-    MethodResponse500:
-      statusCode: "500"
-      responseModels:
-        "application/json": "Default500Error"
-
-
 ############################################################################################
 # this section defines what to include and exclude when packaging artifacts
 ############################################################################################
@@ -171,15 +122,6 @@ functions:
           cors: true
           documentation:
             summary: "returns all the libraries in the system"
-            requestHeaders:
-              - name: "x-api-key"
-                description: "AWS generated api key for the respective stage"
-            methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-                responseModels:
-                  "application/json": "LibraryList"
 
   libraryExist:
     handler: cis/libraries.exists
@@ -191,17 +133,6 @@ functions:
           cors: true
           documentation:
             summary: "returns if the given library exist"
-            requestHeaders:
-              - name: "x-api-key"
-                description: "AWS generated api key for the respective stage"
-            pathParams:
-              - name: "library"
-                description: "name of the library/method to check"
-            methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-
           request:
             parameter:
               paths:
@@ -217,18 +148,6 @@ functions:
           cors: true
           documentation:
             summary: "returns the count in compounds of a library by type"
-            requestHeaders:
-              - name: "x-api-key"
-                description: "AWS generated api key for the respective stage"
-            pathParams:
-              - name: "library"
-                description: "name of the library/method to check"
-            methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-                responseModels:
-                  "application/json": "LibrarySize"
           request:
             parameter:
               paths:
@@ -290,31 +209,6 @@ functions:
           cors: true
           documentation:
             summary: "returns the splash for all the confirmed compounds of the given library sorted by 'order_by' and limited to 'limit' starting at 'offset'"
-            requestHeaders:
-              - name: "x-api-key"
-                description: "AWS generated api key for the respective stage"
-            queryParams:
-              - name: "order_by"
-                description: "column to order results. Valid values: [tgt_id, tgt_ri, pmz, name, adduct], default: 'tgt_id'"
-              - name: "direction"
-                description: "sort order. Valid values: [asc, desc], default 'asc'"
-              - name: "limit"
-                description: "number of items in the result. Default: 10"
-              - name: "offset"
-                description: "index of the first item in the result (zero-based). Default: 0"
-              - name: "value"
-                description: "value to use as the center of the range filter. Default: 0 (no filtering)"
-              - name: "accuracy"
-                description: "value to use ad the limits of the range filter. Default: 0.1 (only used if 'value' > 0)"
-            pathParams:
-              - name: "library"
-                description: "name of the library/method to check"
-            methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-                responseModels:
-                  "application/json": "SplashList"
           request:
             parameter:
               paths:
@@ -434,25 +328,6 @@ functions:
                 library: true
                 splash: true
                 identifiedBy: true
-
-  compoundSetMeta:
-    handler: cis/compounds.register_meta
-    events:
-      - http:
-          private: true
-          path: compound/meta/{library}/{splash}/{identifiedBy}/{name}/{value}
-          method: post
-          cors: true
-          documentation:
-            summary: returns if the given compound exists in the given library
-          request:
-            parameter:
-              paths:
-                library: true
-                splash: true
-                identifiedBy: true
-                name: true
-                value: true
 
   compoundSetMeta:
     handler: cis/compounds.register_meta
@@ -633,23 +508,6 @@ functions:
           cors: true
           documentation:
             summary: returns a paged list and the total number of annotations for the given compound
-            requestHeaders:
-              - name: "x-api-key"
-                description: "AWS generated api key for the respective stage"
-            queryParams:
-              - name: "limit"
-                description: "number of items in the result. Default: 50"
-              - name: "offset"
-                description: "index of the first row to put in the result"
-            pathParams:
-              - name: "splash"
-                description: "splash key of the target to check"
-            methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-                responseModels:
-                  "application/json": AnnotationResponse
           request:
             parameter:
               paths:
