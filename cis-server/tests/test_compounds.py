@@ -1079,3 +1079,29 @@ def test_invalid_identified_names(requireMocking, pos_library_test_name):
     assert response['statusCode'] == 500
     assert json.loads(response['body'])[
                'error'] == "Invalid value for queryString 'identified'. Please use 'true' or 'false'."
+
+
+def test_filter_with_ri_and_pmz(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    without = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'queryStringParameters': {
+        }
+    }, {})
+    assert without['statusCode'] == 200
+
+    filtered = compounds.get_sorted({
+        'pathParameters': {
+            'library': urllib.parse.quote(pos_library_test_name)
+        },
+        'queryStringParameters': {
+            'rivalue': 85,
+            'pmzvalue': 487.35
+        }
+    }, {})
+    assert filtered['statusCode'] == 200
+
+    assert json.loads(without['body'], use_decimal=True) != json.loads(filtered['body'], use_decimal=True)
