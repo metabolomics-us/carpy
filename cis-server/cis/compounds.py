@@ -704,7 +704,7 @@ def get(events, context):
                 print(f"splash: {splash}")
                 statuses = database.query(
                     "select distinct clean, identified_by "
-                    "from pgtarget_status ps "
+                    "from pgspectrum_quality ps "
                     "where ps.target_id = %s",
                     conn, [splash])
 
