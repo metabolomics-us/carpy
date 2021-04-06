@@ -96,6 +96,524 @@ custom:
       - "moto"
       - "pytest"
 
+  ###
+  # documentation (general)
+  ###
+  documentation:
+    api:
+      info:
+        version: '1.0'
+        title: CIS-Server API
+        description: <h2>Specification for the current version of CIS lambdas exposed as REST services</h2>
+#        termsOfService: AsIs
+        contact:
+          name: Fiehnlab IT Team
+          url: https://fiehnlab.ucdavis.edu/staff#it
+        license:
+          name: CDDL-1.0
+          url: https://opensource.org/licenses/CDDL-1.0
+    models:
+      - LibraryName:
+        pattern: '^.* \| .* \| .* \| (?:positive|negative)$'
+        example: 'lcms | QExcative | c18 | positive'
+      - EmptyBody204:
+        type: object
+        properties:
+          statusCode:
+            type: integer
+            default: 204
+          body:
+            nullable: true
+      - EmptyBody400:
+        type: object
+        properties:
+          statusCode:
+            type: integer
+            default: 400
+          body:
+            items:
+              nullable: true
+            default: []
+      - Forbidden403:
+        type: object
+        properties:
+          statusCode:
+            type: integer
+            default: 403
+          body:
+            type: object
+            properties:
+              message:
+                type: string
+      - EmptyBody404:
+        type: object
+        properties:
+          statusCode:
+            type: integer
+            default: 404
+          body:
+            type: array
+            items:
+              nullable: true
+            default: []
+      - Error:
+        type: object
+        properties:
+          statusCode:
+            type: integer
+          body:
+            type: object
+            properties:
+              error:
+                type: string
+      - Splash:
+        pattern: '^splash\d{2}-[0-9a-z]{4}-[0-9a-z]{10}-[0-9a-z]{20}$'
+        example: 'splash10-001i-0900000000-e8f8990bb55851ffc9f1'
+      - IonModes:
+        enum:
+          - positive
+          - negative
+      - SortableColumns:
+        enum:
+          - tgt_id
+          - tgt_ri
+          - pmz
+          - name
+          - adduct
+        default: tgt_id
+      - SortDirection:
+        type: object
+        properties:
+          direction:
+            description: Sort order
+            default: asc
+            enum:
+              - asc
+              - desc
+      - AnnotationsList:
+        type: object
+        properties:
+          splash:
+            $ref: {{model: Splash}}
+          total_count:
+            description: Total number of annotations for this target
+            type: integer
+          annotations:
+            description: List of annotations in the current page (defined by limit and offset).
+            type: array
+            items:
+              $ref: {{model: AnnotationObj}}
+      - AnnotationObj:
+        type: object
+        description: Annotation object
+        properties:
+          id:
+            type: integer
+            example: 127850
+          accurate_mass:
+            type: number
+            example: 675.545654296875
+          ion_mode:
+            $ref: {{model: IonModes}}
+          ms_level:
+            type: integer
+            example: 2
+          original_retention_time:
+            type: number
+            example: 247.95
+          precursor_mass:
+            type: number
+            example: 675.545654296875
+          raw_spectrum:
+            $ref: {{model: Spectrum}}
+          replaced:
+            type: boolean
+          retention_index:
+            type: number
+            example: 259.190495161425
+          spectrum:
+            $ref: {{model: Spectrum}}
+          splash:
+            $ref: {{model: Splash}}
+          sample_id:
+            type: string
+            example: NIH_Lip_Std_CSH_POS_TissuePool_01
+          target_id:
+            type: integer
+            example: 110854
+      - LowercaseTargetTypes:
+        description: Target types lowercased
+        enum:
+          - confirmed
+          - unconfirmed
+          - uncoinfirmed_consensus
+          - is_member
+        default: confirmed
+      - UppercaseTargetTypes:
+        description: Target types uppercased
+        enum:
+          - CONFIRMED
+          - UNCONFIRMED
+          - UNCONFIRMED_CONSENSUS
+          - IS_MEMBER
+        default: CONFIRMED
+      - InchiKey:
+        pattern: '[A-Z]{14}-[A-Z]{10}-[A-Z]{1}'
+      - Spectrum:
+        type: string
+        description: Spectrum string definition
+        example: '86.096703:69919.89 88.363396:3119.44 104.107262:11991.60 114.199013:3147.53 675.543945:6875.87'
+      - Compound:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 199
+          accurate_mass:
+            type: number
+            example: 818.596801757812
+          target_type:
+            $ref: {{model: UppercaseTargetTypes}}
+          inchi_key:
+            $ref: {{model: InchiKey}}
+          method:
+            $ref: {{model: LibraryName}}
+          ms_level:
+            type: integer
+          required_for_correction:
+            type: boolean
+          retention_index:
+            type: number
+            example: 368.360069774002
+          spectrum:
+            $ref: {{model: Spectrum}}
+          splash:
+            $ref: {{model: Splash}}
+          preferred_name:
+            type: string
+            nullable: true
+            example:
+              - unknown_818.5968_368.3601
+              - PC (26:0)
+          preferred_adduct:
+            type: string
+            nullable: true
+            example: [ M+H ]
+          associated_names:
+            type: array
+            items:
+              type: string
+          associated_adducts:
+            type: array
+            items:
+              type: string
+          associated_comments:
+            type: array
+            items:
+              type: string
+          associated_meta:
+            type: array
+            items:
+              type: string
+          associated_statuses:
+            type: array
+            items:
+              $ref: {{model: TargetStatus}}
+          unique_mass:
+            type: number
+          precursor_mass:
+            type: number
+            example: 818.596801757812
+          samples:
+            type: array
+            items:
+              type: string
+      - TargetStatus:
+        type: object
+        properties:
+          clean:
+            type: boolean
+          identifiedBy:
+            $ref: {{model: UserName}}
+      - UserName:
+        type: string
+
+  commonModelSchemaFragments:
+    parameters:
+      LibraryPathParam:
+        name: library
+        in: path
+        required: true
+        description: name of the library/method to check
+        schema:
+          $ref: {{model: LibraryName}}
+      SplashPathParam:
+        name: splash
+        in: path
+        required: true
+        description: splash key
+        schema:
+          $ref: {{model: Splash}}
+      LimitPathParam:
+        name: limit
+        in: path
+        required: true
+        description: number of items to return
+        schema:
+          type: integer
+          default: 10
+      OffsetPathParam:
+        name: offset
+        in: path
+        required: true
+        description: index of the first query row to return
+        schema:
+          type: integer
+          default: 0
+      TypePathParam:
+        name: type
+        in: path
+        required: true
+        description: Target Type
+        schema:
+          $ref: {{model: LowercaseTargetTypes}}
+      OldTypePathParam:
+        name: type
+        in: path
+        required: true
+        description: Target Type
+        schema:
+          $ref: {{model: UppercaseTargetTypes}}
+      NamePathParam:
+        name: name
+        description: New name for the target/compound
+        in: path
+        required: true
+        schema:
+          type: string
+      KeyPathParam:
+        name: name
+        description: Name of the metadata entry
+        in: path
+        required: true
+        schema:
+          type: string
+      ValuePathParam:
+        name: value
+        description: Value of the metadata entry
+        in: path
+        required: true
+        schema:
+          type: string
+      UserPathParam:
+        name: identifiedBy
+        in: path
+        required: true
+        schema:
+          $ref: {{model: UserName}}
+      ObjectPathParam:
+        name: method
+        in: path
+        required: true
+        schema:
+          enum:
+            - target
+            - sample
+      ObjectIdPathParam:
+        name: value
+        in: path
+        required: true
+        schema:
+          type: object
+      TargetIdPathParam:
+        name: tgt_id
+        in: path
+        description: Target id
+        required: true
+        schema:
+          type: integer
+      LimitQueryParam:
+        name: limit
+        in: query
+        required: true
+        description: number of items to return
+        schema:
+          type: integer
+          default: 10
+      OffsetQueryParam:
+        name: offset
+        in: query
+        required: true
+        description: index of the first query row to return
+        schema:
+          type: integer
+          default: 0
+      OrderByQueryParam:
+        name: order_by
+        in: query
+        required: true
+        description: column to order results.
+        schema:
+          $ref: {{model: SortableColumns}}
+      DirectionQueryParam:
+        name: direction
+        in: query
+        required: true
+        schema:
+          $ref: {{model: SortDirection}}
+      ValueQueryParam:
+        name: value
+        in: query
+        description: Value to use as the center of the range filter. A value of 0 means no filter
+        required: false
+        schema:
+          type: number
+          default: 0
+      AccuracyQueryParam:
+        name: accuracy
+        in: query
+        description: value to use ad the limits of the range filter. Only used if 'value' > 0
+        required: false
+        schema:
+          type: number
+          default: 0.1
+      IdentifiedQueryParam:
+        name: identified
+        in: query
+        description: flag to return known compounds only, where target_name != 'unknown_*'
+        required: false
+        schema:
+          type: boolean
+          default: false
+      UserQueryParam:
+        name: identifiedBy
+        in: query
+        description: Username associated with this object
+        required: true
+        schema:
+          $ref: {{model: UserName}}
+      StatusQueryParam:
+        name: clean
+        in: query
+        description: Is spectrum clean (true) or not (false)
+        required: true
+        schema:
+          type: boolean
+          default: false
+
+    responses:
+      Response204:
+        description: Success empty
+        content:
+          'application/json':
+            schema:
+              $ref: {{model: EmptyBody204}}
+      MethodResponse400:
+        description: Invalid Request
+        content:
+          'application/json':
+            schema:
+              $ref: {{model: EmptyBody400}}
+      Forbidden403:
+        description: Forbidden
+        content:
+          'application/json':
+            schema:
+              $ref: {{model: Forbidden403}}
+      MethodResponse404:
+        description: Not Found
+        content:
+          'application/json':
+            schema:
+              $ref: {{model: EmptyBody404}}
+      MethodResponse500:
+        description: Server Error
+        content:
+          'application/json':
+            schema:
+              $ref: {{model: Error}}
+      LibraryListResponse:
+        description: List of library/method names
+        content:
+          'application/json':
+            schema:
+              type: array
+              items:
+                $ref: {{model: LibraryName}}
+      SplashListResponse:
+        description: List of splash keys
+        content:
+          'application/json':
+            schema:
+              type: array
+              items:
+                $ref: {{model: Splash}}
+      ConfigListResponse:
+        description: List of configurations
+        content:
+          'application/json':
+            schema:
+              type: object
+              properties:
+                configs:
+                  type: array
+                  items:
+                    oneOf:
+                      - type: integer
+                      - type: string
+                method:
+                  type: string
+                value:
+                  type: string
+      ProfileListResponse:
+        description: List of profiles
+        content:
+          'application/json':
+            schema:
+              type: object
+              properties:
+                profiles:
+                  type: array
+                  items:
+                    oneOf:
+                      - type: integer
+                      - type: string
+                method:
+                  type: string
+                value:
+                  type: string
+      AnnotationsResponse:
+        description: Success
+        content:
+          'appication/json':
+            schema:
+              $ref: {{model: AnnotationsList}}
+      StatusResponse:
+        description: Success
+        content:
+          'application/json':
+            schema:
+              type: object
+              properties:
+                statusCode:
+                  type: integer
+                  default: 200
+                body:
+                  type: object
+                  properties:
+                    clean:
+                      type: boolean
+                    identifiedBy:
+                      $ref: {{model: UserName}}
+      CompoundResponse:
+        description: Success
+        content:
+          'application/json':
+            schema:
+              $ref: {{model: Compound}}
+
+
+
 ############################################################################################
 # this section defines what to include and exclude when packaging artifacts
 ############################################################################################
