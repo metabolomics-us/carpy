@@ -39,7 +39,7 @@ def get_status(events, context):
 
     try:
         # check if the user already marked this spectrum, possibly updating the 'clean' value
-        query = "SELECT * FROM pgtarget_status " \
+        query = "SELECT * FROM pgspectrum_quality " \
                 "WHERE \"target_id\" = %s"
         params = [tgt_id]
 
@@ -107,7 +107,7 @@ def register_status(events, context):
 
     try:
         # check if the user already marked this spectrum, possibly updating the 'clean' value
-        query = "SELECT * FROM pgtarget_status " \
+        query = "SELECT * FROM pgspectrum_quality " \
                 "WHERE \"target_id\" = %s AND \"identified_by\" = %s"
         exists = database.query(query, conn, [tgt_id, identified_by])
 
@@ -117,12 +117,12 @@ def register_status(events, context):
             result = database.query("SELECT nextval('hibernate_sequence')", conn)
             new_status_id = result[0][0]
             # 2a. add record if user didn't mark this target
-            query = "INSERT INTO pgtarget_status(\"clean\", \"id\", \"target_id\", \"identified_by\") " \
+            query = "INSERT INTO pgspectrum_quality(\"clean\", \"id\", \"target_id\", \"identified_by\") " \
                     "VALUES (%s, %s, %s, %s)"
         else:
             # 2b. update record if user marked this target
             new_status_id = exists[0][0]
-            query = "UPDATE pgtarget_status SET \"clean\" = %s " \
+            query = "UPDATE pgspectrum_quality SET \"clean\" = %s " \
                     "WHERE \"id\" = %s AND \"target_id\" = %s AND \"identified_by\" = %s"
 
         database.query(query, conn, [clean, new_status_id, tgt_id, identified_by])
@@ -178,7 +178,7 @@ def delete_status(events, context):
 
     try:
         result = database.query(
-            "DELETE FROM pgtarget_status pc "
+            "DELETE FROM pgspectrum_quality pc "
             "WHERE pc.\"target_id\" = %s AND pc.\"identified_by\" = %s",
             conn, [tgt_id, identified_by])
 
