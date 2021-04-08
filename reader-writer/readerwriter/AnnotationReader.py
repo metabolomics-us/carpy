@@ -98,9 +98,10 @@ class AnnotationReader:
         '''
         self.panda_representation=pd.DataFrame.from_dict(self.all_annotation_dict)
 
-    def initial_dict_to_panda(self,annotation_dict):
+    def do_everything(self,annotation_dict):
         '''
         if you didnt know all the steps and just want the quick panda output
+        alternate name: initial_dict_to_panda
         '''
         self.assign_initial_dict(annotation_dict)
         self.assign_splash()
@@ -113,47 +114,3 @@ class AnnotationReader:
         self.reformat_spectrum_attribute('raw_spectrum')
         self.add_bin_splash_attribute()
         self.all_annotation_dict_to_panda()        
-
-
-
-if __name__=="__main__":
-
-    #get the client up and running
-    os.environ['CIS_URL'] = 'https://test-api.metabolomics.us/cis'
-    os.environ['CIS_API_TOKEN'] = 'aidfca01Xe9sBdS8LnVv9NPJQA1WVZU58gD8Dmm2'
-    api_token = os.getenv('CIS_API_TOKEN', '')
-    my_api_token_dictionary = {'x-api-key': api_token.strip()}
-    my_client=CISClient(os.getenv('CIS_URL'), os.getenv('CIS_API_TOKEN'))
-    temp_splash='splash10-001i-1900000000-3b9584bc9a188a381979'
-    temp_result=my_client.get_annotations_given_splash(splash=temp_splash)
-
-    #create object
-    my_AnnotationWriter=AnnotationWriter()
-    #basic assignment
-    my_AnnotationWriter.assign_initial_dict(temp_result)
-    my_AnnotationWriter.assign_splash()
-    my_AnnotationWriter.assign_total_count()
-    my_AnnotationWriter.assign_annotations()
-    my_AnnotationWriter.remove_initial_dict()
-    my_AnnotationWriter.assign_keys_from_first_annotation()
-    temp=my_AnnotationWriter.slice_single_key_across_annotations(my_AnnotationWriter.first_dict_keys[0])
-    my_AnnotationWriter.slice_all_keys_across_annotations()
-    my_AnnotationWriter.reformat_spectrum_attribute('spectrum')
-    my_AnnotationWriter.reformat_spectrum_attribute('raw_spectrum')
-    my_AnnotationWriter.add_bin_splash_attribute()
-    my_AnnotationWriter.all_annotation_dict_to_panda()
-    #checks
-    print(my_AnnotationWriter.splash)
-    print(my_AnnotationWriter.total_count)
-    print(my_AnnotationWriter.annotations)
-    print(my_AnnotationWriter.annotation_dict)
-    print(my_AnnotationWriter.first_dict_keys)
-    print(temp)
-    #one written for all calls above
-    print(my_AnnotationWriter.all_annotation_dict)
-    print(my_AnnotationWriter.panda_representation)
-
-
-    my_AnnotationWriter_2=AnnotationWriter()
-    my_AnnotationWriter_2.initial_dict_to_panda(temp_result)
-    print(my_AnnotationWriter_2.panda_representation)
