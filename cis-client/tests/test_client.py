@@ -188,11 +188,10 @@ def test_correct_order(cis_cli, library_test_name):
 
     assert all(masses[i] >= masses[i + 1] for i in range(len(masses) - 1))
 
-
-def test_get_annotations_given_splash(cis_cli, splash_test_name):
-    result = cis_cli.get_annotations_given_splash(splash=splash_test_name[0], limit=10, offset=0)
+#note that spash_test_name gives 502 error
+def test_get_annotations_given_splash(cis_cli, splash_test_name_with_members):
+    result = cis_cli.get_annotations_given_splash(splash=splash_test_name_with_members[0], limit=10, offset=0)
     assert len(result['annotations']) > 0
-
 
 def test_get_spectrum_status(cis_cli, target_id):
     result = cis_cli.get_spectrum_status(target_id)
