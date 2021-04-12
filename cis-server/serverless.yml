@@ -325,8 +325,10 @@ functions:
                 direction: false
                 limit: false
                 offset: false
-                value: false
-                accuracy: false
+                rivalue: false
+                riaccuracy: false
+                pmzvalue: false
+                pmzaccuracy: false
       - http:
           private: true
           path: compounds/{library}/{tgt_type}
@@ -344,8 +346,10 @@ functions:
                 direction: false
                 limit: false
                 offset: false
-                value: false
-                accuracy: false
+                rivalue: false
+                riaccuracy: false
+                pmzvalue: false
+                pmzaccuracy: false
 
   compoundSetName:
     handler: cis/compounds.register_name

@@ -962,8 +962,10 @@ def get_sorted(events, context):
             offset = 0
             order_by = "tgt_id"
             direction = "asc"
-            value = 0.0
-            accuracy = 0.01
+            rivalue = 0
+            riaccuracy = 5
+            pmzvalue = 0.0
+            pmzaccuracy = 0.01
             identified = False
         else:
             if 'limit' in events['queryStringParameters']:
@@ -988,15 +990,25 @@ def get_sorted(events, context):
             else:
                 direction = 'asc'
 
-            if 'value' in events['queryStringParameters']:
-                value = float(events['queryStringParameters']['value'])
-                if 'accuracy' in events['queryStringParameters']:
-                    accuracy = float(events['queryStringParameters']['accuracy'])
+            if 'rivalue' in events['queryStringParameters']:
+                rivalue = float(events['queryStringParameters']['rivalue'])
+                if 'riaccuracy' in events['queryStringParameters']:
+                    riaccuracy = float(events['queryStringParameters']['riaccuracy'])
                 else:
-                    accuracy = 0.01
+                    riaccuracy = 5
             else:
-                value = 0
-                accuracy = 0.01
+                rivalue = 0
+                riaccuracy = 5
+
+            if 'pmzvalue' in events['queryStringParameters']:
+                pmzvalue = float(events['queryStringParameters']['pmzvalue'])
+                if 'pmzaccuracy' in events['queryStringParameters']:
+                    pmzaccuracy = float(events['queryStringParameters']['pmzaccuracy'])
+                else:
+                    pmzaccuracy = 0.01
+            else:
+                pmzvalue = 0.0
+                pmzaccuracy = 0.01
 
             if 'identified' in events['queryStringParameters']:
                 if events['queryStringParameters']['identified'] in bool_map.keys():
@@ -1010,14 +1022,24 @@ def get_sorted(events, context):
         query_filter = "WHERE method_id = %s AND target_type = %s AND dtype = 'PgInternalTarget'"
         query_order = f"ORDER BY \"{column_dict[order_by]}\" {direction.upper()}"
         query_limit = "LIMIT %s OFFSET %s"
+        query_ranges = []
         query_params = [method_name, tgt_type.upper(), limit, offset]
 
         if identified:
             query_filter = f"{query_filter} AND position('unknown' in target_name) IN (0, null)"
 
-        if value > 0:
-            query_filter = f'{query_filter} AND "{column_dict[order_by]}" BETWEEN %s AND %s'
-            query_params = [method_name, tgt_type.upper(), (value - accuracy), (value + accuracy), limit, offset]
+        if rivalue > 0:
+            query_filter = f"{query_filter} AND retention_index BETWEEN %s AND %s "
+            query_ranges.append(rivalue - riaccuracy)
+            query_ranges.append(rivalue + riaccuracy)
+
+        if pmzvalue > 0:
+            query_filter = f"{query_filter} AND precursor_mass BETWEEN %s AND %s "
+            query_ranges.append(pmzvalue - pmzaccuracy)
+            query_ranges.append(pmzvalue + pmzaccuracy)
+
+        if len(query_ranges) > 0:
+            query_params = [method_name, tgt_type.upper(), *query_ranges, limit, offset]
 
         query = f'{query_base} {query_filter} {query_order} {query_limit}'
 
