@@ -16,7 +16,7 @@ def test_register_status(requireMocking, target_id, user_id):
             "tgt_id": target_id
         },
         "queryStringParameters": {
-            "clean": True,
+            "clean": "true",
             "identifiedBy": 'other' + user_id
         }
     }, {})
@@ -29,7 +29,7 @@ def test_register_status(requireMocking, target_id, user_id):
             "tgt_id": target_id
         },
         "queryStringParameters": {
-            "clean": True,
+            "clean": "true",
             "identifiedBy": user_id
         }
     }, {})
@@ -42,13 +42,28 @@ def test_register_status(requireMocking, target_id, user_id):
             "tgt_id": target_id
         },
         "queryStringParameters": {
-            "clean": False,
+            "clean": "false",
             "identifiedBy": user_id
         }
     }, {})
 
     assert response['statusCode'] == 200
     assert json.loads(response['body'])['clean'] is False
+
+
+def test_register_status_random_clean(requireMocking, target_id):
+    from cis import spectrum
+
+    response = spectrum.register_status({
+        "pathParameters": {
+            "tgt_id": target_id
+        },
+        "queryStringParameters": {
+            "clean": "bad stuff"
+        }
+    }, {})
+
+    assert response['statusCode'] == 400
 
 
 def test_register_status_no_clean(requireMocking, target_id, user_id):
@@ -74,7 +89,7 @@ def test_register_status_no_user(requireMocking, target_id):
             "tgt_id": target_id
         },
         "queryStringParameters": {
-            "clean": True
+            "clean": "true"
         }
     }, {})
 
@@ -87,7 +102,7 @@ def test_register_status_no_target_id(requireMocking, user_id):
     response = spectrum.register_status({
         "pathParameters": {},
         "queryStringParameters": {
-            "clean": True,
+            "clean": "true",
             "identifiedBy": user_id
         }
     }, {})

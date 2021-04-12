@@ -12,6 +12,7 @@ conn = database.connect()
 logger.add(sys.stdout, format="{time} {level} {message}", filter="compounds", level="INFO", backtrace=True,
            diagnose=True)
 
+statusDic = {'true': True, 'false': False}
 
 def get_status(events, context):
     """
@@ -101,8 +102,15 @@ def register_status(events, context):
                     "error": "Missing parameters 'clean' or 'identifiedBy'"
                 })
             }
+    if events['queryStringParameters']['clean'] not in statusDic.keys():
+        return {
+            "statusCode": 400,
+            "body": json.dumps({
+                "error": "Invalid query parameter 'clean', must be 'true' or 'false'"
+            })
+        }
 
-    clean = bool(events['queryStringParameters']['clean'])
+    clean = statusDic[events['queryStringParameters']['clean']]
     identified_by = urllib.parse.unquote(events['queryStringParameters']['identifiedBy'])
 
     try:
