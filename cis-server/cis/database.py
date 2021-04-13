@@ -45,7 +45,7 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
         if params is None:
             cur.execute(sql)
         else:
-            logger.debug(f'SQL: {sql}')
+            logger.debug(cur.mogrify(sql, params))
             cur.execute(sql, params)
         if cur.rowcount == 0 or cur.description is None:
             return None

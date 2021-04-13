@@ -117,7 +117,7 @@ def sample_name():
 
 @pytest.fixture()
 def range_search():
-    return 227.21, 0.01
+    return {'pmzval': 279.1598, 'pmzacc': 0.01, 'rival': 219, 'riacc': 10}
 
 
 @pytest.fixture()

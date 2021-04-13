@@ -299,6 +299,8 @@ functions:
                 description: "column to order results. Valid values: [tgt_id, tgt_ri, pmz, name, adduct], default: 'tgt_id'"
               - name: "direction"
                 description: "sort order. Valid values: [asc, desc], default 'asc'"
+              - name: "name"
+                description: "name of the compound to search for"
               - name: "limit"
                 description: "number of items in the result. Default: 10"
               - name: "offset"
@@ -323,6 +325,7 @@ functions:
               querystrings:
                 order_by: false
                 direction: false
+                name: false
                 limit: false
                 offset: false
                 rivalue: false
@@ -344,6 +347,7 @@ functions:
               querystrings:
                 order_by: false
                 direction: false
+                name: false
                 limit: false
                 offset: false
                 rivalue: false
