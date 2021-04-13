@@ -954,6 +954,7 @@ def get_sorted(events, context):
         'adduct': 'adduct_name'
     }
     directions = ['asc', 'desc']
+    tgt_name = None
 
     try:
         if 'queryStringParameters' not in events or events['queryStringParameters'] is None:
@@ -1018,30 +1019,38 @@ def get_sorted(events, context):
             else:
                 identified = False
 
-        query_base = "SELECT splash FROM public.pgtarget"
-        query_filter = "WHERE method_id = %s AND target_type = %s AND dtype = 'PgInternalTarget'"
-        query_order = f"ORDER BY \"{column_dict[order_by]}\" {direction.upper()}"
+            if 'name' in events['queryStringParameters']:
+                tgt_name = f"%{urllib.parse.unquote(events['queryStringParameters']['name'])}%"
+
+        query_tables = "pgtarget t"
+        query_filter = "WHERE t.method_id = %s AND t.target_type = %s AND t.dtype = 'PgInternalTarget'"
+        query_order = f"ORDER BY t.{column_dict[order_by]} {direction.upper()}"
         query_limit = "LIMIT %s OFFSET %s"
         query_ranges = []
         query_params = [method_name, tgt_type.upper(), limit, offset]
+
+        if tgt_name is not None:
+            query_tables = "pgtarget t LEFT JOIN pgtarget_name tn ON t.id = tn.target_id"
+            query_filter = f"{query_filter} AND tn.name ILIKE %s"
+            query_ranges.append(tgt_name)
 
         if identified:
             query_filter = f"{query_filter} AND position('unknown' in target_name) IN (0, null)"
 
         if rivalue > 0:
-            query_filter = f"{query_filter} AND retention_index BETWEEN %s AND %s "
+            query_filter = f"{query_filter} AND retention_index BETWEEN %s AND %s"
             query_ranges.append(rivalue - riaccuracy)
             query_ranges.append(rivalue + riaccuracy)
 
         if pmzvalue > 0:
-            query_filter = f"{query_filter} AND precursor_mass BETWEEN %s AND %s "
+            query_filter = f"{query_filter} AND precursor_mass BETWEEN %s AND %s"
             query_ranges.append(pmzvalue - pmzaccuracy)
             query_ranges.append(pmzvalue + pmzaccuracy)
 
         if len(query_ranges) > 0:
             query_params = [method_name, tgt_type.upper(), *query_ranges, limit, offset]
 
-        query = f'{query_base} {query_filter} {query_order} {query_limit}'
+        query = f"SELECT t.splash FROM {query_tables} {query_filter} {query_order} {query_limit}"
 
         transform = lambda x: x[0]
         result = database.html_response_query(query, conn, params=query_params, transform=transform)
@@ -1050,7 +1059,7 @@ def get_sorted(events, context):
         return result
 
     except Exception as ex:
-        # logger.error(ex)
+        logger.error(ex)
         return {
             "statusCode": 500,
             "headers": headers.__HTTP_HEADERS__,

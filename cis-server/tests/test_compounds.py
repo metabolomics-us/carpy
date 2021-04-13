@@ -955,8 +955,8 @@ def test_get_sorted_with_range(requireMocking, pos_library_test_name, range_sear
         'queryStringParameters': {
             'limit': 10,
             'order_by': 'pmz',
-            'value': range_search[0],
-            'accuracy': range_search[1]
+            'pmzvalue': range_search['pmzval'],
+            'pmzaccuracy': range_search['pmzacc']
         }
     }, {})
 
@@ -967,13 +967,13 @@ def test_get_sorted_with_range(requireMocking, pos_library_test_name, range_sear
     }, {})['body'])[0] for c in json.loads(splashes['body'])]
     assert len(comps_obj) > 0
 
-    assert comps_obj[0]['precursor_mass'] >= range_search[0] - range_search[1]
-    assert comps_obj[-1]['precursor_mass'] <= range_search[0] + range_search[1]
+    assert comps_obj[0]['precursor_mass'] >= range_search['pmzval'] - range_search['pmzacc']
+    assert comps_obj[-1]['precursor_mass'] <= range_search['pmzval'] + range_search['pmzacc']
     assert [comps_obj[x]['precursor_mass'] < comps_obj[x + 1]['precursor_mass'] for x in range(0, len(comps_obj) - 1)]
     assert comps_obj[0]['precursor_mass'] - comps_obj[-1]['precursor_mass'] < 0
 
 
-def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
+def test_get_ranges_gibberish(requireMocking, pos_library_test_name, range_search):
     from cis import compounds
 
     response = compounds.get_sorted({
@@ -983,7 +983,7 @@ def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
         'path': 'something to shut-up pytest\'s KeyError',
         'multiValueQueryStringParameters': 'something to shut-up pytest\'s KeyError',
         'queryStringParameters': {
-            'value': 'boom'
+            'pmzvalue': 'boom'
         }
     }, {})
 
@@ -996,8 +996,8 @@ def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
         'path': 'something to shut-up pytest\'s KeyError',
         'multiValueQueryStringParameters': 'something to shut-up pytest\'s KeyError',
         'queryStringParameters': {
-            'value': 199,
-            'accuracy': 1
+            'rivalue': range_search['rival'],
+            'riaccuracy': 1
         }
     }, {})
 
@@ -1010,8 +1010,8 @@ def test_get_ranges_gibberish(requireMocking, pos_library_test_name):
         'path': 'something to shut-up pytest\'s KeyError',
         'multiValueQueryStringParameters': 'something to shut-up pytest\'s KeyError',
         'queryStringParameters': {
-            'value': 200,
-            'accuracy': 'hacked'
+            'rivalue': range_search['rival'],
+            'riaccuracy': 'hacked'
         }
     }, {})
 
@@ -1081,7 +1081,7 @@ def test_invalid_identified_names(requireMocking, pos_library_test_name):
                'error'] == "Invalid value for queryString 'identified'. Please use 'true' or 'false'."
 
 
-def test_filter_with_ri_and_pmz(requireMocking, pos_library_test_name):
+def test_filter_with_ri_and_pmz(requireMocking, pos_library_test_name, range_search):
     from cis import compounds
 
     without = compounds.get_sorted({
@@ -1098,10 +1098,56 @@ def test_filter_with_ri_and_pmz(requireMocking, pos_library_test_name):
             'library': urllib.parse.quote(pos_library_test_name)
         },
         'queryStringParameters': {
-            'rivalue': 85,
-            'pmzvalue': 487.35
+            'rivalue': range_search['rival'],
+            'pmzvalue': range_search['pmzval']
         }
     }, {})
     assert filtered['statusCode'] == 200
 
     assert json.loads(without['body'], use_decimal=True) != json.loads(filtered['body'], use_decimal=True)
+
+
+def test_get_name_filtered_with_range(requireMocking, pos_library_test_name, range_search):
+    from cis import compounds
+
+    splashes = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {
+            'limit': 30,
+            'order_by': 'pmz',
+            'name': 'dibutyl',
+            'pmzvalue': range_search['pmzval'],
+            'pmzaccuracy': range_search['pmzacc']
+        }
+    }, {})
+
+    logger.info(splashes)
+
+    assert splashes['statusCode'] == 200
+    comps_obj = [json.loads(compounds.get({
+        'pathParameters': {'library': pos_library_test_name,
+                           'splash': c}
+    }, {})['body'])[0] for c in json.loads(splashes['body'])]
+    assert len(comps_obj) == 11
+
+
+def test_get_name_filtered(requireMocking, pos_library_test_name):
+    from cis import compounds
+
+    splashes = compounds.get_sorted({
+        'pathParameters': {'library': urllib.parse.quote(pos_library_test_name)},
+        'queryStringParameters': {
+            'limit': 30,
+            'order_by': 'pmz',
+            'name': 'dibutyl'
+        }
+    }, {})
+
+    logger.info(splashes)
+
+    assert splashes['statusCode'] == 200
+    comps_obj = [json.loads(compounds.get({
+        'pathParameters': {'library': pos_library_test_name,
+                           'splash': c}
+    }, {})['body'])[0] for c in json.loads(splashes['body'])]
+    assert len(comps_obj) == 11
