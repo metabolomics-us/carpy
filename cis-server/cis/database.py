@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional, List
+from typing import Optional, List, Collection
 
 import psycopg2
 import simplejson as json
@@ -32,7 +32,7 @@ def connect():
         logger.error(e)
 
 
-def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]:
+def query(sql: str, connection, params: Optional[Collection] = None) -> Optional[List]:
     """
 
     :param sql: your query string
@@ -61,7 +61,7 @@ def query(sql: str, connection, params: Optional[List] = None) -> Optional[List]
         raise error
 
 
-def html_response_query(sql: str, connection, params: Optional[List] = None, transform: Optional = None,
+def html_response_query(sql: str, connection, params: Optional[Collection] = None, transform: Optional = None,
                         return_404_on_empty=True) -> Optional[List]:
     """
     executes a query and converts the response to

@@ -924,6 +924,25 @@ def delete_meta(events, context):
 def get_sorted(events, context):
     types_list = ['unconfirmed', 'is_member', 'consensus', 'confirmed']
     bool_map = {'true': True, 'false': False}
+    directions = ['ASC', 'DESC']
+    column_dict = {
+        'tgt_id': 'id',
+        'tgt_ri': 'retention_index',
+        'pmz': 'precursor_mass',
+        'name': 'target_name',
+        'adduct': 'adduct_name'
+    }
+    query_params = {
+        'limit': 10,
+        'offset': 0,
+        'order_by': column_dict['tgt_id'],
+        'direction': 'ASC',
+        'identified': False
+    }
+    rivalue = 0
+    riaccuracy = 5
+    pmzvalue = 0.0
+    pmzaccuracy = 0.01
 
     if 'pathParameters' not in events:
         return {
@@ -939,123 +958,85 @@ def get_sorted(events, context):
             "body": json.dumps({"error": "you need to provide a 'library' name"}, use_decimal=True)
         }
     else:
-        method_name = urllib.parse.unquote(events['pathParameters']['library'])
+        query_params['method_name'] = urllib.parse.unquote(events['pathParameters']['library'])
 
     if 'tgt_type' not in events['pathParameters'] or events['pathParameters']['tgt_type'] not in types_list:
-        tgt_type = 'confirmed'
+        query_params['tgt_type'] = 'CONFIRMED'
     else:
-        tgt_type = urllib.parse.unquote(events['pathParameters']['tgt_type'])
-
-    column_dict = {
-        'tgt_id': 'id',
-        'tgt_ri': 'retention_index',
-        'pmz': 'precursor_mass',
-        'name': 'target_name',
-        'adduct': 'adduct_name'
-    }
-    directions = ['asc', 'desc']
-    tgt_name = None
+        query_params['tgt_type'] = urllib.parse.unquote(events['pathParameters']['tgt_type']).upper()
 
     try:
         if 'queryStringParameters' not in events or events['queryStringParameters'] is None:
             logger.info("WARN: using defaults")
-            limit = 10
-            offset = 0
-            order_by = "tgt_id"
-            direction = "asc"
-            rivalue = 0
-            riaccuracy = 5
-            pmzvalue = 0.0
-            pmzaccuracy = 0.01
-            identified = False
         else:
             if 'limit' in events['queryStringParameters']:
-                limit = int(events['queryStringParameters']['limit'])
-            else:
-                limit = 10
+                query_params['limit'] = int(events['queryStringParameters']['limit'])
 
             if 'offset' in events['queryStringParameters']:
-                offset = int(events['queryStringParameters']['offset'])
-            else:
-                offset = 0
+                query_params['offset'] = int(events['queryStringParameters']['offset'])
 
             if 'order_by' in events['queryStringParameters'] and \
                     events['queryStringParameters']['order_by'].lower() in column_dict.keys():
-                order_by = events['queryStringParameters']['order_by']
-            else:
-                order_by = 'tgt_id'
+                query_params['order_by'] = column_dict[events['queryStringParameters']['order_by'].lower()]
 
             if 'direction' in events['queryStringParameters'] and \
-                    events['queryStringParameters']['direction'].lower() in directions:
-                direction = events['queryStringParameters']['direction']
-            else:
-                direction = 'asc'
+                    events['queryStringParameters']['direction'].upper() in directions:
+                query_params['direction'] = events['queryStringParameters']['direction'].upper()
 
             if 'rivalue' in events['queryStringParameters']:
                 rivalue = float(events['queryStringParameters']['rivalue'])
                 if 'riaccuracy' in events['queryStringParameters']:
                     riaccuracy = float(events['queryStringParameters']['riaccuracy'])
-                else:
-                    riaccuracy = 5
-            else:
-                rivalue = 0
-                riaccuracy = 5
 
             if 'pmzvalue' in events['queryStringParameters']:
                 pmzvalue = float(events['queryStringParameters']['pmzvalue'])
                 if 'pmzaccuracy' in events['queryStringParameters']:
                     pmzaccuracy = float(events['queryStringParameters']['pmzaccuracy'])
-                else:
-                    pmzaccuracy = 0.01
-            else:
-                pmzvalue = 0.0
-                pmzaccuracy = 0.01
 
             if 'identified' in events['queryStringParameters']:
                 if events['queryStringParameters']['identified'] in bool_map.keys():
-                    identified = bool_map[events['queryStringParameters']['identified']]
+                    query_params['identified'] = bool_map[events['queryStringParameters']['identified']]
                 else:
                     raise Exception("Invalid value for queryString 'identified'. Please use 'true' or 'false'.")
-            else:
-                identified = False
 
             if 'name' in events['queryStringParameters']:
-                tgt_name = f"%{urllib.parse.unquote(events['queryStringParameters']['name'])}%"
+                query_params['tgt_name'] = urllib.parse.unquote(events['queryStringParameters']['name'])
+                query_params['tgt_name_mask'] = f"%{query_params['tgt_name']}%"
 
         query_tables = "pgtarget t"
-        query_filter = "WHERE t.method_id = %s AND t.target_type = %s AND t.dtype = 'PgInternalTarget'"
-        query_order = f"ORDER BY t.{column_dict[order_by]} {direction.upper()}"
-        query_limit = "LIMIT %s OFFSET %s"
-        query_ranges = []
-        query_params = [method_name, tgt_type.upper(), limit, offset]
+        query_filter = "WHERE t.method_id = %(method_name)s AND t.target_type = %(tgt_type)s " \
+                       "AND t.dtype = 'PgInternalTarget'"
+        query_order = f"ORDER BY t.{query_params['order_by']} {query_params['direction']}"
+        query_limit = "LIMIT %(limit)s OFFSET %(offset)s"
 
-        if tgt_name is not None:
+        if 'tgt_name' in query_params:
             query_tables = "pgtarget t LEFT JOIN pgtarget_name tn ON t.id = tn.target_id"
-            query_filter = f"{query_filter} AND tn.name ILIKE %s"
-            query_ranges.append(tgt_name)
+            query_filter = f"{query_filter} AND tn.name ILIKE %(tgt_name_mask)s"
+            if query_params['order_by'] not in events['queryStringParameters']:
+                query_order = f"ORDER BY similarity(tn.name, %(tgt_name)s) DESC"
+            else:
+                query_order = f"ORDER BY similarity(tn.name, %(tgt_name)s) DESC, t.{query_params['order_by']} " \
+                              f"{query_params['direction']}"
 
-        if identified:
+        if query_params['identified']:
             query_filter = f"{query_filter} AND position('unknown' in target_name) IN (0, null)"
 
         if rivalue > 0:
-            query_filter = f"{query_filter} AND retention_index BETWEEN %s AND %s"
-            query_ranges.append(rivalue - riaccuracy)
-            query_ranges.append(rivalue + riaccuracy)
+            query_filter = f"{query_filter} AND retention_index BETWEEN %(lower_ri)s AND %(upper_ri)s"
+            query_params['lower_ri'] = rivalue - riaccuracy
+            query_params['upper_ri'] = rivalue + riaccuracy
 
         if pmzvalue > 0:
-            query_filter = f"{query_filter} AND precursor_mass BETWEEN %s AND %s"
-            query_ranges.append(pmzvalue - pmzaccuracy)
-            query_ranges.append(pmzvalue + pmzaccuracy)
-
-        if len(query_ranges) > 0:
-            query_params = [method_name, tgt_type.upper(), *query_ranges, limit, offset]
+            query_filter = f"{query_filter} AND precursor_mass BETWEEN %(lower_pmz)s AND %(upper_pmz)s"
+            query_params['lower_pmz'] = pmzvalue - pmzaccuracy
+            query_params['upper_pmz'] = pmzvalue + pmzaccuracy
 
         query = f"SELECT t.splash FROM {query_tables} {query_filter} {query_order} {query_limit}"
 
         transform = lambda x: x[0]
         result = database.html_response_query(query, conn, params=query_params, transform=transform)
 
-        logger.info(f"Requested {limit} results, returning {len(json.loads(result['body']))}")
+        logger.info(f"Requested {query_params['limit']} results, returning {len(json.loads(result['body']))}")
         return result
 
     except Exception as ex:
