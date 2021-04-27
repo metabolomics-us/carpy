@@ -3,8 +3,6 @@ from abc import ABC
 from typing import Optional
 
 import requests as requests
-from requests.adapters import HTTPAdapter
-from urllib3 import Retry
 from loguru import logger
 
 
@@ -13,7 +11,7 @@ class Similarity(ABC):
     A client of the similarity4aws service
     """
     # initialize the loguru logger
-    logger.add(sys.stdout, format="{time} {level} {message}", filter="annotations", level="INFO", backtrace=False,
+    logger.add(sys.stdout, format="{time} {level} {message}", filter="Similarity", level="INFO", backtrace=False,
                diagnose=False)
 
     def __init__(self, url: Optional[str] = None):
@@ -34,6 +32,9 @@ class Similarity(ABC):
 
         if result.status_code == 200:
             return result.json()
+        elif result.status_code in [400, 401]:
+            logger.error(result.json()['error'])
+            raise Exception(result.json()['error'])
         else:
             logger.error(result)
             raise Exception(result)
@@ -68,6 +69,9 @@ class Similarity(ABC):
 
         if result.status_code == 200:
             return result.json()
+        elif result.status_code in [400, 401]:
+            logger.error(result.json()['error'])
+            raise Exception(result.json()['error'])
         else:
             logger.error(result)
             raise Exception(result)
