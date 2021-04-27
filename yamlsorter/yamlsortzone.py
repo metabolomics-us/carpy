@@ -1,5 +1,6 @@
 import argparse
 import csv
+import itertools
 from os.path import splitext
 from pprint import pprint
 
@@ -16,30 +17,53 @@ def readyaml(file):
 
 
 def read_csv(file):
-    yield
+    with open(file, 'r') as infile:
+        cr = csv.reader(infile, dialect='excel')
+        data = {'config': []}
+
+        for t in cr:
+            if t[0] == 'name':
+                continue
+
+            target = {'identifier': t[6], 'accurateMass': float(t[7]), 'retentionTime': float(t[8]),
+                      'retentionTimeUnit': t[9], 'targetType': t[10], 'requiredForCorrection': bool(t[11]),
+                      'zone': int(t[12]), 'msms': t[13]}
+
+            lib = {}
+            for item in data['config']:
+                if item['name'] == t[0] and item['instrument'] == t[1] and item['column'] == t[2] \
+                        and item['ionMode'] == t[3]:
+                    lib = item
+                    break
+
+            if lib == {}:
+                lib = {'name': t[0], 'instrument': t[1], 'column': t[2], 'ionMode': t[3], 'minimumPeakIntensity': int(t[4]),
+                       'description': t[5], 'targets': []}
+                data['config'].append(lib)
+
+            lib['targets'].append(target)
+
+    return data
 
 
 def calc_zone(t, zones: list):
-    print(f'sorted: {zones}')
-    rt = t['retentionTime']
+    try:
+        rt = float(t['retentionTime'])
+        if 'zone' in t and int(t['zone']) > 0:
+            return int(t['zone'])
 
-    if t['retentionTimeUnit'] == 'seconds':
-        rt = rt / 60
+        if t['retentionTimeUnit'] == 'seconds':
+            rt = rt / 60
 
-    for idx in range(0, len(zones)):
-        if zones[idx] <= rt < zones[idx + 1]:
-            print(f'{zones[idx]} <= {rt} < {zones[idx + 1]} -> zone: {idx}')
-            # return idx-1
-        idx += 1
-
-    if 'zone' in t and t['zone'] > 0:
-        return t['zone']
-    else:
-        return 0
+        for idx in range(0, len(zones)):
+            if zones[idx] <= rt < zones[idx + 1]:
+                return idx
+            idx += 1
+    except TypeError as e:
+        print(f"TypeError in t {t}")
 
 
 def save_file(data, params):
-    pprint(params)
     outfile = splitext(params['infile'])[0]
     outfile = outfile + '.sorted.' + params['outformat']
 
@@ -59,22 +83,30 @@ def save_csv(data, outfile):
         wr = csv.writer(ofile, lineterminator='\n', dialect='excel')
         wr.writerow(['name', 'instrument', 'column', 'ionMode', 'minimumPeakIntensity', 'description',
                      'identifier', 'accurateMass', 'retentionTime', 'retentiontimeUnit', 'targetType',
-                     'requiredForCorrection', 'msms'])
+                     'requiredForCorrection', 'zone', 'msms'])
 
         for a in data['config']:
             for t in a['targets']:
-                wr.writerow([a['name'], a['instrument'], a['column'], a['ionMode'], a['minimumPeakIntensity'],
-                             a['description'], t['identifier'], t['accurateMass'], t['retentionTime'],
-                             t['retentionTimeUnit'], t['targetType'], t['requiredForCorrection'], t['msms']])
+                wr.writerow([a['name'], a['instrument'], a['column'], a['ionMode'], int(a['minimumPeakIntensity']),
+                             a['description'], t['identifier'], float(t['accurateMass']), float(t['retentionTime']),
+                             t['retentionTimeUnit'], t['targetType'], bool(t['requiredForCorrection']), int(t['zone']),
+                             t['msms']])
 
 
 def process(params):
-    data = readyaml(params['infile'])
+    data = []
+    if str(params['infile']).lower().endswith('.csv'):
+        data = read_csv(params['infile'])
+    elif str(params['infile']).lower().endswith(('.yml', '.yaml')):
+        data = readyaml(params['infile'])
+
     zones = [float(x) for x in params['zones'].split(',')]
+
     if 0.0 not in zones:
         zones.append(0.0)
+
     zones.sort()
-    print(f'input: {zones}')
+    pprint(params)
 
     for method in data:
         for config in data[method]:
@@ -102,13 +134,13 @@ if __name__ == '__main__':
                         help='output file format. Default "yaml"')
     parser.add_argument('--zones',
                         help='Comma separated list of retention times (minutes) defining zones. '
-                             'Example: 0.0,3.0,5.5,9.0,15.0')
+                             'Example: 0.0,3.1,5.5,9.0,15.0')
 
     args = parser.parse_args()
 
     try:
         process(vars(args))
-    except Exception as e:
-        pprint(e.args)
+    except argparse.ArgumentError as e:
+        print(e)
         parser.print_help()
         exit(-1)
