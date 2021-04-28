@@ -6,6 +6,8 @@ import requests
 from loguru import logger
 from requests.adapters import HTTPAdapter, Retry
 
+import pprint
+
 # initialize the loguru logger
 logger.add(sys.stdout, format="{time} {level} {message}", filter="cisclient", level="INFO", backtrace=True,
            diagnose=True)
@@ -286,15 +288,15 @@ class CISClient:
 
     
     @logger.catch
-    def get_annotations_given_splash(self, splash: str, limit: int = 10, offset: int = 0):
+    def get_annotations_given_splash(self, splash: str, limit: int = 10, offset: int = 0, autopage: bool = True):
         """
         Opted to make limit a positional argument. dont think it should be hardcoded.
         We do not accept a null value for limit and offset (althought the server does not complain per postmates get)
         instead we suppose the defaults.
-        :param splash:
-        :param limit:
-        :param offset:
-        :return:
+        :param splash: hashed identifier that describes the bin of spectra for which you are interested
+        :param limit: the number of results returned with each iteration of calls
+        :param offset: the position at which you want results to start. incremented over iterations
+        :return: returns a .json format dictionary containing all annotations corresponding to the specified bin
         """
         url_path = f'{self._url}/annotations/{splash}'
 
@@ -303,9 +305,24 @@ class CISClient:
         result = self.http.get(f'{url_path}?{url_query_string}', headers=self._header)
 
         if result.status_code == 200:
-            return result.json()
+            result: dict = result.json()
+
+            if autopage:
+                #data is entire dictionary
+                data=result
+
+                while len(data['annotations']) > 0:
+                    offset=limit+offset
+                    data=self.get_annotations_given_splash(splash=splash,limit=limit,offset=offset,autopage=False)
+                    for x in data['annotations']:
+                        result['annotations'].append(x)
+            
+            return result
+        elif result.status_code == 404:
+            return {'annotations':[]}
         else:
             raise Exception(result)
+
 
     @logger.catch
     def get_spectrum_status(self, target_id: int, limit: int = 10, offset: int = 0):

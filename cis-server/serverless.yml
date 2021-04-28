@@ -1,5 +1,6 @@
 service: cis
 
+# using 1.83.3
 frameworkVersion: ">=1.1.0 <2.0.0"
 
 plugins:
@@ -97,7 +98,7 @@ custom:
       - "pytest"
 
   ###
-  # documentation (general)
+  # documentation
   ###
   documentation:
     api:
@@ -640,6 +641,15 @@ functions:
           cors: true
           documentation:
             summary: "returns all the libraries in the system"
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
+              - statusCode: "200"
+                responseModels:
+                  "application/json": "LibraryList"
 
   libraryExist:
     handler: cis/libraries.exists
@@ -651,6 +661,17 @@ functions:
           cors: true
           documentation:
             summary: "returns if the given library exist"
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - name: "library"
+                description: "name of the library/method to check"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
+              - statusCode: "200"
+
           request:
             parameter:
               paths:
@@ -666,6 +687,18 @@ functions:
           cors: true
           documentation:
             summary: "returns the count in compounds of a library by type"
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - name: "library"
+                description: "name of the library/method to check"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
+              - statusCode: "200"
+                responseModels:
+                  "application/json": "LibrarySize"
           request:
             parameter:
               paths:
@@ -727,6 +760,33 @@ functions:
           cors: true
           documentation:
             summary: "returns the splash for all the confirmed compounds of the given library sorted by 'order_by' and limited to 'limit' starting at 'offset'"
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            queryParams:
+              - name: "order_by"
+                description: "column to order results. Valid values: [tgt_id, tgt_ri, pmz, name, adduct], default: 'tgt_id'"
+              - name: "direction"
+                description: "sort order. Valid values: [asc, desc], default 'asc'"
+              - name: "name"
+                description: "name of the compound to search for"
+              - name: "limit"
+                description: "number of items in the result. Default: 10"
+              - name: "offset"
+                description: "index of the first item in the result (zero-based). Default: 0"
+              - name: "value"
+                description: "value to use as the center of the range filter. Default: 0 (no filtering)"
+              - name: "accuracy"
+                description: "value to use ad the limits of the range filter. Default: 0.1 (only used if 'value' > 0)"
+            pathParams:
+              - name: "library"
+                description: "name of the library/method to check"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
+              - statusCode: "200"
+                responseModels:
+                  "application/json": "SplashList"
           request:
             parameter:
               paths:
@@ -734,10 +794,13 @@ functions:
               querystrings:
                 order_by: false
                 direction: false
+                name: false
                 limit: false
                 offset: false
-                value: false
-                accuracy: false
+                rivalue: false
+                riaccuracy: false
+                pmzvalue: false
+                pmzaccuracy: false
       - http:
           private: true
           path: compounds/{library}/{tgt_type}
@@ -753,10 +816,13 @@ functions:
               querystrings:
                 order_by: false
                 direction: false
+                name: false
                 limit: false
                 offset: false
-                value: false
-                accuracy: false
+                rivalue: false
+                riaccuracy: false
+                pmzvalue: false
+                pmzaccuracy: false
 
   compoundSetName:
     handler: cis/compounds.register_name
@@ -1026,6 +1092,23 @@ functions:
           cors: true
           documentation:
             summary: returns a paged list and the total number of annotations for the given compound
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            queryParams:
+              - name: "limit"
+                description: "number of items in the result. Default: 50"
+              - name: "offset"
+                description: "index of the first row to put in the result"
+            pathParams:
+              - name: "splash"
+                description: "splash key of the target to check"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
+              - statusCode: "200"
+                responseModels:
+                  "application/json": AnnotationResponse
           request:
             parameter:
               paths:
