@@ -1,12 +1,13 @@
 service: cis
 
 # using 1.83.3
-frameworkVersion: ">=1.1.0 <2"
+frameworkVersion: ">=1.1.0 <2.0.0"
 
 plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
+
 provider:
   name: aws
   runtime: python3.7
@@ -103,47 +104,611 @@ custom:
   documentation:
     api:
       info:
-        version: "1"
-        title: "CIS-Server"
-        description: "REST API for accessing lc-binbase data"
+        version: '1.0'
+        title: CIS-Server API
+        description: <h2>Specification for the current version of CIS lambdas exposed as REST services</h2>
+#        termsOfService: AsIs
+        contact:
+          name: Fiehnlab IT Team
+          url: https://fiehnlab.ucdavis.edu/staff#it
+        license:
+          name: CDDL-1.0
+          url: https://opensource.org/licenses/CDDL-1.0
     models:
-      - name: "Default500Error"
-        description: "default error response"
+      - name: LibraryName
+        description: "library name"
         contentType: "application/json"
-        schema: ${file(models/default_500_error.yml)}
-      - name: "Default404Response"
-        description: "404 error response"
+        schema:
+          type: string
+          pattern: "^.* \\| .* \\| .* \\| (?:positive|negative)$"
+      - name: LibraryList
+        description: "list of existing library/method names"
         contentType: "application/json"
-        schema: ${file(models/default_404_response.yml)}
-      - name: "LibraryList"
-        description: "List of libraries in the system"
+        schema:
+          type: array
+          items:
+            $ref: "{{model: LibraryName}}"
+      - name: LibrarySize
+        description: "list of existing library/method names"
         contentType: "application/json"
-        schema: ${file(models/string_list.yml)}
-      - name: "LibrarySize"
-        description: "library existence check"
+        schema:
+          type: array
+          items:
+            type: array
+            items:
+              oneOf:
+                - type: string
+                - type: integer
+      - name: EmptyBody204
         contentType: "application/json"
-        schema: ${file(models/library_size.yml)}
-      - name: "SplashList"
-        description: "List of splashes found for the given library"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 204
+            body:
+              type: string
+      - name: EmptyBody400
         contentType: "application/json"
-        schema: ${file(models/string_list.yml)}
-      - name: "CompoundResponse"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 400
+      - name: Forbidden403
         contentType: "application/json"
-        schema: ${file(models/compound_response.yml)}
-      - name: "AnnotationResponse"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 403
+            body:
+              type: object
+              properties:
+                message:
+                  type: string
+      - name: EmptyBody404
         contentType: "application/json"
-        schema: ${file(models/annotation_response.yml)}
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+      #              default: 404
+      #            body:
+      #              type: string
+      - name: ServerError500
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 500
+            body:
+              type: object
+              properties:
+                error:
+                  type: string
+      - name: Splash
+        contentType: "application/json"
+        schema:
+          type: string
+          pattern: "^splash\\d{2}-[0-9a-z]{4}-[0-9a-z]{10}-[0-9a-z]{20}$"
+      - name: SplashList
+        contentType: "application/json"
+        schema:
+          type: array
+          items:
+            $ref: "{{model: Splash}}"
+      - name: NameRegistration
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            library:
+              $ref: "{{model: LibraryName}}"
+            splash:
+              $ref: "{{model: Splash}}"
+      - name: IonModes
+        contentType: "application/json"
+        schema:
+          type: string
+          enum:
+            - positive
+            - negative
+      - name: SortableColumns
+        contentType: "application/json"
+        schema:
+          type: string
+          enum:
+            - tgt_id
+            - tgt_ri
+            - pmz
+            - name
+            - adduct
+          default: tgt_id
+      - name: SortDirection
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            direction:
+              description: Sort order
+              default: asc
+              enum:
+                - asc
+                - desc
+      - name: Spectrum
+        description: Spectrum string definition
+        contentType: "application/json"
+        schema:
+          type: string
+      - name: AnnotationObj
+        contentType: "application/json"
+        schema:
+          type: object
+          description: Annotation object
+          properties:
+            id:
+              type: integer
+            accurate_mass:
+              type: number
+            ion_mode:
+              $ref: "{{model: IonModes}}"
+            ms_level:
+              type: integer
+            original_retention_time:
+              type: number
+            precursor_mass:
+              type: number
+            raw_spectrum:
+              $ref: "{{model: Spectrum}}"
+            replaced:
+              type: boolean
+            retention_index:
+              type: number
+            spectrum:
+              $ref: "{{model: Spectrum}}"
+            splash:
+              $ref: "{{model: Splash}}"
+            sample_id:
+              type: string
+            target_id:
+              type: integer
+      - name: AnnotationsList
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            splash:
+              $ref: "{{model: Splash}}"
+            total_count:
+              description: Total number of annotations for this target
+              type: integer
+            annotations:
+              description: List of annotations in the current page (defined by limit and offset).
+              type: array
+              items:
+                $ref: "{{model: AnnotationObj}}"
+      - name: LowercaseTargetTypes
+        description: Target types lowercased
+        contentType: "application/json"
+        schema:
+          type: string
+          enum:
+            - confirmed
+            - unconfirmed
+            - uncoinfirmed_consensus
+            - is_member
+          default: confirmed
+      - name: UppercaseTargetTypes
+        description: Target types uppercased
+        contentType: "application/json"
+        schema:
+          type: string
+          enum:
+            - CONFIRMED
+            - UNCONFIRMED
+            - UNCONFIRMED_CONSENSUS
+            - IS_MEMBER
+          default: CONFIRMED
+      - name: InchiKey
+        contentType: "application/json"
+        schema:
+          type: string
+          pattern: "[A-Z]{14}-[A-Z]{10}-[A-Z]{1}"
+      - name: Compound
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            id:
+              type: integer
+            accurate_mass:
+              type: number
+            target_type:
+              $ref: "{{model: UppercaseTargetTypes}}"
+            inchi_key:
+              $ref: "{{model: InchiKey}}"
+            method:
+              $ref: "{{model: LibraryName}}"
+            ms_level:
+              type: integer
+            required_for_correction:
+              type: boolean
+            retention_index:
+              type: number
+            spectrum:
+              $ref: "{{model: Spectrum}}"
+            splash:
+              $ref: "{{model: Splash}}"
+            preferred_name:
+              type: string
+            preferred_adduct:
+              type: string
+            associated_names:
+              type: array
+              items:
+                type: string
+            associated_adducts:
+              type: array
+              items:
+                type: string
+            associated_comments:
+              type: array
+              items:
+                type: string
+            associated_meta:
+              type: array
+              items:
+                type: string
+            associated_statuses:
+              type: array
+              items:
+                $ref: "{{model: TargetStatus}}"
+            unique_mass:
+              type: number
+            precursor_mass:
+              type: number
+            samples:
+              type: array
+              items:
+                type: string
+      - name: TargetStatus
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            clean:
+              type: boolean
+            identifiedBy:
+              $ref: "{{model: UserName}}"
+      - name: UserName
+        contentType: "application/json"
+        schema:
+          type: string
+      - name: CompoundExists
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            exists:
+              type: boolean
+            library:
+              $ref: "{{model: LibraryName}}"
+            splash:
+              $ref: "{{model: Splash}}"
+      - name: ConfigList
+        contentType: "application/json"
+        schema:
+          $ref: "{{model: Config}}"
+      - name: Config
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            configs:
+              type: array
+              items:
+                oneOf:
+                  - type: integer
+                  - type: string
+            method:
+              type: string
+            value:
+              type: string
+      - name: ProfileList
+        contentType: "application/json"
+        schema:
+          $ref: "{{model: Profile}}"
+      - name: Profile
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            profiles:
+              type: array
+              items:
+                oneOf:
+                  - type: integer
+                  - type: string
+            method:
+              type: string
+            value:
+              type: string
+      - name: Status
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            id:
+              type: number
+            clean:
+              type: boolean
+            target_id:
+              type: string
+            identifiedBy:
+              $ref: "{{model: UserName}}"
+
 
   commonModelSchemaFragments:
-    MethodResponse404:
-      statusCode: "404"
-      responseModels:
-        "application/json": "Default404Response"
+    parameters:
+      LibraryPathParam:
+        name: library
+        in: path
+        required: true
+        description: name of the library/method to check
+        schema:
+          $ref: "{{model: LibraryName}}"
+      SplashPathParam:
+        name: splash
+        in: path
+        required: true
+        description: splash key
+        schema:
+          $ref: "{{model: Splash}}"
+      LimitPathParam:
+        name: limit
+        in: path
+        required: true
+        description: number of items to return
+        schema:
+          type: integer
+          default: 10
+      OffsetPathParam:
+        name: offset
+        in: path
+        required: true
+        description: index of the first query row to return
+        schema:
+          type: integer
+          default: 0
+      TypePathParam:
+        name: type
+        in: path
+        required: true
+        description: Target Type (lowercase)
+        schema:
+          $ref: "{{model: LowercaseTargetTypes}}"
+      OldTypePathParam:
+        name: type
+        in: path
+        required: true
+        description: Target Type (uppercase)
+        schema:
+          $ref: "{{model: UppercaseTargetTypes}}"
+      NamePathParam:
+        name: name
+        description: New name for the target/compound
+        in: path
+        required: true
+        schema:
+          type: string
+      KeyPathParam:
+        name: name
+        description: Name of the metadata entry
+        in: path
+        required: true
+        schema:
+          type: string
+      ValuePathParam:
+        name: value
+        description: Value of the metadata entry
+        in: path
+        required: true
+        schema:
+          type: string
+      UserPathParam:
+        name: identifiedBy
+        in: path
+        required: true
+        schema:
+          $ref: "{{model: UserName}}"
+      ObjectPathParam:
+        name: method
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+            - target
+            - sample
+      ObjectIdPathParam:
+        name: value
+        in: path
+        required: true
+        schema:
+          type: object
+      TargetIdPathParam:
+        name: tgt_id
+        in: path
+        description: Target id
+        required: true
+        schema:
+          type: integer
+      NameQueryParam:
+        name: name
+        in: query
+        required: true
+        description: name of the compound to search for
+        schema:
+          type: string
+      LimitQueryParam:
+        name: limit
+        in: query
+        required: true
+        description: number of items to return
+        schema:
+          type: integer
+          default: 10
+      OffsetQueryParam:
+        name: offset
+        in: query
+        required: true
+        description: index of the first query row to return
+        schema:
+          type: integer
+          default: 0
+      OrderByQueryParam:
+        name: order_by
+        in: query
+        required: true
+        description: column to order results.
+        schema:
+          $ref: "{{model: SortableColumns}}"
+      DirectionQueryParam:
+        name: direction
+        in: query
+        required: true
+        schema:
+          $ref: "{{model: SortDirection}}"
+      RIValueQueryParam:
+        name: rivalue
+        in: query
+        description: Value to use as the center of the RI range filter. A value of 0 means no filter
+        required: false
+        schema:
+          type: number
+          default: 0
+      RIAccuracyQueryParam:
+        name: riaccuracy
+        in: query
+        description: value to use ad the limits of the RI range filter. Only used if 'value' > 0
+        required: false
+        schema:
+          type: int
+          default: 5
+      PMZValueQueryParam:
+        name: pmzvalue
+        in: query
+        description: Value to use as the center of the mass range filter. A value of 0 means no filter
+        required: false
+        schema:
+          type: number
+          default: 0
+      PMZAccuracyQueryParam:
+        name: pmzaccuracy
+        in: query
+        description: value to use ad the limits of the mass range filter. Only used if 'value' > 0
+        required: false
+        schema:
+          type: number
+          default: 0.01
+      IdentifiedQueryParam:
+        name: identified
+        in: query
+        description: flag to return known compounds only, where target_name != 'unknown_*'
+        required: false
+        schema:
+          type: boolean
+          default: false
+      UserQueryParam:
+        name: identifiedBy
+        in: query
+        description: Username associated with this object
+        required: true
+        schema:
+          $ref: "{{model: UserName}}"
+      StatusQueryParam:
+        name: clean
+        in: query
+        description: Is spectrum clean (true) or not (false)
+        required: true
+        schema:
+          type: boolean
+          default: false
 
-    MethodResponse500:
-      statusCode: "500"
-      responseModels:
-        "application/json": "Default500Error"
+    responses:
+      MethodResponse204:
+        statusCode: '204'
+        responseModels:
+          "application/json": EmptyBody204
+      MethodResponse400:
+        statusCode: '400'
+        responseModels:
+          "application/json": EmptyBody400
+      MethodResponse403:
+        statusCode: '403'
+        responseModels:
+          "application/json": Forbidden403
+      MethodResponse404:
+        statusCode: '404'
+        responseModels:
+          "application/json": EmptyBody404
+      MethodResponse500:
+        statusCode: '500'
+        responseModels:
+          "application/json": ServerError500
+      LibraryListResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": LibraryList
+      LibrarySizeResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": LibrarySize
+      SplashListResponse:
+        description: List of splash keys
+        statusCode: '200'
+        responseModels:
+          "application/json": SplashList
+      NameRegistrationResponse:
+        description: Success response for several compound modifications
+        statusCode: '200'
+        responseModdel:
+          "application/json": NameRegistration
+      ConfigListResponse:
+        description: List of configurations
+        statusCode: '200'
+        responseModels:
+          "application/json": ConfigList
+      ProfileListResponse:
+        description: List of profiles
+        statusCode: '200'
+        responseModels:
+          "application/json": ProfileList
+      AnnotationsResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": AnnotationsList
+      StatusResponse:
+        statusCode: '200'
+        description: Success response for status requests
+        responseModels:
+          "application/json": Status
+      CompoundResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": Compound
+      CompoundExistsResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": CompoundExists
+
 
 
 ############################################################################################
@@ -176,11 +741,10 @@ functions:
               - name: "x-api-key"
                 description: "AWS generated api key for the respective stage"
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-                responseModels:
-                  "application/json": "LibraryList"
+              - ${self:custom.commonModelSchemaFragments.responses.LibraryListResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
 
   libraryExist:
     handler: cis/libraries.exists
@@ -196,13 +760,12 @@ functions:
               - name: "x-api-key"
                 description: "AWS generated api key for the respective stage"
             pathParams:
-              - name: "library"
-                description: "name of the library/method to check"
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
           request:
             parameter:
               paths:
@@ -222,14 +785,12 @@ functions:
               - name: "x-api-key"
                 description: "AWS generated api key for the respective stage"
             pathParams:
-              - name: "library"
-                description: "name of the library/method to check"
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-                responseModels:
-                  "application/json": "LibrarySize"
+              - ${self:custom.commonModelSchemaFragments.responses.LibrarySizeResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -278,8 +839,9 @@ functions:
             parameter:
               paths:
                 library: true
-                type: true
                 limit: true
+                offset: true
+                type: true
 
   compounds:
     handler: cis/compounds.get_sorted
@@ -295,29 +857,23 @@ functions:
               - name: "x-api-key"
                 description: "AWS generated api key for the respective stage"
             queryParams:
-              - name: "order_by"
-                description: "column to order results. Valid values: [tgt_id, tgt_ri, pmz, name, adduct], default: 'tgt_id'"
-              - name: "direction"
-                description: "sort order. Valid values: [asc, desc], default 'asc'"
-              - name: "name"
-                description: "name of the compound to search for"
-              - name: "limit"
-                description: "number of items in the result. Default: 10"
-              - name: "offset"
-                description: "index of the first item in the result (zero-based). Default: 0"
-              - name: "value"
-                description: "value to use as the center of the range filter. Default: 0 (no filtering)"
-              - name: "accuracy"
-                description: "value to use ad the limits of the range filter. Default: 0.1 (only used if 'value' > 0)"
+              - ${self:custom.commonModelSchemaFragments.parameters.LimitQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.OffsetQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.OrderByQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.DirectionQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NameQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.RIValueQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.RIAccuracyQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.PMZValueQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.PMZAccuracyQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.IdentifiedQueryParam}
             pathParams:
-              - name: "library"
-                description: "name of the library/method to check"
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-                responseModels:
-                  "application/json": "SplashList"
+              - ${self:custom.commonModelSchemaFragments.responses.SplashListResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -332,6 +888,7 @@ functions:
                 riaccuracy: false
                 pmzvalue: false
                 pmzaccuracy: false
+                identified: false
       - http:
           private: true
           path: compounds/{library}/{tgt_type}
@@ -339,21 +896,44 @@ functions:
           cors: true
           documentation:
             summary: returns the splash for all the compounds of the given library and tgt_type sorted by 'order_by' and limited to 'limit' starting at 'offset'
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            queryParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.LimitQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.OffsetQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.OrderByQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.DirectionQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NameQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.RIValueQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.RIAccuracyQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.PMZValueQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.PMZAccuracyQueryParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.IdentifiedQueryParam}
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.TypePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.SplashListResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
                 library: true
                 tgt_type: true
               querystrings:
+                limit: false
+                offset: false
                 order_by: false
                 direction: false
                 name: false
-                limit: false
-                offset: false
                 rivalue: false
                 riaccuracy: false
                 pmzvalue: false
                 pmzaccuracy: false
+                identified: false
 
   compoundSetName:
     handler: cis/compounds.register_name
@@ -365,6 +945,19 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound exists in the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.UserPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NamePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -383,6 +976,19 @@ functions:
           cors: true
           documentation:
             summary: returns if the delete of the deletion is ok
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.UserPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NamePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -401,6 +1007,19 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound exists in the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.UserPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NamePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -419,6 +1038,19 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound exists in the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.UserPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NamePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -437,6 +1069,18 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound exists in the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.UserPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -454,6 +1098,53 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound exists in the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.UserPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NamePathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.ValuePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+          request:
+            parameter:
+              paths:
+                library: true
+                splash: true
+                identifiedBy: true
+                name: true
+                value: true
+
+  compoundDeleteMeta:
+    handler: cis/compounds.delete_meta
+    events:
+      - http:
+          private: true
+          path: compound/meta/{library}/{splash}/{identifiedBy}/{name}/{value}
+          method: post
+          cors: true
+          documentation:
+            summary: returns if the given compound exists in the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.UserPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NamePathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.ValuePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -473,6 +1164,17 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound exists in the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.CompoundResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -489,6 +1191,19 @@ functions:
           cors: true
           documentation:
             summary: returns the members of the given compounds
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.LimitPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.OffsetPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.SplashListResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -507,6 +1222,17 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound has any associated splashes in this library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -523,6 +1249,17 @@ functions:
           cors: true
           documentation:
             summary: returns if the given compound exists in the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.CompoundExistsResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -539,6 +1276,18 @@ functions:
           cors: true
           documentation:
             summary: updates the primary name of a compound
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.NamePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.NameRegistrationResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -556,6 +1305,16 @@ functions:
           cors: true
           documentation:
             summary: delete the given bin from the given library
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.LibraryPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -572,6 +1331,17 @@ functions:
           cors: true
           documentation:
             summary: returns the list of profiles used to process the object defined in method, either 'target' or 'sample'
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.ObjectPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.VaaluePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.ProfileListResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -588,6 +1358,17 @@ functions:
           cors: true
           documentation:
             summary: returns the list of configurations used to process the object defined in method, either 'target' or 'sample'
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.ObjectPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.ValuePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.ConfigListResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -613,14 +1394,13 @@ functions:
               - name: "offset"
                 description: "index of the first row to put in the result"
             pathParams:
-              - name: "splash"
-                description: "splash key of the target to check"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.SplashPathParam}
             methodResponses:
-              - ${self:custom.commonModelSchemaFragments.MethodResponse404}
-              - ${self:custom.commonModelSchemaFragments.MethodResponse500}
-              - statusCode: "200"
-                responseModels:
-                  "application/json": AnnotationResponse
+              - ${self:custom.commonModelSchemaFragments.responses.AnnotationsResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -639,6 +1419,16 @@ functions:
           cors: true
           documentation:
             summary: Returns the status of a spectrum as being Clean or Dirty (True or False)
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.TypePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.StatusResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -656,6 +1446,16 @@ functions:
           cors: true
           documentation:
             summary: Marks a spectrum as being Clean or Dirty (True or False) for a user
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.TypePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.StatusResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -674,6 +1474,16 @@ functions:
           cors: true
           documentation:
             summary: Deletes the spectrum's Clean or Dirty flag for a user
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParameters:
+              - ${self:custom.commonModelSchemaFragments.parameters.TypePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse204}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:

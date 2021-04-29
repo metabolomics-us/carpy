@@ -140,8 +140,10 @@ def register_status(events, context):
             "statusCode": 200,
             "headers": headers.__HTTP_HEADERS__,
             "body": json.dumps({
+                "id": new_status_id,
+                "clean": clean,
                 "target_id": tgt_id,
-                "clean": clean
+                "identifiedBy": identified_by
             }, use_decimal=True)
         }
     except Exception as ex:
