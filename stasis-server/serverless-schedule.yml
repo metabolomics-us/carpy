@@ -6,6 +6,7 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
+
 provider:
   name: aws
   runtime: python3.7
@@ -160,9 +161,232 @@ custom:
       - "moto"
       - "pytest"
 
+  documentation:
+    api:
+      info:
+        version: '1.0'
+        title: Stasis-Server API
+        description: <h2>Specification for the current version of Stasis' scheduler related lambdas exposed as REST services</h2>
+        #        termsOfService: AsIs
+        contact:
+          name: Fiehnlab IT Team
+          url: https://fiehnlab.ucdavis.edu/staff#it
+        license:
+          name: CDDL-1.0
+          url: https://opensource.org/licenses/CDDL-1.0
+    models:
+      - name: EmptyBody204
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 204
+            body:
+              type: string
+      - name: EmptyBody400
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 400
+      - name: Forbidden403
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 403
+            body:
+              type: object
+              properties:
+                message:
+                  type: string
+      - name: EmptyBody404
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 404
+            body:
+              type: string
+      - name: ServerError500
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 500
+            body:
+              type: object
+              properties:
+                error:
+                  type: string
+      - name: Job
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+            method:
+              type: string
+            profile:
+              type: string
+            resource:
+              type: string
+            notify:
+              $ref: {{model: Notify}}
+            meta:
+              $ref: {{model: Meta}}
+          required:
+            - id
+            - method
+            - profile
+      - name: Notify
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            email:
+              type: array
+              items:
+                - type: string
+      - name: Meta
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            tracking:
+              $ref: {{model: Tracking}}
+      - name: Tracking
+        contentType: "application/json"
+        schema:
+          type: array
+          items:
+            $ref: {{model: State}}
+      - name: State
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            state:
+              type: string
+            extension:
+              type: string
+          required:
+            - state
+
+  commonModelSchemaFragments:
+    parameters:
+      MethodPathParam:
+        name: method
+        in: path
+        description: Method name
+        required: true
+        schema:
+          type: string
+      JobPathParam:
+        name: job
+        in: path
+        description: Job
+        required: true
+        schema:
+          type: string
+
+    responses:
+      MethodResponse204:
+        statusCode: '204'
+        responseModels:
+          "application/json": EmptyBody204
+      MethodResponse400:
+        statusCode: '400'
+        responseModels:
+          "application/json": EmptyBody400
+      MethodResponse403:
+        statusCode: '403'
+        responseModels:
+          "application/json": Forbidden403
+      MethodResponse404:
+        statusCode: '404'
+        responseModels:
+          "application/json": EmptyBody404
+      MethodResponse500:
+        statusCode: '500'
+        responseModels:
+          "application/json": ServerError500
+      TaskSizeResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json":
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+      ScheduleQueueResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json":
+            schema:
+              type: object
+              properties:
+                queue:
+                  type: string
+      ScheduleResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json":
+            schema:
+              type: string
+      SteacScheduleResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json":
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                method:
+                  type: string
+      JobScheduleResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json":
+            schema:
+              type: string
+              properties:
+                state:
+                  type: string
+                job:
+                  type: string
+      JobScheduleResponse500:
+        statusCode: '500'
+        responseModels:
+          "application/json":
+            schema:
+              type: string
+              properties:
+                state:
+                  type: string
+                job:
+                  type: string
+                reason:
+                  type: string
+
+
+
 
 ############################################################################################
-# this section defines what to include and exclud when packaging artifacts
+# this section defines what to include and exclude when packaging artifacts
 ############################################################################################
 package:
   exclude:
@@ -203,16 +427,24 @@ functions:
           cors: true
           documentation:
             summary: returns the current scheduled tasks size
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.TaskSizeResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     environment:
       current_stage: ${self:custom.stage}
 
   fargateprocessingmonitor:
     handler: stasis/schedule/monitor.monitor_queue
+    documentation:
+      summary: monitors the scheduling queue and ensures correct quantity of scheduled tasks. This has to be driven over cron right now
     events:
       - schedule:
           rate: rate(1 minute)
-          documentation:
-            summary: monitors the scheduling queue and ensures correct quantity of scheduled tasks. This has to be driven over cron right now
 
   # fetches the list of tracking statuses
   schedule_queue:
@@ -225,6 +457,14 @@ functions:
           cors: true
           documentation:
             summary: returns the queue used for scheduling
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.ScheduleQueueResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
 
   #schedule data to stasis, for handling the processing on the backend
   schedule:
@@ -237,6 +477,14 @@ functions:
           cors: true
           documentation:
             summary: schedules a new processing tasks to the queue
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.ScheduleResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
 
 
   steacschedule:
@@ -249,18 +497,27 @@ functions:
           cors: true
           documentation:
             summary: schedules a steac method for processing
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.MethodPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.SteacScheduleResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
 
           request:
             parameter:
               paths:
                 method: true
+
     #defines to which topic we want to connect
     environment:
-
       ##
       # contains scheduling events
       schedule_queue: ${self:custom.scheduleQueue}
-
       ##
       # contains aggregation events
       aggregation_queue: ${self:custom.aggregationQueue}
@@ -279,6 +536,18 @@ functions:
           cors: true
           documentation:
             summary: schedules a job to be computed to the backend queue
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            requestBody:
+              description: Job to schedule
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.JobScheduleResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.JobScheduleResponse500}
 
           request:
             parameter:

@@ -5,7 +5,6 @@ botocore
 untangle
 jsonschema
 watchdog
-pytest
 boltons
 simplejson
 importlib_metadata
