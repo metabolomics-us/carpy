@@ -36,8 +36,8 @@ cd rsources
 
 sls deploy --stage <NAME>
 
-which will setup required queues and so for you. Please be aware, if any of the resources already exist, this will fail with useless error messages
-instead of ignoring existing resources.
+which will setup required queues and so for you. Please be aware, if any of the resources already exist, this will fail
+with useless error messages instead of ignoring existing resources.
 
 Thank you serverless!
 
@@ -45,13 +45,31 @@ https://github.com/serverless/serverless/issues/3183
 
 ## Deploy Stasis
 
+### Option 1
+
+run `build.sh <STAGE>`
+
+Where <STAGE> is one of test, dev or prod
+
+### Option 2
 
 if no domain is setup:
 
-serverless create_domain --stage <NAME>
+```
+serverless create_domain --stage <STAGE> -c serverless-schedule.yml
+serverless create_domain --stage <STAGE> -c serverless-stasis.yml
+```
 
-this only needs to be done once and might take 45m until the service is registered. Also ensure that your certificate is setup for this domain!
+this only needs to be done once and might take 45m until the service is registered. Also ensure that your certificate is
+setup for this domain!
 
-sls deploy --stage <NAME>
+The following needs to be run in the specified order:
+
+```
+sls deploy --stage <STAGE> -c serverless-resources.yml
+sls deploy --stage <STAGE> -c serverless-stasis.yml
+sls deploy --stage <STAGE> -c serverless-schedule.yml
+sls deploy --stage <STAGE> -c serverless-minix.yml
+```
 
 deploys the stage, assuming you setup the domain
