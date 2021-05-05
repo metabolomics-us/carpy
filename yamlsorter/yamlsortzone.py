@@ -1,6 +1,6 @@
 import argparse
 import csv
-import itertools
+import sys
 from os.path import splitext
 from pprint import pprint
 
@@ -46,17 +46,23 @@ def read_csv(file):
     return data
 
 
-def calc_zone(t, zones: list):
+def calc_zone(method, t, zones: dict):
+    libname = f'{method["name"]} | {method["instrument"]} | {method["column"]} | {method["ionMode"]}'
+    zone = zones[libname] if libname in zones else []
+
     try:
         rt = float(t['retentionTime'])
-        if 'zone' in t and int(t['zone']) > 0:
-            return int(t['zone'])
+        # if 'zone' in t and int(t['zone']) > 0:
+        #     return int(t['zone'])
 
         if t['retentionTimeUnit'] == 'seconds':
             rt = rt / 60
 
-        for idx in range(0, len(zones)):
-            if zones[idx] <= rt < zones[idx + 1]:
+        if len(zone) == 0:
+            return 0
+
+        for idx in range(0, len(zone)):
+            if zone[idx] <= rt < zone[idx + 1]:
                 return idx
             idx += 1
     except TypeError as e:
@@ -99,24 +105,31 @@ def process(params):
         data = read_csv(params['infile'])
     elif str(params['infile']).lower().endswith(('.yml', '.yaml')):
         data = readyaml(params['infile'])
+    zones = params['zones']
 
-    zones = [float(x) for x in params['zones'].split(',')]
-
-    if 0.0 not in zones:
-        zones.append(0.0)
-
-    zones.sort()
-    pprint(params)
-
-    for method in data:
-        for config in data[method]:
-            targets = sorted(config['targets'], key=lambda item: item[params['field']])
+    for section in data:
+        for method in data[section]:
+            targets = sorted(method['targets'], key=lambda item: item[params['field']])
             for t in targets:
-                t['zone'] = calc_zone(t, zones)
+                t['zone'] = calc_zone(method, t, zones)
 
-            config['targets'] = targets
+            method['targets'] = targets
 
     save_file(data, params)
+
+
+class keyvalue(argparse.Action):
+    # Constructor calling
+    def __call__(self, parser, namespace,
+                 values, option_string=None):
+        setattr(namespace, self.dest, dict())
+
+        for value in values:
+            # split it into key and value
+            key, value = value.split(':')
+
+            # assign into dictionary
+            getattr(namespace, self.dest)[key] = [float(x) for x in value.split(',')] if len(value) > 0 else [0.0, 15.0]
 
 
 if __name__ == '__main__':
@@ -132,14 +145,22 @@ if __name__ == '__main__':
     parser.add_argument('--outformat', default='yaml', dest='outformat',
                         choices=['yaml', 'csv'],
                         help='output file format. Default "yaml"')
-    parser.add_argument('--zones',
-                        help='Comma separated list of retention times (minutes) defining zones. '
-                             'Example: 0.0,3.1,5.5,9.0,15.0')
+    parser.add_argument('--zones', nargs='*', action=keyvalue,
+                        help='Library definition of retention time zones.\n'
+                             'Where ZONE has the format: <library name>:0.0,3.1,5.5,9.0,15.0')
 
     args = parser.parse_args()
 
+    params = vars(args)
+
+    for z in params['zones']:
+        if 0.0 not in params['zones'][z]:
+            params['zones'][z].append(0.0)
+
+        params['zones'][z].sort()
+
     try:
-        process(vars(args))
+        process(params)
     except argparse.ArgumentError as e:
         print(e)
         parser.print_help()
