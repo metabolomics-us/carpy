@@ -10,7 +10,6 @@ sls plugin install -n serverless-domain-manager
 sls plugin install -n serverless-python-requirements
 sls plugin install -n serverless-aws-documentation
 sls plugin install -n serverless-plugin-split-stacks
-
 ```
 
 ## Delete Log groups
@@ -32,9 +31,9 @@ These tests require the `STASIS_API_TOKEN` environmental variable to be set or, 
 
 if you have not yet created any resources for the given stage, please do the following
 
-cd rsources
+cd resources
 
-sls deploy --stage <NAME>
+`sls deploy --stage <NAME>`
 
 which will setup required queues and so for you. Please be aware, if any of the resources already exist, this will fail
 with useless error messages instead of ignoring existing resources.
@@ -73,3 +72,17 @@ sls deploy --stage <STAGE> -c serverless-minix.yml
 ```
 
 deploys the stage, assuming you setup the domain
+
+## Build documentation
+
+Run one of the following commands to create an openapi file in the preferred format:
+
+### Yaml
+
+`aws apigateway get-export --rest-api-id <api-id> --stage-name <stage> --export-type oas30 --accepts 'application/yaml' openapi.yml`
+
+### JSON
+
+`aws apigateway get-export --rest-api-id <api-id> --stage-name <stage> --export-type oas30 openapi.json`
+
+To view the documentation copy the contents of the file and paste on the left panel at: https://editor.swagger.io/

@@ -129,7 +129,7 @@ custom:
           items:
             $ref: "{{model: LibraryName}}"
       - name: LibrarySize
-        description: "list of existing library/method names"
+        description: "list of target counts of each type in the given library"
         contentType: "application/json"
         schema:
           type: array
@@ -736,7 +736,7 @@ functions:
           method: get
           cors: true
           documentation:
-            summary: "returns all the libraries in the system"
+            summary: "get a list of libraries in the system"
             requestHeaders:
               - name: "x-api-key"
                 description: "AWS generated api key for the respective stage"
@@ -1336,7 +1336,7 @@ functions:
                 description: "AWS generated api key for the respective stage"
             pathParameters:
               - ${self:custom.commonModelSchemaFragments.parameters.ObjectPathParam}
-              - ${self:custom.commonModelSchemaFragments.parameters.VaaluePathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.ValuePathParam}
             methodResponses:
               - ${self:custom.commonModelSchemaFragments.responses.ProfileListResponse}
               - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
