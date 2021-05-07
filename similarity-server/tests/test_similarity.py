@@ -19,7 +19,7 @@ def test_all_similarities(require_mocking, spectrum_pair):
         }
     }, {})
 
-    pprint(result)
+    pprint(json.loads(result['body']))
     assert(result['statusCode'] == 200)
 
 
@@ -34,5 +34,5 @@ def test_similarity(require_mocking, spectrum_pair):
         }
     }, {})
 
-    pprint(result)
+    pprint(json.loads(result['body']))
     assert(result['statusCode'] == 200)
