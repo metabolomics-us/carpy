@@ -9,7 +9,7 @@ plugins:
 
 provider:
   name: aws
-  runtime: python3.7
+  runtime: python3.8
   region: us-west-2
   tags:
     service: binbase
@@ -41,7 +41,7 @@ provider:
     name: "lambdas-minix"
 
   ##
-  # defines all generat environment variables for lambdas
+  # defines all generate environment variables for lambdas
   environment:
     current_stage: ${self:custom.stage}
 
