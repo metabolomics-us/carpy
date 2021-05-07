@@ -4,7 +4,7 @@ frameworkVersion: ">=1.1.0 <2.0.0"
 
 provider:
   name: aws
-  runtime: python3.7
+  runtime: python3.8
   region: us-west-2
   deploymentBucket:
     name: "resources-stasis"
@@ -29,7 +29,7 @@ custom:
   aggregationQueue: "JobsAggregationQueue-${self:custom.stage}"
 
 ############################################################################################
-# this section defines what to include and exclud when packaging artifacts
+# this section defines what to include and exclude when packaging artifacts
 ############################################################################################
 package:
   exclude:

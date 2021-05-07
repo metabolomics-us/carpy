@@ -16,8 +16,8 @@ def get(events, context):
             print(f"fetching url: {url}")
             result = request(url=url, method="GET")
             return {
-                "statusCode" : 200,
-                "body" : result.content
+                "statusCode": 200,
+                "body": result.content
             }
     return {
         "statusCode": 500,

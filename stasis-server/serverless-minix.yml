@@ -6,9 +6,10 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
+
 provider:
   name: aws
-  runtime: python3.7
+  runtime: python3.8
   region: us-west-2
   tags:
     service: binbase
@@ -40,7 +41,7 @@ provider:
     name: "lambdas-minix"
 
   ##
-  # defines all generat environment variables for lambdas
+  # defines all generate environment variables for lambdas
   environment:
     current_stage: ${self:custom.stage}
 
@@ -71,8 +72,120 @@ custom:
       - "botocore"
       - "moto"
       - "pytest"
+
+  documentation:
+    api:
+      info:
+        version: '1.0'
+        title: Stasis-Server API
+        description: <h2>Specification for the current version of Stasis' minix related lambdas exposed as REST services</h2>
+        #        termsOfService: AsIs
+        contact:
+          name: Fiehnlab IT Team
+          url: https://fiehnlab.ucdavis.edu/staff#it
+        license:
+          name: CDDL-1.0
+          url: https://opensource.org/licenses/CDDL-1.0
+    models:
+      - name: EmptyBody204
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 204
+            body:
+              type: string
+      - name: EmptyBody400
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 400
+      - name: Forbidden403
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 403
+            body:
+              type: object
+              properties:
+                message:
+                  type: string
+      - name: EmptyBody404
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 404
+            body:
+              type: string
+      - name: ServerError500
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 500
+            body:
+              type: object
+              properties:
+                error:
+                  type: string
+      - name: MinixExperiment
+        contentType: "application/xml"
+        schema:
+          type: string
+
+
+  commonModelSchemaFragments:
+    parameters:
+      ExperimentIdPathParam:
+        name: id
+        in: path
+        description: Minix Id
+        required: true
+        schema:
+          type: string
+          pattern: "MX\\d{6,10}"
+
+    responses:
+      MethodResponse204:
+        statusCode: '204'
+        responseModels:
+          "application/json": EmptyBody204
+      MethodResponse400:
+        statusCode: '400'
+        responseModels:
+          "application/json": EmptyBody400
+      MethodResponse403:
+        statusCode: '403'
+        responseModels:
+          "application/json": Forbidden403
+      MethodResponse404:
+        statusCode: '404'
+        responseModels:
+          "application/json": EmptyBody404
+      MethodResponse500:
+        statusCode: '500'
+        responseModels:
+          "application/json": ServerError500
+      MinixExperimentResponse:
+        statusCode: '200'
+        responseModels:
+          "application/xml": MinixExperiment
+
 ############################################################################################
-# this section defines what to include and exclud when packaging artifacts
+# this section defines what to include and exclude when packaging artifacts
 ############################################################################################
 package:
   exclude:
@@ -102,6 +215,16 @@ functions:
           cors: true
           documentation:
             summary: downloads the experimental information for this id
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.ExperimentIdPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MinixExperimentResponse}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
 
           request:
             parameter:

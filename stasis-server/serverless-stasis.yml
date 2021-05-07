@@ -6,9 +6,10 @@ plugins:
   - serverless-domain-manager
   - serverless-python-requirements
   - serverless-aws-documentation
+
 provider:
   name: aws
-  runtime: python3.7
+  runtime: python3.8
   region: us-west-2
   tags:
     service: binbase
@@ -65,7 +66,7 @@ provider:
     name: "lambdas-stasis"
 
   ##
-  # defines all generat environment variables for lambdas
+  # defines all generate environment variables for lambdas
   environment:
     current_stage: ${self:custom.stage}
     schedule_queue: ${self:custom.scheduleQueue}
@@ -160,9 +161,326 @@ custom:
       - "moto"
       - "pytest"
 
+  documentation:
+    api:
+      info:
+        version: '1.0'
+        title: Stasis-Server API
+        description: <h2>Specification for the current version of Stasis' scheduler related lambdas exposed as REST services</h2>
+        #        termsOfService: AsIs
+        contact:
+          name: Fiehnlab IT Team
+          url: https://fiehnlab.ucdavis.edu/staff#it
+        license:
+          name: CDDL-1.0
+          url: https://opensource.org/licenses/CDDL-1.0
+    models:
+      - name: EmptyBody204
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 204
+            body:
+              type: string
+      - name: EmptyBody400
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 400
+      - name: Forbidden403
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 403
+            body:
+              type: object
+              properties:
+                message:
+                  type: string
+      - name: EmptyBody404
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 404
+            body:
+              type: string
+      - name: EmptyBody404
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 404
+            body:
+              type: string
+      - name: EmptyBody422
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 422
+            body:
+              type: object
+              properties:
+                error:
+                  type: string
+      - name: ServerError500
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            statusCode:
+              type: integer
+              default: 500
+            body:
+              type: object
+              properties:
+                error:
+                  type: string
+      - name: ResultData
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+            sample:
+              type: string
+            time:
+              type: timestamp
+            injections:
+              type: array
+              items:
+                $ref: {{model: Injection}}
+          required: [ "sample", "injections" ]
+      - name: Injection
+        contentType: "application/json"
+        schema:
+          type: string
+      - name: TrackingData
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            sample:
+              type: string
+            state:
+              $ref: {{model: State}}
+            fileHandle:
+              type: string
+            reason:
+              type: string
+          required: [ "sample", "state" ]
+      - name: JobSync
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            result:
+              type: string
+            job:
+              type: string
+      - name: ExperimentList
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: {{model: Acquisition}}
+            last_item:
+              type: string
+      - name: Acquisition
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+            experiment:
+              type: string
+            sample:
+              type: string
+            acquisition:
+              type: object
+              properties:
+                method:
+                  type: string
+                instrument:
+                  type: string
+                ionisation:
+                  $ref: {{model: Ionization}}
+            metadata:
+              $ref: {{model: Metadata}}
+            userdata:
+              $ref: {{model: Userdata}}
+            processing:
+              type: string
+      - name: Ionisation
+        contentType: "application/json"
+        schema:
+          type: string
+          enum:
+            - positive
+            - negative
+      - name: Metadata
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            class:
+              type: string
+            species:
+              type: string
+            organ:
+              type: string
+      - name: Userdata
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            label:
+              type: string
+            comment:
+              type: string
+      - name: AcquisitionRequest
+        contentType: "application/json"
+        schema:
+          $ref: {{model: Acquisition}}
+      - name: StatusList
+        contentType: "application/json"
+        schema:
+          type: object
+          properties:
+            "^.*$":
+              type: integer
+
+
+  commonModelSchemaFragments:
+    parameters:
+      SamplePathParam:
+        name: sample
+        in: path
+        description: Sample ID (filename without extension)
+        required: true
+        schema:
+          type: string
+      JobPathParam:
+        name: job
+        in: path
+        description: Job name
+        required: true
+        schema:
+          type: string
+      ExperimentPathParam:
+        name: experiment
+        in: path
+        description: experiment name
+        required: true
+        schema:
+          type: string
+      PageSizePathParam:
+        name: psize
+        in: path
+        description: page number
+        required: true
+        schema:
+          type: integer
+      LastSamplePathParam:
+        name: lastSample
+        in: path
+        description: sample name
+        required: true
+        schema:
+          type: string
+      LastKeyPathParam:
+        name: last_key
+        in: path
+        description: sample name
+        required: true
+        schema:
+          type: string
+
+    responses:
+      MethodResponse204:
+        statusCode: '204'
+        responseModels:
+          "application/json": EmptyBody204
+      MethodResponse400:
+        statusCode: '400'
+        responseModels:
+          "application/json": EmptyBody400
+      MethodResponse403:
+        statusCode: '403'
+        responseModels:
+          "application/json": Forbidden403
+      MethodResponse404:
+        statusCode: '404'
+        responseModels:
+          "application/json": EmptyBody404
+      MethodResponse418:
+        statusCode: '418'
+        responseModels:
+          "application/json": EmptyBody422
+      MethodResponse422:
+        statusCode: '422'
+        responseModels:
+          "application/json": EmptyBody422
+      MethodResponse500:
+        statusCode: '500'
+        responseModels:
+          "application/json": ServerError500
+      MethodResponse503:
+        statusCode: '503'
+        responseModels:
+          "application/json": ServerError500
+      CreateResultResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": ResultData
+      TrackingResultResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": TrackingData
+      JobSyncResultResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": JobSync
+      ExperimentResultResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": ExperimentList
+      AcquisitionResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": AcquisitionList
+      StatusListResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": StatusList
+      JobResultResponse:
+        statusCode: '200'
+        responseModels:
+          "application/json": EmptyBody204
 
 ############################################################################################
-# this section defines what to include and exclud when packaging artifacts
+# this section defines what to include and exclude when packaging artifacts
 ############################################################################################
 package:
   exclude:
@@ -190,12 +508,27 @@ functions:
           path: result/{sample}
           method: head
           cors: true
-          documentation:
-            summary: check if a data processing result exists already
           request:
             parameter:
               paths:
                 sample: true
+          documentation:
+            summary: check if a data processing result exists already
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.SamplePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModel:
+                  "application/json":
+                    contentType: "application/json"
+                    schema:
+                      type: string
 
   #fetches an result record
   resultcreate:
@@ -208,6 +541,18 @@ functions:
           cors: true
           documentation:
             summary: uploads a new data processing result.
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            requestModels:
+              "application/json": ResultData
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse400}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": CreateResultResponse
 
     #defines to which topic we want to connect
     environment:
@@ -225,6 +570,18 @@ functions:
           cors: true
           documentation:
             summary: creates a new tracking record in the database for the given sample
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            requestModels:
+              "application/json": TrackingData
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse400}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": CreateTrackingResponse
 
   # creates a tracking update
   # whenever a sample status got pushed
@@ -243,6 +600,7 @@ functions:
                 - ${self:custom.syncQueue}
     timeout: 900
     memorysize: 512
+
   job_synchronization_status_force:
     handler: stasis/jobs/sync.do_sync
     events:
@@ -253,6 +611,18 @@ functions:
           cors: true
           documentation:
             summary: forces the synchronization of a job. For diagnostics reasons and in case the system is hanging.
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse400}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": JobSyncResponse
           request:
             parameter:
               paths:
@@ -269,6 +639,19 @@ functions:
           cors: true
           documentation:
             summary: loads the tracking information for this sample
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.SamplePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse422}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": TrackingResultResponse
           request:
             parameter:
               paths:
@@ -286,6 +669,17 @@ functions:
           cors: true
           documentation:
             summary: deletes the tracking information for the given sample
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.SamplePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse204}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse422}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
           request:
             parameter:
               paths:
@@ -300,37 +694,82 @@ functions:
           method: get
           private: true
           cors: true
-          documentation:
-            summary: 'loads the first page of the experiment (default page size: 25 items)'
           request:
             parameter:
               path:
                 experiment: true
+          documentation:
+            summary: 'loads the first page of the experiment (default page size: 25 items)'
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.ExperimentPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse418}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse422}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": ExperimentResultResponse
       - http:
           path: experiment/{experiment}/{psize}
           method: get
           cors: true
           private: true
-          documentation:
-            summary: fetches an experiment in paginated mode in the given page size
           request:
             parameter:
               path:
                 experiment: true
                 psize: true
+          documentation:
+            summary: fetches an experiment in paginated mode in the given page size
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.ExperimentPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.PageSizePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse418}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse422}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": ExperimentResultResponse
       - http:
           path: experiment/{experiment}/{psize}/{lastSample}
           method: get
           cors: true
           private: true
-          documentation:
-            summary: iterative way to load an experiment definition. Based on the page size and the last fetched sample
           request:
             parameter:
               path:
                 experiment: true
                 psize: true
                 lastSample: true
+          documentation:
+            summary: iterative way to load an experiment definition. Based on the page size and the last fetched sample
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.ExperimentPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.PageSizePathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.LastSamplePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse418}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse422}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": ExperimentResultResponse
 
 
   #fetches an acquisition record
@@ -348,6 +787,18 @@ functions:
                 sample: true
           documentation:
             summary: fetches the acquisition information for the given sample
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.SamplePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": AcquisitionResponse
 
   #fetches an acquisition record
   acquisitioncreate:
@@ -360,6 +811,18 @@ functions:
           cors: true
           documentation:
             summary: creates a new record with the given acquisition information
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            requestModels:
+              "application/json": AcquisitionRequest
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": AcquisitionResponse
 
 
   # fetches the list of tracking statuses
@@ -373,6 +836,16 @@ functions:
           cors: true
           documentation:
             summary: returns all possible status names and their priority
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": StatusListResponse
 
   #checks existence of a raw data file
   fileexists:
@@ -389,6 +862,18 @@ functions:
                 sample: true
           documentation:
             summary: evaluates if a certain file exists
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.SamplePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": EmptyBody204
 
     environment:
       dataBucket: ${self:custom.dataRawBucketName}
@@ -401,12 +886,24 @@ functions:
           path: job/result/{job}
           method: head
           cors: true
-          documentation:
-            summary: check if a job result exists
           request:
             parameter:
               paths:
                 job: true
+          documentation:
+            summary: check if a job result exists
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse503}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": EmptyBody204
     #defines to which topic we want to connect
     environment:
       dataBucket: ${self:custom.dataZipBucketName}
@@ -422,22 +919,24 @@ functions:
           cors: true
           documentation:
             summary: updates the tracking status of a sample with the associated job
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            requestModels:
+              "application/json": JobTrackingRequest
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": EmptyBody204
 
   #fetches an existing tracking record from the system
   jobtrackingget:
     handler: stasis/jobs/tracking.get
     events:
       - http:
-          documentation:
-            summary: Returns the tacking status of a sample with an associated job
-            queryParams:
-              - name: job
-                description: the job id
-                required: true
-              - name: sample
-                description: the sample id
-                required: true
-
           path: job/tracking/{job}/{sample}
           private: true
           method: get
@@ -447,6 +946,21 @@ functions:
               paths:
                 job: true
                 sample: true
+          documentation:
+            summary: Returns the tacking status of a sample with an associated job
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SamplePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
+              - statusCode: '200'
+                responseModels:
+                  "application/json": EmptyBody204
 
   # computes the current state of the given job
   jobtrackingstatus:
@@ -463,10 +977,15 @@ functions:
                 job: true
           documentation:
             summary: returns the overal status of the given job
-            queryParams:
-              - name: job
-                description: the job id
-                required: true
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
       - http:
           path: job/status/{job}
           private: true
@@ -478,16 +997,21 @@ functions:
                 job: true
           documentation:
             summary: forcefully updates the status of a job
-            queryParams:
-              - name: job
-                description: the job id
-                required: true
-
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
       jobStateTable: ${self:custom.jobStateTable}
       jobTrackingTable: ${self:custom.jobTrackingTable}
+
   # computes the complete job
   jobdescription:
     handler: stasis/jobs/tracking.description
@@ -504,12 +1028,16 @@ functions:
                 last_key: false
           documentation:
             summary: return the complete job description with all associated samples and there states
-            queryParams:
-              - name: job
-                description: the job id
-                required: true
-              - name: last_key
-                description: last key received and used for pagination
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.LastKeyPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
       - http:
           path: job/{job}
           private: true
@@ -520,11 +1048,16 @@ functions:
               paths:
                 job: true
           documentation:
-            summary: return the complete job description with all associated samples and there states
-            queryParams:
-              - name: job
-                description: the job id
-                required: true
+            summary: return the complete job description with all associated samples and their states
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     #defines to which topic we want to connect
     environment:
       trackingTable: ${self:custom.trackingTable}
@@ -541,23 +1074,29 @@ functions:
           method: delete
           private: true
           cors: true
-          documentation:
-            summary: removes a sample associated with a job. required for performance reasons
-
           request:
             parameter:
               paths:
                 job: true
                 sample: true
-
+          documentation:
+            summary: removes a sample associated with a job. required for performance reasons
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            pathParams:
+              - ${self:custom.commonModelSchemaFragments.parameters.JobPathParam}
+              - ${self:custom.commonModelSchemaFragments.parameters.SamplePathParam}
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     # requires more memory to get access to faster cpus
     #defines to which topic we want to connect
     environment:
-
       ##
       # contains scheduling events
       schedule_queue: ${self:custom.scheduleQueue}
-
       ##
       # contains aggregation events
       aggregation_queue: ${self:custom.aggregationQueue}
@@ -577,15 +1116,19 @@ functions:
           cors: true
           documentation:
             summary: stores a sample associated with a job. required for performance reasons
-
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     # requires more memory to get access to faster cpus
     #defines to which topic we want to connect
     environment:
-
       ##
       # contains scheduling events
       schedule_queue: ${self:custom.scheduleQueue}
-
       ##
       # contains aggregation events
       aggregation_queue: ${self:custom.aggregationQueue}
@@ -605,15 +1148,19 @@ functions:
           cors: true
           documentation:
             summary: schedules a job to be computed to the backend queue
-
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     # requires more memory to get access to faster cpus
     #defines to which topic we want to connect
     environment:
-
       ##
       # contains scheduling events
       schedule_queue: ${self:custom.scheduleQueue}
-
       ##
       # contains aggregation events
       aggregation_queue: ${self:custom.aggregationQueue}
@@ -621,7 +1168,6 @@ functions:
       jobTrackingTable: ${self:custom.jobTrackingTable}
       trackingTable: ${self:custom.trackingTable}
       acquisitionTable: ${self:custom.acquisitionTable}
-
 
 
   zipbucket:
@@ -634,7 +1180,13 @@ functions:
           cors: true
           documentation:
             summary: returns the name of the bucket for zipped aggregated data
-
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     environment:
       dataBucket: ${self:custom.dataZipBucketName}
 
@@ -648,7 +1200,13 @@ functions:
           cors: true
           documentation:
             summary: returns the name of the bucket for json result data
-
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     environment:
       dataBucket: ${self:custom.dataJSONBucketName}
 
@@ -662,7 +1220,13 @@ functions:
           cors: true
           documentation:
             summary: returns the name of the bucket for all raw data
-
+            requestHeaders:
+              - name: "x-api-key"
+                description: "AWS generated api key for the respective stage"
+            methodResponses:
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse403}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse404}
+              - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
     environment:
       dataBucket: ${self:custom.dataRawBucketName}
 

@@ -1,11 +1,10 @@
 requests
 boto
-boto3
-botocore
+boto3==1.16.31
+botocore==1.19.31
 untangle
 jsonschema
 watchdog
-pytest
 boltons
 simplejson
 importlib_metadata
