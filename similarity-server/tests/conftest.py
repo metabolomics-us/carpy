@@ -11,13 +11,13 @@ def require_mocking():
     mocking context for stasis
     """
 
-    # lamb = moto.mock_lambda()
-    # lamb.start()
-    #
-    # os.environ["current_stage"] = "test"
-    #
-    # yield
-    # lamb.stop()
+    lamb = moto.mock_lambda()
+    lamb.start()
+
+    os.environ["current_stage"] = "test"
+
+    yield
+    lamb.stop()
 
     pass
 

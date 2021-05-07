@@ -44,6 +44,11 @@ provider:
   environment:
     current_stage: ${self:custom.stage}
 
+  ##
+  # vpc settings
+  vpc:
+    securityGroupIds: ${self:custom.security}
+    subnetIds: ${self:custom.subnets}
 
 ############################################################################################
 #custom configuration settings
@@ -51,6 +56,15 @@ provider:
 custom:
   stage: ${opt:stage, self:provider.stage}
   region: ${opt:region, self:provider.region}
+
+  security:
+    - 'sg-7d409b03'
+  subnets:
+    - 'subnet-e382339a'
+    - 'subnet-04c0515e'
+    - 'subnet-b779a9fc'
+    - 'subnet-39f3df11'
+
 
   ###
   # custom domain management
@@ -72,6 +86,9 @@ custom:
     dockerizePip: true
     slim: false
     noDeploy:
+      - "boto3"
+      - "botocore"
+      - "moto"
       - "pytest"
 
   ###
@@ -83,7 +100,7 @@ custom:
         version: '1.0'
         title: Similarity Server API
         description: <h2>Similarity algorithms as lambdas</h2>
-#        termsOfService: AsIs
+        #        termsOfService: AsIs
         contact:
           name: Fiehnlab IT Team
           url: https://fiehnlab.ucdavis.edu/staff#it
@@ -148,9 +165,9 @@ custom:
           properties:
             statusCode:
               type: integer
-                default: 404
-                body:
-                  type: string
+              default: 404
+            body:
+              type: string
       - name: ServerError500
         contentType: "application/json"
         schema:
@@ -230,7 +247,7 @@ custom:
         statusCode: '500'
         responseModels:
           "application/json": ServerError500
-      AlgorythmListResponse:
+      AlgorithmListResponse:
         statusCode: '200'
         responseModels:
           "application/json": AlgorithmList
@@ -281,7 +298,7 @@ functions:
               - ${self:custom.commonModelSchemaFragments.responses.MethodResponse500}
 
   allsimilarities:
-    handler:
+    handler: similarity/similarity.all_similarities
     events:
       - http:
           path: allsimilarities

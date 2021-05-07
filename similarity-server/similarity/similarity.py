@@ -1,21 +1,10 @@
-from abc import ABC
-from pprint import pprint
+# from pprint import pprint
 from urllib import parse
 
 import simplejson as json
 import spectral_similarity
 
 from similarity import headers
-
-
-class SimilarityResult(ABC):
-    def __init__(self, algorithm, value, remove_prec):
-        self.algorithm = algorithm
-        self.similarity = value,
-        self.removePrecursor = remove_prec
-
-    def default(self, o):
-        return o.__dict__
 
 
 def missing_param(msg: str):
@@ -55,7 +44,6 @@ def success(data, use_decimal: bool = False):
 def make_array(spectrum: str):
     peaks = spectrum.split(" ")
     arr = [p.split(":") for p in peaks]
-    pprint(arr)
     return arr
 
 

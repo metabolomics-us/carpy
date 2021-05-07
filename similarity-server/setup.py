@@ -1,5 +1,6 @@
 from sys import version_info
-from setuptools import setup
+
+from setuptools import setup, find_packages
 
 if version_info.major == 3 and version_info.minor < 8 or \
         version_info.major < 3:
@@ -9,19 +10,22 @@ if version_info.major == 3 and version_info.minor < 8 or \
 setup(name='similarity-server',
       description='Similarity algorithms as lambdas',
       url='https://github.com/metabolomics-us/carpy/tree/master/similarity-server',
-      author='diego',
+      author='Diego Pedrosa',
       author_email='linuxmant@gmail.com',
       license='GPLv3',
-      packages=['similarity_server'],
+      packages=find_packages(),
       scripts=[],
       setup_requires=['pytest-runner'],
       tests_require=[
           'pytest',
-          'pytest-watch',
+          'pytest-mock',
+          'pytest-cov',
+          'moto'
       ],
       install_requires=[
-          'requests',
-          'pytest',
+          'boto3',
+          'botocore',
+          'simplejson'
       ],
       include_package_data=True,
       zip_safe=False,
